@@ -1,1 +1,1 @@
-# This is the CosmoSIS ReadMe.
+# This is the CosmoSIS README.
