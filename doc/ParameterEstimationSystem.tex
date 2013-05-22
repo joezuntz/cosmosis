@@ -17,7 +17,7 @@
 \newcommand{\brieftitle}{CosmoSIS}
 \newcommand{\authors}{\href{mailto:jbk@fnal.gov,paterno@fnal.gov}%
                      {Jim Kowalkowski and Marc Paterno \\ \textit{Computing Division} \\ \textit{SSI Group}}}
-\newcommand{\docversion}{12}
+\newcommand{\docversion}{13}
 
 %------------------------------------------------------------
 % Define new commands here
@@ -38,13 +38,38 @@
 %------------------------------------------------------------
 \chapter{Introduction\label{ch:introduction}}
 
+
+\section{Rationale\label{sec:rationale}}
+
+The dark energy science analysis done by DES will involve a large enough
+group of physicists
+that independent and uncoordinated development will be inefficient. In order to
+avoid duplicated effort, and to allow DES members to 
+collaborate more easily, we propose the
+development of an organized environment for cosmological parameter
+estimation.
+
+At the highest level, the goal of this effort is to create a
+collaborative environment in which dark energy science
+analysis\footnote{This effort will begin by focusing on Markov Chain
+  Monte Carlo likelihood sampling analyses.} can
+be performed. The environment should be easy to deploy to a new computer,
+as long as the computer is running one of the experiment-supported
+operating systems. It should be easy for a physicist to introduce new
+physics algorithms into the parameter estimation process, or to
+replace an existing algorithm by a different implementation. It should
+also be easy to ensure that large jobs can take advantage of
+parallel-processing opportunities on multi-core machines, without
+requiring significant parallel-programming experience on the part of
+the physicist-programmers.
+
 \section{Purpose\label{sec:purpose}}
 
 This document describes the features and properties of a proposed
 software system, containing several elements:
 \begin{inparaenum}[(a)]
 \item a framework for the construction of runtime-configurable,
-parallel-capable, Markov Chain Monte Carlo (MCMC)-based parameter estimation programs, which we
+parallel-capable, sampling-based parameter estimation programs, which we
 call \cosmosis (Cosmological Survey Inference System). This framework is initially targeted for the Dark Energy
 Survey (DES)\cite{des} project,
 \item software libraries to support assembly of applications using this
@@ -151,34 +176,6 @@ products and practices for using them. These include:
 % report. This section includes information about what is covered in the
 % report and examples of what is not.
 
-\section{Rationale\label{sec:rationale}}
-
-The dark energy science analysis done by DES will involve a large enough
-group of physicists
-that independent and uncoordinated development will be inefficient. In order to
-avoid duplicated effort, and in order to allow members of the
-DES Dark Energy Science Center collaborate more easily, we propose the
-development of an organized environment for cosmological parameter
-estimation.
-\begin{fixme}
-  Is ``the DES DESC'' the right group to name here, or is that too
-  specific, or too general?
-\end{fixme}
-
-At the highest level, the goal of this effort is to create a
-collaborative environment in which dark energy science
-analysis\footnote{This effort will begin by focusing on Markov Chain
-  Monte Carlo likelihood sampling analyses.} can
-be performed. The environment should be easy to deploy to a new computer,
-as long as the computer is running one of the experiment-supported
-operating systems. It should be easy for a physicist to introduce new
-physics algorithms into the parameter estimation process, or to
-replace an existing algorithm by a different implementation. It should
-also be easy to ensure that large jobs can take advantage of
-parallel-processing opportunities on multi-core machines, without
-requiring significant parallel-programming experience on the part of
-the physicist-programmers.
-
 \section{Terminology\label{sec:terminology}}
 
 In this section, we introduce some technical terminology used
@@ -228,8 +225,8 @@ elsewhere in the document.
 
 \item[Likelihood calculator] A \emph{likelihood calculator} is a module
   that has the purpose of calculating, based on the values if its
-  \emph{input} physics parameters, a set of \emph{output} physics parameters.
-  See also \emph{physics calculator}.
+  \emph{input} physics quantities, a probability associated with those
+  quantities. See also \emph{physics calculator}.
 
 \item[Module] A \emph{module} is a body of code which presents a set
   of classes, or functions, or both. Modules can consist of pure
@@ -237,12 +234,20 @@ elsewhere in the document.
   appear), or as compiled extension modules (in which case the built
   module is platform-dependent), or as a mixture of the two.
 
-\item[Physics calculator]
-See also \emph{likelihood calculator}.
+\item[Physics calculator] A \emph{physics calculator} is a module
+  that has the purpose of calculating, based on the values if its
+  \emph{input} physics quantities a set of \emph{derived} physics
+  quantities (\eg spectra).
+  See also \emph{likelihood calculator}.
 
 \item[Platform] A \emph{platform} is a particular combination of
   computing hardware and operating system version. It includes many
   ``standard'' tools, \eg, \code{make}.
+
+\item[Production release] A \emph{production release} is a release of a
+  body of software that has been validated through whatever mechanism is
+  established for doing so. Each production release of a given body of
+  software is given an identifying \emph{tag} or \emph{version number}.
 
 \item[Program] A \emph{program} is a utility to be
   invoked from the command line, or as part of a batch job. It may be
@@ -509,7 +514,6 @@ we will try to keep code that will also be compatible with Python 3.x,
 to reduce the work that would be necessary if, at some future date, the
 community decides to move to using Python 3.
 
-\chapter{Overview\label{ch:overview}}
 
 % \begin{fixme}
 %   Things to discuss in this section:
@@ -524,7 +528,7 @@ community decides to move to using Python 3.
 % \end{itemize}
 % \end{fixme}
 
-\section{The current situation\label{sec:current_situation}}
+\chapter{The current situation\label{ch:current_situation}}
 
 The current DES parameter estimation software, residing in the
 \texttt{des-pipe} repository, consists of a variety of software
@@ -551,7 +555,7 @@ imported into the \texttt{des-pipe} source code repository. Some software artifa
 between the software packages currently used by DES parameter estimation
 programs.
 
-\subsection{Current external dependencies}
+\section{Current external dependencies}
 
 Code in the \texttt{des-pipe} repository depends upon several different
 external products. These are not delivered as part of the
@@ -594,7 +598,7 @@ required products include:
       upon commit messages in the PyMC project git repository.}.
 \end{enumerate}
 
-\subsection{Current internal dependencies}
+\section{Current internal dependencies}
 
 The \texttt{des-pipe} software is stored in a single
 Mercurial\cite{mercurial} repository, hosted at
@@ -625,7 +629,7 @@ named products.
 \ifthenelse{\boolean{screen}}{\clearpage}{}
 
 
-\subsection{Current build system}
+\section{Current build system}
 
 For C and Fortran code, the \texttt{des-pipe} build system is based on
 \name{make}, and consists of a set of Makefiles. For the Python code,
@@ -652,9 +656,8 @@ is not compatible with code from other modules, \eg
 \texttt{shear/becker/Makefile} sets the switch \texttt{-fshort-enums},
 which produces code that in not binary-compatible with code generated
 without that switch.
-\subsection{Current development techniques}
-\subsection{How programs are executed in the current system}
-
+\section{Current development techniques}
+\section{How programs are executed in the current system}
 
 \chapter{Details}
 
@@ -691,10 +694,10 @@ identifiable, version of the DES source code.
   \end{enumerate}
 \end{fixme}
 
-\section{Framework}
+\section{The \cosmosis framework}
 
 We call the proposed framework \cosmosis. This is a framework
-specifically for the creation of configurable Markov Chain Monte Carlo
+specifically for the creation of configurable sampling-based
 parameter estimation programs. Each program consists of several
 different types of components. These include:
 \begin{itemize}
@@ -711,10 +714,10 @@ different types of components. These include:
 
 The \emph{physics modules} are provided (though a standard interface)
 the tuple of parameter values. Each physics module can read the values
-of existing parameters, and calculate the values of new parameters
-that it can then add to the tuple. The physics modules are run in a
+of existing quantities, and calculate the values of derived quantities
+(\eg spectra) that it can then add to the tuple. The physics modules are run in a
 sequence determined by a configuration file, supplied by the user, so
-that later physics modules can access the values of parameters
+that later physics modules can access the values of quantities
 calculated by earlier physics modules. Each physics module also can
 (but need not) contribute to the calculation of the likelihood of the
 parameter vector. Figure~\ref{fig:despes} shows the organization of a
@@ -764,8 +767,8 @@ parameter vector. Figure~\ref{fig:despes} shows the organization of a
 
 Physics modules perform calculations of two types. They accept as
 input a collection of model parameters, and can augment the collection
-with new parameters. They can not change the value of any existing
-parameter. They can also calculate, and record, a likelihood value,
+with derived quantities. They can not change the value of any 
+previously-calculated quantity. They can also calculate, and record, a likelihood value,
 which will be combined with any other likelihoods calculated by other
 modules in the program.
 
@@ -809,7 +812,7 @@ framework's configuration mechanism.
 \subsection{Samplers}
 
 
-\subsection{Parameter calculators}
+\subsection{Physics calculators}
 
 \subsection{Likelihood calculators}
 
