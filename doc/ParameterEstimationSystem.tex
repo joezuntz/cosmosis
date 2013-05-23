@@ -1,5 +1,4 @@
 \documentclass[draftmode,draftwater]{memarticle}
-% \documentclass[screen,nopanel]{memarticle}
 % \documentclass{memarticle}
 \usepackage{paralist}
 \usepackage[T1]{fontenc}
@@ -655,14 +654,9 @@ from third parties, imported into the repository.
 Figure~\ref{fig:astropackages} shows the dependency graph of the various
 named products.
 
-\ifthenelse{\boolean{screen}}{\clearpage}{}
 \begin{figure}
-  \centering \ifthenelse{\boolean{screen}} {%
-    \includegraphics[width=0.95\textheight]{astro_packages}
-  }{%
-    % \includegraphics[width=\textwidth]{astro_packages}
-    \includegraphics[width=\textwidth]{astro_packages}
-  }
+  \centering
+  \includegraphics[width=\textwidth]{astro_packages}
   \begin{fixme}
     These dependencies are not yet complete.
   \end{fixme}
@@ -671,7 +665,6 @@ named products.
     code. Ellipses denote software products that are not grouped.}
   \label{fig:astropackages}
 \end{figure}
-\ifthenelse{\boolean{screen}}{\clearpage}{}
 
 
 \section{Current build system}
@@ -817,7 +810,6 @@ need not) contribute to the calculation of the likelihood of the
 parameter vector. Figure~\ref{fig:despes} shows the organization of a
 \cosmosis program.
 
-\ifthenelse{\boolean{screen}}{\clearpage}{}
 \begin{figure}[htb]
   \includegraphics[width=\textwidth]{despes}
   \caption{The organization of a \cosmosis program. Solid arrows show
@@ -828,7 +820,6 @@ parameter vector. Figure~\ref{fig:despes} shows the organization of a
     parameter vectors produced by the sampler.}
   \label{fig:despes}
 \end{figure}
-\ifthenelse{\boolean{screen}}{\clearpage}{}
 
 % \subsection{Discussion}
 % blah.
