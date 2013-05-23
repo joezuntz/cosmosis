@@ -1,23 +1,29 @@
 \documentclass[draftmode,draftwater]{memarticle}
-% \documentclass[screen,nopanel]{memarticle} \documentclass{memarticle}
-\usepackage{paralist} \usepackage[T1]{fontenc} \usepackage{palatino%
-  , pxfonts%
-  , mathpazo%
-} \maxtocdepth{chapter}
+% \documentclass[screen,nopanel]{memarticle}
+% \documentclass{memarticle}
+\usepackage{paralist}
+\usepackage[T1]{fontenc}
+\usepackage{palatino%
+           , pxfonts%
+           , mathpazo%
+}
+\maxtocdepth{chapter}
 
-% ------------------------------------------------------------ Document
-% title control. Change these as appropriate for your document.
 % ------------------------------------------------------------
-\newcommand{\doctitle}{A Proposal for \\ a DES Parameter Estimation
-  System} \newcommand{\brieftitle}{CosmoSIS}
+
+% Document title control. Change these as appropriate for your document.
+% ------------------------------------------------------------
+\newcommand{\doctitle}{A Proposal for \\ a DES Parameter Estimation System}
+\newcommand{\brieftitle}{CosmoSIS}
 \newcommand{\authors}{\href{mailto:jbk@fnal.gov,paterno@fnal.gov}%
   {Jim Kowalkowski and Marc Paterno \\ \textit{Computing Division} \\
-    \textit{SSI Group}}} \newcommand{\docversion}{13}
+    \textit{SSI Group}}}
 
-% ------------------------------------------------------------ Define
-% new commands here
+\newcommand{\docversion}{14}
+
 % ------------------------------------------------------------
-% \newcommand{\despes}{\name{despes}\xspace}
+%  Define new commands here
+% ------------------------------------------------------------
 \newcommand{\prog}[1]% format to be used for program names
   {\texttt{#1}}
 \newcommand{\facs}{\name{FACS}\xspace}
@@ -25,8 +31,8 @@
 \newcommand{\despipe}{\name{des-pipe}\xspace}
 
 
-% ------------------------------------------------------------ Document
-% starts here
+% ------------------------------------------------------------
+%  Document starts here
 % ------------------------------------------------------------
 \listfiles
 \begin{document}
