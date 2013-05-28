@@ -5,8 +5,27 @@ digraph depends
 
   subgraph plat
   {
-    platform         [shape=Mrecord, label="{platform | libc \llibgfortran\l}" ]
+    platform         [shape=Mrecord, label="{platform | libc \llibm\llibpthread\l...\l}" ]
   }
+
+  subgraph compilers
+  {
+    compilers [shape=Mrecord, label="{compilers | libgfortran\llibquadmath\llibgcc_s\llibstdc++\l}" ]
+    # rank = same;
+    # libgfortran;
+    # libquadmath;
+    # libgcc_s [label="libgcc_s"];
+    # libstdcpp [label="libstdc++"];
+  }
+
+  # libgfortran -> libquadmath;
+  # libstdcpp -> libgcc_s;
+  # libgfortran -> platform;
+  # libquadmath -> platform;
+  # libgcc_s -> platform;
+  # libstdcpp -> platform;
+
+  compilers -> platform;
 
   subgraph externals
   {
@@ -20,7 +39,7 @@ digraph depends
     blas    [ label="blas" ];
   }
   lapack -> blas;
-  blas -> platform;
+  blas -> compilers;
 
   subgraph low
   {
