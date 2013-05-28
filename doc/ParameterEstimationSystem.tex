@@ -18,7 +18,7 @@
   {Jim Kowalkowski and Marc Paterno \\ \textit{Computing Division} \\
     \textit{SSI Group}}}
 
-\newcommand{\docversion}{14}
+\newcommand{\docversion}{15}
 
 % ------------------------------------------------------------
 %  Define new commands here
@@ -446,8 +446,27 @@ software artifacts are contained in this section. This section defines
 each of these subsystems and describes their constraints and essential
 requirements.
 
-
 \subsection{Source code repositories}
+
+Source code that is managed by DES---specifically, the source code for
+physics modules written by DES---should be kept in a source code
+repository that is accessible by all members of the DES collaboration. A
+git repository on BitBucket will be provided for this purpose.
+
+Code that is not managed by DES, but is used by DES, should not reside
+in this repository. Such code would include, for example, GSL, cfitsio,
+and WMAP7. DES will not keep this code under revision control because
+identifiable versions of the code are available from elsewhere.
+
+The code for the \cosmosis framework itself (as opposed to the code for
+the DES physics modules) will reside in a repository distinct from the
+repository in which the DES physics module source code resides. This
+repository is separate from the code repository in which the physics
+modules resides to make it easier to release new versions of each
+independently, so that development may proceed on each at its own pace.
+This separation also makes it easier to see how other groups could make
+use of the \cosmosis framework, even if they are doing physics analyses
+distinct from those done with the DES physics modules.
 
 \subsection{Build, test, package, and local install}
 
@@ -656,7 +675,7 @@ named products.
 
 \begin{figure}
   \centering
-  \includegraphics[width=\textwidth]{astro_packages}
+  \includegraphics[height=0.95\textheight]{astro_packages}
   \begin{fixme}
     These dependencies are not yet complete.
   \end{fixme}
