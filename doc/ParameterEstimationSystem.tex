@@ -356,12 +356,44 @@ batch job to execute the \prog{cosmosis} program.
 
 \subsection{Modifying an existing physics module}
 
-Modifying existing physics module code is done in the \emph{developer}
-role. Such use requires access to an installed version of \prog{git}.
+Modifying existing physics module code is done in the
+\emph{developer} role. Such use requires access to an
+installed version of \prog{git}.
+
+The user creates a new branch in the source code repository
+for their modified version, and
+commits changes that alter one or more of the physics modules.
+Ideally they read some guiding documentation or even run a script
+for the git commands to do this.
+
+They rebuild the changed module and run some analyses on this
+alternate version, perhaps comparing results from it with the
+master branch.  These tests may be on a different machine if the
+tests are extensive.
+
+When they are satisfied that it works the developer issues a pull
+request to the build manager to merge their branch into master.
+
 
 \subsection{Creating a new physics module}
 
 Creation of new physics modules in done in the \emph{developer} role.
+
+Once again, they begin by creating a new branch of the source code
+repository to contain their new module.  They then copy a template directory
+that creates a stub module according to the language they want to write in.
+
+This template contains an interface file, which connects their code to the
+system, and their primary code files in the appropriate language.
+
+They then modify the module inputs and outputs in the interface file,
+and add a
+calculation to the primary files that does the main work of the module.
+They also modify a short metadata text file to describe the
+module, its authorship, inputs, outputs, and purpose.
+
+They then proceed to test and pull-request the module as described in the
+previous work sequence example.
 
 \subsection{Creating an official release}
 
