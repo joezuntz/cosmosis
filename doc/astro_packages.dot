@@ -8,43 +8,37 @@ digraph depends
     platform         [shape=Mrecord, label="{platform | libc \llibm\llibpthread\l...\l}" ]
   }
 
-  subgraph compilers
-  {
-    compilers [shape=Mrecord, label="{compilers | libgfortran\llibquadmath\llibgcc_s\llibstdc++\l}" ]
-    # rank = same;
-    # libgfortran;
-    # libquadmath;
-    # libgcc_s [label="libgcc_s"];
-    # libstdcpp [label="libstdc++"];
-  }
-
-  # libgfortran -> libquadmath;
-  # libstdcpp -> libgcc_s;
-  # libgfortran -> platform;
-  # libquadmath -> platform;
-  # libgcc_s -> platform;
-  # libstdcpp -> platform;
-
   compilers -> platform;
 
-  subgraph externals
+  subgraph l1
   {
     label = "externals";
-    #rank = same;
+    rank = same;
+    compilers [shape=Mrecord, label="{compilers | libgfortran\llibquadmath\llibgcc_s\llibstdc++\llibgomp\l}" ]
     python  [ label="python" ];
     cfitsio [ label="cfitsio" ];
     gsl     [ label="gsl" ];
     fftw3   [ label="fftw3" ];
-    lapack  [ label="lapack" ];
-    blas    [ label="blas" ];
   }
+    blas    [ label="blas" ];
+    lapack  [ label="lapack" ];
   lapack -> blas;
   blas -> compilers;
+
+  subgraph externals
+  {
+    wmap7_data ->  wmap7;
+    planck_data -> planck;
+    camb;
+  }
+  wmap7 -> lapack;
+  wmap7 -> cfitsio;
+  planck -> lapack;
+  camb -> compilers;
 
   subgraph low
   {
     #rank = same;
-    astro_externals  [shape=Mrecord, label="{astro_externals |wmap7\lhalofit\lCAMB\l}"]
     SciPy -> NumPy -> python;
     NumPy -> blas;
     PyFITS -> NumPy;
@@ -54,40 +48,39 @@ digraph depends
 
   subgraph middle
   {
-    glue             [shape=Mrecord, label="{glue | py_glue \lf_fglue \lc_glue\l}"]
-    samplers [shape=Mrecord, label="{samplers|emcee_sampler\lpymc_sampler\l}"]
+    cosmosis;
   }
+  cosmosis -> camb;
+  cosmosis -> planck_data;
+  cosmosis -> wmap7_data;
+  cosmosis -> PyMC;
+  cosmosis -> emcee;
+  cosmosis -> PyFITS;
+  cosmosis -> gsl;
+  cosmosis -> fftw3;
 
   subgraph top
   {
-    astro_interfaces [shape=Mrecord, label="{astro_interfaces |wmap_interface\lhalofit_interface\lcamb_interface\l}"]
-    des_modules [shape=Mrecord, label="{des_modules|kirk_nz\lhuterer_cl\ldodelson_cl\leifler_cl\lbecker_cl\lvanilla_calib\lmarch_sn\ldodelson_lik\leifler_lik\l}"]
+    des_modules;
   }
+
+  des_modules -> cosmosis;
+
 
   cfitsio -> platform;
   gsl -> platform;
   fftw3 -> platform;
   lapack -> platform;
 
-  des_modules -> glue;
+  des_modules -> cosmosis;
   des_modules -> gsl;
-  des_modules -> astro_externals;
   des_modules -> PyFITS;
-  des_modules -> glue;
+  des_modules -> cosmosis;
   des_modules -> SciPy;
   des_modules -> NumPy;
 
-  astro_interfaces -> glue;
-  astro_interfaces -> platform;
-  astro_interfaces -> astro_externals;
-  astro_externals -> platform;
-
-  samplers -> emcee;
-  samplers -> PyMC;
-  samplers -> glue;
-
-  glue -> cfitsio;
-  glue -> python;
+  cosmosis -> cfitsio;
+  cosmosis -> python;
   python [ label="python" ];
   python -> platform;
 }
