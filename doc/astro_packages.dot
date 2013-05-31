@@ -5,7 +5,7 @@ digraph depends
 
   subgraph plat
   {
-    platform         [shape=Mrecord, label="{platform | libc \llibm\llibpthread\l...\l}" ]
+    platform  [shape=Mrecord, label="{platform | libc\llibm\llibpthread\l...\l}", style=filled; ]
   }
 
   compilers -> platform;
@@ -14,31 +14,41 @@ digraph depends
   {
     label = "externals";
     rank = same;
-    compilers [shape=Mrecord, label="{compilers | libgfortran\llibquadmath\llibgcc_s\llibstdc++\llibgomp\l}" ]
-    python  [ label="python" ];
-    cfitsio [ label="cfitsio" ];
-    gsl     [ label="gsl" ];
-    fftw3   [ label="fftw3" ];
+    compilers [shape=Mrecord, label="{compilers |libgfortran\llibquadmath\llibgcc_s\llibstdc++\llibgomp\l}", style=filled; ]
+    python  [ label="python", style=filled; ];
+    cfitsio [ label="cfitsio", style=filled; ];
+    gsl     [ label="gsl", style=filled; ];
+    fftw3   [ label="fftw3", style=filled; ];
   }
-    blas    [ label="blas" ];
-    lapack  [ label="lapack" ];
+  blas    [ label="blas", style=filled; ];
+  lapack  [ label="lapack", style=filled; ];
   lapack -> blas;
   blas -> compilers;
 
   subgraph externals
   {
+    wmap7_data [style=filled;]
+    planck_data [style=filled;]
     wmap7_data ->  wmap7;
     planck_data -> planck;
     camb;
+    mg_camb;
   }
   wmap7 -> lapack;
   wmap7 -> cfitsio;
   planck -> lapack;
   camb -> compilers;
+  mg_camb -> compilers;
 
+  
   subgraph low
   {
     #rank = same;
+    NumPy [style=filled;]
+    SciPy [style=filled;]
+    PyFITS [style=filled;]
+    PyMC [style=filled;]
+    emcee [style=filled;]
     SciPy -> NumPy -> python;
     NumPy -> blas;
     PyFITS -> NumPy;
@@ -48,39 +58,31 @@ digraph depends
 
   subgraph middle
   {
-    cosmosis;
+    glue;
   }
-  cosmosis -> camb;
-  cosmosis -> planck_data;
-  cosmosis -> wmap7_data;
-  cosmosis -> PyMC;
-  cosmosis -> emcee;
-  cosmosis -> PyFITS;
-  cosmosis -> gsl;
-  cosmosis -> fftw3;
 
   subgraph top
   {
-    des_modules;
+    des_modules [shape=Mrecord;];
   }
 
-  des_modules -> cosmosis;
-
-
+  des_modules -> glue;
+  des_modules -> fftw3;
+  des_modules -> camb;
+  des_modules -> mg_camb;
   cfitsio -> platform;
   gsl -> platform;
   fftw3 -> platform;
   lapack -> platform;
 
-  des_modules -> cosmosis;
   des_modules -> gsl;
   des_modules -> PyFITS;
-  des_modules -> cosmosis;
   des_modules -> SciPy;
   des_modules -> NumPy;
 
-  cosmosis -> cfitsio;
-  cosmosis -> python;
+  glue -> cfitsio;
+  glue -> python;
+  glue -> libini;
   python [ label="python" ];
   python -> platform;
 }

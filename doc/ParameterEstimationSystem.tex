@@ -18,7 +18,7 @@
   {Jim Kowalkowski and Marc Paterno \\ \textit{Computing Division} \\
     \textit{SSI Group}}}
 
-\newcommand{\docversion}{18}
+\newcommand{\docversion}{19}
 
 % ------------------------------------------------------------
 %  Define new commands here
@@ -716,16 +716,22 @@ named products.
 
 \begin{figure}
   \centering
-  \includegraphics[height=\textheight,width=\textwidth,keepaspectratio=true]{astro_packages}
-  \caption{Software packages currently part of the DES parameter
+    \includegraphics[height=\textheight,width=\textwidth,keepaspectratio=true]{astro_packages}
+    \caption{Software packages currently part of the DES parameter
     estimation system. Rounded rectangles enclose groups of related
     code. Ellipses denote software products that are not grouped.
-    \texttt{wmap7\_data} and \texttt{planck\_data} denote the large data
-  files needed for use of their related codes. The library names listed
-  in \texttt{platform} reflect Linux systems; Darwin systems have their equivalents.}
-  \label{fig:astropackages}
+    Shaded shapes are used for packages that are not provided with
+    \texttt{des\_pipe}; their presence must be verified by the user;
+    the other software packages are present in the \texttt{des\_pipe}
+    repository, and built as part of the system. \texttt{wmap7\_data}
+    and \texttt{planck\_data} denote the large data files needed for
+    use of their related codes. The library names listed in
+    \texttt{platform} reflect Linux systems; Darwin systems have their
+    equivalents.} \label{fig:astropackages}
+    \begin{fixme}
+    Please verify these dependencies.
+    \end{fixme}
 \end{figure}
-
 
 \section{Current build system}
 
