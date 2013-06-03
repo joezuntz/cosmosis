@@ -18,7 +18,7 @@
   {Jim Kowalkowski and Marc Paterno \\ \textit{Computing Division} \\
     \textit{SSI Group}}}
 
-\newcommand{\docversion}{19}
+\newcommand{\docversion}{20}
 
 % ------------------------------------------------------------
 %  Define new commands here
@@ -227,6 +227,11 @@ in the document.
   or \code{class}es. In \cpp, some codes (\eg, template-based
   ``libraries'') consist entirely of headers.
 
+\item[Installed products repository] A location (typically a directory
+  tree) in which are put already-built \emph{products}, and which are
+  therefore available for ``setup'' and use. Compare with \emph{source
+    code repository} and \emph{product distribution repository}.
+
 \item[Library] A \emph{library} is a body of compiled code, encompassing
   a collection of functions intended for use in building other libraries
   or programs.
@@ -251,6 +256,18 @@ in the document.
   computing hardware and operating system version. It includes many
   ``standard'' tools, \eg, \code{make}.
 
+\item[Product] A \emph{product} is a cohesive body of software that is
+  delivered to its users as a unit. It might contain one or more
+  libraries or modules (to be used to build other software), or one or
+  more programs, made available to the users of the product, or both. A
+  product may also contain documentation, data, and other files.
+
+\item[Product distribution repository] A location (often a web server)
+  from which distribution tarballs for pre-built products are available.
+  Products can not be used directly from a product distribution
+  repository; they must be downloaded and then installed into an
+  installed products repository.
+
 \item[Production release] A \emph{production release} is a release of a
   body of software that has been validated through whatever mechanism is
   established for doing so. Each production release of a given body of
@@ -261,9 +278,11 @@ in the document.
   Fortran and C programs) or interpreted (as are Python programs).
   Contrast with a \emph{library}.
 
-\item[Repository] A (source code) \emph{repository} is a system used for
-  the version control of source code. Contrast with a \emph{distribution
-    system}.
+\item[Source code repository] A \emph{source code repository} is a
+  system used for the version control of source code. Contrast with a
+  \emph{installed products repository} and \emph{production distribution
+    repository}. When the word repository is used alone, this is the
+  most common meaning.
 
 \item[Toolkit] A \emph{toolkit} is a software system, typically a
   library, module, or set of libraries or modules or both, that provides
@@ -329,7 +348,11 @@ performed by people in those roles.
   \centering
   \includegraphics[width=\textwidth]{roles}.
   \caption{The roles and activities of users of the \cosmosis
-    framework.}
+    framework. Rounded rectangles denote roles; rectangles indicate
+    the parts of the \cosmosis system with which a user in each role
+    interacts. The labels on the arrows indicate the most important
+    interactions. The dotted lines denote inclusion of one subsystem
+    by another.}
   \label{fig:roles}
 \end{figure}
 
