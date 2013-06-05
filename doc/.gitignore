@@ -1,4 +1,7 @@
 .deps
 *.out
 *.toc
-ParameterEstimationSystem.pdf
+*.bbl
+*.blg
+cosmosis-design.pdf
+cosmosis-intro.pdf
