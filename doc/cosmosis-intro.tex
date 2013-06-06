@@ -59,7 +59,7 @@ scientific contributions of those sharing their software through this effort.
 The
 environment should be easy to deploy to a new computer, as long as the
 computer is running one of the experiment-supported operating systems.
-It should be easy for a physicist to introduce new physics algorithms
+It should be easy for a physicist to introduce new physics algorithms or experimental datasets
 into the parameter estimation process, or to replace an existing
 algorithm by a different implementation. It should be easy to migrate
 existing code to build under the new system. It should also be easy to
@@ -339,7 +339,8 @@ different times, more from one role to another. The main roles are:
   ``official'' distributions of software on computing resources for
   which they are responsible. This role might be fulfilled by an
   individual supporting a group at a national laboratory or at a
-  university, or by an individual installing software on his own laptop.
+  university, or by an individual installing software on a personal 
+  laptop or desktop.
 \end{description}
 
 Figure~\ref{fig:roles} illustrates these roles, and the activities
@@ -382,10 +383,10 @@ access to necessary data files.
 
 A user would perform tasks like tailoring existing framework
 configuration files to meet this specific needs, and to run the
-\prog{cosmosis} program configured by such a file to produce analysis
-tuples suitable for his needs. For modest-size jobs, this might be done
-interactively; for large-size jobs, this might involve submitting a
-batch job to execute the \prog{cosmosis} program.
+\prog{cosmosis} program configured by such a file to produce suitable analysis
+tuples. For modest-size jobs, this might be done
+interactively; for large-size jobs, this might involve submitting to
+a batch scheduler system to execute the \prog{cosmosis} program on the user's behalf.
 
 \subsection{Modifying an existing physics module}
 
@@ -393,19 +394,20 @@ Modifying existing physics module code is done in the
 \emph{developer} role. Such use requires access to an
 installed version of \prog{git}.
 
-The user creates a new branch in the source code repository
+The user creates a new branch (or fork) in the source code repository
 for their modified version, and
 commits changes that alter one or more of the physics modules.
-Ideally they read some guiding documentation or even run a script
-for the git commands to do this.
+Ideally some guiding documentation or script will be provided to guide
+the user.
 
 They rebuild the changed module and run some analyses on this
 alternate version, perhaps comparing results from it with the
-master branch.  These tests may be on a different machine if the
+master repository.  These tests may be on a different machine if the
 tests are extensive.
 
 When they are satisfied that it works the developer issues a pull
-request to the build manager to merge their branch into master.
+request to the build manager to merge their changes into the master 
+repository.
 
 
 \subsection{Creating a new physics module}
@@ -644,6 +646,12 @@ we will try to keep code that will also be compatible with Python 3.x,
 to reduce the work that would be necessary if, at some future date, the
 community decides to move to using Python 3.
 
+\section{Parallel Interfaces}
+
+This section should document the parallel interfaces that are supported for
+user-provided modules.  (OpenMP for C,C++, and Fortran, Python multiprocess? pthreads? MPI threads?).
+APIs that are exposed to the user should be made thread-safe or explicitly labelled
+as unsafe.
 
 % \begin{fixme}
 %   Things to discuss in this section:
@@ -715,6 +723,10 @@ required products include:
   which we do not elaborate further here: \name{SuiteSparse},
   \name{pcre}, and \name{swig}. \name{SciPy} has optional parts; it is
   not clear which are needed.
+\item \name{FFTW?}. A common fft library (3.3 is the latest version)
+\item \name{GSL?}.  The GNU scientific library.
+\item \name{BLAS?}. A binary linear algebra system tuned for the local
+  system and linked as appropriate to both GSL and Numpy.
 \item \name{emcee}. The exact version required is unclear, but it must
   be built against the correct Python version. \name{emcee} requires
   \name{mpi4py} for full utility, but can work without it; it also
