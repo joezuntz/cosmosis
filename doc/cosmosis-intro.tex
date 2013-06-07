@@ -321,6 +321,9 @@ different times, more from one role to another. The main roles are:
   jobs. When doing analysis, scientists are often acting in the
   \emph{user} role. This can be true even when one is using code one has
   previously developed.
+  
+  Users need the set of code contained in the {Installed products repository} (see Fig.\ref{fig:roles}); it will
+  be installed in the {runtime environment}, which could be a laptop, a small cluster, or a national facility such as NERSC.
 
 \item[Scientist developer]: \emph{Scientist developers} (henceforth just
   \emph{developers} write, build, and test code, and usually make that
@@ -330,10 +333,14 @@ different times, more from one role to another. The main roles are:
   often not modifying the source code of the sampler, and would thus be
   acting in the user role in respect to the sampler.
 
-\item[Build manager]: \emph{Build managers} create ``offical''
+Developers need to access the {source code repository}, which contains code developed by other scientists. Developers want to add code to this repository and also inspect other developers' source code to ensure compatibility. The {development environment} will contain all installed packages so that the developer can test test any changes made in the context of the full pipeline.
+
+\item[Build manager]: \emph{Build managers} create ``official''
   distributions of software, and make those distributions available for
   others to obtain. They may also create site-specific builds of
-  software, when necessary.
+  software, when necessary. %To date, the build managers have most often been the users and developers themselves.
+  
+  Build managers will manage the {product distribution repository} (adding and updating products) and they will tag releases in the source code repository. 
 
 \item[Install manager]: \emph{Installation managers} install
   ``official'' distributions of software on computing resources for
@@ -341,6 +348,9 @@ different times, more from one role to another. The main roles are:
   individual supporting a group at a national laboratory or at a
   university, or by an individual installing software on a personal 
   laptop or desktop.
+  
+  The Install manager will download the suite of products from the product distribution repository and install the system in the relevant environment.
+  
 \end{description}
 
 Figure~\ref{fig:roles} illustrates these roles, and the activities
