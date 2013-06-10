@@ -201,6 +201,15 @@ in the document.
   text file) that provides parameters necessary for the execution of a
   program. These are sometimes called \emph{initialization files}.
 
+\item[Development environment] The \emph{development environment}
+  comprises a set of tools (compilers, interpreters, source code
+  management tools, \etc.,) used for software development, as well as a
+  set of environment variables and possibly scripts used during the
+  development of software. The purpose of providing a development
+  environment is to help make it easy to assure that software written by
+  one developer is easy for another developer to build. Compare with
+  \emph{runtime environment}.
+
 \item[Distribution system] A (binary) \emph{distribution system} is a
   means for the delivery of \emph{libraries}, \emph{programs},
   \emph{modules} and \emph{headers} (and possibly other associated
@@ -283,6 +292,17 @@ in the document.
   Fortran and C programs) or interpreted (as are Python programs).
   Contrast with a \emph{library}.
 
+\item[Runtime environment] The \emph{runtime environment} comprises a
+  set of tools (\eg., the commands used to obtain access to the correct
+  version of installed products) used for running \prog{cosmosis} and
+  related programs. It includes a set of environment variables and
+  possibly scripts used to run the software. The purpose of providing a
+  runtime environment that is distinct from the development environment
+  is to allow software to run in environments where the build tools are
+  not available, for example in environments where cross-compilation is
+  needed, as is sometimes the case at supercomputing facilities. Compare
+  with \emph{development environment}.
+
 \item[Source code repository] A \emph{source code repository} is a
   system used for the version control of source code. Contrast with a
   \emph{installed products repository} and \emph{production distribution
@@ -327,8 +347,12 @@ different times, more from one role to another. The main roles are:
   \emph{user} role. This can be true even when one is using code one has
   previously developed.
   
-  Users need the set of code contained in the {Installed products repository} (see Fig.\ref{fig:roles}); it will
-  be installed in the {runtime environment}, which could be a laptop, a small cluster, or a national facility such as NERSC.
+  Users need the set of programs code contained in the \emph{installed
+    products repository} (see Fig.~\ref{fig:roles}); they will be made
+  available through the \emph{runtime environment}, which may be
+  deployed to a laptop, a small cluster, or a national facility such as
+  NERSC. Installing the necessary items is the job of an \emph{install
+    manager}.
 
 \item[Scientist developer]: \emph{Scientist developers} (henceforth just
   \emph{developers} write, build, and test code, and usually make that
