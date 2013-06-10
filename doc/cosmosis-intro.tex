@@ -18,7 +18,7 @@
   {Jim Kowalkowski and Marc Paterno \\ \textit{Computing Division} \\
     \textit{SSI Group}}}
 
-\newcommand{\docversion}{2}
+\newcommand{\docversion}{3}
 
 % ------------------------------------------------------------
 %  Define new commands here
@@ -28,7 +28,6 @@
 \newcommand{\facs}{\name{FACS}\xspace}
 \newcommand{\cosmosis}{\name{CosmoSIS}\xspace}
 \newcommand{\despipe}{\name{des-pipe}\xspace}
-
 
 % ------------------------------------------------------------
 %  Document starts here
@@ -40,7 +39,6 @@
 
 % ------------------------------------------------------------
 \chapter{Introduction\label{ch:introduction}}
-
 
 \section{Rationale\label{sec:rationale}}
 
@@ -346,7 +344,8 @@ different times, more from one role to another. The main roles are:
   jobs. When doing analysis, scientists are often acting in the
   \emph{user} role. This can be true even when one is using code one has
   previously developed.
-  
+
+
   Users need the set of programs code contained in the \emph{installed
     products repository} (see Fig.~\ref{fig:roles}); they will be made
   available through the \emph{runtime environment}, which may be
@@ -368,22 +367,27 @@ Developers need to access the {source code repository}, which contains code deve
   distributions of software, and make those distributions available for
   others to obtain. They may also create site-specific builds of
   software, when necessary. %To date, the build managers have most often been the users and developers themselves.
-  
-  Build managers will manage the {product distribution repository} (adding and updating products) and they will tag releases in the source code repository. 
+
+
+  Build managers will manage the {product distribution repository} (adding and updating products) and they will tag releases in the source code repository.
+
 
 \item[Install manager]: \emph{Installation managers} install
   ``official'' distributions of software on computing resources for
   which they are responsible. This role might be fulfilled by an
   individual supporting a group at a national laboratory or at a
-  university, or by an individual installing software on a personal 
+  university, or by an individual installing software on a personal
+
   laptop or desktop.
-  
+
+
   The Install manager will download the suite of products from the product distribution repository and install the system in the relevant environment.
-  
+
+
 \end{description}
 
-Figure~\ref{fig:roles} illustrates these roles, and the activities
-performed by people in those roles.
+Figure~\ref{fig:roles} illustrates the connections between these roles, and the activities
+performed by people in them.
 \begin{figure}
   \centering
   \includegraphics[width=\textwidth]{roles}.
@@ -395,8 +399,6 @@ performed by people in those roles.
     by another.}
   \label{fig:roles}
 \end{figure}
-
-
 
 \section{Work sequence examples}
 
@@ -421,9 +423,16 @@ access to experiment-supplied ``standard'' configuration files and
 access to necessary data files.
 
 A user would perform tasks like tailoring existing framework
-configuration files to meet this specific needs, and to run the
+configuration files to meet his specific needs, and to run the
 \prog{cosmosis} program configured by such a file to produce suitable analysis
-tuples. For modest-size jobs, this might be done
+tuples.
+
+Configuration files are text files, and can be edited by any ASCII text
+editor. To run a pipeline, the user specifies the name of the
+configuration file to be used. All the configuration information needed
+by the program is supplied by that one file.
+
+ For modest-size jobs, this might be done
 interactively; for large-size jobs, this might involve submitting to
 a batch scheduler system to execute the \prog{cosmosis} program on the user's behalf.
 
@@ -445,9 +454,9 @@ master repository.  These tests may be on a different machine if the
 tests are extensive.
 
 When they are satisfied that it works the developer issues a pull
-request to the build manager to merge their changes into the master 
-repository.
+request to the build manager to merge their changes into the master
 
+repository.
 
 \subsection{Creating a new physics module}
 
@@ -455,10 +464,13 @@ Creation of new physics modules in done in the \emph{developer} role.
 
 Once again, they begin by creating a new branch of the source code
 repository to contain their new module.  They then copy a template directory
-that creates a stub module according to the language they want to write in.
+that creates a stub module according to the language they want to write
+in, or use a provided skeleton generator to write one.
 
-This template contains an interface file, which connects their code to the
-system, and their primary code files in the appropriate language.
+The generated (or copied) code contains the appropriate interface
+specification,
+which connects the user's code to the
+framework, and any additional code files necessary for the chosen language.
 
 They then modify the module inputs and outputs in the interface file,
 and add a
@@ -469,15 +481,57 @@ module, its authorship, inputs, outputs, and purpose.
 They then proceed to test and pull-request the module as described in the
 previous work sequence example.
 
-\subsection{Creating an official release}
+\subsection{Creating an official release of the physics module code}
 
 Creation of an official release is done in the \emph{build manager}
-role.
+role. The times at which this is to be done should be determined by the
+appropriate person or persons responsible for managing the code in
+question.
+
+\begin{fixme}
+  This should be brought into conformance with the results of our email
+  discussion of forking repositories.
+\end{fixme}
+
+The creation of an official release comprises several steps:
+\begin{enumerate}
+\item Check out the appropriate version of the source code.
+\item Tag the source code repository with the appropriate version
+  number. This allows the source code used to produce the production
+  release to be unambiguously identified. Note that this requires write
+  access to the source code repository.
+\item \label{item:build} Build the tagged version of the code on the
+  platforms the build manager is supporting. Run all automated tests.
+\item If the tests pass, build the distribution tarballs, and upload
+  them to the product distribution repository. If the tests do no
+  succeed, those responsible for the failing code should be notified so
+  that they can fix their code. If necessary, the build manager may
+  disable the build of specific modules in specific releases.
+\end{enumerate}
+
+Some build managers may be responsible only for building on a specific
+platform, and not for tagging the code. Such a build manager would begin
+at step~\ref{item:build}. Note that this task does not require write
+access to the source code repository.
 
 \subsection{Installing a new release}
 
 Installation, on some computing hardware, of an already-built release is
-done in the \emph{install manager} role.
+done in the \emph{install manager} role. An install manager may be
+responsible for a single laptop or desktop, or for a small cluster, or
+for a national facility such as NERSC. The install manager for a given
+machine must have appropriate permissions to manipulate the files in the
+\emph{installed product repository} on that machine.
+
+To install a new release of a given product, the install manager follows
+these steps:
+\begin{enumerate}
+\item Download an installation tarball from the \emph{product distribution
+  repository} (using a tool such as \prog{wget} or \prog{curl}).
+\item Unwind the tarball into the top-level directory of the installed
+  product repository.
+\item If necessary, run any provided post-installation script.
+\end{enumerate}
 
 \section{Software categories}
 
@@ -576,9 +630,7 @@ distinct from those done with the DES physics modules.
 
 \subsection{Build, test, package, and local install}
 
-
 \subsection{Distribution repositories}
-
 
 \section{Project-wide constraints}
 
