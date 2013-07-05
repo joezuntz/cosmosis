@@ -587,17 +587,122 @@ and describes their constraints and essential requirements.
 
 \subsection{Runtime configuration}
 
+Runtime configuration refers to the configuration of the \prog{cosmosis}
+program. Runtime configuration should be done with a text file, so that
+simple text editors can be used to modify the file, and so that
+configuration files can be kept in a source code repository and compared
+with tools like the common Unix utility \prog{diff}.
+
+The choice of sampler to be used in a given program execution should be
+specified as part of the runtime configuration, rather than by the
+choice of main program to run.
+
+The choice of likelihood calculators and physics calculators to be run
+should be determined by the configuration file. All the configuration
+parameters for such modules should be specified as part of the
+configuration file, and not be read from individual files by each
+module. Modules should not read the configuration file themselves; they
+should be given the necessary configuration parameters as early as
+possible in the program, so that errors in configuration can be
+diagnosed as early as possible. Errors in configuration should cause a
+graceful program shutdown, accompanied by any relevant error messages.
+Some configuration parameters are program-wide, while others are
+module-specific. Some modules need to evaluate parameters only in order
+to assure they are not outside the physical bounds within which the
+module's calculations are valid. Thus is seems necessary for each module
+to receive the full set of configuration parameters for the whole
+program.
+
+An important task of the runtime configuration system is the support of
+provenance tracking, to help assure that the results of calculations are
+reproducible. In support of this provenance tracking, modules may not
+modify the configuration parameters they receive; the parameters are
+read-only.
+
+It should be possible to provide a ``standard'' configuration that
+specifies sensible values for all parameters for each module. The author
+of a module should supply such a configuration along with the code of
+the module. It should be possible for a user to configure any module by
+specifying only those parameters whose values are to be changed from the
+values established by the standard configuration.
+
 \subsection{Data repositories}
+
+While small data sets (less than approximately 1~MB) needed by a module can
+reasonably be stored in the repository in which the code is stored,
+larger data files demand an alternative solution.
+
+For the largest of data sets (greater than approximately 100~GB), it may
+be unreasonable to keep many copies of the same files. For such data
+sets the best solution may be to keep the files in a DES-defined
+directory structure at NERSC. The use of a defined directory structure
+allows some flexibility here. Parts of the directory structure can be
+more replicated elsewhere, if such is needed, more cheaply than the
+entire set, and code can be written to work not only at NERSC, but
+anywhere that the appropriate part of the data set has been replicated.
+
+All data repositories should be accessible using the same API, so that
+the same code can be used wherever the data are available.
 
 \subsection{Configuration repositories}
 
-\subsection{Package repositories}
+A ``standard'' configuration file for each module should be kept in the
+source code repository that contains the code for that module. It should
+be possible to keep other configuration files in the same repository.
+
+Any configuration files in the source code repository should also be
+shipped with a binary build of the software, so that users of the
+runtime system do not require access to a copy of the source code only
+for the purpose of obtaining the configuration files.
+
+\subsection{Installed products repositories}
+
+On centrally managed machines (\eg, university clusters or NERSC), a
+repository of all available products built for that platform should be
+maintained by someone with that responsibility. This task must not
+require that the maintainer have elevated system privileges.
+
+In order to facilitate individual users' ability to make use of
+libraries that are not yet ``officially'' distributed, it must be
+possible for a user to install his own packages without needing write
+access to a centrally-managed installed product repository. The user
+should be able to make his own repository, and to use products from it
+in conjunction with products from the central repository.
 
 \subsection{Environment settings}
 
+In order to facilitate the writing of portable code (portable between
+different machines, as well as between different platforms), we need a
+set of cooperating scripts to establish the user's working environment.
+One part of the scripts may need to be installation-specific, to
+identify the locations or names of installation-specific items (such as
+the location of the local installed product repository). Most of the
+scripts should be installation-independent.
+
+Ideally, users of CosmoSIS would need only to set up the CosmoSIS
+product to obtain access to all necessary software. Developers using
+CosmoSIS should be able to do so with a few steps as possible; setting
+up the software development environment should require no more than one
+command. The tools used for development must be clearly documented.
+
 \subsection{Data handling interface}
 
+
 \subsection{Platform interactions for special facilities}
+
+At some specific facilities (\eg, NERSC), the nature of the facility
+might require the use of some products that differ from those available
+at other sites (\eg, the NERSC batch environment and the \emph{modules}
+system used to access products).
+
+In order to avoid users needing to learn too many sets of commands for
+the same purpose, such systems should be made to operate through the
+same commands as are used for the same purpose elsewhere, whenever
+feasible.
+
+The software environment established by CosmoSIS should in no way
+prevent use of facility-specific features, even when it does not
+directly provide any facilities for supporting such features.
 
 \section{Development environment}
 
