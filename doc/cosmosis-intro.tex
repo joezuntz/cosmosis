@@ -16,7 +16,8 @@
 \newcommand{\brieftitle}{CosmoSIS Introduction}
 \newcommand{\authors}{\href{mailto:jbk@fnal.gov,paterno@fnal.gov}%
   {Jim Kowalkowski and Marc Paterno \\ \textit{Computing Division} \\
-    \textit{SSI Group}}}
+    \textit{SSI Group}}\\
+    Scott Dodelson, FNAL}
 
 \newcommand{\docversion}{4}
 
@@ -42,7 +43,7 @@
 
 \section{Rationale\label{sec:rationale}}
 
-The dark energy science analysis done by DES will involve a large enough
+The dark energy science analysis done by the Dark Energy Survey (DES) will involve a large enough
 group of physicists that independent and uncoordinated development will
 be inefficient. In order to avoid duplicated effort, and to allow DES
 members to collaborate more easily, we propose the development of an
@@ -120,7 +121,7 @@ products and practices for using them. These include:
   science. This framework will be suitable for use by physicists
   participating in the Dark Energy Survey, and eventually by others as
   well. The framework will be developed under the DOE Computational HEP
-  \facs proposal. It will support the development, configuration and use
+  \facs proposal in conjunction with a team at the University of Manchester and support from the Physics Frontier Center at the Kavli Institute for Cosmological Physics. It will support the development, configuration and use
   of user-supplied MCMC samplers, likelihood calculators, and physics
   calculators.
 
@@ -255,7 +256,7 @@ in the document.
   platform-dependent), or as a mixture of the two.
 
 \item[Physics calculator] A \emph{physics calculator} is a module that
-  has the purpose of calculating, based on the values if its
+  has the purpose of calculating, based on the values of its
   \emph{input} physics quantities a set of \emph{derived} physics
   quantities (\eg spectra). See also \emph{likelihood calculator}.
 
@@ -319,7 +320,7 @@ in the document.
 Here we describe the various aspects of the software system, the
 essential functions that it must support, and the constraints to which
 is must adhere. In earlier proposals and discussions, we have referred
-to this this project as a framework. It is, however, more appropriately
+to this project as a framework. It is, however, more appropriately
 called a system since it also encompasses developing and running the
 applications that use the libraries and software modules. This section
 contains rules and mandates that we must follow (constraints) and
@@ -354,14 +355,14 @@ different times, more from one role to another. The main roles are:
     manager}.
 
 \item[Scientist developer]: \emph{Scientist developers} (henceforth just
-  \emph{developers} write, build, and test code, and usually make that
+  \emph{developers}) write, build, and test code, and usually make that
   code available for others to use. When acting in the developer role
   for one body of code, one is often also acting in the user role for
   other code; \eg a developer making use of a given sampler is most
   often not modifying the source code of the sampler, and would thus be
   acting in the user role in respect to the sampler.
 
-Developers need to access the {source code repository}, which contains code developed by other scientists. Developers want to add code to this repository and also inspect other developers' source code to ensure compatibility. The {development environment} will contain all installed packages so that the developer can test test any changes made in the context of the full pipeline.
+Developers need to access the {source code repository}, which contains code developed by other scientists. Developers want to add code to this repository and also inspect other developers' source code to ensure compatibility. The {development environment} will contain all installed packages so that the developer can test any changes made in the context of the full pipeline.
 
 \item[Build manager]: \emph{Build managers} create ``official''
   distributions of software, and make those distributions available for
@@ -377,8 +378,7 @@ Developers need to access the {source code repository}, which contains code deve
   which they are responsible. This role might be fulfilled by an
   individual supporting a group at a national laboratory or at a
   university, or by an individual installing software on a personal
-
-  laptop or desktop.
+laptop or desktop.
 
 
   The Install manager will download the suite of products from the product distribution repository and install the system in the relevant environment.
@@ -449,37 +449,36 @@ their development efforts to whatever extent each is comfortable, while
 allowing sufficient management of the central repository to provide the
 required degree of certainty in the quality of the ``official'' releases.
 
-The user creates a fork of the source code repository%
+The developer creates a fork of the source code repository%
 \footnote{Each user only needs to create a forked repository once; the
   same repository can be used for subsequent developement, including the
   creation of new physics modules, as described in
   section~\ref{sec:creating-new-physics}.}
-for their modified version,
+for his modified version,
 and commits changes that alter one or more of the physics modules.
 Ideally some guiding documentation or script will be provided to guide
-the user.
+the developer.
 
-They rebuild the changed module and run some analyses on this
+The developer rebuilds the changed module and runs analyses on this
 alternate version, perhaps comparing results from it with the
-master repository.  These tests may be on a different machine if the
+master repository.  These tests may be carried out on a different machine if the
 tests are extensive.
 
-When they are satisfied that it works the developer issues a pull
-request to the build manager to merge their changes into the master
+When satisfied that it works, the developer issues a pull
+request to the build manager to merge her changes into the master
 repository.
 
 \subsection{Creating a new physics module\label{sec:creating-new-physics}}
 
 Creation of new physics modules in done in the \emph{developer} role.
 
-Once again, the developers begins by creating a new fork, if needed, of the source code
-repository. They then copy a template directory
-that creates a stub module according to the language they want to write
-in, or use a provided skeleton generator to write one.
+Once again, the developer begins by creating a new fork, if needed, of the source code
+repository. She then copies a template directory
+that creates a stub module according to the desired language or uses a provided skeleton generator to write one.
 
 The generated (or copied) code contains the appropriate interface
 specification,
-which connects the user's code to the
+which connects the developer's code to the
 framework, and any additional code files necessary for the chosen language.
 
 They then modify the module inputs and outputs in the interface file,
