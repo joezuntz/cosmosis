@@ -513,7 +513,7 @@ here:
 \item \label{item:build} Build the tagged version of the code on the
   platforms the build manager is supporting. Run all automated tests.
 \item If the tests pass, build the distribution tarballs, and upload
-  them to the product distribution repository. If the tests do no
+  them to the product distribution repository. If the tests do not
   succeed, those responsible for the failing code should be notified so
   that they can fix their code. If necessary, the build manager may
   disable the build of specific modules in specific releases.
@@ -558,7 +558,7 @@ software, and on anything in any of the other categories.
 
 \subsection{Platform}
 
-Platform software elements are those elements which are not delivered
+Platform software elements are those elements that are not delivered
 through the software product distribution system, but are required as
 part of the software inherent on a given platform. Some examples would
 be the \prog{bash} shell, and the system's standard C library
@@ -619,7 +619,7 @@ graceful program shutdown, accompanied by any relevant error messages.
 Some configuration parameters are program-wide, while others are
 module-specific. Some modules need to evaluate parameters only in order
 to assure they are not outside the physical bounds within which the
-module's calculations are valid. Thus is seems necessary for each module
+module's calculations are valid. Thus it seems necessary for each module
 to receive the full set of configuration parameters for the whole
 program.
 
@@ -691,7 +691,7 @@ scripts should be installation-independent.
 
 Ideally, users of CosmoSIS would need only to set up the CosmoSIS
 product to obtain access to all necessary software. Developers using
-CosmoSIS should be able to do so with a few steps as possible; setting
+CosmoSIS should be able to do so with as few steps as possible; setting
 up the software development environment should require no more than one
 command. The tools used for development must be clearly documented.
 
@@ -999,7 +999,7 @@ Makefile.
 Some Makefiles set compiler switches to values that can result in code
 that is not compatible with code from other modules, \eg
 \prog{shear/becker/Makefile} sets the switch \texttt{-fshort-enums},
-which produces code that in not binary-compatible with code generated
+which produces code that is not binary-compatible with code generated
 without that switch.
 
 \section{Current development techniques}
