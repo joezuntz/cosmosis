@@ -859,6 +859,25 @@ user-provided modules.  (OpenMP for C,C++, and Fortran, Python multiprocess? pth
 APIs that are exposed to the user should be made thread-safe or explicitly labelled
 as unsafe.
 
+There are two levels of parallelism that \cosmosis needs to support.  These are
+process-level and thread-level parallelism.
+
+At the process level, some samplers 
+offer parallel sampling algorithms in which multiple likelihoods can be computed 
+simultaneously.  In this case, minimal communication between processes is required
+(only the final results of a likelihood calculator), and modules, some of which are
+not designed for thread-level safety, are run without interaction.  This process level
+parallelism can use MPI or unix process spawning for parallelism, and \cosmosis must offer
+the ability to spawn, initialize, run, and clean up a new process to run a sequence of modules.
+
+At the thread level, many individual physics modules use code that is or can be multi-threaded
+to speed up specific calculations. This includes OpenMP and POSIX threads (pthreads).  Since these
+multi-threaded sections are confined within a single physics module, and can be confined to 
+parts of the code that do not interact with the \cosmosis core, we do not necessarily require that core functions
+that modules use to read and write data, or similar tasks, be thread-safe.  The only requirement
+is that the user be able to make environment variables that control thread-level parallelism
+(such as OMP\_NUM\_THREADS) visible to the modules.
+
 % \begin{fixme}
 %   Things to discuss in this section:
 %   \begin{itemize}
