@@ -939,9 +939,9 @@ required products include:
   be build against the correct Python version.
 \item \name{matplotlib}. The exact version required is unclear, but it
   must be build against the correct Python version. \name{matplotlib}
-  depends upon \name{libpng} and \name{freetype}. Since this tool
-  supports multiple optional user-interface toolkits, the exact set to
-  be supported must be defined.
+  depends upon \name{libpng} and \name{freetype}. \name{matplotlib} supports
+  multiple user-interface toolkits, but they are not required for current
+  or likely \cosmosis tasks - only the simple Agg backend needs to be supported.
 \item \name{SciPy}. The exact version required is unclear, but it must
   be built against the correct Python version and using the correct
   \cpp{} compiler. \name{SciPy} involves several other dependencies,
