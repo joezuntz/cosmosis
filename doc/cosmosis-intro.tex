@@ -327,6 +327,24 @@ contains rules and mandates that we must follow (constraints) and
 essential functions that the system must carry out (functional
 requirements).
 
+\section{Basic structure}
+
+The basic structure of \cosmosis will connect a series of modules
+together in a sequence, and provides an interface to samplers such that
+they can run the sequence with a specified collection of inputs (in the
+form of a set of category,key,value parameter triplets), and then extract results
+out from the end, most notably likelihoods from a Likelihood Calculator.
+
+An API will let each module in the sequence read parameters and numerical
+data written by the sampler or previous modules, and write them for later
+modules.
+
+\cosmosis will provide functions to samplers to instatiate a module sequence based on configuration
+information (see Section \ref{Runtime configuration section}).  Individual modules
+in the sequence
+must expose three interfaces that \cosmosis will call: instantiation/configuration,
+execution, and finalization.
+
 \section{Roles that people play}
 
 Here we focus on who makes use of this system and what sort of
@@ -596,6 +614,7 @@ contained in this section. This section defines each of these subsystems
 and describes their constraints and essential requirements.
 
 \subsection{Runtime configuration}
+\label{Runtime configuration section}
 
 Runtime configuration refers to the configuration of the \prog{cosmosis}
 program. Runtime configuration should be done with a text file, so that
