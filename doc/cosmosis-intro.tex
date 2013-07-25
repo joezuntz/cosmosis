@@ -19,7 +19,7 @@
     \textit{SSI Group}}\\
     Scott Dodelson, FNAL}
 
-\newcommand{\docversion}{5}
+\newcommand{\docversion}{6}
 
 % ------------------------------------------------------------
 %  Define new commands here
@@ -332,14 +332,14 @@ requirements).
 The basic structure of \cosmosis will connect a series of modules
 together in a sequence, and provides an interface to samplers such that
 they can run the sequence with a specified collection of inputs (in the
-form of a set of category,key,value parameter triplets), and then extract results
+form of a set of category, key, value parameter triplets), and then extract results
 out from the end, most notably likelihoods from a Likelihood Calculator.
 
 An API will let each module in the sequence read parameters and numerical
 data written by the sampler or previous modules, and write them for later
 modules.
 
-\cosmosis will provide functions to samplers to instatiate a module sequence based on configuration
+\cosmosis will provide functions to samplers to instantiate a module sequence based on configuration
 information (see Section \ref{Runtime configuration section}).  Individual modules
 in the sequence
 must expose three interfaces that \cosmosis will call: instantiation/configuration,
@@ -469,7 +469,7 @@ required degree of certainty in the quality of the ``official'' releases.
 
 The developer creates a fork of the source code repository%
 \footnote{Each user only needs to create a forked repository once; the
-  same repository can be used for subsequent developement, including the
+  same repository can be used for subsequent development, including the
   creation of new physics modules, as described in
   section~\ref{sec:creating-new-physics}.}
 for his modified version,
@@ -873,10 +873,10 @@ community decides to move to using Python 3.
 
 \section{Parallel Interfaces}
 
-This section should document the parallel interfaces that are supported for
-user-provided modules.  (OpenMP for C,C++, and Fortran, Python multiprocess? pthreads? MPI threads?).
-APIs that are exposed to the user should be made thread-safe or explicitly labelled
-as unsafe.
+% This section should document the parallel interfaces that are supported for
+% user-provided modules.  (OpenMP for C,C++, and Fortran, Python multiprocess? pthreads? MPI threads?).
+% APIs that are exposed to the user should be made thread-safe or explicitly labeled
+% as unsafe.
 
 There are two levels of parallelism that \cosmosis needs to support.  These are
 process-level and thread-level parallelism.
@@ -886,7 +886,7 @@ offer parallel sampling algorithms in which multiple likelihoods can be computed
 simultaneously.  In this case, minimal communication between processes is required
 (only the final results of a likelihood calculator), and modules, some of which are
 not designed for thread-level safety, are run without interaction.  This process level
-parallelism can use MPI or unix process spawning for parallelism, and \cosmosis must offer
+parallelism can use MPI or Unix process spawning for parallelism, and \cosmosis must offer
 the ability to spawn, initialize, run, and clean up a new process to run a sequence of modules.
 
 At the thread level, many individual physics modules use code that is or can be multi-threaded
