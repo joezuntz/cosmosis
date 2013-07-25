@@ -50,7 +50,7 @@ digraph depends
     PyMC [style=filled;]
     emcee [style=filled;]
     SciPy -> NumPy -> python;
-    NumPy -> blas;
+    NumPy -> lapack;
     PyFITS -> NumPy;
     PyMC -> SciPy;
     emcee -> NumPy;
@@ -73,7 +73,7 @@ digraph depends
   cfitsio -> platform;
   gsl -> platform;
   fftw3 -> platform;
-  lapack -> platform;
+  lapack -> blas;
 
   des_modules -> gsl;
   des_modules -> PyFITS;
