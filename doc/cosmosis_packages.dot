@@ -1,11 +1,13 @@
 
 digraph depends
 {
-  #rankdir=LR
 
-  subgraph plat
+  subgraph lowest
   {
-    platform         [shape=Mrecord, label="{platform | libc \llibm\llibpthread\l...\l}" ]
+    rank=same;
+    platform         [shape=Mrecord, label="{platform | libc \llibm\llibpthread\l...\l}", style=filled, fillcolor=powderblue ]
+    wmapdata [ label="wmapdata", shape=box, style=filled, fillcolor=powderblue ]
+    planck_data [ label="planck_data", shape=box ]
   }
 
   compilers -> platform;
@@ -14,25 +16,31 @@ digraph depends
   {
     label = "externals";
     rank = same;
-    compilers [shape=Mrecord, label="{compilers | libgfortran\llibquadmath\llibgcc_s\llibstdc++\llibgomp\l}" ]
-    python  [ label="python" ];
-    cfitsio [ label="cfitsio" ];
-    gsl     [ label="gsl" ];
-    fftw3   [ label="fftw3" ];
+    compilers [shape=Mrecord, label="{compilers | libgfortran\llibquadmath\llibgcc_s\llibstdc++\llibgomp\l}", style=filled, fillcolor=powderblue ]
+    sqlite  [ label="sqlite", style=filled, fillcolor=powderblue ];
+    cfitsio [ label="cfitsio", style=filled, fillcolor=powderblue ];
+    gsl     [ label="gsl", style=filled, fillcolor=powderblue ];
+    fftw3   [ label="fftw3", style=filled, fillcolor=powderblue ];
   }
-    blas    [ label="blas" ];
-    lapack  [ label="lapack" ];
-  lapack -> blas;
-  blas -> compilers;
+  lapack  [ label="lapack\nblas\n", style=filled, fillcolor=powderblue ];
+  lapack -> compilers;
 
-  subgraph externals
-  {
-    wmap7_data ->  wmap7;
-    planck_data -> planck;
-    camb;
-  }
-  wmap7 -> lapack;
-  wmap7 -> cfitsio;
+  python  [ label="python", style=filled, fillcolor=powderblue ];
+  wmap [ label="wmap", style=filled, fillcolor=powderblue ];
+  camb [ label="camb" ];
+  healpix [ label="healpix" ];
+
+  healpix -> cfitsio;
+  healpix -> fftw3;
+  healpix -> compilers;
+  healpix -> python;
+  camb -> healpix;
+  planck -> healpix;
+
+  wmap -> wmapdata;
+  planck -> planck_data;
+  wmap -> lapack;
+  wmap -> cfitsio;
   planck -> lapack;
   camb -> compilers;
 
@@ -40,7 +48,7 @@ digraph depends
   {
     #rank = same;
     SciPy -> NumPy -> python;
-    NumPy -> blas;
+    NumPy -> lapack;
     PyFITS -> NumPy;
     PyMC -> SciPy;
     emcee -> NumPy;
@@ -51,8 +59,8 @@ digraph depends
     cosmosis;
   }
   cosmosis -> camb;
-  cosmosis -> planck_data;
-  cosmosis -> wmap7_data;
+  cosmosis -> planck;
+  cosmosis -> wmap;
   cosmosis -> PyMC;
   cosmosis -> emcee;
   cosmosis -> PyFITS;
@@ -83,4 +91,6 @@ digraph depends
   cosmosis -> python;
   python [ label="python" ];
   python -> platform;
+  python -> sqlite;
+  sqlite -> platform;
 }
