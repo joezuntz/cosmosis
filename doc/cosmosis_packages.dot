@@ -5,39 +5,57 @@ digraph depends
   subgraph lowest
   {
     rank=same;
-    platform         [shape=Mrecord, label="{platform | libc \llibm\llibpthread\l...\l}", style=filled, fillcolor=powderblue ]
-    wmapdata [ label="wmapdata", shape=box, style=filled, fillcolor=powderblue ]
-    planck_data [ label="planck_data", shape=box ]
+    platform         [shape=Mrecord, label="{platform | libc \llibm\llibpthread\l...\l}"];
+    wmapdata [ label="wmapdata", shape=box];
+    planck_data [ label="planck_data", shape=box];
   }
 
+  subgraph two
+  {
+    rank=same;
+    compilers [shape=Mrecord, label="{compilers | libgfortran\llibquadmath\llibgcc_s\llibstdc++\llibgomp\l}"]  ;
+    sqlite  [ label="sqlite"];
+    cfitsio [ label="cfitsio"];
+    gsl     [ label="gsl"];
+    fftw3   [ label="fftw3"];
+  }
+
+  subgraph three
+  {
+    rank=same;
+    python  [ label="python"];
+    lapack  [ label="lapack\nblas\n"];
+    camb [ label="camb"];
+  }
+
+  subgraph four
+  {
+    rank=same;
+    wmap [ label="wmap"];
+    planck [ label="planck"];
+    suitesparse [ label="suitesparse"];
+  }
+
+  suitesparse -> lapack;
   compilers -> platform;
-
-    compilers [shape=Mrecord, label="{compilers | libgfortran\llibquadmath\llibgcc_s\llibstdc++\llibgomp\l}", style=filled, fillcolor=powderblue ]
-    sqlite  [ label="sqlite", style=filled, fillcolor=powderblue ];
-    cfitsio [ label="cfitsio", style=filled, fillcolor=powderblue ];
-    gsl     [ label="gsl", style=filled, fillcolor=powderblue ];
-    fftw3   [ label="fftw3", style=filled, fillcolor=powderblue ];
-
-  lapack  [ label="lapack\nblas\n", style=filled, fillcolor=powderblue ];
   lapack -> compilers;
-
-  python  [ label="python", style=filled, fillcolor=powderblue ];
-  wmap [ label="wmap", style=filled, fillcolor=powderblue ];
-  camb [ label="camb" ];
-
   wmap -> wmapdata;
   planck -> planck_data;
   wmap -> lapack;
   wmap -> cfitsio;
   planck -> lapack;
+  planck -> cfitsio;
   camb -> compilers;
 
   SciPy -> NumPy -> python;
+  SciPy -> suitesparse;
+  SciPy -> lapack;
   NumPy -> lapack;
+  NumPy -> nose;
+  nose -> python;
   PyFITS -> NumPy;
   PyMC -> SciPy;
   emcee -> NumPy;
-
 
   cosmosis;
 
