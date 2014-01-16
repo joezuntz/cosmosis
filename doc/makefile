@@ -1,5 +1,5 @@
 # PRODUCTS is the list of PDFs we are to build.
-PRODUCTS := cosmosis-intro.pdf cosmosis-design.pdf cosmosis-packages.pdf
+PRODUCTS := cosmosis-intro.pdf cosmosis-design.pdf
 
 # include our latex "build system".
 include latex.mk
