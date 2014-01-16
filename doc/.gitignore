@@ -5,3 +5,9 @@
 *.blg
 cosmosis-design.pdf
 cosmosis-intro.pdf
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+cosmosis_packages.pdf
+astro_packages.pdf
