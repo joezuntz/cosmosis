@@ -1,0 +1,101 @@
+This is a preliminary code for loosely connecting pipeline modules for the DES analysis, particularly for combined probes.  Also here are some example modules connected with the framework.
+
+  LICENSE
+===========
+
+You are ONLY allowed to use this software for Dark Energy Survey work.  
+This was a condition of people contributing code.
+
+
+Documentation
+=============
+
+Preliminary docs at:
+
+http://www.homepages.ucl.ac.uk/~ucapjzu/despes
+
+
+COMPILING
+=========
+
+See  http://www.homepages.ucl.ac.uk/~ucapjzu/despes/install.html
+for more details.  Quick start below:
+
+At the momement, this needs python 2.7
+
+
+1. Choose the Makefile.mine file from the makefiles subdirectory that is closest to your system.  Copy it into the main directory and rename it Makefile.mine.
+2. Modify the new Makefile.mine file to select the compilers and flags that you want to use.
+3. Run "make" at the main directory.  This will build the glue code and in any directories specified in the "TARGETS" variable in Makefile.mine.
+
+If you have any problems you can have a look at the TROUBLESHOOTING file for an error message similar to the one you get, and if that fails to help then you can email jaz@star.ucl.ac.uk
+
+
+GETTING STARTED WITH SAMPLING
+=============================
+
+To get started we will run a simple MCMC based on older data: parameter estimation from the
+WMAP 7-year data plus HST H_0 constraints.
+
+1.	Download the WMAP data separately http://lambda.gsfc.nasa.gov/product/map/current/m_sw.cfm 
+	(the version with the data included).  Extract it (no need to compile it).
+
+2.	Compile as described above, making sure to:
+ 		- include "boltzman/camb" and "likelihood/wmap7" in the TARGETS variable.  
+ 		- define WMAP_DATA_DIR to the path to the data subdirectory of the wmap code you downloaded in step 1
+
+ 3.	In the "example" directory, run:
+ 	python ../sampler/test/run_pipeline.py wmap.ini out1.fits
+ 	If all went well, the output should read:
+	Running camb_cmb ... 0
+	Running hst ... 0
+	Running wmap ...  Initializing WMAP likelihood, version v4.1
+	0
+	Pipeline ran okay.
+
+	This simple run_pipeline.py script just calculates likelihoods of a single parameter set.
+	The calculated spectra data are saved in out1.fits, which you can explore with any FITS viewer
+
+4.	Download PYMC from https://github.com/pymc-devs/pymc/tarball/v2.2
+	And follow the installation instructions.  
+
+5. 	In the "example" directory, run:
+	python ../sampler/pymc_sampler/sampler.py wmap.ini 
+
+	The pipeline will begin an MCMC chain, which should run for several hours
+	Ctrl-C when you get bored.
+
+DIFFERENT SAMPLERS
+==================
+
+All the currently included samplers are set up to work on a pair of parameter ini files.
+The first file describes what the pipeline is - what science modules should be coupled together.
+The second file describes what parameters should be fed into the pipeline (their min, max, and starting values).
+See example/wmap.ini and example/values.ini for examples of the two - they set up a simple
+likelihood run that just uses WMAP-7 year data + HST H_0 constraints.
+
+There are currently three different "samplers" that can be used on data.
+Each sampler requires a section in the main ini file describing how it should run.
+
+
+1) samplers/test/run_pipeline.py
+
+This is a test code, not really a sampler, that just does a single run of the pipeline
+on a fixed set of parameters. The results are saved to an output FITS file.
+It is a good idea to use this to test a pipeline before running properly.
+
+2) samplers/pymc/sampler.py
+
+This is a serial Metropolis-Hastings MCMC sampler that requires the pymc python package
+to be installed.  It uses an adaptive metropolis scheme that iterates towards a better
+proposal.  It also requires an initial covariance matrix to be chosen to start with.
+
+3) samplers/emcee_sampler/emcee_sampler.py
+   samplers/emcee_sampler/emcee_sampler_mpi.py
+
+The emcee sampler requires the emcee python package to be installed.  
+This sampler is a Goodman & Weare highly parallel affine-invariant algorithm.  
+
+The MPI version uses the mpi4py python package to do the parallelization, and 
+the other one uses multiple processes on the same shared memory machine to parallelize.
+
