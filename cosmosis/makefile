@@ -1,14 +1,17 @@
 CXXFLAGS=-std=c++11 -O3 -Wall -Wextra -pedantic -fPIC
+CCFLAGS=-std=c99 -O3 -Wall -Wextra -pedantic -fPIC
 
-ALL: libsample.so c_prog
+all: libcosmosis.so c_datablock_t
+test: all
+	@LD_LIBRARY_PATH=. ./c_datablock_t > c_datablock_t.log || echo Failed c_datablock_t
 
-libsample.so: sample.o
-	$(CXX) -shared -o $@ $<
+libcosmosis.so: datablock.o
+	$(CXX) $(CXXFLAGS) -shared -o $@ $<
 
-c_prog: sample.h c_prog.c
-	$(CC) -o $@ c_prog.c -L . -lsample
+c_datablock_t: datablock.h c_datablock_t.c
+	$(CC) $(CCFLAGS) -o $@ c_datablock_t.c -L . -lcosmosis
 
-sample.o: sample.cc sample.h
+datablock.o: datablock.cc datablock.h
 
 clean:
-	rm -f *.o *~ *.so
+	rm -f *.o *~ *.so c_datablock_t *.log

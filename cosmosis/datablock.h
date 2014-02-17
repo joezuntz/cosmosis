@@ -1,5 +1,5 @@
-#ifndef COSMOSIS_SAMPLE_H
-#define COSMOSIS_SAMPLE_H
+#ifndef COSMOSIS_DATABLOCK_H
+#define COSMOSIS_DATABLOCK_H
 
 #ifdef __cplusplus
 #include <string>
@@ -27,9 +27,17 @@
 //
 //----------------------------------------------------------------------
 
+#include <stdexcept>
+
 namespace cosmosis
 {
-  class Sample
+  // Exception types thrown.
+  struct Error : public std::runtime_error { Error(std::string const& msg) : std::runtime_error(msg) { } };
+  struct NameAlreadyExists : Error { using Error::Error; };
+  struct WrongType : Error { using Error::Error; };
+  struct NameNotFound : Error { using Error::Error; };
+  
+  class DataBlock
   {
   public:
     // All memory management functions are compiler generated.
@@ -42,25 +50,37 @@ namespace cosmosis
 
     void putDouble(std::string const& name, double val);
     void replaceDouble(std::string const& name, double val);
+
+    // Return true if a value (of any time) with this name exists.
+    bool hasValue(std::string const& name) const;
     
   private:
     std::map<std::string, double> values_;  
   };
 }
 
+inline
+bool cosmosis::DataBlock::hasValue(std::string const& name) const
+{
+  return (values_.find(name) != values_.end());
+}
+
+
 extern "C"
 {
 #endif
 
-  typedef void c_sample;
-  c_sample* make_c_sample(void);
+  typedef void c_datablock;
+  c_datablock* make_c_datablock(void);
 
-  bool c_sample_has_section(c_sample const* s, const char* name);
-  bool c_sample_has_value(c_sample const* s, const char* section, const char* name);
-  int c_sample_num_sections(....);
-  int c_sample_get_section_name(..., int isection);  
+  /*
+  bool c_datablock_has_section(c_datablock const* s, const char* name);
+  bool c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
+  int c_datablock_num_sections(....);
+  int c_datablock_get_section_name(..., int isection);  
+  */
 
-  void destroy_c_sample(c_sample* s);
+  void destroy_c_datablock(c_datablock* s);
 
   /* 
      Return 0 if a double named 'name' is found. We do no conversions of type.
@@ -76,10 +96,10 @@ extern "C"
      If the return status is nonzero, the value written into 'val' is not defined.
      If the return status is nonzero, the value written into 'val' is NaN.
   */
-  int  c_sample_get_double(c_sample const* s, const char* name, double* val);
+  int  c_datablock_get_double(c_datablock const* s, const char* name, double* val);
 
   /* Only scalars have default in the C and Fortran interfaces. */
-  int  c_sample_get_double_default(c_sample const* s, const char* name, double* val, double dflt);
+  int  c_datablock_get_double_default(c_datablock const* s, const char* name, double* val, double dflt);
 
 
   /* 
@@ -87,28 +107,31 @@ extern "C"
      1: name already exists
      2: memory allocation failure
   */
-  int c_sample_put_double(c_sample* s, const char* name, double val);
+  int c_datablock_put_double(c_datablock* s, const char* name, double val);
 
   /*
-     Return 0 if the put worked, and nonzero to indicate failure.
-     1: name does not already exist.
-     2: memory allocation failure.
-     3: replace of wrong type.
-   */
-  int c_sample_replace_double(c_sample* s, const char* name, double val);
+    Return 0 if the put worked, and nonzero to indicate failure.
+    1: name does not already exist.
+    2: memory allocation failure.
+    3: replace of wrong type.
+  */
+  int c_datablock_replace_double(c_datablock* s, const char* name, double val);
 
+
+#if 0
   /* Return 0 if the put worked, and nonzero to indicate failure */
-  int c_sample_get_double_array_1d(c_sample const* s, const char* name,
-				   double** array,
-				   int* size);
+  int c_datablock_get_double_array_1d(c_datablock const* s, const char* name,
+				      double** array,
+				      int* size);
 
-  int c_sample_get_double_array_1d_preallocated(c_sample const* s, const char* name,
-						double* array,
-						int* size,
-						int maxsize);
+  int c_datablock_get_double_array_1d_preallocated(c_datablock const* s, const char* name,
+						   double* array,
+						   int* size,
+						   int maxsize);
 
-  void c_sample_put_double_array_1d(c_sample* s, const char* name,
-				    double* array, int sz);
+  void c_datablock_put_double_array_1d(c_datablock* s, const char* name,
+				       double* array, int sz);
+#endif 
 
   
 
