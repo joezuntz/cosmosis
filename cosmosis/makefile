@@ -28,7 +28,11 @@ else
   MEMCHECK_CMD=
 endif
 
-all: libcosmosis.so
+all: verify_setup libcosmosis.so
+
+verify_setup:
+	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
+
 test: test_datablock
 
 test_datablock: all c_datablock_t
