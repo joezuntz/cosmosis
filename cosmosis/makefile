@@ -19,8 +19,8 @@
 #   1) dependencies for targets are not automatically generated.
 #
 #----------------------------------------------------------------------
-CXXFLAGS=-std=c++11 -O3 -Wall -Wextra -pedantic -fPIC
-CCFLAGS=-std=c99 -O3 -Wall -Wextra -pedantic -fPIC
+CXXFLAGS=-std=c++11 -O3 -Wall -Wextra -pedantic -fPIC -g
+CCFLAGS=-std=c99 -O3 -Wall -Wextra -pedantic -fPIC -g
 
 ifdef MEMCHECK
   MEMCHECK_CMD=valgrind --leak-check=full

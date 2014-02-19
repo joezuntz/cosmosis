@@ -2,29 +2,45 @@
 
 using namespace std;
 
-bool cosmosis::DataBlock::getDouble(string const& name, double& val) const noexcept
+bool cosmosis::DataBlock::get(string const& name, double& val) const noexcept
 {
-  auto i = values_.find(name);
-  if (i == values_.end())
+  auto i = doubles_.find(name);
+  if (i == doubles_.end())
     return false;
   val = i->second;
   return true;
 }
+
+bool cosmosis::DataBlock::get(string const& name, int& val) const noexcept
+{
+  auto i = ints_.find(name);
+  if (i == ints_.end())
+    return false;
+  val = i->second;
+  return true;
+}
+
 
 double cosmosis::DataBlock::get_double(string const& name) const
 {
   double result;
   // The exception thrown should be more informative; this is just a
   // stub.
-  return getDouble(name, result) 
-    ? result 
+  return get(name, result)
+    ? result
     : throw NameNotFound(name);
 }
 
-void cosmosis::DataBlock::putDouble(string const& name, double val)
+void cosmosis::DataBlock::put(string const& name, double val)
 {
-  if (hasValue(name)) throw NameAlreadyExists(name);
-  values_[name] = val;
+  if (has_value(name)) throw NameAlreadyExists(name);
+  doubles_[name] = val;
+}
+
+void cosmosis::DataBlock::put(string const& name, int val)
+{
+  if (has_value(name)) throw NameAlreadyExists(name);
+  ints_[name] = val;
 }
 
 extern "C"
@@ -42,7 +58,14 @@ extern "C"
   int c_datablock_get_double(c_datablock const* s, const char* name, double* val)
   {
     auto p = static_cast<cosmosis::DataBlock const*>(s);
-    bool rc = p->getDouble(name, *val);
+    bool rc = p->get(name, *val);
+    return rc ? 0 : 1;
+  }
+
+  int c_datablock_get_int(c_datablock const* s, const char* name, int* val)
+  {
+    auto p = static_cast<cosmosis::DataBlock const*>(s);
+    bool rc = p->get(name, *val);
     return rc ? 0 : 1;
   }
 
@@ -50,20 +73,20 @@ extern "C"
   {
     auto p = static_cast<cosmosis::DataBlock*>(s);
     int rc = 0;
-    try
-      {
-	p->putDouble(name, val);
-      }
-    catch (cosmosis::NameAlreadyExists const&)
-      {
-	rc = 1;
-      }
-    catch (...)
-      {
-	/* Log message about illegal exception here. */
-	abort();
-      }
-
+    try { p->put(name, val); }
+    catch (cosmosis::NameAlreadyExists const&) { rc = 1; }
+    catch (...) { abort(); }
     return rc;
   }
+
+  int c_datablock_put_int(c_datablock* s , const char* name, int val)
+  {
+    auto p = static_cast<cosmosis::DataBlock*>(s);
+    int rc = 0;
+    try { p->put(name, val); }
+    catch (cosmosis::NameAlreadyExists const&) { rc = 1; }
+    catch (...) { abort(); }
+    return rc;
+  }
+
 }
