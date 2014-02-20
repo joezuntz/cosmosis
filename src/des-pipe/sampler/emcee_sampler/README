@@ -1,0 +1,10 @@
+This sampler uses the emcee package available from
+https://github.com/dfm/emcee
+
+You need to separately install that before running this, but it is trivial and 
+quick - just download it and run one of :
+
+sudo python setup.py install      #to install for all machine users
+python setup.py install --user    #to install it just for one user
+
+

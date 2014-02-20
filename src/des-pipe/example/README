@@ -1,0 +1,46 @@
+This directory contains an example CMB+H0 parameter estimation run.
+
+CHECKING EVERYTHING IS SET UP
+=============================
+
+Run:
+
+python ../sampler/test/run_pipeline.py wmap.ini output.fits
+
+If you get any error messages then things are not set up properly.
+
+
+RUNNING SAMPLING
+================
+
+Run the command:
+
+python ../sampler/pymc_sampler/sampler.py wmap.ini
+
+
+
+MODEL
+=====
+
+These modules are run in this default analysis:
+
+camb_cmb      -  Calculate CMB C_ell
+hst           -  Use the Riess et al measurement H_0 = 72 +/- 2
+wmap          -  Use the WMAP likelihood function on the CMB C_ell
+
+The parameters used are specified in values.ini
+
+OUTPUT
+======
+
+Your output to terminal should look something like this:
+
+Running on one core
+Running pipeline:  COSMOPAR/OMEGA_M=2.694775e-01  COSMOPAR/OMEGA_B=4.308746e-02  COSMOPAR/N_S=9.610334e-01  COSMOPAR/A_S=2.104695e-09  COSMOPAR/H0=7.101067e-01  COSMOPAR/OPT_TAU=7.777089e-02
+ Initializing WMAP likelihood, version v4.1
+Pipeline ran okay.
+Got like  -4670.55571318
+Running pipeline:  COSMOPAR/OMEGA_M=2.663785e-01  COSMOPAR/OMEGA_B=4.542426e-02  COSMOPAR/N_S=9.485880e-01  COSMOPAR/A_S=2.113925e-09  COSMOPAR/H0=7.131000e-01  COSMOPAR/OPT_TAU=7.983618e-02
+
+... etc ...
+

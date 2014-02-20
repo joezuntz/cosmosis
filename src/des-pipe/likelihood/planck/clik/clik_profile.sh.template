@@ -1,0 +1,51 @@
+# this code cannot be run directly
+# do 'source PREFIX/bin/clik_profile.sh' from your sh shell or put it in your profile
+
+function addvar () {
+local tmp="${!1}" ;
+tmp="${tmp//:${2}:/:}" ; tmp="${tmp/#${2}:/}" ; tmp="${tmp/%:${2}/}" ;
+export $1="${2}:${tmp}" ;
+} 
+
+if [ -z "${PATH}" ]; then 
+PATH=PREFIX/bin
+export PATH
+else
+addvar PATH PREFIX/bin
+fi
+if [ -z "${PYTHONPATH}" ]; then 
+PYTHONPATH=MPYTHONPATH
+export PYTHONPATH
+else
+addvar PYTHONPATH MPYTHONPATH
+fi
+if [ -z "${DYLD_LIBRARY_PATH}" ]; then 
+DYLD_LIBRARY_PATH=FORTRANLIBPATH
+export DYLD_LIBRARY_PATH
+else
+addvar DYLD_LIBRARY_PATH FORTRANLIBPATH
+fi
+if [ -z "${DYLD_LIBRARY_PATH}" ]; then 
+DYLD_LIBRARY_PATH=PREFIX/lib
+export DYLD_LIBRARY_PATH
+else
+addvar DYLD_LIBRARY_PATH PREFIX/lib
+fi
+if [ -z "${DYLD_LIBRARY_PATH}" ]; then 
+DYLD_LIBRARY_PATH=LAPACKLIBPATH
+export DYLD_LIBRARY_PATH
+else
+addvar DYLD_LIBRARY_PATH LAPACKLIBPATH
+fi
+if [ -z "${DYLD_LIBRARY_PATH}" ]; then 
+DYLD_LIBRARY_PATH=CFITSIOLIBPATH
+export DYLD_LIBRARY_PATH
+else
+addvar DYLD_LIBRARY_PATH CFITSIOLIBPATH
+fi
+CLIK_DATA=PREFIX/share/clik
+export CLIK_DATA
+
+CLIK_PLUGIN=basic,ffp6_foreground,pep_cib
+export CLIK_PLUGIN
+
