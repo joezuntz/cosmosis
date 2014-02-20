@@ -35,11 +35,16 @@ lib: libcosmosis.so
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
 
-test: test_datablock test_entry
+test: test_datablock test_entry test_section
 
 test_datablock: lib c_datablock_t
 	@echo -n Running c_datablock_t
 	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./c_datablock_t > c_datablock_t.log
+	@echo  ... passed
+
+test_section: lib section_t
+	@echo -n Running section_t
+	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./section_t >  section_t.log
 	@echo  ... passed
 
 test_entry: lib entry_t
@@ -47,7 +52,7 @@ test_entry: lib entry_t
 	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@echo  ... passed
 
-libcosmosis.so: datablock.o entry.o
+libcosmosis.so: datablock.o entry.o section.o
 	$(CXX) $(CXXFLAGS) -shared -o $@ $+
 
 c_datablock_t: c_datablock_t.c libcosmosis.so
@@ -56,8 +61,12 @@ c_datablock_t: c_datablock_t.c libcosmosis.so
 entry_t: entry_t.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
 
+section_t: section_t.o libcosmosis.so
+	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
+
 datablock.o: datablock.cc datablock.h entry.hh
 entry.o: entry.cc entry.hh
+section.o: section.cc section.hh entry.hh
 
 clean:
 	rm -f *.o *~ *.so c_datablock_t *.log

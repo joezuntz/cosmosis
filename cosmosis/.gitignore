@@ -3,5 +3,6 @@ c_datablock_t
 *.o
 *.so
 *.dylib
+section_t
 entry_t
 *~
