@@ -1,6 +1,10 @@
 #ifndef COSMOSIS_C_DATABLOCK_H
 #define COSMOSIS_C_DATABLOCK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
   DATABLOCK_STATUS is type of the status codes returned by the C
   datablock interface functions that return status codes. In all cases
@@ -95,6 +99,10 @@ c_datablock_get_double_array_1d_preallocated(c_datablock const* s, const char* n
 DATABLOCK_STATUS
 c_datablock_put_double_array_1d(c_datablock* s, const char* name,
 				double* array, int sz);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
