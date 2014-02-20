@@ -18,6 +18,7 @@
 //   2. Determine whether strings and vectors should be returned as const&.
 //   3. Evaluate whether move c'tor and move assignment should be supported.
 //   4. Does is make sense to have a default parameter type?
+//   5. Decide on an exception policy. DONE: No function is allowed to throw.
 
 namespace cosmosis
 {

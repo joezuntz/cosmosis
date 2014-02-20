@@ -97,8 +97,8 @@ extern "C"
      7: val is null.
      8: s is null.
 
-     If the return status is nonzero, the value written into 'val' is not defined.
-     If the return status is nonzero, the value written into 'val' is NaN.
+     If the return status is nonzero, the value written into 'val' is
+     not defined.
   */
   int  c_datablock_get_double(c_datablock const* s, const char* name, double* val);
   int  c_datablock_get_int(c_datablock const* s, const char* name, int* val);
