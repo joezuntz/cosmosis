@@ -2,8 +2,6 @@
 #define COSMOSIS_DATABLOCK_H
 
 #ifdef __cplusplus
-#include <string>
-#include <map>
 
 //----------------------------------------------------------------------
 // This class demostrates some ways to implement the DataPackage
@@ -28,6 +26,8 @@
 //----------------------------------------------------------------------
 
 #include <stdexcept>
+#include <string>
+#include <map>
 
 namespace cosmosis
 {

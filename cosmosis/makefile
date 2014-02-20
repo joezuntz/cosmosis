@@ -28,25 +28,36 @@ else
   MEMCHECK_CMD=
 endif
 
-all: verify_setup libcosmosis.so
+all: verify_setup lib
+
+lib: libcosmosis.so
 
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
 
-test: test_datablock
+test: test_datablock test_entry
 
-test_datablock: all c_datablock_t
+test_datablock: lib c_datablock_t
 	@echo -n Running c_datablock_t
 	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./c_datablock_t > c_datablock_t.log
 	@echo  ... passed
 
-libcosmosis.so: datablock.o
-	$(CXX) $(CXXFLAGS) -shared -o $@ $<
+test_entry: lib entry_t
+	@echo -n Running entry_t
+	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./entry_t >  entry_t.log
+	@echo  ... passed
 
-c_datablock_t: datablock.h c_datablock_t.c libcosmosis.so
+libcosmosis.so: datablock.o entry.o
+	$(CXX) $(CXXFLAGS) -shared -o $@ $+
+
+c_datablock_t: c_datablock_t.c libcosmosis.so
 	$(CC) $(CCFLAGS) -o $@ c_datablock_t.c -L . -lcosmosis
 
-datablock.o: datablock.cc datablock.h
+entry_t: entry_t.o libcosmosis.so
+	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
+
+datablock.o: datablock.cc datablock.h entry.hh
+entry.o: entry.cc entry.hh
 
 clean:
 	rm -f *.o *~ *.so c_datablock_t *.log
