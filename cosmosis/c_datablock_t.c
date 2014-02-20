@@ -1,4 +1,4 @@
-#include "datablock.h"
+#include "c_datablock.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -18,14 +18,14 @@ void check_scalar_double()
 
   /* Second put of the same name with same type should fail, and the
      value should be unaltered. */
-  assert(c_datablock_put_double(s, "cow", 10.5) == 1);
+  assert(c_datablock_put_double(s, "cow", 10.5) == DBS_NAME_ALREADY_EXISTS);
   val = 0.0;
   assert(c_datablock_get_double(s, "cow", &val) == 0);
   assert(val == expected);
 
   /* Second put of the same name with different type should fail, and
      the value should be unaltered. */
-  assert(c_datablock_put_int(s, "cow", 2112) == 1);
+  assert(c_datablock_put_int(s, "cow", 2112) == DBS_NAME_ALREADY_EXISTS);
   val = 0.0;
   assert(c_datablock_get_double(s, "cow", &val) == 0);
   assert(val == expected);
@@ -49,14 +49,14 @@ void check_scalar_int()
 
   /* Second put of the same name with same type should fail, and the
      value should be unaltered. */
-  assert(c_datablock_put_int(s, "cow", 100) == 1);
+  assert(c_datablock_put_int(s, "cow", 100) == DBS_NAME_ALREADY_EXISTS);
   val = 0;
   assert(c_datablock_get_int(s, "cow", &val) == 0);
   assert(val == expected);
 
   /* Second put of the same name with different type should fail, and
      the value should be unaltered. */
-  assert(c_datablock_put_double(s, "cow", 10.5) == 1);
+  assert(c_datablock_put_double(s, "cow", 10.5) == DBS_NAME_ALREADY_EXISTS);
   val = 0;
   assert(c_datablock_get_int(s, "cow", &val) == 0);
   assert(val == expected);

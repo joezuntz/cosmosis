@@ -52,10 +52,10 @@ test_entry: lib entry_t
 	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@echo  ... passed
 
-libcosmosis.so: datablock.o entry.o section.o
+libcosmosis.so: datablock.o entry.o section.o c_datablock.o
 	$(CXX) $(CXXFLAGS) -shared -o $@ $+
 
-c_datablock_t: c_datablock_t.c libcosmosis.so
+c_datablock_t: c_datablock_t.c c_datablock.h libcosmosis.so
 	$(CC) $(CCFLAGS) -o $@ c_datablock_t.c -L . -lcosmosis
 
 entry_t: entry_t.o libcosmosis.so
@@ -64,10 +64,11 @@ entry_t: entry_t.o libcosmosis.so
 section_t: section_t.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
 
-datablock.o: datablock.cc datablock.h entry.hh
+datablock.o: datablock.cc datablock.hh c_datablock.h entry.hh
+c_datablock.o: c_datablock.cc datablock.hh c_datablock.h entry.hh
 entry.o: entry.cc entry.hh
 section.o: section.cc section.hh entry.hh
 
 clean:
-	rm -f *.o *~ *.so c_datablock_t *.log
+	rm -f *.o *~ *.so c_datablock_t *.log entry_t section_t
 	rm -rf *.dSYM

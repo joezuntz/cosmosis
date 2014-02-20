@@ -1,92 +1,44 @@
-#include "datablock.h"
+#include "datablock.hh"
 
 using namespace std;
 
-bool cosmosis::DataBlock::get(string const& name, double& val) const noexcept
+DATABLOCK_STATUS
+cosmosis::DataBlock::get(string const& name, double& val) const
 {
   auto i = doubles_.find(name);
-  if (i == doubles_.end())
-    return false;
+  if (i == doubles_.end()) return DBS_NAME_NOT_FOUND;
   val = i->second;
-  return true;
+  return DBS_SUCCESS;
 }
 
-bool cosmosis::DataBlock::get(string const& name, int& val) const noexcept
+DATABLOCK_STATUS
+cosmosis::DataBlock::get(string const& name, int& val) const
 {
   auto i = ints_.find(name);
-  if (i == ints_.end())
-    return false;
+  if (i == ints_.end()) return DBS_NAME_NOT_FOUND;
   val = i->second;
-  return true;
+  return DBS_SUCCESS;
 }
 
 
 double cosmosis::DataBlock::get_double(string const& name) const
 {
   double result;
-  // The exception thrown should be more informative; this is just a
-  // stub.
-  return get(name, result)
-    ? result
-    : throw NameNotFound(name);
+  DATABLOCK_STATUS rc = get(name, result);
+  if (rc != DBS_SUCCESS) throw Error(name, rc);
+  return result;
 }
 
-void cosmosis::DataBlock::put(string const& name, double val)
+DATABLOCK_STATUS cosmosis::DataBlock::put(string const& name, double val)
 {
-  if (has_value(name)) throw NameAlreadyExists(name);
+  if (has_value(name)) return DBS_NAME_ALREADY_EXISTS;
   doubles_[name] = val;
+  return DBS_SUCCESS;
 }
 
-void cosmosis::DataBlock::put(string const& name, int val)
+DATABLOCK_STATUS cosmosis::DataBlock::put(string const& name, int val)
 {
-  if (has_value(name)) throw NameAlreadyExists(name);
+  if (has_value(name)) return DBS_NAME_ALREADY_EXISTS;
   ints_[name] = val;
-}
-
-extern "C"
-{
-  c_datablock* make_c_datablock(void)
-  {
-    return new cosmosis::DataBlock();
-  }
-
-  void destroy_c_datablock(c_datablock* s)
-  {
-    delete static_cast<cosmosis::DataBlock*>(s);
-  }
-
-  int c_datablock_get_double(c_datablock const* s, const char* name, double* val)
-  {
-    auto p = static_cast<cosmosis::DataBlock const*>(s);
-    bool rc = p->get(name, *val);
-    return rc ? 0 : 1;
-  }
-
-  int c_datablock_get_int(c_datablock const* s, const char* name, int* val)
-  {
-    auto p = static_cast<cosmosis::DataBlock const*>(s);
-    bool rc = p->get(name, *val);
-    return rc ? 0 : 1;
-  }
-
-  int c_datablock_put_double(c_datablock* s , const char* name, double val)
-  {
-    auto p = static_cast<cosmosis::DataBlock*>(s);
-    int rc = 0;
-    try { p->put(name, val); }
-    catch (cosmosis::NameAlreadyExists const&) { rc = 1; }
-    catch (...) { abort(); }
-    return rc;
-  }
-
-  int c_datablock_put_int(c_datablock* s , const char* name, int val)
-  {
-    auto p = static_cast<cosmosis::DataBlock*>(s);
-    int rc = 0;
-    try { p->put(name, val); }
-    catch (cosmosis::NameAlreadyExists const&) { rc = 1; }
-    catch (...) { abort(); }
-    return rc;
-  }
-
+  return DBS_SUCCESS;
 }
