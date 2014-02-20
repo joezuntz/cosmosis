@@ -4,3 +4,4 @@ c_datablock_t
 *.so
 *.dylib
 entry_t
+*~
