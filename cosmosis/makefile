@@ -67,6 +67,7 @@ section_t: section_t.o libcosmosis.so
 datablock.o: datablock.cc datablock.hh c_datablock.h entry.hh
 c_datablock.o: c_datablock.cc datablock.hh c_datablock.h entry.hh
 entry.o: entry.cc entry.hh
+entry_t.o: entry_t.cc entry.hh
 section.o: section.cc section.hh entry.hh
 
 clean:
