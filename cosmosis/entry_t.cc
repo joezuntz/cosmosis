@@ -107,19 +107,23 @@ void test_complex()
   assert(e.int_val() == -5);
 }
 
-template <class T, class F, class G, class H>
+template <class T, class F, class G, class H, class I>
 void test_vector(std::vector<T> const& vals,
-
                  F is_x_member,
                  G valuecheck_fun,
-                 H set_x_member)
+                 H set_x_member,
+		 I tagcheck_fun)
 {
   // Create the entry with the specified values.
   Entry e(vals);
   // Make sure the type and value is what is expected.
   assert(std::mem_fn(is_x_member)(e));
-  assert(not e.is_int());
+  assert(tagcheck_fun(e));
   assert(valuecheck_fun(e, vals));
+  // Now make the value be an non-vector type, so we can observe the
+  // switching.
+  e.set_int_val(2112);
+  assert(e.is_int());
   // Now reverse the value, to make sure we have a different sequence of
   // the right type to assign.
   std::vector<T> reversed(vals);
@@ -142,25 +146,29 @@ int main()
   test_vector(std::vector<int>({-101, 20, 3}),
               &Entry::is_int_array,
               [](Entry const& e, std::vector<int> v) -> bool { return e.int_array() == v; },
-              &Entry::set_int_array
+              &Entry::set_int_array,
+	      [](Entry const& e) -> bool { return e.is_int_array(); }
               );
 
   test_vector(std::vector<double>({-101.5, 2.0, 3.25, 1.875}),
               &Entry::is_double_array,
               [](Entry const& e, std::vector<double> v) -> bool { return e.double_array() == v; },
-              &Entry::set_double_array
+              &Entry::set_double_array,
+	      [](Entry const& e) -> bool { return e.is_double_array(); }
               );
 
   test_vector(std::vector<std::string>({"cow", "the dog"}),
               &Entry::is_string_array,
               [](Entry const& e, std::vector<std::string> v) -> bool { return e.string_array() == v; },
-              &Entry::set_string_array
+              &Entry::set_string_array,
+	      [](Entry const& e) -> bool { return e.is_string_array(); }
               );
 
   test_vector(std::vector<complex_t>({{-10.25,0.25}, {20.0, -3.0}}),
               &Entry::is_complex_array,
               [](Entry const& e, std::vector<complex_t> v) -> bool { return e.complex_array() == v; },
-              &Entry::set_complex_array
+              &Entry::set_complex_array,
+	      [](Entry const& e) -> bool { return e.is_complex_array(); }
               );
 
   Entry e("cats and dogs");
