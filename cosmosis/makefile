@@ -23,7 +23,7 @@ CXXFLAGS=-std=c++11 -O3 -Wall -Wextra -pedantic -fPIC -g
 CCFLAGS=-std=c99 -O3 -Wall -Wextra -pedantic -fPIC -g
 
 ifdef MEMCHECK
-  MEMCHECK_CMD=valgrind --leak-check=full --error-exitcode=1
+  MEMCHECK_CMD=valgrind --error-exitcode=1 --leak-check=yes --errors-for-leak-kinds=definite
 else
   MEMCHECK_CMD=
 endif
@@ -49,7 +49,7 @@ test_section: lib section_t
 
 test_entry: lib entry_t
 	@echo -n Running entry_t
-	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./entry_t >  entry_t.log
+	LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@echo  ... passed
 
 libcosmosis.so: datablock.o entry.o section.o c_datablock.o
