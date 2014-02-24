@@ -23,7 +23,7 @@ CXXFLAGS=-std=c++11 -O3 -Wall -Wextra -pedantic -fPIC -g
 CCFLAGS=-std=c99 -O3 -Wall -Wextra -pedantic -fPIC -g
 
 ifdef MEMCHECK
-  MEMCHECK_CMD=valgrind --leak-check=full
+  MEMCHECK_CMD=valgrind --leak-check=full --error-exitcode=1
 else
   MEMCHECK_CMD=
 endif
