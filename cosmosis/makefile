@@ -49,7 +49,7 @@ test_section: lib section_t
 
 test_entry: lib entry_t
 	@echo -n Running entry_t
-	LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./entry_t >  entry_t.log
+	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@echo  ... passed
 
 libcosmosis.so: datablock.o entry.o section.o c_datablock.o
