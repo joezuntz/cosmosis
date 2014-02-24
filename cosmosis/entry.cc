@@ -27,7 +27,6 @@ void cosmosis::Entry::_destroy_if_managed() {
     case tag_t::complex_array_t: vz.~vector<complex_t>(); break;
     default:                     break;
     }
-
 }
 
 void cosmosis::Entry::set_int_val(int v)
