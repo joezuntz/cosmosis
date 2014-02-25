@@ -23,6 +23,5 @@ desglue = Extension('desglue',
 setup (name = 'pydesglue',
        version = '1.0',
        description = 'DES Glue Code',
-       packages = ['pydesglue'],
-       #py_modules = ['pydesglue'],#, 'termcolor','IncludingConfigParser'],
+       #packages = ['pydesglue'],
        ext_modules = [desglue])

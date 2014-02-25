@@ -1,18 +1,13 @@
-include ../Makefile.mine
+#include ../Makefile.mine
 
+F90=gfortran
 
-FFLAGS += -Iinclude -I$(CFITSIO_INC) -fPIC
+FFLAGS += -Iinclude -I$(CFITSIO_INC) -fPIC -ffree-line-length-none
 CFLAGS += -Iinclude  -I$(CFITSIO_INC)
 LDFLAGS += -L$(CFITSIO_LIB) -lcfitsio
 CFLAGS += -fPIC
 
-ifeq ($(strip $(PREFIX)),)
-	PREFIX_FLAG=--user
-elseps
-	PREFIX_FLAG=--prefix=$(PREFIX)
-endif
-
-all: check names cwrapper pywrapper fwrapper c_py_bridge f_py_bridge inih
+all: names cwrapper pywrapper fwrapper c_py_bridge f_py_bridge inih
 
 inih: inih/ini.c inih/ini.h  
 	#
@@ -52,13 +47,13 @@ pywrapper: names python/pydesglue.c python/pydesglue.h python/setup.py
 	#
 	#----- COMPILING PYTHON MODULE------
 	#
-	cd python; CFITSIO_INC=$(CFITSIO_INC) CFITSIO_LIB=$(CFITSIO_LIB) $(PYTHON) setup.py install  --quiet $(PREFIX_FLAG)
+	cd python; CFITSIO_INC=$(CFITSIO_INC) CFITSIO_LIB=$(CFITSIO_LIB) $(PYTHON) setup.py install  --quiet --install-lib=../lib
 
 c_py_bridge: C/des_python_caller.c C/des_python_caller.h
 	#
 	# ----- COMPILING PYTHON-C BRIDGE ------
 	#
-	cd C; $(CC) $(CFLAGS) `../python_compilation_flags include` -c des_python_caller.c
+	cd C; $(CC) $(CFLAGS) `python-config --includes` -c des_python_caller.c
 	ar rc lib/libcpywrap.a C/des_python_caller.o
 	cp C/des_python_caller.h include/
 

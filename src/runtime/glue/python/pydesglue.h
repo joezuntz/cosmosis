@@ -3,7 +3,6 @@
 #include <Python.h>
 #include <cStringIO.h>
 #include "internal_fits.h"
-#include "des_pipeline.h"
 #include "des_options.h"
 
 PyObject * convert_fits_to_stringio(internal_fits * F);

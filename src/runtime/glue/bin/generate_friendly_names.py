@@ -83,7 +83,7 @@ class section_names(object):
 def main():
 	fortran_outfile = "fortran/des_section_names.f90"
 	c_outfile = "C/des_section_names.h"
-	py_outfile = "python/pydesglue/section_names.py"
+	py_outfile = "../section_names.py"
 	names = load_name_list("section_list.txt")
 	generate_fortran_names(names, fortran_outfile)
 	generate_c_names(names, c_outfile)
