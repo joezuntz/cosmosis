@@ -37,10 +37,9 @@
 //
 // TODO:
 //
-//   1. Complete the implementation: support access to vector types.
-//   2. Evaluate whether move c'tor and move assignment should be
+//   1. Evaluate whether move c'tor and move assignment should be
 //   supported.
-//   3. Extend to support 2-dimensional arrays.
+//   2. Extend to support 2-dimensional arrays.
 //
 
 
@@ -76,7 +75,6 @@ namespace cosmosis
     std::vector<std::string> string_array() const;
     std::vector<complex_t> complex_array() const;
 
-
     bool is_int() const;
     bool is_double() const;
     bool is_string() const;
@@ -85,7 +83,6 @@ namespace cosmosis
     bool is_double_array() const;
     bool is_string_array() const;
     bool is_complex_array() const;
-
 
     void set_int_val(int v);
     void set_double_val(double v);
@@ -127,14 +124,12 @@ namespace cosmosis
 
 
 inline
-
 cosmosis::Entry::Entry(int v) :
 
   type_(tag_t::int_t), i(v)
 {}
 
 inline
-
 cosmosis::Entry::Entry(double v) :
   type_(tag_t::double_t), d(v)
 {}
