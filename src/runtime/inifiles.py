@@ -2,7 +2,6 @@ import os
 import sys
 import collections
 from . import parser
-from . import odict
 from . import section_names
 from . import utils
 from . import data_package
@@ -12,7 +11,7 @@ class Inifile(parser.IncludingConfigParser):
 	def __init__(self, defaults=None):
 		parser.IncludingConfigParser.__init__(self,
 			defaults=defaults, 
-			dict_type=odict.OrderedDict)
+			dict_type=collections.OrderedDict)
 
 
 	def iter_all(self):

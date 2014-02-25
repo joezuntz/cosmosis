@@ -12,10 +12,6 @@ typedef struct des_optionset{
 	des_option ** option;
 } des_optionset;
 
-typedef void* (*des_setup_function)(des_optionset *);
-des_setup_function load_des_setup(char * library_name, char * function_name);
-
-
 #define DEFAULT_OPTION_SECTION "config"
 
 des_optionset * des_optionset_init();

@@ -4,7 +4,6 @@
 #include "string.h"
 #include "math.h"
 #include "ini.h"
-#include <dlfcn.h>
 
 #define MAX_OPTIONS 4096
 
@@ -283,34 +282,3 @@ int des_optionset_get_double_default(des_optionset * options, const char * secti
 
 
 
-
-des_setup_function load_des_setup(char * library_name, char * function_name)
-{
-	des_setup_function output = NULL;
-	void * library_handle = dlopen(library_name, RTLD_NOW|RTLD_GLOBAL);  //JAZ This should possibly be "LOCAL" instead - need to think about this.
-
-	if (library_handle==NULL){
-		char * message = dlerror();
-		fprintf(stderr,"Error opening library %s:\n%s\n", library_name, message);
-		return NULL;
-	}
-	output = (des_setup_function)dlsym(library_handle, function_name);
-
-	if (output==NULL){
-		
-		// See if there is a function name with an extra underscore in - fortran sometimes does this.
-		int n = strlen(function_name);
-		char underscored_name[n+2];
-		snprintf(underscored_name, n+2, "%s_", function_name);
-		output = (des_setup_function)dlsym(library_handle, underscored_name);
-		
-		if (output==NULL){
-			char * message = dlerror();
-			fprintf(stderr,"Error loading interface %s from library %s:\n%s\n", function_name, library_name, message);
-		}
-	}
-	
-	return output;
-	//JAZ we do not close the library as this invalidates the function, I think.
-
-}

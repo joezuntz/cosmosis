@@ -8,11 +8,11 @@ CFLAGS += -fPIC
 
 ifeq ($(strip $(PREFIX)),)
 	PREFIX_FLAG=--user
-else
+elseps
 	PREFIX_FLAG=--prefix=$(PREFIX)
 endif
 
-all: check names cwrapper pywrapper fwrapper c_py_bridge f_py_bridge ftest inih
+all: check names cwrapper pywrapper fwrapper c_py_bridge f_py_bridge inih
 
 inih: inih/ini.c inih/ini.h  
 	#
@@ -31,7 +31,6 @@ cwrapper: names C/internal_fits.c C/internal_fits.h inih
 	#
 	$(CC) $(CFLAGS) -c C/internal_fits.c -o C/internal_fits.o
 	$(CC) $(CFLAGS) -c C/des_options.c -o C/des_options.o
-	# $(CC) $(CFLAGS) -c C/des_pipeline.c -o C/des_pipeline.o
 	ar rc lib/libcfitswrap.a C/internal_fits.o C/des_options.o
 	ranlib lib/libcfitswrap.a
 	cp C/*.h include/
@@ -49,14 +48,7 @@ fwrapper: names cwrapper fortran/iso_c_utilities.f90 fortran/dynamic_loading.f90
 	ranlib lib/libffitswrap.a
 	mv *.mod include/
 
-ftest: fwrapper
-	#
-	# ----- COMPILING FORTRAN TESTS ------
-	#
-	$(F90) $(FFLAGS) -o bin/test_fglue fortran/test_glue.f90 -Llib  -lffitswrap -lcfitswrap -lini  $(LDFLAGS)
-	$(F90) $(FFLAGS) -o bin/test_foptions fortran/f90_test_options.f90 -Llib -lffitswrap -lcfitswrap -lini $(LDFLAGS)
-
-pywrapper: names python/pydesglue.c python/pydesglue.h python/pydesglue python/setup.py
+pywrapper: names python/pydesglue.c python/pydesglue.h python/setup.py
 	#
 	#----- COMPILING PYTHON MODULE------
 	#

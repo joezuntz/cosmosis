@@ -1,8 +1,9 @@
-from ConfigParser import *
+import ConfigParser
 import os
 import sys
+import warnings
 
-class IncludingConfigParser(ConfigParser):
+class IncludingConfigParser(ConfigParser.ConfigParser):
     """ Extension of ConfigParser to \%include other files.
         Use the line:
         %include filename.ini
@@ -47,7 +48,7 @@ class IncludingConfigParser(ConfigParser):
                     sectname = mo.group('header')
                     if sectname in self._sections:
                         cursect = self._sections[sectname]
-                    elif sectname == DEFAULTSECT:
+                    elif sectname == ConfigParser.DEFAULTSECT:
                         cursect = self._defaults
                     else:
                         cursect = self._dict()
@@ -67,7 +68,7 @@ class IncludingConfigParser(ConfigParser):
                     self.read(filename)
                     cursect=None
                 elif cursect is None:
-                    raise MissingSectionHeaderError(fpname, lineno, line)
+                    raise ConfigParser.MissingSectionHeaderError(fpname, lineno, line)
                 # an option line?
                 else:
                     mo = self._optcre.match(line)
@@ -97,7 +98,7 @@ class IncludingConfigParser(ConfigParser):
                         # raised at the end of the file and will contain a
                         # list of all bogus lines
                         if not e:
-                            e = ParsingError(fpname)
+                            e = ConfigParser.ParsingError(fpname)
                         e.append(lineno, repr(line))
         # if any parsing errors occurred, raise an exception
         if e:
