@@ -1,11 +1,21 @@
 #include "entry.hh"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <functional>
 #include <iostream>
+#include <map>
 
 using cosmosis::Entry;
 using cosmosis::complex_t;
+
+void test_copy()
+{
+  typedef std::map<std::string, Entry> map_t;
+  map_t vals;
+  vals.insert(map_t::value_type("cow", Entry("moo")));
+  vals.insert(map_t::value_type("pi", Entry(4.0 * std::atan(1.0))));
+}
 
 void test_int()
 {

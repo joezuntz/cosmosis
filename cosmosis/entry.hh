@@ -61,8 +61,8 @@ namespace cosmosis
     explicit Entry(std::vector<std::string> const& a);
     explicit Entry(std::vector<complex_t> const& a);
 
-    Entry(Entry const& other) = delete;
-    Entry& operator=(Entry const& other) = delete;
+    Entry(Entry const& other);
+    Entry& operator=(Entry const& other);
 
     ~Entry();
 

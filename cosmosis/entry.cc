@@ -3,6 +3,26 @@
 using std::string;
 using std::vector;
 
+cosmosis::Entry::Entry(Entry const& e) :
+  type_(e.type_)  
+{
+  if (e.is_int())
+    set_int_val(e.i);
+  else if (e.is_double())
+    set_double_val(e.d);
+}
+
+cosmosis::Entry& 
+cosmosis::Entry::operator=(Entry const& e)
+{
+  if (e.is_int())
+    set_int_val(e.i);
+  else if (e.is_double())
+    set_double_val(e.d);
+
+  return *this;
+}
+
 cosmosis::Entry::~Entry()
 {
   _destroy_if_managed();

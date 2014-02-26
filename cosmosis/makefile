@@ -64,11 +64,12 @@ entry_t: entry_t.o libcosmosis.so
 section_t: section_t.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
 
-datablock.o: datablock.cc datablock.hh c_datablock.h entry.hh
-c_datablock.o: c_datablock.cc datablock.hh c_datablock.h entry.hh
-entry.o: entry.cc entry.hh
+datablock.o: datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
+c_datablock.o: c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
+entry.o: entry.cc entry.hh datablock_status.h
 entry_t.o: entry_t.cc entry.hh
-section.o: section.cc section.hh entry.hh
+section.o: section.cc section.hh entry.hh datablock_status.h
+section_t.o: section_t.cc section.hh
 
 clean:
 	rm -f *.o *~ *.so c_datablock_t *.log entry_t section_t

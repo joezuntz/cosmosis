@@ -2,23 +2,52 @@
 
 using std::string;
 
+// template <class T>
+// DATABLOCK_STATUS
+// cosmosis::_set_section_value(string const& name, T const& value)
+// {
+//   auto i = vals_.find(name);
+//   if (i != vals_.end() ) return DBS_NAME_ALREADY_EXISTS;
+//   vals_.insert(i, make_pair(name, Entry(v)));
+//   return DBS_SUCCESS;
+// }
 
-bool cosmosis::Section::set_int_val(string const& , int )
+// DATABLOCK_STATUS cosmosis::Section::set_val(string const& name , int v)
+// {
+//   auto i = vals_.find(name);
+//   if (i != vals_.end() ) return DBS_NAME_ALREADY_EXISTS;
+//   vals_.insert(i, make_pair(name, Entry(v)));
+//   return DBS_SUCCESS;
+// }
+
+// DATABLOCK_STATUS cosmosis::Section::set_val(string const& name , double v)
+// {
+//   auto i = vals_.find(name);
+//   if (i != vals_.end() ) return DBS_NAME_ALREADY_EXISTS;
+//   vals_.insert(i, make_pair(name, Entry(v)));
+//   return DBS_SUCCESS;
+// }
+
+// DATABLOCK_STATUS cosmosis::Section::set_val(string const& name , string const& v)
+// {
+//   auto i = vals_.find(name);
+//   if (i != vals_.end() ) return DBS_NAME_ALREADY_EXISTS;
+//   vals_.insert(i, make_pair(name, Entry(v)));
+//   return DBS_SUCCESS;
+// }
+
+// DATABLOCK_STATUS cosmosis::Section::set_val(string const& name , complex_t v)
+// {
+//   auto i = vals_.find(name);
+//   if (i != vals_.end() ) return DBS_NAME_ALREADY_EXISTS;
+//   vals_.insert(i, make_pair(name, Entry(v)));
+//   return DBS_SUCCESS;
+// }
+
+bool
+cosmosis::Section::get(string const& , double& ) const
 {
   return false;
 }
 
-bool cosmosis::Section::set_double_val(string const& , double )
-{
-  return false;
-}
 
-bool cosmosis::Section::set_string_val(string const& , string )
-{
-  return false;
-}
-
-bool cosmosis::Section::set_complex_val(string const& , complex_t )
-{
-  return false;
-}
