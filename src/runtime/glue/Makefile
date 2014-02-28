@@ -1,8 +1,6 @@
-#include ../Makefile.mine
+include ../Makefile.mine
 
-F90=gfortran
-
-FFLAGS += -Iinclude -I$(CFITSIO_INC) -fPIC -ffree-line-length-none
+FFLAGS += -Iinclude -I$(CFITSIO_INC) -fPIC 
 CFLAGS += -Iinclude  -I$(CFITSIO_INC)
 LDFLAGS += -L$(CFITSIO_LIB) -lcfitsio
 CFLAGS += -fPIC
