@@ -44,10 +44,10 @@ using std::string;
 //   return DBS_SUCCESS;
 // }
 
-bool
-cosmosis::Section::get(string const& , double& ) const
-{
-  return false;
-}
+// bool
+// cosmosis::Section::get(string const& , double& ) const
+// {
+//   return false;
+// }
 
 

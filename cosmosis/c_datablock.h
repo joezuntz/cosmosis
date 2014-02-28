@@ -7,7 +7,9 @@
 extern "C" {
 #endif
 
-
+/*
+  The type c_datablock represents the C 
+ */
 typedef void c_datablock;
 c_datablock* make_c_datablock(void);
 

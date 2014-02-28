@@ -46,34 +46,61 @@
 namespace cosmosis
 {
   typedef std::complex<double> complex_t;
-
+  typedef std::vector<int> vint_t;
+  typedef std::vector<double> vdouble_t;
+  typedef std::vector<std::string> vstring_t;
+  typedef std::vector<complex_t> vcomplex_t;
+  
   class Entry
   {
   public:
     struct BadEntry { }; // used for exceptions.
 
+    Entry();
     explicit Entry(int v);
     explicit Entry(double v);
     explicit Entry(std::string v);
     explicit Entry(complex_t v);
-    explicit Entry(std::vector<int> const& a);
-    explicit Entry(std::vector<double> const& a);
-    explicit Entry(std::vector<std::string> const& a);
-    explicit Entry(std::vector<complex_t> const& a);
+    explicit Entry(vint_t const& a);
+    explicit Entry(vdouble_t const& a);
+    explicit Entry(vstring_t const& a);
+    explicit Entry(vcomplex_t const& a);
 
     Entry(Entry const& other);
-    Entry& operator=(Entry const& other);
+    Entry& operator=(Entry const& other) = delete;
 
     ~Entry();
+
+    bool operator==(Entry const& other) const;
+
+    // Return true if the Entry is currently carrying a value of type T.
+    template <class T> bool is() const;
+
+    // If the Entry is carrying a value of type T, return
+    // it. Otherwise throw a BadEntry exception.
+    template <class T> T val() const;
+
+    // Replace the existing value (of whatever type) with the given
+    // value.
+    void set_val(int v);
+    void set_val(double v);
+    void set_val(std::string const& v);
+    void set_val(complex_t v);
+    void set_val(vint_t const& v);
+    void set_val(vdouble_t const& v);
+    void set_val(vstring_t const& v);
+    void set_val(vcomplex_t const& v);
+
+  private:
 
     int int_val() const;
     double double_val() const;
     std::string string_val() const;
     complex_t complex_val() const;
-    std::vector<int> int_array() const;
-    std::vector<double> double_array() const;
-    std::vector<std::string> string_array() const;
-    std::vector<complex_t> complex_array() const;
+    vint_t int_array() const;
+    vdouble_t double_array() const;
+    vstring_t string_array() const;
+    vcomplex_t complex_array() const;
 
     bool is_int() const;
     bool is_double() const;
@@ -88,12 +115,11 @@ namespace cosmosis
     void set_double_val(double v);
     void set_string_val(std::string const& v);
     void set_complex_val(complex_t v);
-    void set_int_array(std::vector<int> const & a);
-    void set_double_array(std::vector<double> const& a);
-    void set_string_array(std::vector<std::string> const& a);
-    void set_complex_array(std::vector<complex_t> const& a);
+    void set_int_array(vint_t const & a);
+    void set_double_array(vdouble_t const& a);
+    void set_string_array(vstring_t const& a);
+    void set_complex_array(vcomplex_t const& a);
 
-  private:
     // tag_t names all the alternatives for what can be stored in the
     // union.
     enum class tag_t { int_t, double_t, string_t, complex_t
@@ -109,10 +135,10 @@ namespace cosmosis
       double d;
       std::string s;
       complex_t z;
-      std::vector<int> vi;
-      std::vector<double> vd;
-      std::vector<std::string> vs;
-      std::vector<complex_t> vz;
+      vint_t vi;
+      vdouble_t vd;
+      vstring_t vs;
+      vcomplex_t vz;
     }; // union
 
     void _destroy_if_managed();
@@ -122,10 +148,13 @@ namespace cosmosis
 
 // Implementation of member functions.
 
+inline
+cosmosis::Entry::Entry() :
+  type_(tag_t::double_t), d(0.0)
+{ }
 
 inline
 cosmosis::Entry::Entry(int v) :
-
   type_(tag_t::int_t), i(v)
 {}
 
@@ -145,22 +174,22 @@ cosmosis::Entry::Entry(complex_t v) :
 {}
 
 inline
-cosmosis::Entry::Entry(std::vector<int> const& v) :
+cosmosis::Entry::Entry(vint_t const& v) :
   type_(tag_t::int_array_t), vi(v)
 {}
 
 inline
-cosmosis::Entry::Entry(std::vector<double> const& v) :
+cosmosis::Entry::Entry(vdouble_t const& v) :
   type_(tag_t::double_array_t), vd(v)
 {}
 
 inline
-cosmosis::Entry::Entry(std::vector<std::string> const& v) :
+cosmosis::Entry::Entry(vstring_t const& v) :
   type_(tag_t::string_array_t), vs(v)
 {}
 
 inline
-cosmosis::Entry::Entry(std::vector<complex_t> const& v) :
+cosmosis::Entry::Entry(vcomplex_t const& v) :
   type_(tag_t::complex_array_t), vz(v)
 {}
 
@@ -193,32 +222,60 @@ cosmosis::complex_t cosmosis::Entry::complex_val() const
 }
 
 inline
-std::vector<int> cosmosis::Entry::int_array() const
+cosmosis::vint_t cosmosis::Entry::int_array() const
 {
   if (type_ != tag_t::int_array_t) throw BadEntry();
   return vi;
 }
 
 inline
-std::vector<double> cosmosis::Entry::double_array() const
+cosmosis::vdouble_t cosmosis::Entry::double_array() const
 {
   if (type_ != tag_t::double_array_t) throw BadEntry();
   return vd;
 }
 
 inline
-std::vector<std::string> cosmosis::Entry::string_array() const
+cosmosis::vstring_t cosmosis::Entry::string_array() const
 {
   if (type_ != tag_t::string_array_t) throw BadEntry();
   return vs;
 }
 
 inline
-std::vector<cosmosis::complex_t> cosmosis::Entry::complex_array() const
+cosmosis::vcomplex_t cosmosis::Entry::complex_array() const
 {
   if (type_ != tag_t::complex_array_t) throw BadEntry();
   return vz;
 }
+
+namespace cosmosis
+{
+  template <> inline bool Entry::is<int>() const { return is_int(); }
+  template <> inline int Entry::val<int>() const { return int_val(); }
+
+  template <> inline bool Entry::is<double>() const { return is_double(); }
+  template <> inline double Entry::val<double>() const { return double_val(); }
+  
+  template <> inline bool Entry::is<std::string>() const { return is_string(); }
+  template <> inline std::string Entry::val<std::string>() const { return string_val(); }
+
+  template <> inline bool Entry::is<complex_t>() const { return is_complex(); }
+  template <> inline complex_t Entry::val<complex_t>() const { return complex_val(); }
+
+  template <> inline bool Entry::is<vint_t>() const { return is_int_array(); }
+  template <> inline vint_t Entry::val<vint_t>() const { return int_array(); }
+
+  template <> inline bool Entry::is<vdouble_t>() const { return is_double_array(); }
+  template <> inline vdouble_t Entry::val<vdouble_t>() const { return double_array(); }
+
+  template <> inline bool Entry::is<vstring_t>() const { return is_string_array(); }
+  template <> inline vstring_t Entry::val<vstring_t>() const { return string_array(); }
+
+  template <> inline bool Entry::is<vcomplex_t>() const { return is_complex_array(); }
+  template <> inline vcomplex_t Entry::val<vcomplex_t>() const { return complex_array(); }
+}
+
 
 inline
 bool cosmosis::Entry::is_int() const
