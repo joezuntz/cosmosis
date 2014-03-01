@@ -3,24 +3,20 @@
 using std::string;
 using std::vector;
 
-// This seems inefficient, but we must first set the data to an
-// innocuous value, so that the 'set' functions we call don't cause
-// havoc based on our current state.
+
 cosmosis::Entry::Entry(Entry const& e) :
-  type_(e.type_)
+  type_(e.type_),
+  i(0)
 {
-  switch (type_)
-    {
-    case tag_t::int_t:            i = e.i; break;
-    case tag_t::double_t:         d = e.d; break;
-    case tag_t::string_t:         new(&s) string(e.s); break;
-    case tag_t::complex_t:        z = e.z; break;
-    case tag_t::int_array_t:      new(&vi) vector<int>(e.vi); break;
-    case tag_t::double_array_t:   new(&vd) vector<double>(e.vd); break;
-    case tag_t::string_array_t:   new(&vs) vector<string>(e.vs); break;
-    case tag_t::complex_array_t:  new(&vz) vector<complex_t>(e.vz); break;
-    default: throw BadEntry();
-    }
+  if      (type_ == typeid(int)) i = e.i;
+  else if (type_ == typeid(double)) d = e.d;
+  else if (type_ == typeid(string)) emplace(&s, e.s);
+  else if (type_ == typeid(complex_t)) z = e.z;
+  else if (type_ == typeid(vint_t)) emplace(&vi, e.vi);
+  else if (type_ == typeid(vdouble_t)) emplace(&vd, e.vd);
+  else if (type_ == typeid(vstring_t)) emplace(&vs, e.vs);
+  else if (type_ == typeid(vcomplex_t)) emplace(&vz,  e.vz);
+  else throw BadEntry();
 }
 
 cosmosis::Entry::~Entry()
@@ -32,19 +28,15 @@ bool
 cosmosis::Entry::operator==(Entry const& rhs) const
 {
   if (type_ != rhs.type_) return false;
-  switch (type_)
-    {
-    case tag_t::int_t:            return i == rhs.i;
-    case tag_t::double_t:         return d == rhs.d;
-    case tag_t::string_t:         return s == rhs.s;
-    case tag_t::complex_t:        return z == rhs.z;
-    case tag_t::int_array_t:     return vi == rhs.vi;
-    case tag_t::double_array_t:  return vd == rhs.vd;
-    case tag_t::string_array_t:  return vs == rhs.vs;
-    case tag_t::complex_array_t: return vz == rhs.vz;
-    default: throw BadEntry();
-    }
-
+  if (type_ == typeid(int)) return i == rhs.i;
+  else if (type_ == typeid(double)) return d == rhs.d;
+  else if (type_ == typeid(string)) return s == rhs.s;
+  else if (type_ == typeid(complex_t)) return z == rhs.z;
+  else if (type_ == typeid(vint_t)) return vi == rhs.vi;
+  else if (type_ == typeid(vdouble_t)) return vd == rhs.vd;
+  else if (type_ == typeid(vstring_t)) return vs == rhs.vs;
+  else if (type_ == typeid(vcomplex_t)) return vz == rhs.vz;
+  else throw BadEntry();
 }
 
 // Each 'set' function must check for all possible types with
@@ -57,94 +49,18 @@ cosmosis::Entry::operator==(Entry const& rhs) const
 // type.
 
 void cosmosis::Entry::_destroy_if_managed() {
-  switch (type_)
-    {
-    case tag_t::string_t:        s.~string(); break;
-    case tag_t::int_array_t:     vi.~vector<int>(); break;
-    case tag_t::double_array_t:  vd.~vector<double>(); break;
-    case tag_t::string_array_t:  vs.~vector<string>(); break;
-    case tag_t::complex_array_t: vz.~vector<complex_t>(); break;
-    default:                     break;
-    }
+  if      (type_ == typeid(string)) s.~string();
+  else if (type_ == typeid(vint_t)) vi.~vector<int>();
+  else if (type_ == typeid(vdouble_t)) vd.~vector<double>();
+  else if (type_ == typeid(vstring_t)) vs.~vector<string>();
+  else if (type_ == typeid(vcomplex_t)) vz.~vector<complex_t>();
 }
 
-void cosmosis::Entry::set_val(int v)
-{
-  _destroy_if_managed();
-  type_ = tag_t::int_t;
-  i = v;
-}
-
-void cosmosis::Entry::set_val(double v)
-{
-  _destroy_if_managed();
-  type_ = tag_t::double_t;
-  d = v;
-}
-
-void cosmosis::Entry::set_val(string const& v)
-{
-  if (type_ == tag_t::string_t)
-    s = v;
-  else
-    {
-      _destroy_if_managed();
-      type_ = tag_t::string_t;
-      new(&s) string(v);
-    }
-}
-
-void cosmosis::Entry::set_val(cosmosis::complex_t v)
-{
-  _destroy_if_managed();
-  type_ = tag_t::complex_t;
-  z = v;
-}
-
-void cosmosis::Entry::set_val(vector<int> const& v)
-{
-  if (type_ == tag_t::int_array_t)
-    vi = v;
-  else
-    {
-      _destroy_if_managed();
-      type_ = tag_t::int_array_t;
-      new(&vi) vector<int>(v);
-    }
-}
-
-void cosmosis::Entry::set_val(vector<double> const& v)
-{
-  if (type_ == tag_t::double_array_t)
-    vd = v;
-  else
-    {
-      _destroy_if_managed();
-      type_ = tag_t::double_array_t;
-      new(&vd) vector<double>(v);
-    }
-}
-
-void cosmosis::Entry::set_val(vector<string> const& v)
-{
-  if (type_ == tag_t::string_array_t)
-    vs = v;
-  else
-    {
-      _destroy_if_managed();
-      type_ = tag_t::string_array_t;
-      new(&vs) vector<string>(v);
-    }
-}
-
-void cosmosis::Entry::set_val(vector<complex_t> const& v)
-{
-  if (type_ == tag_t::complex_array_t)
-    vz = v;
-  else
-    {
-      _destroy_if_managed();
-      type_ = tag_t::complex_array_t;
-      new(&vz) vector<complex_t>(v);
-    }
-}
+void cosmosis::Entry::set_val(int v) { _set(v, i); }
+void cosmosis::Entry::set_val(double v) { _set(v, d); }
+void cosmosis::Entry::set_val(string const& v) { _vset(v, s); }
+void cosmosis::Entry::set_val(cosmosis::complex_t v) { _set(v, z); }
+void cosmosis::Entry::set_val(vector<int> const& v) { _vset(v, vi); }
+void cosmosis::Entry::set_val(vector<double> const& v) { _vset(v, vd); }
+void cosmosis::Entry::set_val(vector<string> const& v) { _vset(v, vs); }
+void cosmosis::Entry::set_val(vector<complex_t> const& v) { _vset(v, vz); }
