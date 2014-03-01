@@ -39,17 +39,17 @@ test: test_datablock test_entry test_section
 
 test_datablock: lib c_datablock_t
 	@echo -n Running c_datablock_t
-	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./c_datablock_t > c_datablock_t.log
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_t > c_datablock_t.log
 	@echo  ... passed
 
 test_section: lib section_t
 	@echo -n Running section_t
-	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./section_t >  section_t.log
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./section_t >  section_t.log
 	@echo  ... passed
 
 test_entry: lib entry_t
 	@echo -n Running entry_t
-	@LD_LIBRARY_PATH=. $(MEMCHECK_CMD) ./entry_t >  entry_t.log
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@echo  ... passed
 
 libcosmosis.so: datablock.o entry.o section.o c_datablock.o
