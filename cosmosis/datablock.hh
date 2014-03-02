@@ -36,26 +36,18 @@
 //
 //----------------------------------------------------------------------
 
-#include <stdexcept>
 #include <string>
 #include <map>
 
-extern "C" {
-#include "c_datablock.h"
-}
+#include "datablock_status.h"
+#include "section.hh"
+
+// extern "C" {
+// #include "c_datablock.h"
+// }
 
 namespace cosmosis
 {
-  // Exception type thrown by DataBlock functions.
-  // TODO: make the exceptions carry the corresponding enumerated error code rather than the int.
-  struct Error : public std::runtime_error 
-  {
-    Error(std::string const& msg, DATABLOCK_STATUS errorcode ) :
-      std::runtime_error(msg), code(errorcode)  
-    { }
-    DATABLOCK_STATUS code;
-  };
-
   class DataBlock
   {
   public:
@@ -63,33 +55,49 @@ namespace cosmosis
 
     // get functions return the status, and set the value of their
     // output argument only upon success.
-    DATABLOCK_STATUS get(std::string const& name, double& val) const;
-    DATABLOCK_STATUS get(std::string const& name, int& val) const;
+    template <class T>
+    DATABLOCK_STATUS get_val(std::string const& section,
+			     std::string const& name,
+			     T& val) const;
 
-    // get_X functions throw if the given name is not found.
-    double get_double(std::string const& name) const;
-    int    get_int(std::string const& name) const;
+    template <class T>
+    DATABLOCK_STATUS put_val(std::string const& section,
+			     std::string const& name,
+			     T const& val);
 
     // put and replace functions return the status of the or
     // replace. They modify the state of the object only on success.
-    DATABLOCK_STATUS put(std::string const& name, double val);
-    DATABLOCK_STATUS put(std::string const& name, int val);
-    DATABLOCK_STATUS replaceDouble(std::string const& name, double val);
+    // DATABLOCK_STATUS put(std::string const& name, double val);
+    // DATABLOCK_STATUS put(std::string const& name, int val);
+    // DATABLOCK_STATUS replaceDouble(std::string const& name, double val);
 
-    // Return true if a value (of any time) with this name exists.
-    bool has_value(std::string const& name) const;
+    // Return true if the DataBlock has a section with the given name.
+    bool has_section(std::string const& name) const;
 
   private:
-    std::map<std::string, double> doubles_;
-    std::map<std::string, int> ints_;
+    std::map<std::string, Section> sections_;
   };
 }
 
-inline
-bool cosmosis::DataBlock::has_value(std::string const& name) const
+template <class T>
+DATABLOCK_STATUS
+cosmosis::DataBlock::get_val(std::string const& section,
+			     std::string const& name,
+			     T& val) const
 {
-  return (doubles_.find(name) != doubles_.end() ||
-	  ints_.find(name) != ints_.end());
+  auto isec = sections_.find(section);
+  if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
+  return isec->second.get_val(name, val);
+}
+
+template <class T>
+DATABLOCK_STATUS
+cosmosis::DataBlock::put_val(std::string const& section,
+			     std::string const& name,
+			     T const& val)
+{
+  auto& sec = sections_[section]; // create one if needed
+  return sec.put_val(name, val);
 }
 
 #endif

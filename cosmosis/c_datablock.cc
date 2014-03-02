@@ -1,4 +1,5 @@
 #include "datablock.hh"
+#include "c_datablock.h"
 
 extern "C"
 {
@@ -15,32 +16,43 @@ extern "C"
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_double(c_datablock const* s, const char* name, 
+  c_datablock_get_double(c_datablock const* s,
+			 const char* section,
+			 const char* name,
 			 double* val)
   {
     auto p = static_cast<cosmosis::DataBlock const*>(s);
-    return p->get(name, *val);
+    return p->get_val(section, name, *val);
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_int(c_datablock const* s, const char* name, int* val)
+  c_datablock_get_int(c_datablock const* s,
+		      const char* section,
+		      const char* name,
+		      int* val)
   {
     auto p = static_cast<cosmosis::DataBlock const*>(s);
-    return p->get(name, *val);
+    return p->get_val(section, name, *val);
   }
 
   DATABLOCK_STATUS
-  c_datablock_put_double(c_datablock* s , const char* name, double val)
+  c_datablock_put_double(c_datablock* s,
+			 const char* section,
+			 const char* name,
+			 double val)
   {
     auto p = static_cast<cosmosis::DataBlock*>(s);
-    return p->put(name, val);
+    return p->put_val(section, name, val);
   }
 
   DATABLOCK_STATUS
-  c_datablock_put_int(c_datablock* s , const char* name, int val)
+  c_datablock_put_int(c_datablock* s,
+		      const char* section,
+		      const char* name,
+		      int val)
   {
     auto p = static_cast<cosmosis::DataBlock*>(s);
-    return p->put(name, val);
+    return p->put_val(section, name, val);
   }
 
 } // extern "C"

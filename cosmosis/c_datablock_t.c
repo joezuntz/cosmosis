@@ -12,22 +12,22 @@ void check_scalar_double()
   expected = 3.5;
 
   /* Put with no previous value should save the right value. */
-  assert(c_datablock_put_double(s, "cow", expected) == 0);
-  assert(c_datablock_get_double(s, "cow", &val) == 0);
+  assert(c_datablock_put_double(s, "x", "cow", expected) == 0);
+  assert(c_datablock_get_double(s, "x", "cow", &val) == 0);
   assert(val == expected);
 
   /* Second put of the same name with same type should fail, and the
      value should be unaltered. */
-  assert(c_datablock_put_double(s, "cow", 10.5) == DBS_NAME_ALREADY_EXISTS);
+  assert(c_datablock_put_double(s, "x", "cow", 10.5) == DBS_NAME_ALREADY_EXISTS);
   val = 0.0;
-  assert(c_datablock_get_double(s, "cow", &val) == 0);
+  assert(c_datablock_get_double(s, "x", "cow", &val) == 0);
   assert(val == expected);
 
   /* Second put of the same name with different type should fail, and
      the value should be unaltered. */
-  assert(c_datablock_put_int(s, "cow", 2112) == DBS_NAME_ALREADY_EXISTS);
+  assert(c_datablock_put_int(s, "x", "cow", 2112) == DBS_NAME_ALREADY_EXISTS);
   val = 0.0;
-  assert(c_datablock_get_double(s, "cow", &val) == 0);
+  assert(c_datablock_get_double(s, "x", "cow", &val) == 0);
   assert(val == expected);
 
   destroy_c_datablock(s);
@@ -43,22 +43,22 @@ void check_scalar_int()
   expected = -4;
 
   /* Put with no previous value should save the right value. */
-  assert(c_datablock_put_int(s, "cow", expected) == 0);
-  assert(c_datablock_get_int(s, "cow", &val) == 0);
+  assert(c_datablock_put_int(s, "x", "cow", expected) == 0);
+  assert(c_datablock_get_int(s, "x", "cow", &val) == 0);
   assert(val == expected);
 
   /* Second put of the same name with same type should fail, and the
      value should be unaltered. */
-  assert(c_datablock_put_int(s, "cow", 100) == DBS_NAME_ALREADY_EXISTS);
+  assert(c_datablock_put_int(s, "x", "cow", 100) == DBS_NAME_ALREADY_EXISTS);
   val = 0;
-  assert(c_datablock_get_int(s, "cow", &val) == 0);
+  assert(c_datablock_get_int(s, "x", "cow", &val) == 0);
   assert(val == expected);
 
   /* Second put of the same name with different type should fail, and
      the value should be unaltered. */
-  assert(c_datablock_put_double(s, "cow", 10.5) == DBS_NAME_ALREADY_EXISTS);
+  assert(c_datablock_put_double(s, "x", "cow", 10.5) == DBS_NAME_ALREADY_EXISTS);
   val = 0;
-  assert(c_datablock_get_int(s, "cow", &val) == 0);
+  assert(c_datablock_get_int(s, "x", "cow", &val) == 0);
   assert(val == expected);
 
   destroy_c_datablock(s);

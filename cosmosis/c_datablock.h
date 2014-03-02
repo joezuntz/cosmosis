@@ -23,29 +23,29 @@ c_datablock* make_c_datablock(void);
 DATABLOCK_STATUS destroy_c_datablock(c_datablock* s);
 
 /*
-  Return 0 if a double named 'name' is found. We do no conversions of type.
-  1: section not found.
-  2: name not found
-  3: wrong type
-  4: memory allocation failure.
-  5: section name is null
-  6: name is null, section is not null
-  7: val is null.
-  8: s is null.
+  Return DBS_SUCCESS if a double named 'name' is found. We do no conversions of type.
 
-  If the return status is nonzero, the value written into 'val' is
-  not defined.
-*/
+  If the return status is nonzero, the value written into 'val' is not
+  defined.  */
 DATABLOCK_STATUS
-c_datablock_get_double(c_datablock const* s, const char* name, double* val);
+c_datablock_get_double(c_datablock const* s,
+		       const char* section,
+		       const char* name,
+		       double* val);
 
 DATABLOCK_STATUS
-c_datablock_get_int(c_datablock const* s, const char* name, int* val);
+c_datablock_get_int(c_datablock const* s,
+		    const char* section,
+		    const char* name,
+		    int* val);
 
 /* Only scalars have default in the C and Fortran interfaces. */
 DATABLOCK_STATUS
-c_datablock_get_double_default(c_datablock const* s, const char* name, 
-			       double* val, double dflt);
+c_datablock_get_double_default(c_datablock const* s,
+			       const char* section,
+			       const char* name,
+			       double* val,
+			       double dflt);
 
 
 /*
@@ -54,10 +54,16 @@ c_datablock_get_double_default(c_datablock const* s, const char* name,
   2: memory allocation failure
 */
 DATABLOCK_STATUS
-c_datablock_put_double(c_datablock* s, const char* name, double val);
+c_datablock_put_double(c_datablock* s,
+		       const char* section,
+		       const char* name,
+		       double val);
 
 DATABLOCK_STATUS
-c_datablock_put_int(c_datablock* s, const char* name, int val);
+c_datablock_put_int(c_datablock* s,
+		    const char* section,
+		    const char* name,
+		    int val);
 
 /*
   Return 0 if the put worked, and nonzero to indicate failure.
@@ -66,25 +72,35 @@ c_datablock_put_int(c_datablock* s, const char* name, int val);
   3: replace of wrong type.
 */
 DATABLOCK_STATUS
-c_datablock_replace_double(c_datablock* s, const char* name, double val);
-
+c_datablock_replace_double(c_datablock* s,
+			   const char* section,
+			   const char* name,
+			   double val);
 
 #if 0
 /* Return 0 if the put worked, and nonzero to indicate failure */
 DATABLOCK_STATUS
-c_datablock_get_double_array_1d(c_datablock const* s, const char* name,
-				double** array, int* size);
+c_datablock_get_double_array_1d(c_datablock const* s,
+				const char* section,
+				const char* name,
+				double** array,
+				int* size);
 
 DATABLOCK_STATUS
-c_datablock_get_double_array_1d_preallocated(c_datablock const* s, const char* name,
+c_datablock_get_double_array_1d_preallocated(c_datablock const* s,
+					     const char* section,
+					     const char* name,
 					     double* array,
 					     int* size,
 					     int maxsize);
 
 DATABLOCK_STATUS
-c_datablock_put_double_array_1d(c_datablock* s, const char* name,
-				double* array, int sz);
-#endif
+c_datablock_put_double_array_1d(c_datablock* s,
+				const char* section,
+				const char* name,
+				double* array,
+				int sz);
+#endif // if 0
 
 #ifdef __cplusplus
 }
