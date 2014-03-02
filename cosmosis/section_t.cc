@@ -10,37 +10,44 @@ using cosmosis::complex_t;
 using std::vector;
 using std::string;
 
-void test_puts()
-{
-  Section s1;
-
-  assert(s1.put_val("i1", -10) == DBS_SUCCESS);
-  assert(s1.put_val("d1", 2.5) == DBS_SUCCESS);
-  assert(s1.put_val("s1", "cow says moo") == DBS_SUCCESS);
-  assert(s1.put_val("z1", complex_t(-1.5, 3.5)) == DBS_SUCCESS);
-  assert(s1.put_val("vi1", vector<int>({1, 2, -10})) == DBS_SUCCESS);
-  assert(s1.put_val("vd1", vector<double>({2.5, -10.5})) == DBS_SUCCESS);
-  assert(s1.put_val("vs1", vector<string>({"cow says moo", "pig says oink"})) == DBS_SUCCESS);
-  assert(s1.put_val("vz1", vector<complex_t>({complex_t(-1.5, 3.5)})) == DBS_SUCCESS);
-
-  for (auto name : { "i1", "d1", "s1", "z1", "vi1", "vd1", "vs1", "vz1" })
-    assert(s1.put_val(name, "cow says moo") == DBS_NAME_ALREADY_EXISTS);
-}
-
-void test_replace()
+template <class T>
+void test_type(T && x, T && y)
 {
   Section s;
-  assert(s.replace_val("i", 21) == DBS_NAME_NOT_FOUND);
+  assert(s.put_val("a", x) == DBS_SUCCESS);
+  assert(s.put_val("a", y) == DBS_NAME_ALREADY_EXISTS);
+  T result;
+  assert(s.get_val("a", result) == DBS_SUCCESS);
+  assert(result == x);
+  assert(s.replace_val("a", y) == DBS_SUCCESS);
+  assert(s.get_val("a", result) == DBS_SUCCESS);
+  assert(result == y);
+  assert(not s.has_value<T>("b"));
+  assert(s.replace_val("b", x) == DBS_NAME_NOT_FOUND);
+  assert(s.has_value<T>("a"));
+  assert(s.has_name("a"));
+  assert(not s.has_name("b"));
+}
 
-  assert(s.put_val("i", -10) == DBS_SUCCESS);
-  assert(s.replace_val("i", 21) == DBS_SUCCESS);
-  int i = 0;
-  assert(s.get_val("i", i) == DBS_SUCCESS);
-  assert(i == 21);
+void test_crossing_types()
+{
+  Section s;
+  assert(s.put_val("a", 1) == DBS_SUCCESS);
+  assert(s.put_val("a", 2.0) == DBS_NAME_ALREADY_EXISTS);
+  assert(s.replace_val("a", vector<string>()) == DBS_SUCCESS);
+  assert(s.has_value<vector<string>>("a"));
 }
 
 int main()
 {
-  test_puts();
-  test_replace();
+  test_type(10, 101);
+  test_type(-2.5, 1.0e17);
+  test_type<std::string>("cow", "dog");
+  test_type(complex_t(1.0, 2.0), complex_t(-5.5, 2e-12));
+  test_type(vector<int>({1,2,3}), vector<int>({2,3,4,5}));
+  test_type(vector<double>(), vector<double>({2.5,3.5,4.5,5.5}));
+  test_type(vector<string>({"cow"}), vector<string>({"a","","cd"}));
+  test_type(vector<complex_t>({1.5, 2.25}), vector<complex_t>());
+
+  test_crossing_types();
 }

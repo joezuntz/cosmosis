@@ -30,7 +30,10 @@ namespace cosmosis
     template <class T> bool has_value(std::string const& name) const;
 
     template <class T> 
-    DATABLOCK_STATUS get_val(std::string const& name, T& v) const;    
+    DATABLOCK_STATUS get_val(std::string const& name, T& v) const;
+
+    // Return true if we have a value of any type with the given name.
+    bool has_name(std::string const& name) const;
 
   private:
     std::map<std::string, Entry> vals_;
