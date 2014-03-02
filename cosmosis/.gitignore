@@ -6,3 +6,4 @@ c_datablock_t
 section_t
 entry_t
 *~
+datablock_t
