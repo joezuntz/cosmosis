@@ -22,6 +22,13 @@ extern "C"
       return DBS_SECTION_NOT_FOUND;
   }
 
+  int c_datablock_num_sections(c_datablock const* s)
+  {
+    if (s == nullptr) return -1;
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    return p->num_sections();
+  }
+
   DATABLOCK_STATUS destroy_c_datablock(c_datablock* s)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;

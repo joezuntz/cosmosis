@@ -26,9 +26,15 @@ extern "C" {
    */
   DATABLOCK_STATUS c_datablock_has_section(c_datablock const* s, const char* name);
 
+  /*
+    Return the number of sections contained in the datablock. If s is
+    null, return -1.
+   */
+  int c_datablock_num_sections(c_datablock const* s);
+
 /*
   bool c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
-  int c_datablock_num_sections(....);
+
   DATABLOCK_STATUS c_datablock_get_section_name(..., int isection);
 */
 

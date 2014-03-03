@@ -7,9 +7,17 @@ void test_sections()
   c_datablock* s;
   s = make_c_datablock();
 
-  assert(c_datablock_has_section(0, 0) == DBS_DATABLOCK_NULL);
-  assert(c_datablock_has_section(s, 0) == DBS_NAME_NULL);
+  assert(c_datablock_has_section(NULL, NULL) == DBS_DATABLOCK_NULL);
+  assert(c_datablock_has_section(s, NULL) == DBS_NAME_NULL);
+  assert(c_datablock_num_sections(NULL) == -1);
+
   assert(c_datablock_has_section(s, "cow") == DBS_SECTION_NOT_FOUND);
+  assert(c_datablock_num_sections(s) == 0);
+
+  /* Creating a parameter in a section must create the section. */
+  assert(c_datablock_put_int(s, "s1", "a", 10) == DBS_SUCCESS);
+  assert(c_datablock_has_section(s, "s1") == DBS_SUCCESS);
+  assert(c_datablock_num_sections(s) == 1);
 
   destroy_c_datablock(s);
 }

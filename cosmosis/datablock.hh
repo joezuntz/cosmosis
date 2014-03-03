@@ -75,6 +75,9 @@ namespace cosmosis
     // Return true if the DataBlock has a section with the given name.
     bool has_section(std::string const& name) const;
 
+    // Return the number of sections in this DataBlock.
+    std::size_t num_sections() const;
+
   private:
     std::map<std::string, Section> sections_;
   };
