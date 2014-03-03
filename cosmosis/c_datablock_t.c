@@ -19,6 +19,12 @@ void test_sections()
   assert(c_datablock_has_section(s, "s1") == DBS_SUCCESS);
   assert(c_datablock_num_sections(s) == 1);
 
+  /* Make a few more sections. */
+  assert(c_datablock_put_int(s, "s2", "a", 10) == DBS_SUCCESS);
+  assert(c_datablock_put_int(s, "s3", "a", 10) == DBS_SUCCESS);
+  assert(c_datablock_put_double(s, "s4", "a", 10.5) == DBS_SUCCESS);
+  assert(c_datablock_num_sections(s) == 4);
+
   destroy_c_datablock(s);
 }
 

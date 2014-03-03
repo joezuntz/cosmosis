@@ -32,7 +32,13 @@ extern "C"
   DATABLOCK_STATUS destroy_c_datablock(c_datablock* s)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    delete static_cast<DataBlock*>(s);
+    DataBlock* p = static_cast<DataBlock*>(s);
+    // The call to clear() is not really necessary, but to aid in
+    // debugging incorrect use of the C interface (especially to help
+    // detect premature calls to destroy_c_datablock), it seems
+    // useful.
+    p->clear();
+    delete p;
     return DBS_SUCCESS;
   }
 

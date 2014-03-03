@@ -78,6 +78,9 @@ namespace cosmosis
     // Return the number of sections in this DataBlock.
     std::size_t num_sections() const;
 
+    // Remove all the sections.
+    void clear();
+
   private:
     std::map<std::string, Section> sections_;
   };

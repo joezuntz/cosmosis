@@ -11,3 +11,8 @@ std::size_t cosmosis::DataBlock::num_sections() const
 {
   return sections_.size();
 }
+
+void cosmosis::DataBlock::clear()
+{
+  sections_.clear();
+}
