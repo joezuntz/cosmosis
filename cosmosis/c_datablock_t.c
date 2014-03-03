@@ -47,6 +47,11 @@ void check_scalar_int()
   assert(c_datablock_get_int(s, "x", "cow", &val) == 0);
   assert(val == expected);
 
+  /* Put of the same name into a different section should not collide. */
+  assert(c_datablock_put_int(s, "y", "cow", expected) == 0);
+  assert(c_datablock_get_int(s, "y", "cow", &val) == 0);
+  assert(val == expected);
+
   /* Second put of the same name with same type should fail, and the
      value should be unaltered. */
   assert(c_datablock_put_int(s, "x", "cow", 100) == DBS_NAME_ALREADY_EXISTS);
