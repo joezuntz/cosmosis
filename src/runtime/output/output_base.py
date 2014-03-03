@@ -1,0 +1,112 @@
+import abc
+
+class OutputBase(object):
+	__metaclass__ = abc.ABCMeta
+
+	def __init__(self):
+		super(OutputBase,self).__init__()
+		self._columns = []
+		self.closed=False
+		self.begun_sampling = False
+
+	@property
+	def columns(self):
+		return self._columns
+
+	@columns.setter
+	def columns(self, columns):
+		self._columns = columns
+
+	@columns.deleter
+	def columns(self, columns):
+		self._columns = []
+
+	def add_column(self, name, dtype, comment=""):
+		self.columns.append((name,dtype,comment))
+
+	def del_column(self, column):
+		if isinstance(column, int):
+			self.columns.pop(column)
+		elif isinstance(column, tuple):
+			self.columns.remove(tuple)
+		elif isinstance(column, basestring):
+			self.columns.pop(self.column_index_for_name(column))
+		else:
+			raise TypeError("Unknown type of column to delete")
+
+	def column_index_for_name(self, name):
+		for i,(col_name,dtype,comment) in enumerate(self._columns):
+			if name==col_name:
+				return i
+
+	@property
+	def column_names(self):
+		return [c[0] for c in self._columns]
+
+	def parameters(self, params):
+		""" 
+		Tell the outputter to save a vector of parameters.
+		The number of parameters and their types
+		must match what the columns are.
+		"""
+		#Check that the length is correct
+		if self.closed:
+			raise RuntimeError("Tried to write parameters to closed output")
+		if not len(params)==len(self._columns):
+			raise ValueError("Sampler error - tried to save ")
+		#If this is our first sample then 
+		if not self.begun_sampling:
+			self._begun_sampling(params)
+			self.begun_sampling=True
+		self._write_parameters(params)
+
+	def metadata(self, key, value, comment=""):
+		"""
+		Save an item of metadata, with an optional comment.
+		For many some output types this will only work before
+		sampling has begun.
+		"""
+		if self.closed:
+			raise RuntimeError("Tried to write metadata info to closed output")
+		self._write_metadata(key, value, comment)
+
+	def final(self, key, value, comment=""):
+		"""
+		Save an item of final metadata (like a convergence test).
+		This is designed to be run after sampling has finished;
+		doing otherwise might cause problems.
+		"""
+		if self.closed:
+			raise RuntimeError("Tried to write final info to closed output")
+		self._write_final(key, value, comment)
+
+	def close(self):
+		self.closed=True
+		self._close()
+
+	#These are the methods that subclasses should
+	#implement.  _begun_sampling and _close are optional.
+	#The others are mandatory
+	def _begun_sampling(self, params):
+		pass
+
+	def _close(self):
+		pass
+
+	@abc.abstractmethod
+	def _write_parameters(self, params):
+		pass
+
+	@abc.abstractmethod
+	def _write_metadata(self, key, value, comment):
+		pass
+
+	@abc.abstractmethod
+	def _write_final(self, key, value, comment):
+		pass
+
+
+	@classmethod
+	def from_ini(cls, ini):
+		raise NotImplemented("The output mode you tried to use is incomplete - sorry.")
+
