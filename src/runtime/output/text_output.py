@@ -19,13 +19,14 @@ class TextColumnOutput(OutputBase):
 		for (key,(value,comment)) in self._metadata.items():
 			self._file.write('#{key} {value}\n'.format(key=key,value=value))
 		self._metadata={}
-		#now we have done this so do not need to do it again.
-		self.begun_parameters=True
 
 	def _write_metadata(self, key, value, comment=''):
 		#We save the metadata until we get the first 
 		#parameters since up till then the columns can
 		#be changed
+		#In the text mode we cannot write more metadata
+		#after sampling has begun (because it goes at the top).
+		#What should we do?
 		self._metadata[key]= (value, comment)
 
 	def _write_parameters(self, params):
