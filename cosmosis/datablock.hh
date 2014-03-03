@@ -59,17 +59,17 @@ namespace cosmosis
     DATABLOCK_STATUS get_val(std::string const& section,
 			     std::string const& name,
 			     T& val) const;
-
+    // put and replace functions return the status of the or
+    // replace. They modify the state of the object only on success.
     template <class T>
     DATABLOCK_STATUS put_val(std::string const& section,
 			     std::string const& name,
 			     T const& val);
 
-    // put and replace functions return the status of the or
-    // replace. They modify the state of the object only on success.
-    // DATABLOCK_STATUS put(std::string const& name, double val);
-    // DATABLOCK_STATUS put(std::string const& name, int val);
-    // DATABLOCK_STATUS replaceDouble(std::string const& name, double val);
+    template <class T>
+    DATABLOCK_STATUS replace_val(std::string const& section,
+				 std::string const& name,
+				 T const& val);
 
     // Return true if the DataBlock has a section with the given name.
     bool has_section(std::string const& name) const;
@@ -98,6 +98,17 @@ cosmosis::DataBlock::put_val(std::string const& section,
 {
   auto& sec = sections_[section]; // create one if needed
   return sec.put_val(name, val);
+}
+
+template <class T>
+DATABLOCK_STATUS
+cosmosis::DataBlock::replace_val(std::string const& section,
+				 std::string const& name,
+				 T const& val)
+{
+  auto isec = sections_.find(section);
+  if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
+  return isec->second.replace_val(name, val);
 }
 
 #endif

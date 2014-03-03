@@ -34,8 +34,8 @@ void test_crossing_types()
   Section s;
   assert(s.put_val("a", 1) == DBS_SUCCESS);
   assert(s.put_val("a", 2.0) == DBS_NAME_ALREADY_EXISTS);
-  assert(s.replace_val("a", vector<string>()) == DBS_SUCCESS);
-  assert(s.has_value<vector<string>>("a"));
+  assert(s.replace_val("a", vector<string>()) == DBS_WRONG_VALUE_TYPE);
+  assert(s.has_value<int>("a"));
 }
 
 int main()

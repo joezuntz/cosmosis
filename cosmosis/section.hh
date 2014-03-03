@@ -59,6 +59,7 @@ cosmosis::Section::replace_val(std::string const& name, T const& v)
 {
   auto i = vals_.find(name);
   if (i == vals_.end()) return DBS_NAME_NOT_FOUND;
+  if (not i->second.is<T>()) return DBS_WRONG_VALUE_TYPE;
   i->second.set_val(v);
   return DBS_SUCCESS;
 }
