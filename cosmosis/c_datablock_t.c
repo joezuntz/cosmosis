@@ -2,7 +2,19 @@
 #include <stdio.h>
 #include <assert.h>
 
-void check_scalar_double()
+void test_sections()
+{
+  c_datablock* s;
+  s = make_c_datablock();
+
+  assert(c_datablock_has_section(0, 0) == DBS_DATABLOCK_NULL);
+  assert(c_datablock_has_section(s, 0) == DBS_NAME_NULL);
+  assert(c_datablock_has_section(s, "cow") == DBS_SECTION_NOT_FOUND);
+
+  destroy_c_datablock(s);
+}
+
+void test_scalar_double()
 {
   double val, expected;
   c_datablock* s;
@@ -33,7 +45,7 @@ void check_scalar_double()
   destroy_c_datablock(s);
 }
 
-void check_scalar_int()
+void test_scalar_int()
 {
   int val, expected;
   c_datablock* s;
@@ -93,7 +105,9 @@ void check_scalar_int()
 
 int main()
 {
-  check_scalar_double();
-  check_scalar_int();
+  test_sections();
+  test_scalar_int();
+  test_scalar_double();
+
   return 0;
 }

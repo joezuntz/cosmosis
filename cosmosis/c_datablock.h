@@ -8,13 +8,25 @@ extern "C" {
 #endif
 
 /*
-  The type c_datablock represents the C 
+  The type c_datablock represents groups of named values.
+  Values can be any of the following types:
+      int, double, char array ("string"), double _Complex
+      int array, double array, char array array, double _Complex array.
+
+  Groups of parameters are organized into named 'sections'.
+
  */
-typedef void c_datablock;
-c_datablock* make_c_datablock(void);
+
+  typedef void c_datablock;
+  c_datablock* make_c_datablock(void);
+
+  /*
+    Return DBS_SUCCESS if the datablock has a section with the given
+    name, and an error status otherwise.
+   */
+  DATABLOCK_STATUS c_datablock_has_section(c_datablock const* s, const char* name);
 
 /*
-  bool c_datablock_has_section(c_datablock const* s, const char* name);
   bool c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
   int c_datablock_num_sections(....);
   DATABLOCK_STATUS c_datablock_get_section_name(..., int isection);
