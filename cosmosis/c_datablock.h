@@ -2,6 +2,7 @@
 #define COSMOSIS_C_DATABLOCK_H
 
 #include "datablock_status.h"
+#include <complex.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,22 +41,25 @@ extern "C" {
 
 DATABLOCK_STATUS destroy_c_datablock(c_datablock* s);
 
+
 /*
-  Return DBS_SUCCESS if a double named 'name' is found. We do no conversions of type.
 
-  If the return status is nonzero, the value written into 'val' is not
-  defined.  */
-DATABLOCK_STATUS
-c_datablock_get_double(c_datablock const* s,
-		       const char* section,
-		       const char* name,
-		       double* val);
+  The c_datablock_get_T functions return DBS_SUCCESS if a value of
+  type T with the given name is found in the given section, and an
+  error status otherwise. No conversions of type are done.
+
+  If the return status is not DBS_SUCCESS, the value written into 'val' is not
+  defined.
+*/
 
 DATABLOCK_STATUS
-c_datablock_get_int(c_datablock const* s,
-		    const char* section,
-		    const char* name,
-		    int* val);
+c_datablock_get_int(c_datablock const* s, const char* section, const char* name, int* val);
+
+DATABLOCK_STATUS
+c_datablock_get_double(c_datablock const* s, const char* section, const char* name, double* val);
+
+DATABLOCK_STATUS
+c_datablock_get_complex(c_datablock const* s, const char* section, const char* name, double _Complex* val);
 
 /* Only scalars have default in the C and Fortran interfaces. */
 DATABLOCK_STATUS
@@ -72,16 +76,14 @@ c_datablock_get_double_default(c_datablock const* s,
   2: memory allocation failure
 */
 DATABLOCK_STATUS
-c_datablock_put_double(c_datablock* s,
-		       const char* section,
-		       const char* name,
-		       double val);
+c_datablock_put_int(c_datablock* s, const char* section, const char* name, int val);
 
 DATABLOCK_STATUS
-c_datablock_put_int(c_datablock* s,
-		    const char* section,
-		    const char* name,
-		    int val);
+c_datablock_put_double(c_datablock* s, const char* section, const char* name, double val);
+
+DATABLOCK_STATUS
+c_datablock_put_complex(c_datablock* s, const char* section, const char* name, double _Complex val);
+
 
 /*
   Return 0 if the put worked, and nonzero to indicate failure.
@@ -90,10 +92,14 @@ c_datablock_put_int(c_datablock* s,
   3: replace of wrong type.
 */
 DATABLOCK_STATUS
-c_datablock_replace_double(c_datablock* s,
-			   const char* section,
-			   const char* name,
-			   double val);
+c_datablock_replace_int(c_datablock* s, const char* section, const char* name, int val);
+
+DATABLOCK_STATUS
+c_datablock_replace_double(c_datablock* s, const char* section, const char* name, double val);
+
+DATABLOCK_STATUS
+c_datablock_replace_complex(c_datablock* s, const char* section, const char* name, double _Complex val);
+
 
 #if 0
 /* Return 0 if the put worked, and nonzero to indicate failure */
