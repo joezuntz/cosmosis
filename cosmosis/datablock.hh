@@ -42,10 +42,6 @@
 #include "datablock_status.h"
 #include "section.hh"
 
-// extern "C" {
-// #include "c_datablock.h"
-// }
-
 namespace cosmosis
 {
   class DataBlock
@@ -59,13 +55,18 @@ namespace cosmosis
     DATABLOCK_STATUS get_val(std::string const& section,
 			     std::string const& name,
 			     T& val) const;
+
     // put and replace functions return the status of the or
     // replace. They modify the state of the object only on success.
+    // put requires that there is not already a value with the given
+    // name in the given section.
     template <class T>
     DATABLOCK_STATUS put_val(std::string const& section,
 			     std::string const& name,
 			     T const& val);
 
+    // replace requires that there is already a value with the given
+    // name and of the same type in the given section.
     template <class T>
     DATABLOCK_STATUS replace_val(std::string const& section,
 				 std::string const& name,
@@ -78,6 +79,8 @@ namespace cosmosis
     std::map<std::string, Section> sections_;
   };
 }
+
+// Implementation details below.
 
 template <class T>
 DATABLOCK_STATUS
