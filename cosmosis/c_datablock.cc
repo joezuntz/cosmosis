@@ -144,4 +144,49 @@ extern "C"
     return p->put_val(section, name, z);
   }
 
+  DATABLOCK_STATUS
+  c_datablock_replace_int(c_datablock* s,
+			  const char* section,
+			  const char* name,
+			  int val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->replace_val(section, name, val);
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_replace_double(c_datablock* s,
+			     const char* section,
+			     const char* name,
+			     double val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->replace_val(section, name, val);
+  }
+
+
+  DATABLOCK_STATUS
+  c_datablock_replace_complex(c_datablock* s,
+			     const char* section,
+			     const char* name,
+			     double _Complex val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    std::complex<double> z { val };
+    return p->replace_val(section, name, z);
+  }
+
+
 } // extern "C"

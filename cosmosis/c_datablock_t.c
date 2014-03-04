@@ -30,7 +30,7 @@ void test_sections()
 
 void test_scalar_int()
 {
-  int val, expected;
+  int val, expected, new_expected;
   c_datablock* s;
   s = make_c_datablock();
   assert(s);
@@ -61,13 +61,38 @@ void test_scalar_int()
   assert(c_datablock_get_int(s, "x", "cow", &val) == DBS_SUCCESS);
   assert(val == expected);
 
+  /* Replacement of an existing value with one of the same type should
+     save the right value. */
+  new_expected = -10;
+  val = 0;
+  assert(c_datablock_replace_int(s, "x", "cow", new_expected) == DBS_SUCCESS);
+  assert(c_datablock_get_int(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(val==new_expected);
+
+  /* Attempted replacement using a new name should not succeed, and
+     the stored value should not be changed. */
+  assert(c_datablock_replace_int(s, "x", "no such parameter", 999) ==
+	 DBS_NAME_NOT_FOUND);
+  val = 0;
+  assert(c_datablock_get_int(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(val==new_expected);
+
+  /* Attempted replacement using a name associated with a different
+     type should not succeed, and the stored value should not be
+     changed. */
+  assert(c_datablock_put_double(s, "x", "a double", 2.5) == DBS_SUCCESS);
+  assert(c_datablock_replace_int(s, "x", "a double", 10) == DBS_WRONG_VALUE_TYPE);
+  double d;
+  assert(c_datablock_get_double(s, "x", "a double", &d) == DBS_SUCCESS);
+  assert(d == 2.5);
+
   destroy_c_datablock(s);
 }
 
 
 void test_scalar_double()
 {
-  double val, expected;
+  double val, expected, new_expected;
   c_datablock* s;
   s = make_c_datablock();
   assert(s);
@@ -98,12 +123,37 @@ void test_scalar_double()
   assert(c_datablock_get_double(s, "x", "cow", &val) == DBS_SUCCESS);
   assert(val == expected);
 
+  /* Replacement of an existing value with one of the same type should
+     save the right value. */
+  new_expected = -1.5e-12;
+  val = 0;
+  assert(c_datablock_replace_double(s, "x", "cow", new_expected) == DBS_SUCCESS);
+  assert(c_datablock_get_double(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(val==new_expected);
+
+  /* Attempted replacement using a new name should not succeed, and
+     the stored value should not be changed. */
+  assert(c_datablock_replace_double(s, "x", "no such parameter", 9.99) ==
+	 DBS_NAME_NOT_FOUND);
+  val = 0.0;
+  assert(c_datablock_get_double(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(val==new_expected);
+
+  /* Attempted replacement using a name associated with a different
+     type should not succeed, and the stored value should not be
+     changed. */
+  assert(c_datablock_put_int(s, "x", "an int", 2) == DBS_SUCCESS);
+  assert(c_datablock_replace_double(s, "x", "an int", 10) == DBS_WRONG_VALUE_TYPE);
+  int i;
+  assert(c_datablock_get_int(s, "x", "an int", &i) == DBS_SUCCESS);
+  assert(i == 2);
+
   destroy_c_datablock(s);
 }
 
 void test_scalar_complex()
 {
-  double _Complex val, expected;
+  double _Complex val, expected, new_expected;
   c_datablock* s;
   s = make_c_datablock();
   assert(s);
@@ -133,6 +183,31 @@ void test_scalar_complex()
   val = 0.0;
   assert(c_datablock_get_complex(s, "x", "cow", &val) == DBS_SUCCESS);
   assert(val == expected);
+
+  /* Replacement of an existing value with one of the same type should
+     save the right value. */
+  new_expected = -10.0 - 4.5 * _Complex_I;
+  val = 0.0;
+  assert(c_datablock_replace_complex(s, "x", "cow", new_expected) == DBS_SUCCESS);
+  assert(c_datablock_get_complex(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(val==new_expected);
+
+  /* Attempted replacement using a new name should not succeed, and
+     the stored value should not be changed. */
+  assert(c_datablock_replace_complex(s, "x", "no such parameter", 9.99) ==
+	 DBS_NAME_NOT_FOUND);
+  val = 0.0;
+  assert(c_datablock_get_complex(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(val==new_expected);
+
+  /* Attempted replacement using a name associated with a different
+     type should not succeed, and the stored value should not be
+     changed. */
+  assert(c_datablock_put_double(s, "x", "a double", 2.5) == DBS_SUCCESS);
+  assert(c_datablock_replace_complex(s, "x", "a double", _Complex_I) == DBS_WRONG_VALUE_TYPE);
+  double d;
+  assert(c_datablock_get_double(s, "x", "a double", &d) == DBS_SUCCESS);
+  assert(d == 2.5);
 
   destroy_c_datablock(s);
 }
@@ -166,6 +241,7 @@ int main()
   test_sections();
   test_scalar_int();
   test_scalar_double();
+  test_scalar_complex();
 
   return 0;
 }
