@@ -47,7 +47,7 @@ cosmosis::Section::put_val(std::string const& name, T const& v)
   auto i = vals_.find(name);
   if (i == vals_.end() )
     {
-      vals_.insert(i, make_pair(name, Entry(v)));
+      vals_.insert(make_pair(name, Entry(v)));
       return DBS_SUCCESS;
     }
   return DBS_NAME_ALREADY_EXISTS;
