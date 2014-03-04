@@ -4,8 +4,7 @@
 
 void test_sections()
 {
-  c_datablock* s;
-  s = make_c_datablock();
+  c_datablock* s = make_c_datablock();
 
   assert(c_datablock_has_section(NULL, NULL) == DBS_DATABLOCK_NULL);
   assert(c_datablock_has_section(s, NULL) == DBS_NAME_NULL);
@@ -30,15 +29,14 @@ void test_sections()
 
 void test_scalar_int()
 {
-  int val, expected, new_expected;
-  c_datablock* s;
-  s = make_c_datablock();
+  c_datablock* s = make_c_datablock();
   assert(s);
 
-  expected = -4;
+  int expected = -4;
 
   /* Put with no previous value should save the right value. */
   assert(c_datablock_put_int(s, "x", "cow", expected) == DBS_SUCCESS);
+  int val = 0;
   assert(c_datablock_get_int(s, "x", "cow", &val) == DBS_SUCCESS);
   assert(val == expected);
 
@@ -63,7 +61,7 @@ void test_scalar_int()
 
   /* Replacement of an existing value with one of the same type should
      save the right value. */
-  new_expected = -10;
+  int new_expected = -10;
   val = 0;
   assert(c_datablock_replace_int(s, "x", "cow", new_expected) == DBS_SUCCESS);
   assert(c_datablock_get_int(s, "x", "cow", &val) == DBS_SUCCESS);
@@ -82,7 +80,7 @@ void test_scalar_int()
      changed. */
   assert(c_datablock_put_double(s, "x", "a double", 2.5) == DBS_SUCCESS);
   assert(c_datablock_replace_int(s, "x", "a double", 10) == DBS_WRONG_VALUE_TYPE);
-  double d;
+  double d = 0.0;
   assert(c_datablock_get_double(s, "x", "a double", &d) == DBS_SUCCESS);
   assert(d == 2.5);
 
@@ -92,15 +90,14 @@ void test_scalar_int()
 
 void test_scalar_double()
 {
-  double val, expected, new_expected;
-  c_datablock* s;
-  s = make_c_datablock();
+  c_datablock* s = make_c_datablock();
   assert(s);
 
-  expected = 3.5;
+  double expected = 3.5;
 
   /* Put with no previous value should save the right value. */
   assert(c_datablock_put_double(s, "x", "cow", expected) == DBS_SUCCESS);
+  double val = 0.0;
   assert(c_datablock_get_double(s, "x", "cow", &val) == DBS_SUCCESS);
   assert(val == expected);
 
@@ -125,7 +122,7 @@ void test_scalar_double()
 
   /* Replacement of an existing value with one of the same type should
      save the right value. */
-  new_expected = -1.5e-12;
+  double new_expected = -1.5e-12;
   val = 0;
   assert(c_datablock_replace_double(s, "x", "cow", new_expected) == DBS_SUCCESS);
   assert(c_datablock_get_double(s, "x", "cow", &val) == DBS_SUCCESS);
@@ -153,15 +150,14 @@ void test_scalar_double()
 
 void test_scalar_complex()
 {
-  double _Complex val, expected, new_expected;
-  c_datablock* s;
-  s = make_c_datablock();
+  c_datablock* s = make_c_datablock();
   assert(s);
 
-  expected = 3.5 - 0.5 * _Complex_I;
+  double _Complex expected = 3.5 - 0.5 * _Complex_I;
 
   /* Put with no previous value should save the right value. */
   assert(c_datablock_put_complex(s, "x", "cow", expected) == DBS_SUCCESS);
+  double _Complex val = 0.0;
   assert(c_datablock_get_complex(s, "x", "cow", &val) == DBS_SUCCESS);
   assert(val == expected);
 
@@ -186,7 +182,7 @@ void test_scalar_complex()
 
   /* Replacement of an existing value with one of the same type should
      save the right value. */
-  new_expected = -10.0 - 4.5 * _Complex_I;
+  double _Complex new_expected = -10.0 - 4.5 * _Complex_I;
   val = 0.0;
   assert(c_datablock_replace_complex(s, "x", "cow", new_expected) == DBS_SUCCESS);
   assert(c_datablock_get_complex(s, "x", "cow", &val) == DBS_SUCCESS);
