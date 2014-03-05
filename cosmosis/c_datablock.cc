@@ -1,10 +1,14 @@
 #include "datablock.hh"
 #include "c_datablock.h"
 
+#include <assert.h>
+
 using cosmosis::DataBlock;
 using cosmosis::complex_t;
+using std::string;
 
 #include <complex.h>
+#include <string.h>
 
 extern "C"
 {
@@ -54,6 +58,7 @@ extern "C"
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NAME_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
 
     auto p = static_cast<DataBlock const*>(s);
     return p->get_val(section, name, *val);
@@ -68,6 +73,7 @@ extern "C"
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NAME_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
 
     auto p = static_cast<DataBlock const*>(s);
     return p->get_val(section, name, *val);
@@ -82,6 +88,7 @@ extern "C"
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NAME_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
 
     auto p = static_cast<DataBlock const*>(s);
     complex_t z;
@@ -99,6 +106,29 @@ extern "C"
     // guarantee for double _Complex.
     if (rc == DBS_SUCCESS) *val = * reinterpret_cast<double _Complex*>(&z);
     return rc;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_string(c_datablock const* s,
+			 const char* section,
+			 const char* name,
+			 char**  val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    string tmp;
+    auto rc = p->get_val(section, name, tmp);
+    if (rc != DBS_SUCCESS) return rc;
+    size_t sz = tmp.size();
+    *val = (char*) malloc(sz+1);
+    if (*val == nullptr) return DBS_MEMORY_ALLOC_FAILURE;
+    strncpy(*val, tmp.data(), sz);
+    *val[sz] = 0; // make the output be nul-terminated.
+    return DBS_SUCCESS;
   }
 
   DATABLOCK_STATUS
@@ -145,6 +175,21 @@ extern "C"
   }
 
   DATABLOCK_STATUS
+  c_datablock_put_string(c_datablock* s,
+			 const char* section,
+			 const char* name,
+			 const char* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == NULL) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->put_val(section, name, std::string(val));
+  }
+
+  DATABLOCK_STATUS
   c_datablock_replace_int(c_datablock* s,
 			  const char* section,
 			  const char* name,
@@ -172,7 +217,6 @@ extern "C"
     return p->replace_val(section, name, val);
   }
 
-
   DATABLOCK_STATUS
   c_datablock_replace_complex(c_datablock* s,
 			     const char* section,
@@ -188,5 +232,19 @@ extern "C"
     return p->replace_val(section, name, z);
   }
 
+  DATABLOCK_STATUS
+  c_datablock_replace_string(c_datablock* s,
+			     const char* section,
+			     const char* name,
+			     const char* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == NULL) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->replace_val(section, name, std::string(val));
+  }
 
 } // extern "C"

@@ -61,6 +61,10 @@ c_datablock_get_double(c_datablock const* s, const char* section, const char* na
 DATABLOCK_STATUS
 c_datablock_get_complex(c_datablock const* s, const char* section, const char* name, double _Complex* val);
 
+DATABLOCK_STATUS
+c_datablock_get_string(c_datablock const* s, const char* section, const char* name, char** val);
+
+
 /* Only scalars have default in the C and Fortran interfaces. */
 DATABLOCK_STATUS
 c_datablock_get_double_default(c_datablock const* s,
@@ -84,6 +88,8 @@ c_datablock_put_double(c_datablock* s, const char* section, const char* name, do
 DATABLOCK_STATUS
 c_datablock_put_complex(c_datablock* s, const char* section, const char* name, double _Complex val);
 
+DATABLOCK_STATUS
+c_datablock_put_string(c_datablock* s, const char* section, const char* name, const char* val);
 
 /*
   Return 0 if the put worked, and nonzero to indicate failure.
@@ -100,6 +106,8 @@ c_datablock_replace_double(c_datablock* s, const char* section, const char* name
 DATABLOCK_STATUS
 c_datablock_replace_complex(c_datablock* s, const char* section, const char* name, double _Complex val);
 
+DATABLOCK_STATUS
+c_datablock_replace_string(c_datablock* s, const char* section, const char* name, const char* val);
 
 #if 0
 /* Return 0 if the put worked, and nonzero to indicate failure */
