@@ -47,14 +47,16 @@ namespace cosmosis
   class DataBlock
   {
   public:
+    struct BadDataBlockAccess : cosmosis::Exception { }; // used for exceptions.
+
     // All memory management functions are compiler generated.
 
     // get functions return the status, and set the value of their
     // output argument only upon success.
     template <class T>
     DATABLOCK_STATUS get_val(std::string const& section,
-			     std::string const& name,
-			     T& val) const;
+                             std::string const& name,
+                             T& val) const;
 
     // put and replace functions return the status of the or
     // replace. They modify the state of the object only on success.
@@ -62,15 +64,15 @@ namespace cosmosis
     // name in the given section.
     template <class T>
     DATABLOCK_STATUS put_val(std::string const& section,
-			     std::string const& name,
-			     T const& val);
+                             std::string const& name,
+                             T const& val);
 
     // replace requires that there is already a value with the given
     // name and of the same type in the given section.
     template <class T>
     DATABLOCK_STATUS replace_val(std::string const& section,
-				 std::string const& name,
-				 T const& val);
+                                 std::string const& name,
+                                 T const& val);
 
     // Return true if the DataBlock has a section with the given name.
     bool has_section(std::string const& name) const;
@@ -80,6 +82,15 @@ namespace cosmosis
 
     // Remove all the sections.
     void clear();
+
+    // The view functions provide readonly access to the data in
+    // DataBlock without copying the data. The reference returned by a
+    // call to view is invalidated if any replace function is called for
+    // the same section and name. Throws BadDataBlockAccess if the
+    // section can't be found, BadSection access if the name can't be
+    // found, or BadEntry if the contained value is of the wrong type.
+    template <class T>
+    T const& view(std::string const& section, std::string const& name) const;
 
   private:
     std::map<std::string, Section> sections_;
@@ -91,8 +102,8 @@ namespace cosmosis
 template <class T>
 DATABLOCK_STATUS
 cosmosis::DataBlock::get_val(std::string const& section,
-			     std::string const& name,
-			     T& val) const
+                             std::string const& name,
+                             T& val) const
 {
   auto isec = sections_.find(section);
   if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
@@ -102,8 +113,8 @@ cosmosis::DataBlock::get_val(std::string const& section,
 template <class T>
 DATABLOCK_STATUS
 cosmosis::DataBlock::put_val(std::string const& section,
-			     std::string const& name,
-			     T const& val)
+                             std::string const& name,
+                             T const& val)
 {
   auto& sec = sections_[section]; // create one if needed
   return sec.put_val(name, val);
@@ -112,12 +123,22 @@ cosmosis::DataBlock::put_val(std::string const& section,
 template <class T>
 DATABLOCK_STATUS
 cosmosis::DataBlock::replace_val(std::string const& section,
-				 std::string const& name,
-				 T const& val)
+                                 std::string const& name,
+                                 T const& val)
 {
   auto isec = sections_.find(section);
   if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
   return isec->second.replace_val(name, val);
 }
+
+template <class T>
+T const&
+cosmosis::DataBlock::view(std::string const& section, std::string const& name) const
+{
+  auto isec = sections_.find(section);
+  if (isec == sections_.end()) throw BadDataBlockAccess();
+  return isec->second.view<T>(name);
+}
+
 
 #endif

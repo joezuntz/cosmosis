@@ -6,6 +6,7 @@
 #include <vector>
 
 using cosmosis::DataBlock;
+using cosmosis::Section;
 using cosmosis::complex_t;
 using std::string;
 using std::vector;
@@ -29,6 +30,13 @@ void test(T const& x, T const& y, W const& wrong)
   assert(b.replace_val("sect_a", "param", y) == DBS_SUCCESS);
   assert(b.get_val("sect_a", "param", val) == DBS_SUCCESS);
   assert(val == y);
+  try { b.view<T>("no such section", ""); assert(0 == "view<T> failed to throw exception\n");}
+  catch (Section::BadSectionAccess const&) { }
+  catch (...) { assert("view<T> threw the wrong type of exception\n"); }
+  assert(b.view<T>("sect_a", "param") == y);
+  try { b.view<T>("no such section", "param"); assert(0 == "view<T> failed to throw exception\n"); }
+  catch (DataBlock::BadDataBlockAccess const&) { }
+  catch (...) { assert("view<T> threw the wrong type of exception\n"); }
 }
 
 int main()

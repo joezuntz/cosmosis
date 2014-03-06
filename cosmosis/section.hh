@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 
+#include "exceptions.hh"
 #include "entry.hh"
 #include "datablock_status.h"
 
@@ -19,6 +20,7 @@ namespace cosmosis
   class Section
   {
   public:
+    struct BadSectionAccess : cosmosis::Exception { }; // used for exceptions
 
     template <class T>
     DATABLOCK_STATUS put_val(std::string const& name, T const& value);
@@ -34,6 +36,14 @@ namespace cosmosis
 
     // Return true if we have a value of any type with the given name.
     bool has_name(std::string const& name) const;
+
+    // The view functions provide readonly access to the data in the
+    // Section without copying the data. The reference returned by a
+    // call to view is invalidated if any replace function is called for
+    // the same name. Throws BadSectionAccess if the name can't be
+    // found, and BadEntry if the contained value is the wrong type.
+    template <class T>
+    T const& view(std::string const& name) const;
 
   private:
     std::map<std::string, Entry> vals_;
@@ -81,6 +91,15 @@ cosmosis::Section::get_val(std::string const& name, T& v) const
   if (not i->second.is<T>()) return DBS_WRONG_VALUE_TYPE;
   v = i->second.val<T>();
   return DBS_SUCCESS;  
+}
+
+template <class T>
+T const& 
+cosmosis::Section::view(std::string const& name) const
+{
+  auto i = vals_.find(name);
+  if (i == vals_.end()) throw BadSectionAccess();
+  return i->second.view<T>();
 }
 
 #endif

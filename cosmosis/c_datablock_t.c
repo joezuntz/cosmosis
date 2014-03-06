@@ -288,6 +288,90 @@ void test_scalar_string()
   destroy_c_datablock(s);
 }
 
+#define TEST_ARRAY(length, val, expected) \
+  for (int i = 0; i != length; ++i) assert(val[i] == expected[i])
+
+void test_array_int()
+{
+  c_datablock* s = make_c_datablock();
+  assert(s);
+  int expected[] = {1,2,3};
+  int sz = sizeof(expected)/sizeof(int);
+
+  /* Put with no previous value should save the right value. */
+  assert(c_datablock_put_int_array_1d(s, "x", "cow", expected, sz) == DBS_SUCCESS);
+  int* val = NULL;
+  int length;
+  assert(c_datablock_get_int_array_1d(s, "x", "cow", &val, &length ) == DBS_SUCCESS);
+  TEST_ARRAY(length, val, expected);
+  free(val);
+
+  /* Get with preallocated buffer should return the right value. */
+  const int big = 100;
+  int buffer[big];
+  assert(c_datablock_get_int_array_1d_preallocated(s, "x", "cow", buffer, &length, big) == DBS_SUCCESS);
+
+  /* int too_small[1]; */
+
+  /* Put of the same name into a different section should not collide. */
+  assert(c_datablock_put_int_array_1d(s, "y", "cow", expected, sz) == DBS_SUCCESS);
+  val = NULL;
+
+  assert(c_datablock_get_int_array_1d(s, "y", "cow", &val, &length ) == DBS_SUCCESS);
+  TEST_ARRAY(length, val, expected);
+  free(val);
+
+#if 0
+  /* Second put of the same name with same type should fail, and the
+     value should be unaltered. */
+  assert(c_datablock_put_string(s, "x", "cow", "roses are red") == DBS_NAME_ALREADY_EXISTS);
+  val = NULL;
+  assert(c_datablock_get_string(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(strlen(val) == strlen(expected));
+  assert(strncmp(val, expected, strlen(expected)) == 0);
+  free(val);
+
+  /* Second put of the same name with different type should fail, and
+     the value should be unaltered. */
+  assert(c_datablock_put_int(s, "x", "cow", 2112) == DBS_NAME_ALREADY_EXISTS);
+  val = NULL;
+  assert(c_datablock_get_string(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(strlen(val) == strlen(expected));
+  assert(strncmp(val, expected, strlen(expected)) == 0);
+  free(val);
+
+  /* Replacement of an existing value with one of the same type should
+     save the right value. */
+  const char* new_expected = "";
+  val = NULL;
+  assert(c_datablock_replace_string(s, "x", "cow", new_expected) == DBS_SUCCESS);
+  assert(c_datablock_get_string(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(strlen(val) == strlen(new_expected));
+  assert(strncmp(val, new_expected, strlen(new_expected)) == 0);
+  free(val);
+
+  /* Attempted replacement using a new name should not succeed, and
+     the stored value should not be changed. */
+  assert(c_datablock_replace_string(s, "x", "no such parameter", "moose") == DBS_NAME_NOT_FOUND);
+  val = NULL;
+  assert(c_datablock_get_string(s, "x", "cow", &val) == DBS_SUCCESS);
+  assert(strlen(val) == strlen(new_expected));
+  assert(strncmp(val, new_expected, strlen(new_expected)) == 0);
+  free(val);
+
+  /* Attempted replacement using a name associated with a different
+     type should not succeed, and the stored value should not be
+     changed. */
+  assert(c_datablock_put_double(s, "x", "a double", 2.5) == DBS_SUCCESS);
+  assert(c_datablock_replace_string(s, "x", "a double", "gurgle") == DBS_WRONG_VALUE_TYPE);
+  double d;
+  assert(c_datablock_get_double(s, "x", "a double", &d) == DBS_SUCCESS);
+  assert(d == 2.5);
+#endif
+  destroy_c_datablock(s);
+}
+
+
   /*
   double x[] = {1,2,3};
   c_datablock_put_double_array_1d(s, "pig", x, 3);
@@ -317,6 +401,8 @@ int main()
   test_scalar_double();
   test_scalar_string();
   test_scalar_complex();
+
+  test_array_int();
 
   return 0;
 }

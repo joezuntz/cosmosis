@@ -6,6 +6,7 @@
 using cosmosis::DataBlock;
 using cosmosis::complex_t;
 using std::string;
+using std::vector;
 
 #include <complex.h>
 #include <string.h>
@@ -129,6 +130,55 @@ extern "C"
   }
 
   DATABLOCK_STATUS
+  c_datablock_get_int_array_1d(c_datablock const* s,
+                               const char* section,
+                               const char* name,
+                               int** val,
+                               int* sz)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (sz == nullptr) return DBS_SIZE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    vector<int> const& r = p->view<vector<int>>(name, section);
+    *val = static_cast<int*>(malloc(r.size() * sizeof(int)));
+    if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
+    std::copy(r.cbegin(), r.cend(), *val);
+    *sz = r.size();
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_int_array_1d_preallocated(c_datablock const* s,
+                                            const char* section,
+                                            const char* name,
+                                            int* val,
+                                            int* sz,
+                                            int maxsize)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (sz == nullptr) return DBS_SIZE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    vector<int> const& r = p->view<vector<int>>(name, section);
+    if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
+    *sz = r.size();
+    std::copy(r.cbegin(), r.cend(), val);
+    // If we are asked to clear out the remainder of the input buffer,
+    // the following line should be used.
+
+    //
+    // std::fill(val + *sz, val+maxsize, 0);
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
   c_datablock_put_int(c_datablock* s,
 		      const char* section,
 		      const char* name,
@@ -183,7 +233,24 @@ extern "C"
     if (val == NULL) return DBS_VALUE_NULL;
 
     auto p = static_cast<DataBlock*>(s);
-    return p->put_val(section, name, std::string(val));
+    return p->put_val(section, name, string(val));
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_put_int_array_1d(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               int const*  val,
+                               int sz)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == NULL) return DBS_VALUE_NULL;
+    if (sz < 0) return DBS_SIZE_NEGATIVE;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->put_val(section, name, vector<int>(val, val+sz));
   }
 
   DATABLOCK_STATUS
@@ -241,7 +308,25 @@ extern "C"
     if (val == NULL) return DBS_VALUE_NULL;
 
     auto p = static_cast<DataBlock*>(s);
-    return p->replace_val(section, name, std::string(val));
+    return p->replace_val(section, name, string(val));
   }
+
+  DATABLOCK_STATUS
+  c_datablock_replace_int_array_id(c_datablock* s,
+                                   const char* section,
+                                   const char* name,
+                                   int const* val,
+                                   int sz)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (sz  < 0) return DBS_SIZE_NEGATIVE;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->replace_val(section, name, vector<int>(val, val+sz));
+  }
+
 
 } // extern "C"

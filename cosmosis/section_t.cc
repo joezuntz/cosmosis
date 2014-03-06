@@ -5,6 +5,7 @@
 #include "section.hh"
 #include "entry.hh"
 
+using cosmosis::Entry;
 using cosmosis::Section;
 using cosmosis::complex_t;
 using std::vector;
@@ -18,10 +19,15 @@ void test_type(T && x, T && y)
   assert(s.put_val("a", y) == DBS_NAME_ALREADY_EXISTS);
   T result;
   assert(s.get_val("a", result) == DBS_SUCCESS);
+  assert(s.get_val("no such parameter", result) == DBS_NAME_NOT_FOUND);
+  try { s.view<T>("no such parameter"); assert(0 =="view<T> failed to throw an exception"); }
+  catch (Section::BadSectionAccess const&) { }
+  catch (...) { assert(0 =="view<T> threw wrong type of exception"); }
   assert(result == x);
   assert(s.replace_val("a", y) == DBS_SUCCESS);
   assert(s.get_val("a", result) == DBS_SUCCESS);
   assert(result == y);
+  assert(s.view<T>("a") == y);
   assert(not s.has_value<T>("b"));
   assert(s.replace_val("b", x) == DBS_NAME_NOT_FOUND);
   assert(s.has_value<T>("a"));

@@ -7,6 +7,8 @@
 #include <typeinfo>
 #include <vector>
 
+#include "exceptions.hh"
+
 // Entry is a discriminated union, capable of holding any one of the
 // value types indicated by tag_t.
 //
@@ -56,7 +58,7 @@ namespace cosmosis
   class Entry
   {
   public:
-    struct BadEntry { }; // used for exceptions.
+    struct BadEntry : public cosmosis::Exception { }; // used for exceptions.
 
     // A default-constructed Entry carries a double, with value 0.0
     Entry();
@@ -82,9 +84,13 @@ namespace cosmosis
     // Return true if the Entry is currently carrying a value of type T.
     template <class T> bool is() const;
 
-    // If the Entry is carrying a value of type T, return
-    // it. Otherwise throw a BadEntry exception.
+    // If the Entry is carrying a value of type T, return a copy of it.
+    // Otherwise throw a BadEntry exception.
     template <class T> T val() const;
+
+    // If the Entry is carrying a value of type T, return a reference to
+    // it. Otherwise throw a BadEntry exception.
+    template <class T> T const& view() const;
 
     // Replace the existing value (of whatever type) with the given
     // value.
@@ -117,9 +123,9 @@ namespace cosmosis
     // Call the destructor of the current value, if it is a managed type.
     void _destroy_if_managed();
 
-    // If the Entry is carrying a value of type T, return it;
-    // otherwise throw BadEntry.
-    template <class T> T _val(T* v) const;
+    // If the Entry is carrying a value of type T, return a reference to
+    // it; otherwise throw BadEntry.
+    template <class T> T const& _val(T* v) const;
 
     // Set the carried value to be of type T, with value val. Use this
     // function to set types with trivial destructors.
@@ -182,7 +188,7 @@ cosmosis::Entry::Entry(vcomplex_t const& v) :
 {}
 
 template <class T>
-T cosmosis::Entry::_val(T* v) const
+T const& cosmosis::Entry::_val(T* v) const
 {
   if (type_ != typeid(T)) throw BadEntry();
   return *v;
@@ -213,6 +219,7 @@ namespace cosmosis
 {
   template <class T> void emplace(T* addr, T const& val) { new(addr) T(val); }
   template <class T> bool Entry::is() const { return (type_ == typeid(T)); }
+
   template <> inline int Entry::val<int>() const { return _val(&i); }
   template <> inline double Entry::val<double>() const { return _val(&d); }
   template <> inline std::string Entry::val<std::string>() const { return _val(&s); }
@@ -221,6 +228,16 @@ namespace cosmosis
   template <> inline vdouble_t Entry::val<vdouble_t>() const { return _val(&vd); }
   template <> inline vstring_t Entry::val<vstring_t>() const { return _val(&vs); }
   template <> inline vcomplex_t Entry::val<vcomplex_t>() const { return _val(&vz); }
+
+  template <> inline int const& Entry::view<int>() const { return _val(&i); }
+  template <> inline double const& Entry::view<double>() const { return _val(&d); }
+  template <> inline std::string const& Entry::view<std::string>() const { return _val(&s); }
+  template <> inline complex_t const& Entry::view<complex_t>() const { return _val(&z); }
+  template <> inline vint_t const& Entry::view<vint_t>() const { return _val(&vi); }
+  template <> inline vdouble_t const& Entry::view<vdouble_t>() const { return _val(&vd); }
+  template <> inline vstring_t const& Entry::view<vstring_t>() const { return _val(&vs); }
+  template <> inline vcomplex_t const& Entry::view<vcomplex_t>() const { return _val(&vz); }
+
 }
 
 #endif
