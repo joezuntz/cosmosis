@@ -70,6 +70,8 @@ namespace cosmosis
     explicit Entry(vcomplex_t const& a);
 
     Entry(Entry const& other);
+    // The next might not be needed; havng the copy and not operator=
+    // makes operator= implicitly deleted.
     Entry& operator=(Entry const& other) = delete;
 
     ~Entry();

@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
+
+#include <stdio.h>
+
 
 void test_sections()
 {
@@ -221,7 +224,11 @@ void test_scalar_string()
   assert(c_datablock_put_string(s, "x", "cow", expected) == DBS_SUCCESS);
   char* val = NULL;
   assert(c_datablock_get_string(s, "x", "cow", &val) == DBS_SUCCESS);
-  assert(strlen(val) == strlen(expected));
+  int x = strlen(val);
+  int y = strlen(expected);
+  printf("expected is: %s\n", expected);
+  printf("val is:      %s\n", val);
+  assert(x==y);
   assert(strncmp(val, expected, strlen(expected)) == 0);
   free(val);
 

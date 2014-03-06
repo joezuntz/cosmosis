@@ -110,9 +110,9 @@ extern "C"
 
   DATABLOCK_STATUS
   c_datablock_get_string(c_datablock const* s,
-			 const char* section,
-			 const char* name,
-			 char**  val)
+                         const char* section,
+                         const char* name,
+                         char**  val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NAME_NULL;
@@ -123,11 +123,8 @@ extern "C"
     string tmp;
     auto rc = p->get_val(section, name, tmp);
     if (rc != DBS_SUCCESS) return rc;
-    size_t sz = tmp.size();
-    *val = (char*) malloc(sz+1);
+    *val = strdup(tmp.c_str());
     if (*val == nullptr) return DBS_MEMORY_ALLOC_FAILURE;
-    strncpy(*val, tmp.data(), sz);
-    *val[sz] = 0; // make the output be nul-terminated.
     return DBS_SUCCESS;
   }
 
