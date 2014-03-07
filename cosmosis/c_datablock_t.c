@@ -14,6 +14,9 @@ void test_sections()
   assert(c_datablock_has_section(NULL, NULL) == DBS_DATABLOCK_NULL);
   assert(c_datablock_has_section(s, NULL) == DBS_NAME_NULL);
   assert(c_datablock_num_sections(NULL) == -1);
+  assert(c_datablock_has_value(NULL, NULL, NULL) == DBS_DATABLOCK_NULL);
+  assert(c_datablock_has_value(s, NULL, NULL) == DBS_SECTION_NULL);
+  assert(c_datablock_has_value(s, "boo", NULL) == DBS_NAME_NULL);
 
   assert(c_datablock_has_section(s, "cow") == DBS_SECTION_NOT_FOUND);
   assert(c_datablock_num_sections(s) == 0);
@@ -22,6 +25,9 @@ void test_sections()
   assert(c_datablock_put_int(s, "s1", "a", 10) == DBS_SUCCESS);
   assert(c_datablock_has_section(s, "s1") == DBS_SUCCESS);
   assert(c_datablock_num_sections(s) == 1);
+  assert(c_datablock_has_value(s, "s1", "a") == DBS_SUCCESS);
+  assert(c_datablock_has_value(s, "no such section", "a") == DBS_SECTION_NOT_FOUND);
+  assert(c_datablock_has_value(s, "s1", "no such parameter") == DBS_NAME_NOT_FOUND);
 
   /* Make a few more sections. */
   assert(c_datablock_put_int(s, "s2", "a", 10) == DBS_SUCCESS);

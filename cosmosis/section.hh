@@ -35,7 +35,7 @@ namespace cosmosis
     DATABLOCK_STATUS get_val(std::string const& name, T& v) const;
 
     // Return true if we have a value of any type with the given name.
-    bool has_name(std::string const& name) const;
+    bool has_val(std::string const& name) const;
 
     // The view functions provide readonly access to the data in the
     // Section without copying the data. The reference returned by a

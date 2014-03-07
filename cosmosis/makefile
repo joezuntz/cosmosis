@@ -19,10 +19,10 @@
 #   1) dependencies for targets are not automatically generated.
 #
 #----------------------------------------------------------------------
-CXXFLAGS=-std=c++11 -O3 -Wall -Wextra -pedantic -fPIC -g
-#CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
-CCFLAGS=-std=c99 -O3 -Wall -Wextra -pedantic -fPIC -g
-#CCFLAGS=-std=c99 -O0 -Wall -Wextra -pedantic -fPIC -g
+#CXXFLAGS=-std=c++11 -O3 -Wall -Wextra -pedantic -fPIC -g
+CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
+#CCFLAGS=-std=c99 -O3 -Wall -Wextra -pedantic -fPIC -g
+CCFLAGS=-std=c99 -O0 -Wall -Wextra -pedantic -fPIC -g
 
 ifdef MEMCHECK
   MEMCHECK_CMD=valgrind --error-exitcode=1 --leak-check=yes --errors-for-leak-kinds=definite --track-origins=yes --suppressions=cosmosis_tests.supp

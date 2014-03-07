@@ -51,6 +51,11 @@ namespace cosmosis
 
     // All memory management functions are compiler generated.
 
+    // Return DBS_SUCCESS if the datablock has a value in the given
+    // section with the given name, and an error status otherwise.
+    DATABLOCK_STATUS has_val(std::string const& section,
+                             std::string const& name) const;
+
     // get functions return the status, and set the value of their
     // output argument only upon success.
     template <class T>

@@ -34,8 +34,13 @@ extern "C" {
   int c_datablock_num_sections(c_datablock const* s);
 
   /*
-    bool c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
+    Return DBS_SUCCESS if the datablock has a value in the given section
+    with the given name, and an error status otherwise. The associated
+    value can be of any supported type.
+  */
+  DATABLOCK_STATUS c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
 
+  /*
     DATABLOCK_STATUS c_datablock_get_section_name(..., int isection);
   */
 

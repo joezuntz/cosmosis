@@ -18,6 +18,10 @@ void test(T const& x, T const& y, W const& wrong)
   assert(not b.has_section("sect_a"));
   assert(b.put_val("sect_a", "param", x) == DBS_SUCCESS);
   assert(b.has_section("sect_a"));
+  assert(b.has_val("no such section", "x") == DBS_SECTION_NOT_FOUND);
+  assert(b.has_val("sect_a", "no such parameter") == DBS_NAME_NOT_FOUND);
+  assert(b.has_val("sect_a", "param") == DBS_SUCCESS);
+
   T val;
   assert(b.get_val("sect_a", "param", val) == DBS_SUCCESS);
   assert(val == x);

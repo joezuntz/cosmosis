@@ -40,6 +40,17 @@ extern "C"
     return p->num_sections();
   }
 
+  DATABLOCK_STATUS c_datablock_has_value(c_datablock const* s,
+                                         const char* section,
+                                         const char* name)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    return p->has_val(section, name);
+  }
+
   DATABLOCK_STATUS destroy_c_datablock(c_datablock* s)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
@@ -61,7 +72,7 @@ extern "C"
 		      int* val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
@@ -76,7 +87,7 @@ extern "C"
 			 double* val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
@@ -91,7 +102,7 @@ extern "C"
 			  double _Complex* val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
@@ -120,7 +131,7 @@ extern "C"
                          char**  val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
@@ -141,7 +152,7 @@ extern "C"
                                int* sz)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
     if (sz == nullptr) return DBS_SIZE_NULL;
@@ -171,7 +182,7 @@ extern "C"
                                             int maxsize)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
     if (sz == nullptr) return DBS_SIZE_NULL;
@@ -196,7 +207,7 @@ extern "C"
 		      int val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
 
     auto p = static_cast<DataBlock*>(s);
@@ -210,7 +221,7 @@ extern "C"
 			 double val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
 
     auto p = static_cast<DataBlock*>(s);
@@ -224,7 +235,7 @@ extern "C"
 			  double _Complex val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
 
     auto p = static_cast<DataBlock*>(s);
@@ -239,7 +250,7 @@ extern "C"
 			 const char* val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == NULL) return DBS_VALUE_NULL;
 
@@ -255,7 +266,7 @@ extern "C"
                                int sz)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == NULL) return DBS_VALUE_NULL;
     if (sz < 0) return DBS_SIZE_NEGATIVE;
@@ -271,7 +282,7 @@ extern "C"
 			  int val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
 
     auto p = static_cast<DataBlock*>(s);
@@ -285,7 +296,7 @@ extern "C"
 			     double val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
 
     auto p = static_cast<DataBlock*>(s);
@@ -299,7 +310,7 @@ extern "C"
 			     double _Complex val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
 
     auto p = static_cast<DataBlock*>(s);
@@ -314,7 +325,7 @@ extern "C"
 			     const char* val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == NULL) return DBS_VALUE_NULL;
 
@@ -330,7 +341,7 @@ extern "C"
                                    int sz)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NAME_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
     if (sz  < 0) return DBS_SIZE_NEGATIVE;

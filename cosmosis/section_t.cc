@@ -31,8 +31,8 @@ void test_type(T && x, T && y)
   assert(not s.has_value<T>("b"));
   assert(s.replace_val("b", x) == DBS_NAME_NOT_FOUND);
   assert(s.has_value<T>("a"));
-  assert(s.has_name("a"));
-  assert(not s.has_name("b"));
+  assert(s.has_val("a"));
+  assert(not s.has_val("b"));
 }
 
 void test_crossing_types()
