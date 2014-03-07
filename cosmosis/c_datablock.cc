@@ -1,9 +1,13 @@
 #include "datablock.hh"
+#include "section.hh"
+#include "entry.hh"
 #include "c_datablock.h"
 
 #include <assert.h>
 
 using cosmosis::DataBlock;
+using cosmosis::Section;
+using cosmosis::Entry;
 using cosmosis::complex_t;
 using std::string;
 using std::vector;
@@ -143,12 +147,19 @@ extern "C"
     if (sz == nullptr) return DBS_SIZE_NULL;
 
     auto p = static_cast<DataBlock const*>(s);
-    vector<int> const& r = p->view<vector<int>>(name, section);
-    *val = static_cast<int*>(malloc(r.size() * sizeof(int)));
-    if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
-    std::copy(r.cbegin(), r.cend(), *val);
-    *sz = r.size();
-    return DBS_SUCCESS;
+    try {
+      vector<int> const& r = p->view<vector<int>>(section, name);
+      *val = static_cast<int*>(malloc(r.size() * sizeof(int)));
+      if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
+      std::copy(r.cbegin(), r.cend(), *val);
+      *sz = r.size();
+      return DBS_SUCCESS;
+    }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
+    return DBS_LOGIC_ERROR;
   }
 
   DATABLOCK_STATUS
@@ -166,7 +177,7 @@ extern "C"
     if (sz == nullptr) return DBS_SIZE_NULL;
 
     auto p = static_cast<DataBlock const*>(s);
-    vector<int> const& r = p->view<vector<int>>(name, section);
+    vector<int> const& r = p->view<vector<int>>(section, name);
     if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
     *sz = r.size();
     std::copy(r.cbegin(), r.cend(), val);

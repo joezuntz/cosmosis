@@ -303,6 +303,7 @@ void test_array_int()
   int* val = NULL;
   int length;
   assert(c_datablock_get_int_array_1d(s, "x", "cow", &val, &length ) == DBS_SUCCESS);
+  assert(length == sz);
   TEST_ARRAY(length, val, expected);
   free(val);
 
