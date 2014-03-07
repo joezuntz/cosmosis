@@ -85,6 +85,10 @@ namespace cosmosis
     // Return the number of sections in this DataBlock.
     std::size_t num_sections() const;
 
+    // Return the name of the i'th section. Throws BadDataBlockAccess if
+    // the index is out-of-range.
+    std::string const& section_name(std::size_t i) const;
+
     // Remove all the sections.
     void clear();
 
@@ -144,6 +148,5 @@ cosmosis::DataBlock::view(std::string const& section, std::string const& name) c
   if (isec == sections_.end()) throw BadDataBlockAccess();
   return isec->second.view<T>(name);
 }
-
 
 #endif

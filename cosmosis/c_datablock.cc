@@ -1,9 +1,11 @@
+#include <assert.h>
+#include <complex.h>
+#include <string.h>
+
 #include "datablock.hh"
 #include "section.hh"
 #include "entry.hh"
 #include "c_datablock.h"
-
-#include <assert.h>
 
 using cosmosis::DataBlock;
 using cosmosis::Section;
@@ -11,9 +13,6 @@ using cosmosis::Entry;
 using cosmosis::complex_t;
 using std::string;
 using std::vector;
-
-#include <complex.h>
-#include <string.h>
 
 extern "C"
 {
@@ -49,6 +48,15 @@ extern "C"
     if (name == nullptr) return DBS_NAME_NULL;
     DataBlock const* p = static_cast<DataBlock const*>(s);
     return p->has_val(section, name);
+  }
+
+  const char* c_datablock_get_section_name(c_datablock const* s, int i)
+  {
+    if (i < 0) return nullptr;
+    auto n = static_cast<size_t>(i);
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    if (n >= p->num_sections()) return nullptr;
+    return p->section_name(n).c_str();
   }
 
   DATABLOCK_STATUS destroy_c_datablock(c_datablock* s)
@@ -349,6 +357,5 @@ extern "C"
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, vector<int>(val, val+sz));
   }
-
 
 } // extern "C"

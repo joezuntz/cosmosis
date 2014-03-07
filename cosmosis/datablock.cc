@@ -20,6 +20,15 @@ std::size_t cosmosis::DataBlock::num_sections() const
   return sections_.size();
 }
 
+std::string const& cosmosis::DataBlock::section_name(std::size_t i) const
+{
+  if (i >= num_sections()) throw BadDataBlockAccess();
+  auto isec = sections_.begin();
+  std::advance(isec, i);
+  return isec->first;
+
+}
+
 void cosmosis::DataBlock::clear()
 {
   sections_.clear();

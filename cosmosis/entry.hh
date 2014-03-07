@@ -46,7 +46,6 @@
 //   2. Extend to support 2-dimensional arrays.
 //
 
-
 namespace cosmosis
 {
   typedef std::complex<double> complex_t;
@@ -54,7 +53,7 @@ namespace cosmosis
   typedef std::vector<double> vdouble_t;
   typedef std::vector<std::string> vstring_t;
   typedef std::vector<complex_t> vcomplex_t;
-  
+
   class Entry
   {
   public:
@@ -237,7 +236,6 @@ namespace cosmosis
   template <> inline vdouble_t const& Entry::view<vdouble_t>() const { return _val(&vd); }
   template <> inline vstring_t const& Entry::view<vstring_t>() const { return _val(&vs); }
   template <> inline vcomplex_t const& Entry::view<vcomplex_t>() const { return _val(&vz); }
-
 }
 
 #endif

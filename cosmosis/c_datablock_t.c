@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 
-
 void test_sections()
 {
   c_datablock* s = make_c_datablock();
@@ -33,7 +32,18 @@ void test_sections()
   assert(c_datablock_put_int(s, "s2", "a", 10) == DBS_SUCCESS);
   assert(c_datablock_put_int(s, "s3", "a", 10) == DBS_SUCCESS);
   assert(c_datablock_put_double(s, "s4", "a", 10.5) == DBS_SUCCESS);
-  assert(c_datablock_num_sections(s) == 4);
+  const int expected_sections = 4;
+  assert(c_datablock_num_sections(s) == expected_sections);
+
+  /* Make sure all the section names are what we expect. We make the
+     calls out-of-order intentionally.
+   */
+  assert(strcmp(c_datablock_get_section_name(s, 3), "s4") == 0);
+  assert(strcmp(c_datablock_get_section_name(s, 0), "s1") == 0);
+  assert(strcmp(c_datablock_get_section_name(s, 2), "s3") == 0);
+  assert(strcmp(c_datablock_get_section_name(s, 1), "s2") == 0);
+  assert(c_datablock_get_section_name(s, -1) == NULL);
+  assert(c_datablock_get_section_name(s, 4) == NULL);
 
   destroy_c_datablock(s);
 }
@@ -97,7 +107,6 @@ void test_scalar_int()
 
   destroy_c_datablock(s);
 }
-
 
 void test_scalar_double()
 {
@@ -170,6 +179,7 @@ void test_scalar_complex()
   assert(c_datablock_put_complex(s, "x", "cow", expected) == DBS_SUCCESS);
   double _Complex val = 0.0;
   assert(c_datablock_get_complex(s, "x", "cow", &val) == DBS_SUCCESS);
+  printf("real: %g    imag: %g\n", creal(val), cimag(val));
   assert(val == expected);
 
   /* Put of the same name into a different section should not collide. */

@@ -15,7 +15,6 @@ extern "C" {
     int array, double array, char array array, double _Complex array.
 
     Groups of parameters are organized into named 'sections'.
-
   */
 
   typedef void c_datablock;
@@ -41,14 +40,24 @@ extern "C" {
   DATABLOCK_STATUS c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
 
   /*
-    DATABLOCK_STATUS c_datablock_get_section_name(..., int isection);
+    Return the name of the i'th section of the datablock. Note that if a
+    new section is added, the ordinal position of some or all of the
+    named sections may change; this is because the sections are stored
+    in sorted order for speed of lookup. The caller is not intended to
+    free the returned pointer; the datablock retains ownership of the
+    memory buffer containing the string. A NULL pointer is returned if i
+    is negative or out-of-range. Numbering of sections starts with 0.
   */
-
-  DATABLOCK_STATUS destroy_c_datablock(c_datablock* s);
-
+  const char* c_datablock_get_section_name(c_datablock const* s, int i);
 
   /*
+    Deallocate all the resources associated with the given datablock.
+    After this call, any use of that datablock will result in undefined
+    behavior (most likely, a crash in the program).
+   */
+  DATABLOCK_STATUS destroy_c_datablock(c_datablock* s);
 
+  /*
     The c_datablock_get_T functions return DBS_SUCCESS if a value of
     type T with the given name is found in the given section, and an
     error status otherwise. No conversions of type are done.
@@ -69,7 +78,6 @@ extern "C" {
   DATABLOCK_STATUS
   c_datablock_get_string(c_datablock const* s, const char* section, const char* name, char** val);
 
-
   /* Only scalars have default in the C and Fortran interfaces. */
   DATABLOCK_STATUS
   c_datablock_get_double_default(c_datablock const* s,
@@ -77,7 +85,6 @@ extern "C" {
                                  const char* name,
                                  double* val,
                                  double dflt);
-
 
   /*
     Return 0 if the put worked, and nonzero to indicate failure.
@@ -113,8 +120,6 @@ extern "C" {
 
   DATABLOCK_STATUS
   c_datablock_replace_string(c_datablock* s, const char* section, const char* name, const char* val);
-
-
 
   DATABLOCK_STATUS
   c_datablock_get_int_array_1d(c_datablock const* s,

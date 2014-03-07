@@ -43,6 +43,21 @@ void test(T const& x, T const& y, W const& wrong)
   catch (...) { assert("view<T> threw the wrong type of exception\n"); }
 }
 
+void test_sections()
+{
+  DataBlock b;
+  b.put_val("ints", "a", 10);
+  b.put_val("doubles", "a", 2.5);
+  b.put_val("strings", "a", string("cow says moo"));
+  assert(b.num_sections() == 3);
+  assert(b.section_name(0) == "doubles");
+  assert(b.section_name(1) == "ints");
+  assert(b.section_name(2) == "strings");
+  try { b.section_name(3); assert(0 == "section_name failed to throw required exception\n"); }
+  catch (DataBlock::BadDataBlockAccess const&) { }
+  catch (...) { assert(0 == "section_name threw the wrong type of exception\n"); }
+}
+
 int main()
 {
   test(100, -25, 2.5);
@@ -53,4 +68,6 @@ int main()
   test(vector<double>{1,2,3}, vector<double>{3,2,1}, string("moo"));
   test(vector<complex_t>{{1,2},{2.5, 3}}, vector<complex_t>{{2,1}}, 100);
   test(vector<string>{"a","b","c"}, vector<string>{"dog", "cow"}, 1.5);
+
+  test_sections();
 }
