@@ -222,14 +222,12 @@ extern "C"
 
     auto p = static_cast<DataBlock const*>(s);
     vector<int> const& r = p->view<vector<int>>(section, name);
-    if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
     *sz = r.size();
+    if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
     std::copy(r.cbegin(), r.cend(), val);
     // If we are asked to clear out the remainder of the input buffer,
     // the following line should be used.
-
-    //
-    // std::fill(val + *sz, val+maxsize, 0);
+    //    std::fill(val + *sz, val+maxsize, 0);
     return DBS_SUCCESS;
   }
 
@@ -367,7 +365,7 @@ extern "C"
   }
 
   DATABLOCK_STATUS
-  c_datablock_replace_int_array_id(c_datablock* s,
+  c_datablock_replace_int_array_1d(c_datablock* s,
                                    const char* section,
                                    const char* name,
                                    int const* val,

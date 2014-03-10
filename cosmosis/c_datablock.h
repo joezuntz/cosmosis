@@ -121,6 +121,16 @@ extern "C" {
   DATABLOCK_STATUS
   c_datablock_replace_string(c_datablock* s, const char* section, const char* name, const char* val);
 
+  /*
+    Returns DBS_SUCCESS on success, and and error status otherwise.
+    c_datablock_get_int_array_1d allocates takes as input the address of
+    an array-of-int (val), into which is written the address of a
+    newly-allocated array-of-int; it also takes an address of an int
+    (size) into which is written the size of the newly-allocated array.
+
+    The user is responsible for disposing of the allocated memory (using
+    'free') when it is no longer needed.
+   */
   DATABLOCK_STATUS
   c_datablock_get_int_array_1d(c_datablock const* s,
                                const char* section,
@@ -128,6 +138,20 @@ extern "C" {
                                int** val,
                                int* size);
 
+ /*
+    Returns DBS_SUCCESS on success, and and error status otherwise.
+    c_datablock_get_int_array_1d_preallocated takes as input an
+    already-allocated array-of-int (val), into which is copied the
+    values contained in the array. The user must specify the size of the
+    pre-allocated array (maxsize). The function also takes the address
+    of an int (size) into which is written the number of elements
+    written into the pre-allocated array.
+
+    If the size of the pre-allocated array smaller than the size of the
+    array in the datablock, then no values are written into 'array', and
+    and error status is returned. The size of the array in the datablock
+    is still written into 'size' in this case.
+   */
   DATABLOCK_STATUS
   c_datablock_get_int_array_1d_preallocated(c_datablock const* s,
                                             const char* section,
@@ -142,6 +166,13 @@ extern "C" {
                                const char* name,
                                int const*  val,
                                int sz);
+
+  DATABLOCK_STATUS
+  c_datablock_replace_int_array_1d(c_datablock* s,
+                                   const char* section,
+                                   const char* name,
+                                   int const* val,
+                                   int sz);
 
   DATABLOCK_STATUS
   c_datablock_get_double_array_1d(c_datablock const* s,
