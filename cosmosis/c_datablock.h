@@ -168,6 +168,13 @@ extern "C" {
                                int sz);
 
   DATABLOCK_STATUS
+  c_datablock_replace_int_array_1d(c_datablock* s,
+                                   const char* section,
+                                   const char* name,
+                                   int const* val,
+                                   int sz);
+
+  DATABLOCK_STATUS
   c_datablock_get_double_array_1d(c_datablock const* s,
                                const char* section,
                                const char* name,

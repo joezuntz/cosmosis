@@ -365,7 +365,7 @@ extern "C"
   }
 
   DATABLOCK_STATUS
-  c_datablock_replace_int_array_id(c_datablock* s,
+  c_datablock_replace_int_array_1d(c_datablock* s,
                                    const char* section,
                                    const char* name,
                                    int const* val,
