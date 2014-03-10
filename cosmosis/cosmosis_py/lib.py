@@ -23,11 +23,18 @@ def load_function_types(namespace, c_type, c_name):
 	load_library_function(namespace, "c_datablock_replace_%s"%c_name, [c_block, c_str, c_str, c_type], c_status)
 	load_library_function(namespace, "c_datablock_get_%s"%c_name, [c_block, c_str, c_str, ct.POINTER(c_type)], c_status)
 
+def load_array_function_types(namespace, c_type, c_name):
+	load_library_function(namespace, "c_datablock_put_%s_array_1d"%c_name, [c_block, c_str, c_str, ct.POINTER(c_type), c_int], c_status)
+	load_library_function(namespace, "c_datablock_get_%s_array_1d"%c_name, [c_block, c_str, c_str, ct.POINTER(ct.POINTER(c_type)), c_int_p], c_status)
+	load_library_function(namespace, "c_datablock_get_%s_array_1d_preallocated"%c_name, [c_block, c_str, c_str, ct.POINTER(c_type), c_int_p, c_int], c_status)
+
+
 
 load_function_types(locals(), ct.c_int, 'int')
 load_function_types(locals(), ct.c_double, 'double')
 load_function_types(locals(), c_complex, 'complex')
 
+load_array_function_types(locals(), ct.c_int, 'int')
 
 load_library_function(
 	locals(), 
