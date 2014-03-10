@@ -1,11 +1,11 @@
 #include "c_datablock.h"
-#include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
 
-#include <stdio.h>
+#include <assert.h>
+#include <limits.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 void test_sections()
 {
@@ -329,7 +329,17 @@ void test_array_int()
   int buffer[big];
   assert(c_datablock_get_int_array_1d_preallocated(s, "x", "cow", buffer, &length, big) == DBS_SUCCESS);
 
-  /* int too_small[1]; */
+  /* Get with a too-small buffer should fail, and leave the buffer
+     untouched. The returned value of length will say how big the
+     buffer needs to be. */
+  const int small = 1;
+  int too_small[small];
+  too_small[0] = INT_MIN;
+  length = 0;
+  assert(c_datablock_get_int_array_1d_preallocated(s, "x", "cow", too_small, &length, small) ==
+         DBS_SIZE_INSUFFICIENT);
+  assert(too_small[0] == INT_MIN);
+  assert(length == sz);
 
   /* Put of the same name into a different section should not collide. */
   assert(c_datablock_put_int_array_1d(s, "y", "cow", expected, sz) == DBS_SUCCESS);
