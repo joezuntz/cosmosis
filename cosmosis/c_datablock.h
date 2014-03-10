@@ -8,15 +8,14 @@
 extern "C" {
 #endif
 
-/*
-  The type c_datablock represents groups of named values.
-  Values can be any of the following types:
-      int, double, char array ("string"), double _Complex
-      int array, double array, char array array, double _Complex array.
+  /*
+    The type c_datablock represents groups of named values.
+    Values can be any of the following types:
+    int, double, char array ("string"), double _Complex
+    int array, double array, char array array, double _Complex array.
 
-  Groups of parameters are organized into named 'sections'.
-
- */
+    Groups of parameters are organized into named 'sections'.
+  */
 
   typedef void c_datablock;
   c_datablock* make_c_datablock(void);
@@ -24,107 +23,125 @@ extern "C" {
   /*
     Return DBS_SUCCESS if the datablock has a section with the given
     name, and an error status otherwise.
-   */
+  */
   DATABLOCK_STATUS c_datablock_has_section(c_datablock const* s, const char* name);
 
   /*
     Return the number of sections contained in the datablock. If s is
     null, return -1.
-   */
+  */
   int c_datablock_num_sections(c_datablock const* s);
 
-/*
-  bool c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
+  /*
+    Return DBS_SUCCESS if the datablock has a value in the given section
+    with the given name, and an error status otherwise. The associated
+    value can be of any supported type.
+  */
+  DATABLOCK_STATUS c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
 
-  DATABLOCK_STATUS c_datablock_get_section_name(..., int isection);
-*/
+  /*
+    Return the name of the i'th section of the datablock. Note that if a
+    new section is added, the ordinal position of some or all of the
+    named sections may change; this is because the sections are stored
+    in sorted order for speed of lookup. The caller is not intended to
+    free the returned pointer; the datablock retains ownership of the
+    memory buffer containing the string. A NULL pointer is returned if i
+    is negative or out-of-range. Numbering of sections starts with 0.
+  */
+  const char* c_datablock_get_section_name(c_datablock const* s, int i);
 
-DATABLOCK_STATUS destroy_c_datablock(c_datablock* s);
+  /*
+    Deallocate all the resources associated with the given datablock.
+    After this call, any use of that datablock will result in undefined
+    behavior (most likely, a crash in the program).
+   */
+  DATABLOCK_STATUS destroy_c_datablock(c_datablock* s);
 
+  /*
+    The c_datablock_get_T functions return DBS_SUCCESS if a value of
+    type T with the given name is found in the given section, and an
+    error status otherwise. No conversions of type are done.
 
-/*
+    If the return status is not DBS_SUCCESS, the value written into 'val' is not
+    defined.
+  */
 
-  The c_datablock_get_T functions return DBS_SUCCESS if a value of
-  type T with the given name is found in the given section, and an
-  error status otherwise. No conversions of type are done.
+  DATABLOCK_STATUS
+  c_datablock_get_int(c_datablock const* s, const char* section, const char* name, int* val);
 
-  If the return status is not DBS_SUCCESS, the value written into 'val' is not
-  defined.
-*/
+  DATABLOCK_STATUS
+  c_datablock_get_double(c_datablock const* s, const char* section, const char* name, double* val);
 
-DATABLOCK_STATUS
-c_datablock_get_int(c_datablock const* s, const char* section, const char* name, int* val);
+  DATABLOCK_STATUS
+  c_datablock_get_complex(c_datablock const* s, const char* section, const char* name, double _Complex* val);
 
-DATABLOCK_STATUS
-c_datablock_get_double(c_datablock const* s, const char* section, const char* name, double* val);
+  DATABLOCK_STATUS
+  c_datablock_get_string(c_datablock const* s, const char* section, const char* name, char** val);
 
-DATABLOCK_STATUS
-c_datablock_get_complex(c_datablock const* s, const char* section, const char* name, double _Complex* val);
+  /* Only scalars have default in the C and Fortran interfaces. */
+  DATABLOCK_STATUS
+  c_datablock_get_double_default(c_datablock const* s,
+                                 const char* section,
+                                 const char* name,
+                                 double* val,
+                                 double dflt);
 
-/* Only scalars have default in the C and Fortran interfaces. */
-DATABLOCK_STATUS
-c_datablock_get_double_default(c_datablock const* s,
-			       const char* section,
-			       const char* name,
-			       double* val,
-			       double dflt);
+  /*
+    Return 0 if the put worked, and nonzero to indicate failure.
+    1: name already exists
+    2: memory allocation failure
+  */
+  DATABLOCK_STATUS
+  c_datablock_put_int(c_datablock* s, const char* section, const char* name, int val);
 
+  DATABLOCK_STATUS
+  c_datablock_put_double(c_datablock* s, const char* section, const char* name, double val);
 
-/*
-  Return 0 if the put worked, and nonzero to indicate failure.
-  1: name already exists
-  2: memory allocation failure
-*/
-DATABLOCK_STATUS
-c_datablock_put_int(c_datablock* s, const char* section, const char* name, int val);
+  DATABLOCK_STATUS
+  c_datablock_put_complex(c_datablock* s, const char* section, const char* name, double _Complex val);
 
-DATABLOCK_STATUS
-c_datablock_put_double(c_datablock* s, const char* section, const char* name, double val);
+  DATABLOCK_STATUS
+  c_datablock_put_string(c_datablock* s, const char* section, const char* name, const char* val);
 
-DATABLOCK_STATUS
-c_datablock_put_complex(c_datablock* s, const char* section, const char* name, double _Complex val);
+  /*
+    Return 0 if the put worked, and nonzero to indicate failure.
+    1: name does not already exist.
+    2: memory allocation failure.
+    3: replace of wrong type.
+  */
+  DATABLOCK_STATUS
+  c_datablock_replace_int(c_datablock* s, const char* section, const char* name, int val);
 
+  DATABLOCK_STATUS
+  c_datablock_replace_double(c_datablock* s, const char* section, const char* name, double val);
 
-/*
-  Return 0 if the put worked, and nonzero to indicate failure.
-  1: name does not already exist.
-  2: memory allocation failure.
-  3: replace of wrong type.
-*/
-DATABLOCK_STATUS
-c_datablock_replace_int(c_datablock* s, const char* section, const char* name, int val);
+  DATABLOCK_STATUS
+  c_datablock_replace_complex(c_datablock* s, const char* section, const char* name, double _Complex val);
 
-DATABLOCK_STATUS
-c_datablock_replace_double(c_datablock* s, const char* section, const char* name, double val);
+  DATABLOCK_STATUS
+  c_datablock_replace_string(c_datablock* s, const char* section, const char* name, const char* val);
 
-DATABLOCK_STATUS
-c_datablock_replace_complex(c_datablock* s, const char* section, const char* name, double _Complex val);
+  DATABLOCK_STATUS
+  c_datablock_get_int_array_1d(c_datablock const* s,
+                               const char* section,
+                               const char* name,
+                               int** val,
+                               int* size);
 
+  DATABLOCK_STATUS
+  c_datablock_get_int_array_1d_preallocated(c_datablock const* s,
+                                            const char* section,
+                                            const char* name,
+                                            int* array,
+                                            int* size,
+                                            int maxsize);
 
-#if 0
-/* Return 0 if the put worked, and nonzero to indicate failure */
-DATABLOCK_STATUS
-c_datablock_get_double_array_1d(c_datablock const* s,
-				const char* section,
-				const char* name,
-				double** array,
-				int* size);
-
-DATABLOCK_STATUS
-c_datablock_get_double_array_1d_preallocated(c_datablock const* s,
-					     const char* section,
-					     const char* name,
-					     double* array,
-					     int* size,
-					     int maxsize);
-
-DATABLOCK_STATUS
-c_datablock_put_double_array_1d(c_datablock* s,
-				const char* section,
-				const char* name,
-				double* array,
-				int sz);
-#endif // if 0
+  DATABLOCK_STATUS
+  c_datablock_put_int_array_1d(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               int const*  val,
+                               int sz);
 
 #ifdef __cplusplus
 }

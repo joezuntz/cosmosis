@@ -181,8 +181,10 @@ void test_vector(vector<T> const& vals)
   Entry e(vals);
   // Make sure the type and value is what is expected.
   assert(e.is<vector<T>>());
-  assert(e.val<vector<T>>() == vals);  
-	 
+  assert(e.val<vector<T>>() == vals);
+
+	
+
   // Now make the value be an non-vector but memory-managed type, so we
   // can observe the switching, and test for leaking memory.
   e.set_val("tomato soup");
