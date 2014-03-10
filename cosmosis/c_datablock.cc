@@ -21,15 +21,11 @@ extern "C"
     return new cosmosis::DataBlock();
   }
 
-  DATABLOCK_STATUS c_datablock_has_section(c_datablock const* s, const char* name)
+  _Bool c_datablock_has_section(c_datablock const* s, const char* name)
   {
-    if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (name == nullptr) return DBS_NAME_NULL;
+    if (s == nullptr || name == nullptr) return false;
     DataBlock const* p = static_cast<DataBlock const*>(s);
-    if (p->has_section(name))
-      return DBS_SUCCESS;
-    else
-      return DBS_SECTION_NOT_FOUND;
+    return p->has_section(name);
   }
 
   int c_datablock_num_sections(c_datablock const* s)
@@ -169,6 +165,35 @@ extern "C"
     try {
       vector<int> const& r = p->view<vector<int>>(section, name);
       *val = static_cast<int*>(malloc(r.size() * sizeof(int)));
+      if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
+      std::copy(r.cbegin(), r.cend(), *val);
+      *sz = r.size();
+      return DBS_SUCCESS;
+    }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
+    return DBS_LOGIC_ERROR;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_double_array_1d(c_datablock const* s,
+                               const char* section,
+                               const char* name,
+                               double** val,
+                               int* sz)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (sz == nullptr) return DBS_SIZE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    try {
+      vector<double> const& r = p->view<vector<double>>(section, name);
+      *val = static_cast<double*>(malloc(r.size() * sizeof(double)));
       if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
       std::copy(r.cbegin(), r.cend(), *val);
       *sz = r.size();

@@ -3,6 +3,7 @@
 
 #include "datablock_status.h"
 #include <complex.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,10 +22,10 @@ extern "C" {
   c_datablock* make_c_datablock(void);
 
   /*
-    Return DBS_SUCCESS if the datablock has a section with the given
-    name, and an error status otherwise.
+    Return true if the datablock has a section with the given name, and
+    false otherwise. If either 's' or 'name' is null, return false.
   */
-  DATABLOCK_STATUS c_datablock_has_section(c_datablock const* s, const char* name);
+  _Bool c_datablock_has_section(c_datablock const* s, const char* name);
 
   /*
     Return the number of sections contained in the datablock. If s is
@@ -65,7 +66,6 @@ extern "C" {
     If the return status is not DBS_SUCCESS, the value written into 'val' is not
     defined.
   */
-
   DATABLOCK_STATUS
   c_datablock_get_int(c_datablock const* s, const char* section, const char* name, int* val);
 
@@ -142,6 +142,29 @@ extern "C" {
                                const char* name,
                                int const*  val,
                                int sz);
+
+  DATABLOCK_STATUS
+  c_datablock_get_double_array_1d(c_datablock const* s,
+                               const char* section,
+                               const char* name,
+                               double** val,
+                               int* size);
+
+  DATABLOCK_STATUS
+  c_datablock_get_double_array_1d_preallocated(c_datablock const* s,
+                                            const char* section,
+                                            const char* name,
+                                            double* array,
+                                            int* size,
+                                            int maxsize);
+
+  DATABLOCK_STATUS
+  c_datablock_put_double_array_1d(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               double const*  val,
+                               int sz);
+
 
 #ifdef __cplusplus
 }
