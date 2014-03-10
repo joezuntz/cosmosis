@@ -8,8 +8,8 @@ module cosmosis_wrappers
 			use iso_c_binding
 			use cosmosis_types
 			implicit none
-			integer(kind=cosmosis_block) :: make_datablock
-		end function make_datablock
+			integer(kind=cosmosis_block) :: make_c_datablock
+		end function make_c_datablock
 
 		function c_datablock_has_section_wrapper(s, name) bind(C, name="c_datablock_has_section")
 			use iso_c_binding

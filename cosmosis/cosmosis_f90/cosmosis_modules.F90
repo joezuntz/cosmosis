@@ -144,7 +144,7 @@ module cosmosis_modules
 	!datablock you need.
 	function make_datablock()
 		integer(kind=cosmosis_block) :: make_datablock
-		return make_c_datablock()
+		make_datablock =  make_c_datablock()
 	end function make_datablock
 
 end module cosmosis_modules
