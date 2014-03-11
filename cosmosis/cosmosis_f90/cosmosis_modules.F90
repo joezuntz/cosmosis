@@ -4,6 +4,7 @@
 module cosmosis_modules
 	use cosmosis_types
 	use cosmosis_wrappers
+	implicit none
 
 	contains
 
@@ -46,6 +47,8 @@ module cosmosis_modules
 
 	end function datablock_put_double
 
+
+
 	!Save a complex double with the given name to the given section
 	function datablock_put_complex(block, section, name, value) result(status)
 		integer(cosmosis_status) :: status
@@ -58,6 +61,64 @@ module cosmosis_modules
 			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value)
 
 	end function datablock_put_complex
+
+!		function c_datablock_put_int_array_1d_wrapper(s, section, name, value, size)
+
+	!Save an integer array with the given name to the given section
+	function datablock_put_int_array_1d(block, section, name, value) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		integer(c_int), dimension(:) :: value
+		integer(c_int) :: sz
+
+		sz=size(value)
+
+		status = c_datablock_put_int_array_1d_wrapper(block, &
+			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, sz)
+
+	end function datablock_put_int_array_1d
+
+	function datablock_replace_int_array_1d(block, section, name, value) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		integer(c_int), dimension(:) :: value
+		integer(c_int) :: sz
+
+		sz=size(value)
+
+		status = c_datablock_replace_int_array_1d_wrapper(block, &
+			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, sz)
+
+	end function datablock_replace_int_array_1d
+
+
+	!c_datablock_get_int_array_1d_preallocated_wrapper(s, section, name, value, size, maxsize)
+
+	function datablock_get_int_array_1d(block, section, name, value, size) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		integer(c_int), dimension(:), allocatable :: value
+		integer(c_int) :: size
+		integer(c_int) :: maxsize
+
+		maxsize = -1 !Need to get maxsize by querying the block
+		stop 'Finish this code'
+#warning FINISH THIS CODE IT WILL NOT WORK		
+		allocate(value(maxsize))
+
+		status = c_datablock_get_int_array_1d_preallocated_wrapper(block, &
+			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, size, maxsize)
+
+	end function datablock_get_int_array_1d
+
+
+
 
 	!Replace the named integer in the given section with the new value
 	function datablock_replace_int(block, section, name, value) result(status)
