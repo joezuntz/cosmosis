@@ -1,0 +1,246 @@
+#ifndef COSMOSIS_ENTRY_HH
+#define COSMOSIS_ENTRY_HH
+
+#include <string>
+#include <complex>
+#include <typeindex>
+#include <typeinfo>
+#include <vector>
+
+#include "exceptions.hh"
+
+// Entry is a discriminated union, capable of holding any one of the
+// value types indicated by tag_t.
+//
+// This is an extended version of the example from section 8.3.2 in
+// "The C++ Programming Language, 4th edition" by Bjarne Stroustrup.
+//
+// Original author: Marc Paterno (paterno@fnal.gov)
+//
+// Design ideas not taken:
+//
+// Functions that do not throw are not all declared 'noexcept', because
+// there seems to be no clear advantage to doing so.
+//
+// strings and vectors are returned by value, rather than by const
+// reference, for two reasons:
+//
+//    1. The requirements of the C interface to be supported include a
+// requirement of copying data into user-supplied string or array
+// buffers.
+//
+//    2. Returning a reference to the internal state of an Entry object,
+//    when that internal state can change, seems error-prone.
+//
+// It does not seem to make sense to have a default parameter type, so
+// Entry has no default constructor.
+//
+//  The 'is_<type>' functions are present mostly so that the C interface
+//  can be written in a way that can be certain to never allow an
+//  exception to be thrown, without needing pervasive try/catch blocks.
+//
+// TODO:
+//
+//   1. Evaluate whether move c'tor and move assignment should be
+//   supported.
+//   2. Extend to support 2-dimensional arrays.
+//
+
+namespace cosmosis
+{
+  typedef std::complex<double> complex_t;
+  typedef std::vector<int> vint_t;
+  typedef std::vector<double> vdouble_t;
+  typedef std::vector<std::string> vstring_t;
+  typedef std::vector<complex_t> vcomplex_t;
+
+  class Entry
+  {
+  public:
+    struct BadEntry : public cosmosis::Exception { }; // used for exceptions.
+
+    // A default-constructed Entry carries a double, with value 0.0
+    Entry();
+    explicit Entry(int v);
+    explicit Entry(double v);
+    explicit Entry(std::string v);
+    explicit Entry(complex_t v);
+    explicit Entry(vint_t const& a);
+    explicit Entry(vdouble_t const& a);
+    explicit Entry(vstring_t const& a);
+    explicit Entry(vcomplex_t const& a);
+
+    Entry(Entry const& other);
+    // The next might not be needed; havng the copy and not operator=
+    // makes operator= implicitly deleted.
+    Entry& operator=(Entry const& other) = delete;
+
+    ~Entry();
+
+    // Two Entries are equal if they carry the same type, and the same value.
+    bool operator==(Entry const& other) const;
+
+    // Return true if the Entry is currently carrying a value of type T.
+    template <class T> bool is() const;
+
+    // If the Entry is carrying a value of type T, return a copy of it.
+    // Otherwise throw a BadEntry exception.
+    template <class T> T val() const;
+
+    // If the Entry is carrying a value of type T, return a reference to
+    // it. Otherwise throw a BadEntry exception.
+    template <class T> T const& view() const;
+
+    // If the Entry is carrying a value that is a vector, return the
+    // length of the vector. Otherwise, return -1. If the length of the
+    // vector is greater than MAXINT, return -2.
+    int size() const;
+
+    // Replace the existing value (of whatever type) with the given
+    // value.
+    void set_val(int v);
+    void set_val(double v);
+    void set_val(std::string const& v);
+    void set_val(complex_t v);
+    void set_val(vint_t const& v);
+    void set_val(vdouble_t const& v);
+    void set_val(vstring_t const& v);
+    void set_val(vcomplex_t const& v);
+
+  private:
+    // The type of the value currenty active.
+    std::type_index type_;
+
+    // the anonymous union contains the value.
+    union
+    {
+      int i;
+      double d;
+      std::string s;
+      complex_t z;
+      vint_t vi;
+      vdouble_t vd;
+      vstring_t vs;
+      vcomplex_t vz;
+    }; // union
+
+    // Call the destructor of the current value, if it is a managed type.
+    void _destroy_if_managed();
+
+    // If the Entry is carrying a value of type T, return a reference to
+    // it; otherwise throw BadEntry.
+    template <class T> T const& _val(T* v) const;
+
+    // Set the carried value to be of type T, with value val. Use this
+    // function to set types with trivial destructors.
+    template <class T> void _set(T val, T& member);
+
+    // Set the carried value to be of type T, with value val. Use this
+    // function to set types with nontrival destructors.
+    template <class T> void _vset(T const& val, T& member);
+  }; // class Entry
+
+  // emplace is used to do placement new of type T, with value val, at
+  // location addr.
+  template <class T> void emplace(T* addr, T const& val);
+} // namespace cosmosis
+
+// Implementation of member functions.
+inline
+cosmosis::Entry::Entry() :
+  type_(typeid(double)), d(0.0)
+{ }
+
+inline
+cosmosis::Entry::Entry(int v) :
+  type_(typeid(int)), i(v)
+{}
+
+inline
+cosmosis::Entry::Entry(double v) :
+  type_(typeid(double)), d(v)
+{}
+
+inline
+cosmosis::Entry::Entry(std::string v) :
+  type_(typeid(std::string)), s(v)
+{}
+
+inline
+cosmosis::Entry::Entry(complex_t v) :
+  type_(typeid(complex_t)), z(v)
+{}
+
+inline
+cosmosis::Entry::Entry(vint_t const& v) :
+  type_(typeid(vint_t)), vi(v)
+{}
+
+inline
+cosmosis::Entry::Entry(vdouble_t const& v) :
+  type_(typeid(vdouble_t)), vd(v)
+{}
+
+inline
+cosmosis::Entry::Entry(vstring_t const& v) :
+  type_(typeid(vstring_t)), vs(v)
+{}
+
+inline
+cosmosis::Entry::Entry(vcomplex_t const& v) :
+  type_(typeid(vcomplex_t)), vz(v)
+{}
+
+template <class T>
+T const& cosmosis::Entry::_val(T* v) const
+{
+  if (type_ != typeid(T)) throw BadEntry();
+  return *v;
+}
+
+template <class T>
+void cosmosis::Entry::_set(T val, T& member)
+{
+  _destroy_if_managed();
+  type_ = typeid(val);
+  member = val;
+}
+
+template <class T>
+void cosmosis::Entry::_vset(T const& val, T& member)
+{
+  if (type_ == typeid(val))
+    member = val;
+  else
+    {
+      _destroy_if_managed();
+      type_ = typeid(val);
+      emplace(&member, val);
+    }
+}
+
+namespace cosmosis
+{
+  template <class T> void emplace(T* addr, T const& val) { new(addr) T(val); }
+  template <class T> bool Entry::is() const { return (type_ == typeid(T)); }
+
+  template <> inline int Entry::val<int>() const { return _val(&i); }
+  template <> inline double Entry::val<double>() const { return _val(&d); }
+  template <> inline std::string Entry::val<std::string>() const { return _val(&s); }
+  template <> inline complex_t Entry::val<complex_t>() const { return _val(&z); }
+  template <> inline vint_t Entry::val<vint_t>() const { return _val(&vi); }
+  template <> inline vdouble_t Entry::val<vdouble_t>() const { return _val(&vd); }
+  template <> inline vstring_t Entry::val<vstring_t>() const { return _val(&vs); }
+  template <> inline vcomplex_t Entry::val<vcomplex_t>() const { return _val(&vz); }
+
+  template <> inline int const& Entry::view<int>() const { return _val(&i); }
+  template <> inline double const& Entry::view<double>() const { return _val(&d); }
+  template <> inline std::string const& Entry::view<std::string>() const { return _val(&s); }
+  template <> inline complex_t const& Entry::view<complex_t>() const { return _val(&z); }
+  template <> inline vint_t const& Entry::view<vint_t>() const { return _val(&vi); }
+  template <> inline vdouble_t const& Entry::view<vdouble_t>() const { return _val(&vd); }
+  template <> inline vstring_t const& Entry::view<vstring_t>() const { return _val(&vs); }
+  template <> inline vcomplex_t const& Entry::view<vcomplex_t>() const { return _val(&vz); }
+}
+
+#endif
