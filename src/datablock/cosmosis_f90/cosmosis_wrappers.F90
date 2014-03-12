@@ -11,6 +11,16 @@ module cosmosis_wrappers
 			integer(kind=cosmosis_block) :: make_c_datablock
 		end function make_c_datablock
 
+		function c_datablock_get_array_length_wrapper(s, section, name) bind(C, name="c_datablock_get_array_length")
+			use iso_c_binding
+			use cosmosis_types
+			implicit none
+			integer (kind=c_int) :: c_datablock_get_array_length_wrapper
+			integer(kind=cosmosis_block), value :: s
+			character(kind=c_char), dimension(*) :: section, name
+		end function c_datablock_get_array_length_wrapper
+
+
 		function c_datablock_has_section_wrapper(s, name) bind(C, name="c_datablock_has_section")
 			use iso_c_binding
 			use cosmosis_types

@@ -28,7 +28,7 @@ program test_cosmosis
 	status = datablock_get_complex(block, "MAGIC", "FOURIER", z)
 	write(*,*) "status = ", status
 	write(*,*) "recovered values = ", n, x, z
-
+	
 
 
 end program test_cosmosis

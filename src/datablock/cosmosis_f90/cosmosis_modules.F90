@@ -95,9 +95,6 @@ module cosmosis_modules
 
 	end function datablock_replace_int_array_1d
 
-
-	!c_datablock_get_int_array_1d_preallocated_wrapper(s, section, name, value, size, maxsize)
-
 	function datablock_get_int_array_1d(block, section, name, value, size) result(status)
 		integer(cosmosis_status) :: status
 		integer(cosmosis_block) :: block
@@ -107,11 +104,8 @@ module cosmosis_modules
 		integer(c_int) :: size
 		integer(c_int) :: maxsize
 
-		maxsize = -1 !Need to get maxsize by querying the block
-		stop 'Finish this code'
-#warning FINISH THIS CODE IT WILL NOT WORK		
+		maxsize = c_datablock_get_array_length_wrapper(block, section, name)
 		allocate(value(maxsize))
-
 		status = c_datablock_get_int_array_1d_preallocated_wrapper(block, &
 			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, size, maxsize)
 
