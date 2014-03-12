@@ -17,7 +17,7 @@ class TextColumnOutput(OutputBase):
 		#now write any metadata.
 		#text mode does not support comments
 		for (key,(value,comment)) in self._metadata.items():
-			self._file.write('#{key} {value}\n'.format(key=key,value=value))
+			self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
 		self._metadata={}
 
 	def _write_metadata(self, key, value, comment=''):
@@ -38,7 +38,7 @@ class TextColumnOutput(OutputBase):
 		c=''
 		if comment:
 			c='  #'+comment
-		self._file.write('#{k}={v}{c}\n'.format(k=key,v=value,c=c))
+		self._file.write('#{k}={v} {c}\n'.format(k=key,v=value,c=c))
 
 	@classmethod
 	def from_ini(cls, ini):
@@ -47,4 +47,18 @@ class TextColumnOutput(OutputBase):
 		filename = ini['filename']
 		delimiter = ini.get('delimiter','\t')
 		return cls(filename, delimiter=delimiter)
+
+	@classmethod
+	def load(cls, *args):
+		filename = args[0]
+		#Read the metadata
+		for i,line in open(filename):
+			line=line.strip()
+			if line.startswith('#'):
+				if i==0:
+					column_names = line.lstrip('#').split()
+				else:
+					#parse form '#key=value #comment'
+					pass
+
 

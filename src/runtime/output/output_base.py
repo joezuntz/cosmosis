@@ -1,4 +1,7 @@
 import abc
+import logging
+
+logger = logging.getLogger(__name__)
 
 class OutputBase(object):
 	__metaclass__ = abc.ABCMeta
@@ -8,6 +11,17 @@ class OutputBase(object):
 		self._columns = []
 		self.closed=False
 		self.begun_sampling = False
+
+	def log_debug(self, message, *args):
+		logger.debug(message, *args)
+	def log_info(self, message, *args):
+		logger.info(message, *args)
+	def log_warning(self, message, *args):
+		logger.warning(message, *args)
+	def log_error(self, message, *args):
+		logger.error(message, *args)
+	def log_critical(self, message, *args):
+		logger.critical(message, *args)
 
 	@property
 	def columns(self):
@@ -87,6 +101,7 @@ class OutputBase(object):
 	#These are the methods that subclasses should
 	#implement.  _begun_sampling and _close are optional.
 	#The others are mandatory
+
 	def _begun_sampling(self, params):
 		pass
 
@@ -105,8 +120,19 @@ class OutputBase(object):
 	def _write_final(self, key, value, comment):
 		pass
 
-
 	@classmethod
 	def from_ini(cls, ini):
-		raise NotImplemented("The output mode you tried to use is incomplete - sorry.")
+		""" This method should create an output object from the section of ini file it is given"""
+		raise NotImplemented("The format mode you tried to use is incomplete - sorry")
+
+	@classmethod
+	def load(cls, *args):
+		""" This method should load back in data written using the format.
+			It returns a triplet of (column_names, columns, metadata, final_metadata)
+			with column_names a list of strings
+			     columns a list of numpy arrays
+			     metadata a dictionary
+			     final_metadata a dictionary
+		"""
+		raise NotImplemented("The format mode you tried to use is incomplete - sorry")
 
