@@ -28,6 +28,11 @@ void * setup(c_datablock * options)
 	DATABLOCK_STATUS status=0;
 	example_data * data = malloc(sizeof(example_data));
 
+	if ( example_data == NULL ) {
+		fprintf(stderr, "Error allocating memory in example setup.\n");
+		exit(1);
+	}
+
 	// Read required parameters from options
 	status |= c_datablock_get_double(options, section, "measured_omega", &(data->omega));
 	status |= c_datablock_get_double(options, section, "measured_error", &(data->sigma));
