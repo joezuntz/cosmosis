@@ -1,4 +1,5 @@
 #include "entry.hh"
+#include <limits>
 
 using std::string;
 using std::vector;
@@ -54,6 +55,24 @@ void cosmosis::Entry::_destroy_if_managed() {
   else if (type_ == typeid(vdouble_t)) vd.~vector<double>();
   else if (type_ == typeid(vstring_t)) vs.~vector<string>();
   else if (type_ == typeid(vcomplex_t)) vz.~vector<complex_t>();
+}
+
+template <class V>
+int clamped_size(V const& v)
+{
+  auto sz = v.size();
+  return sz > std::numeric_limits<int>::max()
+    ? -2
+    : sz;
+}
+
+int cosmosis::Entry::size() const
+{
+  if      (type_ == typeid(vint_t))     return clamped_size(vi);
+  else if (type_ == typeid(vdouble_t))  return clamped_size(vd);
+  else if (type_ == typeid(vstring_t))  return clamped_size(vs);
+  else if (type_ == typeid(vcomplex_t)) return clamped_size(vz);
+  else return -1;  
 }
 
 void cosmosis::Entry::set_val(int v) { _set(v, i); }

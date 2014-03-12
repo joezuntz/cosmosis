@@ -91,6 +91,11 @@ namespace cosmosis
     // it. Otherwise throw a BadEntry exception.
     template <class T> T const& view() const;
 
+    // If the Entry is carrying a value that is a vector, return the
+    // length of the vector. Otherwise, return -1. If the length of the
+    // vector is greater than MAXINT, return -2.
+    int size() const;
+
     // Replace the existing value (of whatever type) with the given
     // value.
     void set_val(int v);

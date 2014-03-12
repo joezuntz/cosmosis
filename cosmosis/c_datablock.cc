@@ -46,6 +46,15 @@ extern "C"
     return p->has_val(section, name);
   }
 
+  int c_datablock_get_array_length(c_datablock const* s,
+                                   const char* section,
+                                   const char* name)
+  {
+    if (s==nullptr || section==nullptr || name==nullptr) return -1;
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    return p->get_size(section, name);
+  }
+
   const char* c_datablock_get_section_name(c_datablock const* s, int i)
   {
     if (i < 0) return nullptr;

@@ -10,6 +10,14 @@ DATABLOCK_STATUS cosmosis::DataBlock::has_val(string const& section,
   return isec->second.has_val(name) ? DBS_SUCCESS : DBS_NAME_NOT_FOUND;
 }
 
+int cosmosis::DataBlock::get_size(string const& section,
+                                  string const& name) const
+{
+  auto isec = sections_.find(section);
+  if (isec == sections_.end()) return -1;
+  return isec->second.get_size(name);
+}
+
 bool cosmosis::DataBlock::has_section(string const& name) const
 {
   return sections_.find(name) != sections_.end();

@@ -44,6 +44,34 @@ void test_crossing_types()
   assert(s.has_value<int>("a"));
 }
 
+void test_size()
+{
+  Section s;
+  assert(s.put_val("a", 1) == DBS_SUCCESS);
+  assert(s.get_size("a") == -1);
+
+  assert(s.put_val("b", 2.5) == DBS_SUCCESS);
+  assert(s.get_size("b") == -1);
+
+  assert(s.put_val("c", "cow") == DBS_SUCCESS);
+  assert(s.get_size("c") == -1);
+
+  assert(s.put_val("d", complex_t(1.5, 2.5)) == DBS_SUCCESS);
+  assert(s.get_size("d") == -1);
+
+  assert(s.put_val("e", vector<int>(102, 1)) == DBS_SUCCESS);
+  assert(s.get_size("e") == 102);
+
+  assert(s.put_val("f", vector<double>(1024*1024, -0.5)) == DBS_SUCCESS);
+  assert(s.get_size("f") == 1024*1024);
+
+  assert(s.put_val("g", vector<complex_t>(103, complex_t(1.5, 3.5))) == DBS_SUCCESS);
+  assert(s.get_size("g") == 103);
+
+  assert(s.put_val("h", vector<string>(99, "dog")) == DBS_SUCCESS);
+  assert(s.get_size("h") == 99);
+}
+
 int main()
 {
   test_type(10, 101);
@@ -56,4 +84,5 @@ int main()
   test_type(vector<complex_t>({1.5, 2.25}), vector<complex_t>());
 
   test_crossing_types();
+  test_size();
 }

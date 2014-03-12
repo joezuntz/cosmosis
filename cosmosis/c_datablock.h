@@ -41,6 +41,13 @@ extern "C" {
   DATABLOCK_STATUS c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
 
   /*
+    If the section and name correspond to a value that is an array,
+    return the length of the array. Otherwise return -1. If any of the
+    arguments is NULL, return -1.
+   */
+  int c_datablock_get_array_length(c_datablock const* s, const char* section, const char* name);
+
+  /*
     Return the name of the i'th section of the datablock. Note that if a
     new section is added, the ordinal position of some or all of the
     named sections may change; this is because the sections are stored

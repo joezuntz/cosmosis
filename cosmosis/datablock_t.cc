@@ -2,6 +2,7 @@
 #include "entry.hh"
 
 #include <cassert>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -43,6 +44,25 @@ void test(T const& x, T const& y, W const& wrong)
   catch (...) { assert("view<T> threw the wrong type of exception\n"); }
 }
 
+void test_size()
+{
+  DataBlock b;
+  assert(b.get_size("no such section", "cow") == -1);
+  b.put_val("a", "x", 1);
+  assert(b.get_size("a", "no such parameter") == -1);
+  assert(b.get_size("a", "x") == -1);
+  b.put_val("a", "y", vector<int>(100, 2));
+  assert(b.get_size("a", "y") == 100);
+
+  // The following would test what happens if we have an array-type
+  // parameter that is too long... running it causes a memory exhaustion
+  // on many machines, rather than exercising the functionality in the
+  // DataBlock.
+  //
+  //  b.put_val("a","big", vector<int>(std::numeric_limits<int>::max()+1, 1.5));
+  // assert(b.get_size("a", "big") == -2);
+}
+
 void test_sections()
 {
   DataBlock b;
@@ -68,6 +88,6 @@ int main()
   test(vector<double>{1,2,3}, vector<double>{3,2,1}, string("moo"));
   test(vector<complex_t>{{1,2},{2.5, 3}}, vector<complex_t>{{2,1}}, 100);
   test(vector<string>{"a","b","c"}, vector<string>{"dog", "cow"}, 1.5);
-
+  test_size();
   test_sections();
 }

@@ -82,6 +82,7 @@ void test_int()
   assert(not e.is<string>());
   assert(not e.is<complex_t>());
   assert(e.val<int>() == 1);
+  assert(e.size() == -1);
   e.set_val(10);
   assert (e.val<int>() == 10);
   try {
@@ -107,6 +108,7 @@ void test_double()
   assert(not e.is<string>());
   assert(not e.is<complex_t>());
   assert(e.val<double>() == 2.5);
+  assert(e.size() == -1);
   e.set_val(-1.5);
   assert(e.val<double>() == -1.5);
   try {
@@ -132,6 +134,7 @@ void test_string()
   assert(e.is<string>());
   assert(not e.is<complex_t>());
   assert(e.val<string>() == "this has spaces");
+  assert(e.size() == -1);
   e.set_val("cow");
   assert (e.val<string>() == "cow");
   try {
@@ -157,6 +160,7 @@ void test_complex()
   assert(not e.is<string>());
   assert(e.is<complex_t>());
   assert(e.val<complex_t>() == complex_t(1.5, 2.5));
+  assert(e.size() == -1);
   e.set_val(complex_t(-2.5, 10.0));
   assert (e.val<complex_t>() == complex_t(-2.5, 10.0));
   try {
@@ -182,8 +186,7 @@ void test_vector(vector<T> const& vals)
   // Make sure the type and value is what is expected.
   assert(e.is<vector<T>>());
   assert(e.val<vector<T>>() == vals);
-
-	
+  assert(e.size() == vals.size());
 
   // Now make the value be an non-vector but memory-managed type, so we
   // can observe the switching, and test for leaking memory.

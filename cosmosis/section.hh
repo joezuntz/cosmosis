@@ -31,8 +31,13 @@ namespace cosmosis
     // return true if we have a value of the right type for the given name.
     template <class T> bool has_value(std::string const& name) const;
 
-    template <class T>
+    // Return -1 if this section has no parameter with the given name,
+    // or if the parameter is not an array type. Return -2 if the array
+    // length is longer than MAXINT. Otherwise, return the length of the
+    // array.
+    int get_size(std::string const& name) const;
 
+    template <class T>
     DATABLOCK_STATUS get_val(std::string const& name, T& v) const;
 
     // Return true if we have a value of any type with the given name.

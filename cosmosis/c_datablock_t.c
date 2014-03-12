@@ -11,6 +11,7 @@ void test_sections()
 {
   c_datablock* s = make_c_datablock();
 
+  /* Null pointers should not cause crashes. */
   assert(c_datablock_has_section(NULL, NULL) == false);
   assert(c_datablock_has_section(s, NULL) == false);
   assert(c_datablock_num_sections(NULL) == -1);
@@ -20,6 +21,10 @@ void test_sections()
 
   assert(c_datablock_has_section(s, "cow") == false);
   assert(c_datablock_num_sections(s) == 0);
+
+  assert(c_datablock_get_array_length(NULL, NULL, NULL) == -1);
+  assert(c_datablock_get_array_length(s, NULL, NULL) == -1);
+  assert(c_datablock_get_array_length(s, "no such section", NULL) == -1);
 
   /* Creating a parameter in a section must create the section. */
   assert(c_datablock_put_int(s, "s1", "a", 10) == DBS_SUCCESS);
@@ -321,6 +326,7 @@ void test_array_int()
   assert(length == sz);
   TEST_ARRAY(length, val, expected);
   free(val);
+  assert(c_datablock_get_array_length(s, "x", "cow") == sz);
 
   /* Get with preallocated buffer should return the right value. */
   const int big = 100;

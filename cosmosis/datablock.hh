@@ -56,6 +56,13 @@ namespace cosmosis
     DATABLOCK_STATUS has_val(std::string const& section,
                              std::string const& name) const;
 
+    // Return -1 if no parameter of the given name in the given section
+    // is found, or if the parameter is not an array. Return -2 if the
+    // length of the array is larger than MAXINT. Otherwise, return the
+    // length of the array.
+    int get_size(std::string const& section,
+                 std::string const& name) const;
+
     // get functions return the status, and set the value of their
     // output argument only upon success.
     template <class T>
