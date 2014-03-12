@@ -1,0 +1,88 @@
+#include <cassert>
+#include <string>
+#include <vector>
+
+#include "section.hh"
+#include "entry.hh"
+
+using cosmosis::Entry;
+using cosmosis::Section;
+using cosmosis::complex_t;
+using std::vector;
+using std::string;
+
+template <class T>
+void test_type(T && x, T && y)
+{
+  Section s;
+  assert(s.put_val("a", x) == DBS_SUCCESS);
+  assert(s.put_val("a", y) == DBS_NAME_ALREADY_EXISTS);
+  T result;
+  assert(s.get_val("a", result) == DBS_SUCCESS);
+  assert(s.get_val("no such parameter", result) == DBS_NAME_NOT_FOUND);
+  try { s.view<T>("no such parameter"); assert(0 =="view<T> failed to throw an exception"); }
+  catch (Section::BadSectionAccess const&) { }
+  catch (...) { assert(0 =="view<T> threw wrong type of exception"); }
+  assert(result == x);
+  assert(s.replace_val("a", y) == DBS_SUCCESS);
+  assert(s.get_val("a", result) == DBS_SUCCESS);
+  assert(result == y);
+  assert(s.view<T>("a") == y);
+  assert(not s.has_value<T>("b"));
+  assert(s.replace_val("b", x) == DBS_NAME_NOT_FOUND);
+  assert(s.has_value<T>("a"));
+  assert(s.has_val("a"));
+  assert(not s.has_val("b"));
+}
+
+void test_crossing_types()
+{
+  Section s;
+  assert(s.put_val("a", 1) == DBS_SUCCESS);
+  assert(s.put_val("a", 2.0) == DBS_NAME_ALREADY_EXISTS);
+  assert(s.replace_val("a", vector<string>()) == DBS_WRONG_VALUE_TYPE);
+  assert(s.has_value<int>("a"));
+}
+
+void test_size()
+{
+  Section s;
+  assert(s.put_val("a", 1) == DBS_SUCCESS);
+  assert(s.get_size("a") == -1);
+
+  assert(s.put_val("b", 2.5) == DBS_SUCCESS);
+  assert(s.get_size("b") == -1);
+
+  assert(s.put_val("c", "cow") == DBS_SUCCESS);
+  assert(s.get_size("c") == -1);
+
+  assert(s.put_val("d", complex_t(1.5, 2.5)) == DBS_SUCCESS);
+  assert(s.get_size("d") == -1);
+
+  assert(s.put_val("e", vector<int>(102, 1)) == DBS_SUCCESS);
+  assert(s.get_size("e") == 102);
+
+  assert(s.put_val("f", vector<double>(1024*1024, -0.5)) == DBS_SUCCESS);
+  assert(s.get_size("f") == 1024*1024);
+
+  assert(s.put_val("g", vector<complex_t>(103, complex_t(1.5, 3.5))) == DBS_SUCCESS);
+  assert(s.get_size("g") == 103);
+
+  assert(s.put_val("h", vector<string>(99, "dog")) == DBS_SUCCESS);
+  assert(s.get_size("h") == 99);
+}
+
+int main()
+{
+  test_type(10, 101);
+  test_type(-2.5, 1.0e17);
+  test_type<std::string>("cow", "dog");
+  test_type(complex_t(1.0, 2.0), complex_t(-5.5, 2e-12));
+  test_type(vector<int>({1,2,3}), vector<int>({2,3,4,5}));
+  test_type(vector<double>(), vector<double>({2.5,3.5,4.5,5.5}));
+  test_type(vector<string>({"cow"}), vector<string>({"a","","cd"}));
+  test_type(vector<complex_t>({1.5, 2.25}), vector<complex_t>());
+
+  test_crossing_types();
+  test_size();
+}
