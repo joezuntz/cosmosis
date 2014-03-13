@@ -5,20 +5,10 @@ CFLAGS += -Iinclude  -I$(CFITSIO_INC)
 LDFLAGS += -L$(CFITSIO_LIB) -lcfitsio
 CFLAGS += -fPIC
 
-all: names cwrapper pywrapper fwrapper c_py_bridge f_py_bridge inih
-
-inih: inih/ini.c inih/ini.h  
-	#
-	# ----- COMPILING INI FILE HANDLING------
-	#
-	$(CC) $(CFLAGS) -I./inih -c inih/ini.c -o inih/ini.o
-	ar rc lib/libini.a inih/ini.o
-	ranlib lib/libini.a
-	cp inih/ini.h include/
-
+all: names cwrapper pywrapper fwrapper c_py_bridge f_py_bridge 
 
 #Make the very small library from this code.
-cwrapper: names C/internal_fits.c C/internal_fits.h inih
+cwrapper: names C/internal_fits.c C/internal_fits.h 
 	#
 	#----- COMPILING CORE C CODE ------
 	#
@@ -70,7 +60,7 @@ names:
 check:
 	$(MAKE) -f Makefile.check
 
-.PHONY: check inih names
+.PHONY: check names
 
 clean:
 	rm -f C/*.o
