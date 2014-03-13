@@ -1,4 +1,5 @@
-from output_base import OutputBase
+from .output_base import OutputBase
+from . import utils
 
 class TextColumnOutput(OutputBase):
 	def __init__(self, filename, delimiter='\t'):
@@ -48,17 +49,51 @@ class TextColumnOutput(OutputBase):
 		delimiter = ini.get('delimiter','\t')
 		return cls(filename, delimiter=delimiter)
 
+	@staticmethod
+	def parse_value(x):
+		x = try_numeric(x)
+		if x=='True':
+			x=True
+		if x=='False':
+			x=False
+		return x
+
+
 	@classmethod
 	def load(cls, *args):
 		filename = args[0]
 		#Read the metadata
+		started_data = False
+		metadata = {}
+		final_metadata = {}
+		data = []
 		for i,line in open(filename):
 			line=line.strip()
+			if not line: continue
 			if line.startswith('#'):
 				if i==0:
 					column_names = line.lstrip('#').split()
 				else:
 					#parse form '#key=value #comment'
-					pass
+					key_val, comment = line.lstrip('#').split()
+					key,val = key_val.split('=')
+					val = self.parse_value(val)
+					if started_data:
+						final_metadata[key] = val
+					else:
+						metadata[key] = val
+			else:
+				started_data = True
+				words = line.split()
+				vals = [float(word) for word in words]
+				data.append(vals)
+		data = np.array(data).T
+		cols = [col for col in data]
+		for i in xrange(len(cols)):
+			if (cols[i]==cols[i].astype(int)).all():
+				cols[i] = cols[i].astype(int)
+		return column_names, cols, metadata, final_metadata
+
+
 
 
