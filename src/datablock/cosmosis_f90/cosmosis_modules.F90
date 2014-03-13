@@ -20,6 +20,14 @@ module cosmosis_modules
 		found = (found_status .ne. 0)
 	end function datablock_has_section
 
+	function datablock_get_array_length(block, section, name) result(n)
+		integer(c_int) :: n
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+
+		n = c_datablock_get_array_length_wrapper(block, trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR)
+	end function datablock_get_array_length		
 
 	!Save an integer with the given name to the given section
 	function datablock_put_int(block, section, name, value) result(status)
@@ -80,36 +88,22 @@ module cosmosis_modules
 
 	end function datablock_put_int_array_1d
 
-	function datablock_replace_int_array_1d(block, section, name, value) result(status)
+
+	function datablock_put_double_array_1d(block, section, name, value) result(status)
 		integer(cosmosis_status) :: status
 		integer(cosmosis_block) :: block
 		character(len=*) :: section
 		character(len=*) :: name
-		integer(c_int), dimension(:) :: value
+		real(c_double), dimension(:) :: value
 		integer(c_int) :: sz
 
 		sz=size(value)
 
-		status = c_datablock_replace_int_array_1d_wrapper(block, &
+		status = c_datablock_put_double_array_1d_wrapper(block, &
 			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, sz)
 
-	end function datablock_replace_int_array_1d
+	end function datablock_put_double_array_1d
 
-	function datablock_get_int_array_1d(block, section, name, value, size) result(status)
-		integer(cosmosis_status) :: status
-		integer(cosmosis_block) :: block
-		character(len=*) :: section
-		character(len=*) :: name
-		integer(c_int), dimension(:), allocatable :: value
-		integer(c_int) :: size
-		integer(c_int) :: maxsize
-
-		maxsize = c_datablock_get_array_length_wrapper(block, section, name)
-		allocate(value(maxsize))
-		status = c_datablock_get_int_array_1d_preallocated_wrapper(block, &
-			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, size, maxsize)
-
-	end function datablock_get_int_array_1d
 
 
 
@@ -153,6 +147,37 @@ module cosmosis_modules
 
 	end function datablock_replace_complex
 
+	function datablock_replace_int_array_1d(block, section, name, value) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		integer(c_int), dimension(:) :: value
+		integer(c_int) :: sz
+
+		sz=size(value)
+
+		status = c_datablock_replace_int_array_1d_wrapper(block, &
+			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, sz)
+
+	end function datablock_replace_int_array_1d
+
+
+	function datablock_replace_double_array_1d(block, section, name, value) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		real(c_double), dimension(:) :: value
+		integer(c_int) :: sz
+
+		sz=size(value)
+
+		status = c_datablock_replace_double_array_1d_wrapper(block, &
+			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, sz)
+
+	end function datablock_replace_double_array_1d
+
 
 	!Load the named integer from the given section
 	function datablock_get_int(block, section, name, value) result(status)
@@ -192,6 +217,50 @@ module cosmosis_modules
 			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value)
 
 	end function datablock_get_complex
+
+	function datablock_get_int_array_1d(block, section, name, value, size) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		integer(c_int), dimension(:), allocatable :: value
+		integer(c_int) :: size
+		integer(c_int) :: maxsize
+
+		maxsize = datablock_get_array_length(block, section, name)
+		! We don't actually know which failure we have here
+		! So we just return 1
+		if (maxsize<0) then
+			status = 1
+		else
+			allocate(value(maxsize))
+			status = c_datablock_get_int_array_1d_preallocated_wrapper(block, &
+				trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, size, maxsize)
+		endif
+
+	end function datablock_get_int_array_1d
+
+	function datablock_get_double_array_1d(block, section, name, value, size) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		real(c_double), dimension(:), allocatable :: value
+		integer(c_int) :: size
+		integer(c_int) :: maxsize
+
+		maxsize = datablock_get_array_length(block, section, name)
+		! We don't actually know which failure we have here
+		! So we just return 1
+		if (maxsize<0) then
+			status = 1
+		else
+			allocate(value(maxsize))
+			status = c_datablock_get_double_array_1d_preallocated_wrapper(block, &
+				trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, size, maxsize)
+		endif
+
+	end function datablock_get_double_array_1d
 
 	!Create a datablock.
 	!Unless you are writing a sampler you should not
