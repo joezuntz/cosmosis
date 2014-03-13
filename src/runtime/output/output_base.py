@@ -67,7 +67,7 @@ class OutputBase(object):
 		if self.closed:
 			raise RuntimeError("Tried to write parameters to closed output")
 		if not len(params)==len(self._columns):
-			raise ValueError("Sampler error - tried to save ")
+			raise ValueError("Sampler error - tried to save wrong number of parameters, or failed to set column names")
 		#If this is our first sample then 
 		if not self.begun_sampling:
 			self._begun_sampling(params)

@@ -1,6 +1,6 @@
 from .output_base import OutputBase
 from . import utils
-
+import numpy as np
 class TextColumnOutput(OutputBase):
 	def __init__(self, filename, delimiter='\t'):
 		super(TextColumnOutput, self).__init__()
@@ -18,7 +18,10 @@ class TextColumnOutput(OutputBase):
 		#now write any metadata.
 		#text mode does not support comments
 		for (key,(value,comment)) in self._metadata.items():
-			self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
+			if comment:
+				self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
+			else:
+				self._file.write('#{k}={v}\n'.format(k=key,v=value,c=comment))
 		self._metadata={}
 
 	def _write_metadata(self, key, value, comment=''):
@@ -39,7 +42,7 @@ class TextColumnOutput(OutputBase):
 		c=''
 		if comment:
 			c='  #'+comment
-		self._file.write('#{k}={v} {c}\n'.format(k=key,v=value,c=c))
+		self._file.write('#{k}={v}{c}\n'.format(k=key,v=value,c=c))
 
 	@classmethod
 	def from_ini(cls, ini):
@@ -51,7 +54,7 @@ class TextColumnOutput(OutputBase):
 
 	@staticmethod
 	def parse_value(x):
-		x = try_numeric(x)
+		x = utils.try_numeric(x)
 		if x=='True':
 			x=True
 		if x=='False':
@@ -67,17 +70,22 @@ class TextColumnOutput(OutputBase):
 		metadata = {}
 		final_metadata = {}
 		data = []
-		for i,line in open(filename):
+		for i,line in enumerate(open(filename)):
 			line=line.strip()
 			if not line: continue
 			if line.startswith('#'):
+				line=line.lstrip('#')
 				if i==0:
-					column_names = line.lstrip('#').split()
+					column_names = line.split()
 				else:
 					#parse form '#key=value #comment'
-					key_val, comment = line.lstrip('#').split()
-					key,val = key_val.split('=')
-					val = self.parse_value(val)
+					if line.count('#')==0:
+						key_val = line.strip()
+						comment = ''
+					else:
+						key_val, comment = line.split('#', 1)
+					key,val = key_val.split('=',1)
+					val = cls.parse_value(val)
 					if started_data:
 						final_metadata[key] = val
 					else:
