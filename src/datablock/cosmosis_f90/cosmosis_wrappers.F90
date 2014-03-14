@@ -11,6 +11,17 @@ module cosmosis_wrappers
 			integer(kind=cosmosis_block) :: make_c_datablock
 		end function make_c_datablock
 
+		function c_datablock_num_sections_wrapper(block) bind(C, name="c_datablock_num_sections")
+			use iso_c_binding
+			use cosmosis_types
+			implicit none
+			integer(kind=cosmosis_block), value :: block
+			integer(c_int) :: c_datablock_num_sections_wrapper
+		end function c_datablock_num_sections_wrapper
+
+
+
+
 		function c_datablock_get_array_length_wrapper(s, section, name) bind(C, name="c_datablock_get_array_length")
 			use iso_c_binding
 			use cosmosis_types
@@ -29,6 +40,18 @@ module cosmosis_wrappers
 			integer(kind=cosmosis_block), value :: s
 			character(kind=c_char), dimension(*) :: name
 		end function c_datablock_has_section_wrapper
+
+		function c_datablock_get_section_name_wrapper(s, i) bind(C, name="c_datablock_get_section_name")
+			use iso_c_binding
+			use cosmosis_types
+			implicit none
+			integer(kind=cosmosis_block), value :: s
+			integer(kind=c_int), value :: i
+			type(c_ptr) :: c_datablock_get_section_name_wrapper
+		end function c_datablock_get_section_name_wrapper
+
+
+!  const char* c_datablock_get_section_name(c_datablock const* s, int i)
 
 		function c_datablock_put_int_wrapper(s, section, name, value) bind(C, name="c_datablock_put_int")
 			use iso_c_binding
@@ -213,7 +236,47 @@ module cosmosis_wrappers
 			integer(kind=c_int) :: size
 		end function c_datablock_get_double_array_1d_preallocated_wrapper
 
+	function wrap_strlen(str) bind(C, name='strlen')
+		use iso_c_binding
+		implicit none
+		type(c_ptr), value :: str
+		integer(c_size_t) :: wrap_strlen
+	end function wrap_strlen
+
+
 
 	end interface
+
+	contains
+
+
+
+	function c_string_to_fortran(c_str, max_len) result(f_str)
+		use iso_c_binding
+		character(max_len) :: f_str
+	    character, pointer, dimension(:) :: p_str
+		type(c_ptr) :: c_str
+		integer :: max_len
+		integer(c_size_t) :: n, shpe(1)
+		integer i
+
+		!Initialize an empty string
+		do i=1,max_len
+			f_str(i:i+1) = " "
+		enddo
+
+		!Check for NULL pointer.  If so translate as blank
+		if(.not. c_associated(c_str)) return
+
+		!Otherwise, get string length and copy that many chars
+		n = wrap_strlen(c_str)
+		shpe(1) = n
+		call c_f_pointer(c_str, p_str, shpe)
+		do i=1,n
+			f_str(i:i+1) = p_str(i)
+		enddo
+
+	end function
+
 
 end module cosmosis_wrappers
