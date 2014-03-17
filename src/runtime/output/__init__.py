@@ -13,3 +13,6 @@ def outputter_from_ini(ini):
 	return output
 
 
+def test():
+	from . import test_output
+	test_output.test_text()
