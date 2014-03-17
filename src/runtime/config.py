@@ -1,118 +1,149 @@
 import os
 import sys
 import collections
-from . import parser
-from . import section_names
-from . import utils
-from . import data_package
+import warnings
+import ConfigParser
+
+class IncludingConfigParser(ConfigParser.ConfigParser):
+    """ Extension of ConfigParser to \%include other files.
+        Use the line:
+        %include filename.ini
+        This is assumed to end a section, and the last section
+        in the included file is assumed to end as well
+    """
+    def _read(self, fp, fpname):
+        """Parse a sectioned setup file.
+
+        The sections in setup file contains a title line at the top,
+        indicated by a name in square brackets (`[]'), plus key/value
+        options lines, indicated by `name: value' format lines.
+        Continuations are represented by an embedded newline then
+        leading whitespace.  Blank lines, lines beginning with a '#',
+        and just about everything else are ignored.
+        """
+        cursect = None                        # None, or a dictionary
+        optname = None
+        lineno = 0
+        e = None                              # None, or an exception
+        while True:
+            line = fp.readline()
+            if not line:
+                break
+            lineno = lineno + 1
+            # comment or blank line?
+            if line.strip() == '' or line[0] in '#;':
+                continue
+            if line.split(None, 1)[0].lower() == 'rem' and line[0] in "rR":
+                # no leading whitespace
+                continue
+            # continuation line?
+            if line[0].isspace() and cursect is not None and optname:
+                value = line.strip()
+                if value:
+                    cursect[optname].append(value)
+            # a section header or option header?
+            else:
+                # is it a section header?
+                mo = self.SECTCRE.match(line)
+                if mo:
+                    sectname = mo.group('header')
+                    if sectname in self._sections:
+                        cursect = self._sections[sectname]
+                    elif sectname == ConfigParser.DEFAULTSECT:
+                        cursect = self._defaults
+                    else:
+                        cursect = self._dict()
+                        cursect['__name__'] = sectname
+                        self._sections[sectname] = cursect
+                    # So sections can't start with a continuation line
+                    optname = None
+                # no section header in the file?
+                elif line.lower().startswith('%include'):
+                    include_statement, filename = line.split()
+                    filename = filename.strip('"')
+                    filename = filename.strip("'")
+                    sys.stdout.write("Reading included ini file: " % (filename,))
+                    if not os.path.exists(filename):
+                        sys.stderr.write("Tried to include non-existent ini file: %s\n" % (filename,))
+                        raise IOError("Tried to include non-existent ini file: %s\n" % (filename,))
+                    self.read(filename)
+                    cursect = None
+                elif cursect is None:
+                    raise ConfigParser.MissingSectionHeaderError(fpname, lineno, line)
+                # an option line?
+                else:
+                    mo = self._optcre.match(line)
+                    if mo:
+                        optname, vi, optval = mo.group('option', 'vi', 'value')
+                        optname = self.optionxform(optname.rstrip())
+                        # This check is fine because the OPTCRE cannot
+                        # match if it would set optval to None
+                        if optval is not None:
+                            if vi in ('=', ':') and ';' in optval:
+                                # ';' is a comment delimiter only if it follows
+                                # a spacing character
+                                pos = optval.find(';')
+                                if pos != -1 and optval[pos-1].isspace():
+                                    optval = optval[:pos]
+                            optval = optval.strip()
+                            # allow empty values
+                            if optval == '""':
+                                optval = ''
+                            cursect[optname] = [optval]
+                        else:
+                            # valueless option handling
+                            cursect[optname] = optval
+                    else:
+                        # a non-fatal parsing error occurred.  set up the
+                        # exception but keep going. the exception will be
+                        # raised at the end of the file and will contain a
+                        # list of all bogus lines
+                        if not e:
+                            e = ConfigParser.ParsingError(fpname)
+                        e.append(lineno, repr(line))
+        # if any parsing errors occurred, raise an exception
+        if e:
+            raise e
+
+        # join the multi-line values collected while reading
+        all_sections = [self._defaults]
+        all_sections.extend(self._sections.values())
+        for options in all_sections:
+            for name, val in options.items():
+                if isinstance(val, list):
+                    options[name] = '\n'.join(val)
 
 
-class Inifile(parser.IncludingConfigParser):
-	def __init__(self, defaults=None):
-		parser.IncludingConfigParser.__init__(self,
-			defaults=defaults, 
-			dict_type=collections.OrderedDict)
+class Inifile(IncludingConfigParser):
+    def __init__(self, filename, defaults=None, override=None):
+        IncludingConfigParser.__init__(self,
+                                       defaults=defaults,
+                                       dict_type=collections.OrderedDict)
+        self.read(filename)
 
+        self.defaults = defaults
 
-	def iter_all(self):
-		for section in self.sections():
-			for name, value in self.items(section):
-				yield section, name, value
+        # override parameters
+        if override:
+            for section, name in override:
+                if not self.has_section(section):
+                    self.add_section(section)
+                self.set(section, name, override[(section, name)])
 
-	@classmethod
-	def from_file(cls, filename):
-		if not os.path.exists(filename):
-			raise ValueError("Tried to find non-existent ini file called %s" % filename)
-		ini = cls()
-		ini.read(filename)
-		return ini
+    def __iter__(self):
+        return (((section, name), value) for section in self.sections()
+                for name, value in self.items(section))
 
-class ParameterFile(Inifile):
-	def __init__(self, defaults=None):
-		Inifile.__init__(self, defaults=defaults)
-
-	def params_from_section(self, section):
-		output = {}
-		for name, value in self.items(section):
-			output[name] = utils.try_numeric(value)
-		return output
-	def data_package_from_section(self, section):
-		params = self.params_from_section(section)
-		return data_package.DesDataPackage.from_cosmo_params(params)
-
-
-class ParameterRangesFile(Inifile):
-	@classmethod
-	def parse_range(cls, info):
-		words = info.split()
-		if len(words)==1:
-			value = utils.try_numeric(words[0])
-			return (value, value, value)
-		elif len(words)==3:
-			low, start, high = [utils.try_numeric(p) for p in words]
-			return (low, start, high)
-		else:
-			raise ValueError("Was expecting there to be one (for fixed param) or three (for varied) words in line %s of parameter range file" % info)
-	def get(self, section, param):
-		return self.parse_range(Inifile.get(self,section, param))
-	def iter_all(self):
-		for (section, name, value) in Inifile.iter_all(self):
-			yield getattr(section_names.section_names, section, section), name.upper(), self.parse_range(value)
-	def to_parameter_dicts(self):
-		params = {}
-		for section in self.sections():
-			section_code = getattr(section_names.section_names, section, section)
-			params[section_code] = {}
-			for param, value in self.items(section):
-				param = param.upper()
-				params[section_code][param] = self.parse_range(value)
-		return params
-	def to_fixed_parameter_dicts(self):
-		params = {}
-		for section in self.sections():
-			section_code = getattr(section_names.section_names, section, section)
-			params[section_code] = {}
-			for param, value in self.items(section):
-				param = param.upper()
-				params[section_code][param] = self.parse_range(value)[1]
-		return params
-
-	@staticmethod
-	def is_fixed(param_range):
-		return param_range[0]==param_range[2]
-
-	@staticmethod
-	def is_varied(param_range):
-		return param_range[0]!=param_range[2]
-
-	def param_list(self):
-		return list(self.iter_all())
-	def varied_param_list(self):
-		return [(section,name,value) 
-				  for (section, name, param_range) in self.iter_all()
-				  if self.is_varied(param_range)
-		]
-
-	def fixed_param_list(self):
-		return [(section,name,value) 
-				  for (section, name, param_range) in self.iter_all()
-				  if self.is_fixed(param_range)
-		]
-
-	@staticmethod
-	def list_to_dicts(param_list):
-		output = {}
-		for (section, _, _) in param_list:
-			output.setdefault(section,dict())
-		for (section, name, value) in param_list:
-			output[section][name] = value
-
-	def varied_param_dicts(self):
-		return self.list_to_dicts(self.varied_param_dicts())
-
-	def fixed_param_dicts(self):
-		return self.list_to_dicts(self.fixed_param_dicts())
-
-
-
-
+    def getboolean(self, section, name):
+        try:
+            super(Inifile, self).getboolean(section, name)
+        except ValueError:
+            # additional options t/y/n/f
+            value = self.get(section, name).lower()
+            if value.startswith('y') or value.startswith('t'):
+                return True
+            elif value.startswith('n') or value.startswith('f'):
+                return False
+            else:
+                raise ValueError("Unable to parse parameter %s--%s = %s into boolean form"
+                                 % (section, name, value))
