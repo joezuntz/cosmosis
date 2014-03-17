@@ -134,9 +134,10 @@ class Inifile(IncludingConfigParser):
         return (((section, name), value) for section in self.sections()
                 for name, value in self.items(section))
 
+    # these functions override the default parsers to allow for extra formats
     def getboolean(self, section, name):
         try:
-            super(Inifile, self).getboolean(section, name)
+            return Inifile.getboolean(self, section, name)
         except ValueError:
             # additional options t/y/n/f
             value = self.get(section, name).lower()
@@ -147,3 +148,45 @@ class Inifile(IncludingConfigParser):
             else:
                 raise ValueError("Unable to parse parameter %s--%s = %s into boolean form"
                                  % (section, name, value))
+
+    def gettyped(self, section, name):
+        import re
+
+        value = Inifile.get(self, section, name)
+
+        # try quoted string
+        m = re.match(r"^(['\"])(.*?)\1$", value)
+        if m is not None:
+            return m.group(2)
+
+        value_list = value.split()
+
+        # try to match integer array
+        try:
+            parsed = [int(s) for s in value_list]
+            return parsed
+        except ValueError:
+            pass
+
+        # try to match float array
+        try:
+            parsed = [float(s) for s in value_list]
+            return parsed
+        except ValueError:
+            pass
+
+        # try to match complex array
+        try:
+            parsed = [complex(s) for s in value_list]
+            return parsed    
+        except ValueError:
+            pass
+
+        # try to match boolean (no array support)
+        try:
+            return self.getboolean(section, name)
+        except ValueError:
+            pass        
+
+        # default to string
+        return value
