@@ -4,6 +4,7 @@ import collections
 import warnings
 import ConfigParser
 
+
 class IncludingConfigParser(ConfigParser.ConfigParser):
     """ Extension of ConfigParser to \%include other files.
         Use the line:
@@ -178,7 +179,7 @@ class Inifile(IncludingConfigParser):
         # try to match complex array
         try:
             parsed = [complex(s) for s in value_list]
-            return parsed    
+            return parsed
         except ValueError:
             pass
 
@@ -186,7 +187,7 @@ class Inifile(IncludingConfigParser):
         try:
             return self.getboolean(section, name)
         except ValueError:
-            pass        
+            pass
 
         # default to string
         return value

@@ -17,8 +17,23 @@ class Parameter(object):
         self.prior = prior
         # check consistency of prior with range
 
+    def __eq__(self, other):
+        if instance(other, (list, tuple)):
+            try:
+                section, name = other
+            except ValueError:
+                return False
+            return (self.section == section and
+                    self.name == name)
+        elif instanceof(other, Parameter):
+            return (self.section == other.section and
+                    self.name == other.name)
+
     def is_fixed(self):
         return self.limits[0] == self.limits[1]
+
+    def is_varied(self):
+        return not self.is_fixed()
 
     def in_range(self, p):
         return self.limits[0] <= p <= self.limits[1]
