@@ -8,6 +8,7 @@ c_str = ct.c_char_p
 c_int = ct.c_int
 c_int_p = ct.POINTER(ct.c_int)
 
+
 def load_library_function(namespace, name, argtypes, restype):
 	function = getattr(dll,name)
 	function.argtypes = argtypes
@@ -50,6 +51,16 @@ load_library_function(
 	c_block
 )
 
+load_library_function(
+	locals(), 
+	"c_datablock_num_sections",
+	[c_block],
+	c_int
+)
 
-
-
+load_library_function(
+	locals(),
+	"c_datablock_get_array_length",
+	[c_block, c_str, c_str],
+	c_int
+	)
