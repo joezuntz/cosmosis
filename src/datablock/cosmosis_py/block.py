@@ -1,9 +1,13 @@
 import ctypes as ct
 from . import lib
 from .errors import BlockError
+from . import errors
 import numpy as np
 
 class Block(object):
+	GET=0
+	PUT=1
+	REPLACE=2
 	def __init__(self, ptr=None, own=None):
 		self.owns=own
 		if ptr is None:
@@ -117,6 +121,39 @@ class Block(object):
 		status = lib.c_datablock_put_int_array_1d(self._ptr, section, name, value, n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
+
+	def _method_for_value(self, value, method_type):
+		T = type(value)
+		method={ int:(self.get_int,self.put_int,self.replace_int),
+		         float:(self.get_double,self.put_double,self.replace_double),
+		         complex:(self.get_complex,self.put_complex,self.replace_complex),
+		         str:(self.get_string,self.put_string,self.replace_string)
+		         }.get(T)
+		if method:
+			return method[method_type]
+		if hasattr(value,'__len__'):
+			array = np.array(value)
+			method = {
+				(1,'i'):(self.get_int_array_1d,self.put_int_array_1d,self.replace_int_array_1d),
+				#These are not implemented yet
+				# (2,'i'):(self.get_int_array_2d,self.put_int_array_1d,self.replace_int_array_1d),
+				# (1,'f'):(self.get_double_array_1d,self.put_double_array_1d,self.replace_double_array_1d),
+				# (2,'f'):(self.get_double_array_2d,self.put_double_array_1d,self.replace_double_array_1d),
+				# (1,'c'):(self.get_complex_array_1d,self.put_complex_array_1d,self.replace_complex_array_1d),
+				# (2,'c'):(self.get_complex_array_2d,self.put_complex_array_1d,self.replace_complex_array_1d),
+			}.get((array.ndim,array.dtype.kind))
+			if method:
+				return method[method_type]
+		raise ValueError("I do not know how to handle this type %r %r"%(value,type(value)))
+
+
+	def put(self, section, name, value):
+		method = self._method_for_value(value,self.PUT)
+		method(section, name, value)
+
+	def replace(self, section, name, value):
+		method = self._method_for_value(value,self.REPLACE)
+		method(section, name, value)
 
 
 	def replace_int(self, section, name, value):

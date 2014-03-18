@@ -31,3 +31,16 @@ class TestBlockFunctions(unittest.TestCase):
 		b.put_int_array_1d(section, 'x', [1,2,3])
 		r = b.get_int_array_1d(section, 'x')
 		assert (r==[1,2,3]).all()
+
+	def test_generic(self):
+		b = block.Block()
+		section = 'test'
+		b.put(section, 'a', 4)
+		assert b.get_int(section, 'a')==4
+		b.put(section, 'b', 2.0)
+		assert b.get_double(section, 'b')==2.0
+		b.put(section, 'c', 'hello')
+		assert b.get_string(section, 'c')=='hello'
+		self.assertRaises(errors.BlockNameAlreadyExists, b.put, 'test', 'c', 'my_string')
+		b.put(section, 'd', [1,2,3,4])
+		assert all(b.get_int_array_1d(section, 'd') == [1,2,3,4])
