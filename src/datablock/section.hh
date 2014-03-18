@@ -8,6 +8,7 @@
 #include "exceptions.hh"
 #include "entry.hh"
 #include "datablock_status.h"
+#include "datablock_types.h"
 
 namespace cosmosis
 {
@@ -36,6 +37,9 @@ namespace cosmosis
     // length is longer than MAXINT. Otherwise, return the length of the
     // array.
     int get_size(std::string const& name) const;
+    
+    DATABLOCK_STATUS 
+    get_type(std::string const&name, datablock_type_t &t) const;
 
     template <class T>
     DATABLOCK_STATUS get_val(std::string const& name, T& v) const;

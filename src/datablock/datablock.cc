@@ -18,6 +18,15 @@ int cosmosis::DataBlock::get_size(string const& section,
   return isec->second.get_size(name);
 }
 
+DATABLOCK_STATUS cosmosis::DataBlock::get_type(string const& section,
+                                              string const& name, datablock_type_t &t) const
+{
+  auto isec = sections_.find(section);
+  if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
+  return isec->second.get_type(name,t);
+}
+
+
 bool cosmosis::DataBlock::has_section(string const& name) const
 {
   return sections_.find(name) != sections_.end();

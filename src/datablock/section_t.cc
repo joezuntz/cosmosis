@@ -72,6 +72,46 @@ void test_size()
   assert(s.get_size("h") == 99);
 }
 
+
+
+void test_type_finding()
+{
+  Section s;
+  datablock_type_t t;
+  assert(s.put_val("a", 1) == DBS_SUCCESS);
+  assert(s.get_type("a",t) == DBS_SUCCESS);
+  assert(t==DBT_INT);
+
+  assert(s.put_val("b", 2.5) == DBS_SUCCESS);
+  assert(s.get_type("b",t) == DBS_SUCCESS);
+  assert(t==DBT_DOUBLE);
+
+  assert(s.put_val("c", "cow") == DBS_SUCCESS);
+  assert(s.get_type("c",t) == DBS_SUCCESS);
+  assert(t==DBT_STRING);
+
+  assert(s.put_val("d", complex_t(1.5, 2.5)) == DBS_SUCCESS);
+  assert(s.get_type("d",t) == DBS_SUCCESS);
+  assert(t==DBT_COMPLEX);
+
+  assert(s.put_val("e", vector<int>(102, 1)) == DBS_SUCCESS);
+  assert(s.get_type("e",t) == DBS_SUCCESS);
+  assert(t==DBT_INT1D);
+
+  assert(s.put_val("f", vector<double>(1024*1024, -0.5)) == DBS_SUCCESS);
+  assert(s.get_type("f",t) == DBS_SUCCESS);
+  assert(t==DBT_DOUBLE1D);
+
+  assert(s.put_val("g", vector<complex_t>(103, complex_t(1.5, 3.5))) == DBS_SUCCESS);
+  assert(s.get_type("g",t) == DBS_SUCCESS);
+  assert(t==DBT_COMPLEX1D);
+
+  assert(s.put_val("h", vector<string>(99, "dog")) == DBS_SUCCESS);
+  assert(s.get_type("h",t) == DBS_SUCCESS);
+  assert(t==DBT_STRING1D);
+}
+
+
 int main()
 {
   test_type(10, 101);
@@ -85,4 +125,5 @@ int main()
 
   test_crossing_types();
   test_size();
+  test_type_finding();
 }
