@@ -74,13 +74,6 @@ class Block(object):
 			raise BlockError(status, section, name)
 		return r.real+1j*r.imag
 
-	def get_string(self, section, name):
-		r = lib.c_str()
-		status = lib.c_datablock_get_string(self._ptr,section,name,r)
-		if status!=0:
-			raise BlockError(status, section, name)
-		return str(r)
-
 	def get_int_array_1d(self, section, name):
 		n = lib.c_datablock_get_array_length(self._ptr, section, name)
 		r = np.zeros(n, dtype=np.intc)
@@ -92,18 +85,12 @@ class Block(object):
 		return r
 
 	def put_int(self, section, name, value):
-		status = lib.c_datablock_put_int(self._ptr,section,name,int(value))
+		status = lib.c_datablock_put_int(self._ptr,section,name,value)
 		if status!=0:
 			raise BlockError(status, section, name)
-
-	def put_string(self, section, name, value):
-		status = lib.c_datablock_put_string(self._ptr,section,name,str(value))
-		if status!=0:
-			raise BlockError(status, section, name)
-
 
 	def put_double(self, section, name, value):
-		status = lib.c_datablock_put_double(self._ptr,section,name,float(value))
+		status = lib.c_datablock_put_double(self._ptr,section,name,value)
 		if status!=0:
 			raise BlockError(status, section, name)
 
