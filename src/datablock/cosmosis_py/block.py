@@ -4,13 +4,15 @@ from .errors import BlockError
 import numpy as np
 
 class Block(object):
-	def __init__(self, ptr=None):
-		self.owns=False
+	def __init__(self, ptr=None, own=None):
+		self.owns=own
 		if ptr is None:
 			ptr = lib.make_c_datablock()
 			self.owns=True
+		if own is not None:
+			self.owns=own
 		self._ptr = ptr
-	#TODO: add destructor
+	#TODO: add destructor.  destroy block if owned
 
 	@staticmethod
 	def python_to_c_complex(value):
