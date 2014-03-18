@@ -2,6 +2,7 @@
 
 from . import block
 import unittest
+from . import errors
 
 class TestBlockFunctions(unittest.TestCase):
 	def test_int(self):
@@ -10,10 +11,19 @@ class TestBlockFunctions(unittest.TestCase):
 		section = 'test'
 		b.put_int(section,'a',1)
 		assert b.get_int(section,'a')==1
-		self.assertRaises(block.BlockError, b.get_int, 'test', 'b')
+		self.assertRaises(errors.BlockNameNotFound, b.get_int, 'test', 'b')
 		b.replace_int(section,'a',2)
 		assert b.get_int(section,'a')==2
-		self.assertRaises(block.BlockError, b.put_int, 'test', 'a', 3)
+		self.assertRaises(errors.BlockNameAlreadyExists, b.put_int, 'test', 'a', 3)
+
+	def test_string(self):
+		b = block.Block()
+		section = 'test'
+		b.put_string(section, 's', 'my_string')
+		assert b.get_string(section,'s')=='my_string'
+		self.assertRaises(errors.BlockNameNotFound, b.get_string, 'test', 't')
+		self.assertRaises(errors.BlockNameAlreadyExists, b.put_string, 'test', 's', 'my_string')
+
 
 	def test_int_array(self):
 		b = block.Block()

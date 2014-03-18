@@ -1,4 +1,6 @@
 import collections
+import types
+
 
 enum_names = [
 "DBS_SUCCESS",
@@ -52,12 +54,33 @@ ERROR_MESSAGES.update({
 	DBS_LOGIC_ERROR: "{status}: Internal cosmosis logical error.  Please contact cosmosis team (section was {section}, name was {name})",
 })
 
+ERROR_CLASSES = {}
+
+
+ #Might want to create more of a subclass structure here.
+ #Have them all inherit from BlockError
 class BlockError(Exception):
 	def __init__(self, status, section, name):
 		self.name=name
 		self.status=status
 		self.section=section
+
+	@staticmethod
+	def exception_for_status(status, section, name):
+		return ERROR_CLASSES[status](status, section, name)
+	
 	def __str__(self):
 		return ERROR_MESSAGES[self.status].format(status=self.status, name=self.name,section=self.section)
 
+
+def underscore_to_camelcase(value):
+	return "".join(str.capitalize(x) if x else '_' for x in value.split("_"))
+
+#for each status except the success one we create an error class
+for name in enum_names[1:]:
+	class_name = 'Block'+underscore_to_camelcase(name[4:].lower())
+	cls = type(class_name, (BlockError,), {})
+	status = locals()[name]
+	locals()[class_name] = cls
+	ERROR_CLASSES[status] = cls	
 

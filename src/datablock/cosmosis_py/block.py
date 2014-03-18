@@ -57,22 +57,29 @@ class Block(object):
 		r = ct.c_int()
 		status = lib.c_datablock_get_int(self._ptr,section,name,r)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
 	def get_double(self, section, name):
 		r = ct.c_double()
 		status = lib.c_datablock_get_double(self._ptr,section,name,r)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
 	def get_complex(self, section, name):
 		r = lib.c_complex()
 		status = lib.c_datablock_get_complex(self._ptr,section,name,r)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
 		return r.real+1j*r.imag
+
+	def get_string(self, section, name):
+		r = lib.c_str()
+		status = lib.c_datablock_get_string(self._ptr,section,name,r)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+		return str(r.value)
 
 	def get_int_array_1d(self, section, name):
 		n = lib.c_datablock_get_array_length(self._ptr, section, name)
@@ -81,51 +88,61 @@ class Block(object):
 		sz = lib.c_int()
 		status = lib.c_datablock_get_int_array_1d_preallocated(self._ptr, section, name, arr, ct.byref(sz), n)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
 		return r
 
 	def put_int(self, section, name, value):
-		status = lib.c_datablock_put_int(self._ptr,section,name,value)
+		status = lib.c_datablock_put_int(self._ptr,section,name,int(value))
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
 
 	def put_double(self, section, name, value):
-		status = lib.c_datablock_put_double(self._ptr,section,name,value)
+		status = lib.c_datablock_put_double(self._ptr,section,name,float(value))
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
 
 	def put_complex(self, section, name, value):
 		value=self.python_to_c_complex(value)
 		status = lib.c_datablock_put_complex(self._ptr,section,name,value)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
+
+	def put_string(self, section, name, value):
+		status = lib.c_datablock_put_string(self._ptr,section,name,str(value))
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
 
 	def put_int_array_1d(self, section, name, value):
 		value_ref, value,n=self.python_to_1d_c_array(value, ct.c_int)
 		status = lib.c_datablock_put_int_array_1d(self._ptr, section, name, value, n)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
 
 
 	def replace_int(self, section, name, value):
 		status = lib.c_datablock_replace_int(self._ptr,section,name,value)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_double(self, section, name, value):
 		r = ct.c_double()
 		status = lib.c_datablock_replace_double(self._ptr,section,name,value)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_complex(self, section, name, value):
 		value=self.python_to_c_complex(value)
 		status = lib.c_datablock_replace_complex(self._ptr,section,name,value)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
+
+	def replace_string(self, section, name, value):
+		status = lib.c_datablock_replace_string(self._ptr,section,name,str(value))
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_int_array_1d(self, section, name, value):
 		value_ref, value,n=self.python_to_1d_c_array(value, ct.c_int)
 		status = lib.c_datablock_replace_int_array_1d(self._ptr, section, name, value, n)
 		if status!=0:
-			raise BlockError(status, section, name)
+			raise BlockError.exception_for_status(status, section, name)
