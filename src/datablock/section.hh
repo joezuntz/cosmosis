@@ -37,8 +37,21 @@ namespace cosmosis
     // array.
     int get_size(std::string const& name) const;
 
+    // Return DBS_SUCCESS if the value with the given name is of the
+    // given type, and and error if there is no such name or the value
+    // is not of the given type. If returning DBS_SUCCESS, the value of
+    // v is set; otherwise the value is not defined.
     template <class T>
     DATABLOCK_STATUS get_val(std::string const& name, T& v) const;
+
+    // Return DBS_SUCCESS if the value with the given name is of the
+    // given type, or if there is no value with the given name. Return
+    // an error if the value associated with the given name is of the
+    // wrong type. If the name was not found, set v to be the supplied
+    // default; otherwise, set v to be the value associated with the
+    // name.
+    template <class T>
+    DATABLOCK_STATUS get_val(std::string const& name, T const& def, T& v) const;
 
     // Return true if we have a value of any type with the given name.
     bool has_val(std::string const& name) const;
@@ -97,7 +110,21 @@ cosmosis::Section::get_val(std::string const& name, T& v) const
   if (not i->second.is<T>()) return DBS_WRONG_VALUE_TYPE;
   v = i->second.val<T>();
   return DBS_SUCCESS;
+}
 
+template <class T>
+DATABLOCK_STATUS
+cosmosis::Section::get_val(std::string const& name, T const& def, T& v) const
+{
+  auto i = vals_.find(name);
+  if (i == vals_.end())
+    {
+      v = def;
+      return DBS_SUCCESS;
+    }
+  if (not i->second.is<T>()) return DBS_WRONG_VALUE_TYPE;
+  v = i->second.val<T>();
+  return DBS_SUCCESS;
 }
 
 template <class T>

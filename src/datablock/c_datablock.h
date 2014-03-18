@@ -87,11 +87,33 @@ extern "C" {
 
   /* Only scalars have default in the C and Fortran interfaces. */
   DATABLOCK_STATUS
+  c_datablock_get_int_default(c_datablock const* s,
+                              const char* section,
+                              const char* name,
+                              int def,
+                              int* val);
+
+  DATABLOCK_STATUS
   c_datablock_get_double_default(c_datablock const* s,
                                  const char* section,
                                  const char* name,
-                                 double* val,
-                                 double dflt);
+                                 double def,
+                                 double* val);
+
+  DATABLOCK_STATUS
+  c_datablock_get_string_default(c_datablock const* s,
+                                 const char* section,
+                                 const char* name,
+                                 const char* def,
+                                 char** val);
+
+  DATABLOCK_STATUS
+  c_datablock_get_complex_default(c_datablock const* s,
+                                  const char* section,
+                                  const char* name,
+                                  double _Complex def,
+                                  double _Complex* val);
+
 
   /*
     Return 0 if the put worked, and nonzero to indicate failure.

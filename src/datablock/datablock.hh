@@ -70,6 +70,12 @@ namespace cosmosis
                              std::string const& name,
                              T& val) const;
 
+    template <class T>
+    DATABLOCK_STATUS get_val(std::string const& section,
+                             std::string const& name,
+                             T const& def,
+                             T& val) const;
+
     // put and replace functions return the status of the or
     // replace. They modify the state of the object only on success.
     // put requires that there is not already a value with the given
@@ -124,6 +130,22 @@ cosmosis::DataBlock::get_val(std::string const& section,
   auto isec = sections_.find(section);
   if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
   return isec->second.get_val(name, val);
+}
+
+template <class T>
+DATABLOCK_STATUS
+cosmosis::DataBlock::get_val(std::string const& section,
+                             std::string const& name,
+                             T const& def,
+                             T& val) const
+{
+  auto isec = sections_.find(section);
+  if (isec == sections_.end())
+    {
+      val = def;
+      return DBS_SUCCESS;
+    }
+  return isec->second.get_val(name, def, val);
 }
 
 template <class T>

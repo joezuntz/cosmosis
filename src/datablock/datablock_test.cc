@@ -17,15 +17,25 @@ void test(T const& x, T const& y, W const& wrong)
 {
   DataBlock b;
   assert(not b.has_section("sect_a"));
+  T val;
+
+  assert(b.get_val("no such section", "a", y, val) == DBS_SUCCESS);
+  assert(val == y);
+
   assert(b.put_val("sect_a", "param", x) == DBS_SUCCESS);
   assert(b.has_section("sect_a"));
+  assert(b.get_val("sect_a", "no such parameter", y, val) == DBS_SUCCESS);
+  assert(val == y);
+
   assert(b.has_val("no such section", "x") == DBS_SECTION_NOT_FOUND);
   assert(b.has_val("sect_a", "no such parameter") == DBS_NAME_NOT_FOUND);
   assert(b.has_val("sect_a", "param") == DBS_SUCCESS);
 
-  T val;
   assert(b.get_val("sect_a", "param", val) == DBS_SUCCESS);
   assert(val == x);
+  assert(b.get_val("sect_a", "param", y, val) == DBS_SUCCESS);
+  assert(val == x);
+
   assert(b.get_val("no such section", "param", val) == DBS_SECTION_NOT_FOUND);
   assert(b.get_val("sect_a", "no such parameter", val) == DBS_NAME_NOT_FOUND);
 
