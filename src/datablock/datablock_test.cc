@@ -88,6 +88,37 @@ void test_sections()
   catch (...) { assert(0 == "section_name threw the wrong type of exception\n"); }
 }
 
+void test_types()
+{
+  DataBlock b;
+  b.put_val("ints", "a", 10);
+  b.put_val("doubles", "a", 2.5);
+  b.put_val("strings", "a", string("cow says moo"));
+  b.put_val("complex", "a", complex_t{10.5, 3.5});
+  b.put_val("int_vec", "a", vector<int>{3,2,1});
+  b.put_val("double_vec", "a", vector<double>{3.,2.,1.});
+  b.put_val("string_vec", "a", vector<string>{"3","2","1"});
+  b.put_val("complex_vec", "a", vector<complex_t>{{1,2},{2.5, 3}});
+  datablock_type_t t;
+  assert (b.get_type("ints","a",t)==DBS_SUCCESS);
+  assert(t==DBT_INT);
+  assert (b.get_type("doubles","a",t)==DBS_SUCCESS);
+  assert(t==DBT_DOUBLE);
+  assert (b.get_type("complex","a",t)==DBS_SUCCESS);
+  assert(t==DBT_COMPLEX);
+  assert (b.get_type("strings","a",t)==DBS_SUCCESS);
+  assert(t==DBT_STRING);
+  assert (b.get_type("int_vec","a",t)==DBS_SUCCESS);
+  assert(t==DBT_INT1D);
+  assert (b.get_type("double_vec","a",t)==DBS_SUCCESS);
+  assert(t==DBT_DOUBLE1D);
+  assert (b.get_type("string_vec","a",t)==DBS_SUCCESS);
+  assert(t==DBT_STRING1D);
+  assert (b.get_type("complex_vec","a",t)==DBS_SUCCESS);
+  assert(t==DBT_COMPLEX1D);
+
+}
+
 int main()
 {
   test(100, -25, 2.5);
@@ -100,4 +131,5 @@ int main()
   test(vector<string>{"a","b","c"}, vector<string>{"dog", "cow"}, 1.5);
   test_size();
   test_sections();
+  test_types();
 }

@@ -19,7 +19,7 @@ def populate_table(out, nparam, ns):
 	for i in xrange(ns):
 		x = np.arange(nparam, dtype=int)+i
 		out.parameters(x)
-	out.final("FINISH","YES")
+	out.final("FINISH",True)
 	out.close()
 
 def test_text():
@@ -42,5 +42,15 @@ def test_text():
 
 		assert A == np.arange(ns, dtype=int)
 		assert B == np.arange(ns, dtype=int)+1
+
+
+	#or with our own method
+	names, cols, meta, final = TextColumnOutput.load(filename)
+	assert names == [string.ascii_uppercase[i] for i in xrange(nparam)]
+	assert len(cols)==nparam
+	assert len(cols[0])==ns
+	assert meta['NP']==nparam
+	assert final['FINISH'] is True
+
 	os.remove(filename)
 

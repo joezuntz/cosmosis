@@ -77,6 +77,18 @@ extern "C"
     return DBS_SUCCESS;
   }
 
+  DATABLOCK_STATUS c_datablock_get_type(c_datablock const * s,
+                                        const char* section,
+                                        const char* name,
+                                        datablock_type_t * t)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    return p->get_type(section, name, *t);
+  }
+
   DATABLOCK_STATUS
   c_datablock_get_int(c_datablock const* s,
 		      const char* section,

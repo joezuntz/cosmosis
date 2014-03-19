@@ -63,6 +63,14 @@ namespace cosmosis
     int get_size(std::string const& section,
                  std::string const& name) const;
 
+  // Get the type, if any, of the named object.
+  // The types are enumerated in 
+  // Returns DBS_SUCCESS if found.
+  DATABLOCK_STATUS get_type(std::string const& section,
+                            std::string const& name,
+                            datablock_type_t &t) const;
+
+
     // get functions return the status, and set the value of their
     // output argument only upon success.
     template <class T>
