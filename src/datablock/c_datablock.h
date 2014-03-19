@@ -2,12 +2,15 @@
 #define COSMOSIS_C_DATABLOCK_H
 
 #include "datablock_status.h"
+#include "datablock_types.h"
 #include <complex.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
 
   /*
     The type c_datablock represents groups of named values.
@@ -64,6 +67,9 @@ extern "C" {
     behavior (most likely, a crash in the program).
    */
   DATABLOCK_STATUS destroy_c_datablock(c_datablock* s);
+
+
+  DATABLOCK_STATUS c_datablock_get_type(c_datablock const* s, const char* section, const char* name, datablock_type_t * t);
 
   /*
     The c_datablock_get_T functions return DBS_SUCCESS if a value of
