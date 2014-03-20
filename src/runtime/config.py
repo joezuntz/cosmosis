@@ -122,8 +122,6 @@ class Inifile(IncludingConfigParser):
                                        dict_type=collections.OrderedDict)
         self.read(filename)
 
-        self.defaults = defaults
-
         # override parameters
         if override:
             for section, name in override:
@@ -135,10 +133,48 @@ class Inifile(IncludingConfigParser):
         return (((section, name), value) for section in self.sections()
                 for name, value in self.items(section))
 
-    # these functions override the default parsers to allow for extra formats
-    def getboolean(self, section, name):
+    def get(self, section, name, default=None):
         try:
-            return Inifile.getboolean(self, section, name)
+            return IncludingConfigParser.get(self, section, name)
+        except (ConfigParser.NoSectionError,ConfigParser.NoOptionError) as e:
+            if default is None:
+                raise e
+            else:
+                return default
+
+    # these functions override the default parsers to allow for extra formats
+    def getint(self, section, name, default=None):
+        try:
+            return IncludingConfigParser.getint(self, section, name)
+        except (ConfigParser.NoSectionError,ConfigParser.NoOptionError) as e:
+            if default is None:
+                raise e
+            elif not isinstance(default, int):
+                raise TypeError("Default not integer")
+            else:
+                return default
+
+    def getfloat(self, section, name, default=None):
+        try:
+            return IncludingConfigParser.getfloat(self, section, name)
+        except (ConfigParser.NoSectionError,ConfigParser.NoOptionError) as e:
+            if default is None:
+                raise e
+            elif not isinstance(default, float):
+                raise TypeError("Default not float")
+            else:
+                return default       
+
+    def getboolean(self, section, name, default=False):
+        try:
+            return IncludingConfigParser.getboolean(self, section, name)
+        except (ConfigParser.NoSectionError,ConfigParser.NoOptionError) as e:
+            if default is None:
+                raise e
+            elif not isinstance(default, bool):
+                raise TypeError("Default not boolean")
+            else:
+                return default
         except ValueError:
             # additional options t/y/n/f
             value = self.get(section, name).lower()
@@ -153,7 +189,7 @@ class Inifile(IncludingConfigParser):
     def gettyped(self, section, name):
         import re
 
-        value = Inifile.get(self, section, name)
+        value = IncludingConfigParser.get(self, section, name)
 
         # try quoted string
         m = re.match(r"^(['\"])(.*?)\1$", value)
@@ -165,21 +201,30 @@ class Inifile(IncludingConfigParser):
         # try to match integer array
         try:
             parsed = [int(s) for s in value_list]
-            return parsed
+            if len(parsed) == 1:
+                return parsed[0]
+            else:
+                return parsed
         except ValueError:
             pass
 
         # try to match float array
         try:
             parsed = [float(s) for s in value_list]
-            return parsed
+            if len(parsed) == 1:
+                return parsed[0]
+            else:
+                return parsed
         except ValueError:
             pass
 
         # try to match complex array
         try:
             parsed = [complex(s) for s in value_list]
-            return parsed
+            if len(parsed) == 1:
+                return parsed[0]
+            else:
+                return parsed
         except ValueError:
             pass
 

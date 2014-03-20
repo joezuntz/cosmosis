@@ -18,27 +18,46 @@ class Module(object):
                  setup_function, execute_function, cleanup_function, rootpath="."):
 
         self.name = module_name
-        self.module_path
+
+        self.setup_function = setup_function
+        self.execute_function = execute_function
+        self.cleanup_function = cleanup_function
 
         # identify module filename
-        filename = self.get_option(module_name, "file")
+        filename = file_path
         if not os.path.isabs(filename):
-            filename = os.path.join(root, filename)
+            filename = os.path.join(rootpath, filename)
 
-        # attempt to load setup function
-        self.setup_function = load_library_interface()
+        self.library = Module.load_library(filename)
+
+        # attempt to load setup and cleanup functions
+        self.setup_function = Module.load_function(self.library,
+                                                   setup_function,
+                                                   MODULE_TYPE_SETUP)
+        self.cleanup_function = Module.load_function(self.library,
+                                                     cleanup_function,
+                                                     MODULE_TYPE_CLEANUP)      
 
     def setup(self, config):
         if self.setup_function:
-            self.data = self.setup_function(config)
+            self.data = self.setup_function(config._ptr)
         else:
             self.data = None
 
-    def execute(self, options, data_block):
         if self.data:
-            self.execute(options, data_block)
+            module_type = MODULE_TYPE_EXECUTE_CONFIG
         else:
-            self.execute(options, data_block, self.data)
+            module_type = MODULE_TYPE_EXECUTE_SIMPLE
+
+        self.execute_function = Module.load_function(self.library,
+                                                     self.execute_function,
+                                                     module_type)
+
+    def execute(self, data_block):
+        if self.data:
+            self.execute_function(data_block._ptr, self.data)
+        else:
+            self.execute_function(data_block._ptr)
 
     def cleanup(self):
         if self.cleanup_function:
@@ -51,7 +70,7 @@ class Module(object):
     def load_library(filepath):
         if filepath.endswith('so') or filepath.endswith('dylib'):
             try:
-                library = ctypes.dll.LoadLibrary(filepath)
+                library = ctypes.cdll.LoadLibrary(filepath)
             except OSError as error:
                 exists = os.path.exists(filepath)
                 if exists:
@@ -71,7 +90,7 @@ class Module(object):
         return library
 
     @staticmethod
-    def load_library_interface(library, function_name,
+    def load_function(library, function_name,
                                module_type=MODULE_TYPE_EXECUTE_SIMPLE):
         "Load a module from a shared library"
         function = getattr(library, function_name, None)

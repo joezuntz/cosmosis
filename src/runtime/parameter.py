@@ -4,7 +4,7 @@ import prior
 
 
 class Parameter(object):
-    def __init__(section, name, start, limits=None, prior=None):
+    def __init__(self, section, name, start, limits=None, prior=None):
         if not limits:
             self.limits = (start, start)
         else:
@@ -15,7 +15,7 @@ class Parameter(object):
         self.start = start
 
         self.prior = prior
-        # check consistency of prior with range
+        # TODO: check consistency of prior with limits 
 
     def __eq__(self, other):
         if instance(other, (list, tuple)):
@@ -38,7 +38,11 @@ class Parameter(object):
     def in_range(self, p):
         return self.limits[0] <= p <= self.limits[1]
 
+    def width(self, p):
+        return self.limits[1] - self.limits[0]
+
     def random_point(self):
+        # TODO: should sample from prior distribution
         return random.uniform(*self.limits)
 
     def normalize(self, p):
@@ -53,7 +57,7 @@ class Parameter(object):
         else:
             raise ValueError("parameter value not normalized")
 
-    def prior(self, p):
+    def evaluate_prior(self, p):
         if self.prior:
             return self.prior(p)
         else:
@@ -69,7 +73,7 @@ class Parameter(object):
             priors = {}
 
         parameters = []
-        for section, name, value in values_ini:
+        for (section, name), value in values_ini:
             # parse value line
             start, limits = Parameter.parse_parameter(value)
 

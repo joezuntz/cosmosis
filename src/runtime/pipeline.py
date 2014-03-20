@@ -4,25 +4,26 @@ import sys
 import string
 import numpy as np
 import time
+import ConfigParser
 
 import utils
 import config
-import section_names
 import parameter
 import prior
 import module
+from cosmosis_py import block
 
 
 PIPELINE_INI_SECTION = "pipeline"
 
 
 class Pipeline(object):
-    def __init__(self, arg=None, quiet=False, debug=False, timing=False):
+    def __init__(self, arg=None, quiet=True, debug=False, timing=False):
         """Initialize with a single filename or a list of them, a ConfigParser, or nothing for an empty pipeline"""
         if arg is None:
             arg = list()
 
-        if isinstance(arg, ConfigParser.ConfigParser):
+        if isinstance(arg, config.Inifile):
             self.options = arg
         else:
             self.options = config.Inifile(arg)
@@ -34,31 +35,28 @@ class Pipeline(object):
         # initialize modules
         self.modules = []
         if PIPELINE_INI_SECTION in self.options.sections():
-            rootpath = self.get_option(PIPELINE_INI_SECTION, "root", os.curdir)
-            module_list = self.get_option(PIPELINE_INI_SECTION,
-                                          "module", "").split()
+            rootpath = self.options.get(PIPELINE_INI_SECTION, "root", os.curdir)
+            module_list = self.options.get(PIPELINE_INI_SECTION,
+                                          "modules", "").split()
 
             for module_name in module_list:
                 # identify module file
-                filename = self.get_option(module_name, "file")
+                filename = self.options.get(module_name, "file")
 
                 # identify relevant functions
-                setup_function = self.get_option(module_name,
-                                                 "function", "setup")
-                exec_function = self.get_option(module_name,
-                                                "setup", "execute")
-                cleanup_function = self.get_option(module_name,
-                                                   "cleanup", "cleanup")
+                setup_function = self.options.get(module_name,
+                                                 "setup", "setup")
+                exec_function = self.options.get(module_name,
+                                                 "function", "execute")
+                cleanup_function = self.options.get(module_name,
+                                                  "cleanup", "cleanup")
 
-                modules.append(module.Module(module_name,
-                                             filename,
-                                             setup_function,
-                                             exec_function,
-                                             cleanup_function,
-                                             rootpath))
-
-            # setup modules after ensuring they all exist and are loadable
-            self.setup()
+                self.modules.append(module.Module(module_name,
+                                                  filename,
+                                                  setup_function,
+                                                  exec_function,
+                                                  cleanup_function,
+                                                  rootpath))
 
     def setup(self):
         if self.timing:
@@ -67,10 +65,12 @@ class Pipeline(object):
         for module in self.modules:
             # identify parameters needed for module setup
             relevant_sections = [PIPELINE_INI_SECTION,
-                                 "general", "logging",
-                                 "debug", module_name]
+                                 "general", 
+                                 "logging",
+                                 "debug", 
+                                 module.name]
 
-            config_block = Block()
+            config_block = block.Block()
 
             for (section, name), value in self.options:
                 if section in relevant_sections:
@@ -84,7 +84,7 @@ class Pipeline(object):
                 timings.append(time.clock())
 
         if not self.quiet:
-            sys.stdout.write("Setup all pipeline modules")
+            sys.stdout.write("Setup all pipeline modules\n")
 
         if self.timing:
             timings.append(time.clock())
@@ -123,7 +123,7 @@ class Pipeline(object):
                 return None
 
         if not self.quiet:
-            sys.stdout.write("Pipeline ran okay.")
+            sys.stdout.write("Pipeline ran okay.\n")
 
         if self.timing:
             sys.stdout.write("Module timing:\n")
@@ -133,13 +133,13 @@ class Pipeline(object):
         # return something
         return True
 
-    def get_option(self, section, name, default=None):
-        try:
-            return self.options.get(section, name)
-        except ConfigParser.NoOptionError:
-            if default is not None:
-                return default
-            raise ValueError("Could not find entry in the ini file for section %s, parameter %s, which was needed." % (section, name))
+#    def get_option(self, section, name, default=None):
+#        try:
+#            return self.options.get(section, name)
+#        except ConfigParser.NoOptionError:
+#            if default is not None:
+#                return default
+#            raise ValueError("Could not find entry in the ini file for section %s, parameter %s, which was needed." % (section, name))
 
 
 class LikelihoodPipeline(Pipeline):
@@ -154,39 +154,39 @@ class LikelihoodPipeline(Pipeline):
             self.id_code = ""
         self.n_iterations = 0
 
-        values_file = self.get_option(PIPELINE_INI_SECTION, "values")
-        priors_files = self.get_option(PIPELINE_INI_SECTION,
+        values_file = self.options.get(PIPELINE_INI_SECTION, "values")
+        priors_files = self.options.get(PIPELINE_INI_SECTION,
                                        "priors", "").split()
-        priors_files = priors_files.split()
 
         self.parameters = parameter.Parameter.load_parameters(values_file,
                                                               priors_files)
+
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]
         self.fixed_params = [param for param in self.parameters
                              if param.is_fixed()]
 
         #We want to save some parameter results from the run for further output
-        extra_saves = self.get_option(PIPELINE_INI_SECTION,
+        extra_saves = self.options.get(PIPELINE_INI_SECTION,
                                       "extra_output", "")
         self.extra_saves = []
         for extra_save in extra_saves.split():
             section, name = extra_save.upper().split('/')
-            section = getattr(section_names.section_names,
-                              section.lower(), section)
-
             if not (section, name) in parameters:
                 raise RuntimeError()
             self.extra_saves.append((section, name))
 
         #pull out all the section names and likelihood names for later
-        self.likelihood_names = self.get_option(PIPELINE_INI_SECTION,
+        self.likelihood_names = self.options.get(PIPELINE_INI_SECTION,
                                                 "likelihoods").split()
+
+        # now that we've set up the pipeline properly, initialize modules
+        self.setup()
 
     def randomized_start(self):
         # should have different randomization strategies (uniform, gaussian)
         # possibly depending on prior?
-        return np.array([p.random_point() for p in self.varied_parameters])
+        return np.array([p.random_point() for p in self.varied_params])
 
     def is_out_of_range(self, p):
         return any([not param.in_range(x) for
@@ -205,7 +205,7 @@ class LikelihoodPipeline(Pipeline):
             if self.is_out_of_range(params_by_section):
                 return None
 
-        data = Block()
+        data = block.Block()
 
         # add varied parameters
         for param, x in zip(self.varied_params, p):
@@ -221,8 +221,8 @@ class LikelihoodPipeline(Pipeline):
             return None
 
     def prior(self, p):
-        return sum([param.prior(x) for param, x in
-                    zip(self.varied_params, p)]
+        return sum([param.evaluate_prior(x) for param, x in
+                    zip(self.varied_params, p)])
 
     def posterior(self, p):
         prior = self.prior(p)
@@ -235,30 +235,30 @@ class LikelihoodPipeline(Pipeline):
         #Set the parameters by name from the parameter vector
         #If one is out of range then return -infinity as the log-likelihood
         #i.e. likelihood is zero.  Or if something else goes wrong do the same
-        with self.run_parameters(p) as data:
-            if data is None:
-                return -np.inf, utils.everythingIsNan
+        data = self.run_parameters(p)
+        if data is None:
+            return -np.inf, utils.everythingIsNan
 
-            # loop through named likelihoods and sum their values
+        # loop through named likelihoods and sum their values
+        try:
+            like = sum([data.get_double("LIKELIHOOD",
+                                        likelihood_name+"_like")
+                        for likelihood_name in self.likelihood_names])
+        except block.BlockError as e:
+            return -np.inf, utils.everythingIsNan
+
+        if not self.quiet:
+            sys.stdout.write("Likelihood %e\n" % (like,))
+
+        extra_saves = {}
+        for option in self.extra_saves:
             try:
-                like = sum([data.get_double(LIKELIHOOD_SECTION,
-                                            likelihood_name+"_LIKE")
-                            for likelihood_name in self.likelihoods])
+                value = data.get_double(*option)
             except BlockError:
-                return -np.inf, utils.everythingIsNan
+                value = np.nan
 
-            if not self.quiet:
-                sys.stdout.write("Likelihood %e" % (like,))
+            extra_saves[option] = value
+        extra_saves['LIKE'] = like
 
-            extra_saves = {}
-            for option in self.extra_saves:
-                try:
-                    value = data.get_double(*option)
-                except BlockError:
-                    value = np.nan
-
-                extra_saves[option] = value
-            extra_saves['LIKE'] = like
-
-            self.n_iterations += 1
-            return like, extra_saves
+        self.n_iterations += 1
+        return like, extra_saves

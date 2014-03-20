@@ -26,9 +26,9 @@ void * setup(c_datablock * options)
 
 	// Allocate space for returned config data
 	DATABLOCK_STATUS status=0;
-	example_data * data = malloc(sizeof(example_data));
+	example_data * data = (example_data *)malloc(sizeof(example_data));
 
-	if ( example_data == NULL ) {
+	if ( data == NULL ) {
 		fprintf(stderr, "Error allocating memory in example setup.\n");
 		exit(1);
 	}
