@@ -26,7 +26,12 @@ void * setup(c_datablock * options)
 
 	// Allocate space for returned config data
 	DATABLOCK_STATUS status=0;
-	example_data * data = malloc(sizeof(example_data));
+	example_data * data = (example_data *)malloc(sizeof(example_data));
+
+	if ( data == NULL ) {
+		fprintf(stderr, "Error allocating memory in example setup.\n");
+		exit(1);
+	}
 
 	// Read required parameters from options
 	status |= c_datablock_get_double(options, section, "measured_omega", &(data->omega));
