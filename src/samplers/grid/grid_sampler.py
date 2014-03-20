@@ -1,17 +1,23 @@
-#!/usr/bin/env python
-import pydesglue
 import sys
-import argparse
 import itertools
 import numpy as np
 import copy
-import ConfigParser
-try:
-	import progressbar
-except ImportError:
-	progressbar=None
+
+from sampler import Sampler
 
 
+GRID_INI_SECTION = "grid"
+
+
+class GridSampler(Sampler)
+
+    def config():
+        self.nsample_dimension = self.ini.getint(GRID_INI_SECTION, "nsample_dimension", 1)
+
+    def execute():
+
+                
+        
 def grid_sample_parameters(baseline, ranges_file, params, nsample_dimension):
 	param_value_arrays = []
 	for section, param in params:
@@ -43,7 +49,7 @@ globalPipeline = None
 def task(inputs):
 	parameters, filename = inputs
 	print parameters
-	post, extra = globalPipeline.posterior(parameters, filename=filename)
+:wq	post, extra = globalPipeline.posterior(parameters, filename=filename)
 	p = [post]
 	for (section, param, param_range) in globalPipeline.varied_params:
 		p.append(parameters[section][param])
@@ -102,22 +108,3 @@ def grid_sample(inifile, parameters, nsample_dimension, outfile_base, pool=None,
 	outfile.close()
 	#Return the results.
 	return results
-
-parser = argparse.ArgumentParser(description="Sample parameters on a grid",add_help=True)
-parser.add_argument("inifile",type=str,help="Input parameter ini file")
-parser.add_argument("outfile",type=str,help="Output text file")
-parser.add_argument("-n","--nsample_dimension",type=int,default=10,help="Number of samples per dimension")
-parser.add_argument("--save",action='store_true',default=False,help="Save data for each parameter combination to fits files")
-parser.add_argument("-p","--param",dest='params',action='append',help="List of parameters to grid over, in the form section--param")
-parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.  Requires emcee")
-
-def main(argv):
-	args = parser.parse_args(argv)
-	pool=None
-	if args.mpi:
-		import temporary_utils
-		pool=temporary_utils.MPIPool(debug=False)
-	grid_sample(args.inifile, args.params, args.nsample_dimension, args.outfile, pool=pool, save=args.save)
-
-if __name__=="__main__":
-	main(sys.argv[1:])
