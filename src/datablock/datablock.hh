@@ -38,12 +38,16 @@
 
 #include <string>
 #include <map>
+#include <cctype>
 
 #include "datablock_status.h"
 #include "section.hh"
 
 namespace cosmosis
 {
+  inline
+  void downcase(std::string& s) { for (auto& x : s) x = std::tolower(x); }
+
   class DataBlock
   {
   public:
@@ -53,34 +57,34 @@ namespace cosmosis
 
     // Return DBS_SUCCESS if the datablock has a value in the given
     // section with the given name, and an error status otherwise.
-    DATABLOCK_STATUS has_val(std::string const& section,
-                             std::string const& name) const;
+    DATABLOCK_STATUS has_val(std::string section,
+                             std::string name) const;
 
     // Return -1 if no parameter of the given name in the given section
     // is found, or if the parameter is not an array. Return -2 if the
     // length of the array is larger than MAXINT. Otherwise, return the
     // length of the array.
-    int get_size(std::string const& section,
-                 std::string const& name) const;
+    int get_size(std::string section,
+                 std::string name) const;
 
   // Get the type, if any, of the named object.
   // The types are enumerated in 
   // Returns DBS_SUCCESS if found.
-  DATABLOCK_STATUS get_type(std::string const& section,
-                            std::string const& name,
+  DATABLOCK_STATUS get_type(std::string section,
+                            std::string name,
                             datablock_type_t &t) const;
 
 
     // get functions return the status, and set the value of their
     // output argument only upon success.
     template <class T>
-    DATABLOCK_STATUS get_val(std::string const& section,
-                             std::string const& name,
+    DATABLOCK_STATUS get_val(std::string section,
+                             std::string name,
                              T& val) const;
 
     template <class T>
-    DATABLOCK_STATUS get_val(std::string const& section,
-                             std::string const& name,
+    DATABLOCK_STATUS get_val(std::string section,
+                             std::string name,
                              T const& def,
                              T& val) const;
 
@@ -89,19 +93,19 @@ namespace cosmosis
     // put requires that there is not already a value with the given
     // name in the given section.
     template <class T>
-    DATABLOCK_STATUS put_val(std::string const& section,
-                             std::string const& name,
+    DATABLOCK_STATUS put_val(std::string section,
+                             std::string name,
                              T const& val);
 
     // replace requires that there is already a value with the given
     // name and of the same type in the given section.
     template <class T>
-    DATABLOCK_STATUS replace_val(std::string const& section,
-                                 std::string const& name,
+    DATABLOCK_STATUS replace_val(std::string section,
+                                 std::string name,
                                  T const& val);
 
     // Return true if the DataBlock has a section with the given name.
-    bool has_section(std::string const& name) const;
+    bool has_section(std::string name) const;
 
     // Return the number of sections in this DataBlock.
     std::size_t num_sections() const;
@@ -120,7 +124,7 @@ namespace cosmosis
     // section can't be found, BadSection access if the name can't be
     // found, or BadEntry if the contained value is of the wrong type.
     template <class T>
-    T const& view(std::string const& section, std::string const& name) const;
+    T const& view(std::string section, std::string name) const;
 
   private:
     std::map<std::string, Section> sections_;
@@ -131,10 +135,11 @@ namespace cosmosis
 
 template <class T>
 DATABLOCK_STATUS
-cosmosis::DataBlock::get_val(std::string const& section,
-                             std::string const& name,
+cosmosis::DataBlock::get_val(std::string section,
+                             std::string name,
                              T& val) const
 {
+  downcase(section); downcase(name);
   auto isec = sections_.find(section);
   if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
   return isec->second.get_val(name, val);
@@ -142,11 +147,12 @@ cosmosis::DataBlock::get_val(std::string const& section,
 
 template <class T>
 DATABLOCK_STATUS
-cosmosis::DataBlock::get_val(std::string const& section,
-                             std::string const& name,
+cosmosis::DataBlock::get_val(std::string section,
+                             std::string name,
                              T const& def,
                              T& val) const
 {
+  downcase(section); downcase(name);
   auto isec = sections_.find(section);
   if (isec == sections_.end())
     {
@@ -158,20 +164,22 @@ cosmosis::DataBlock::get_val(std::string const& section,
 
 template <class T>
 DATABLOCK_STATUS
-cosmosis::DataBlock::put_val(std::string const& section,
-                             std::string const& name,
+cosmosis::DataBlock::put_val(std::string section,
+                             std::string name,
                              T const& val)
 {
+  downcase(section); downcase(name);
   auto& sec = sections_[section]; // create one if needed
   return sec.put_val(name, val);
 }
 
 template <class T>
 DATABLOCK_STATUS
-cosmosis::DataBlock::replace_val(std::string const& section,
-                                 std::string const& name,
+cosmosis::DataBlock::replace_val(std::string section,
+                                 std::string name,
                                  T const& val)
 {
+  downcase(section); downcase(name);
   auto isec = sections_.find(section);
   if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
   return isec->second.replace_val(name, val);
@@ -179,8 +187,9 @@ cosmosis::DataBlock::replace_val(std::string const& section,
 
 template <class T>
 T const&
-cosmosis::DataBlock::view(std::string const& section, std::string const& name) const
+cosmosis::DataBlock::view(std::string section, std::string name) const
 {
+  downcase(section); downcase(name);
   auto isec = sections_.find(section);
   if (isec == sections_.end()) throw BadDataBlockAccess();
   return isec->second.view<T>(name);

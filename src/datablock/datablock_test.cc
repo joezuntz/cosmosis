@@ -22,8 +22,10 @@ void test(T const& x, T const& y, W const& wrong)
   assert(b.get_val("no such section", "a", y, val) == DBS_SUCCESS);
   assert(val == y);
 
-  assert(b.put_val("sect_a", "param", x) == DBS_SUCCESS);
+  assert(b.put_val("SECT_A", "param", x) == DBS_SUCCESS);
   assert(b.has_section("sect_a"));
+  assert(b.has_section("Sect_a"));
+  assert(b.has_section("Sect_A"));
   assert(b.get_val("sect_a", "no such parameter", y, val) == DBS_SUCCESS);
   assert(val == y);
 
@@ -33,6 +35,11 @@ void test(T const& x, T const& y, W const& wrong)
 
   assert(b.get_val("sect_a", "param", val) == DBS_SUCCESS);
   assert(val == x);
+  assert(b.get_val("sect_A", "param", val) == DBS_SUCCESS);
+  assert(val == x);
+  assert(b.get_val("Sect_A", "PARAM", val) == DBS_SUCCESS);
+  assert(val == x);
+
   assert(b.get_val("sect_a", "param", y, val) == DBS_SUCCESS);
   assert(val == x);
 
