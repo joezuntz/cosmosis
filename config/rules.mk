@@ -16,6 +16,7 @@ library: $(LIBRARY)
 
 $(LIBRARY): $(OBJ_LIB)
 	@echo Working in directory $${PWD}
+	@echo Building library from $(OBJ_LIB)
 	$(LINK.cc) -shared -o $@ $+ $(USER_LDLIBS)
 
 build: ${COSMOSIS_DIR}/config/rules.mk
@@ -44,6 +45,7 @@ print:
 	@echo "MAKEFILE_LIST = $(MAKEFILE_LIST)"
 	@echo "MAKECMDGOALS = $(MAKECMDGOALS)"
 	@echo "DEPDIR = $(DEPDIR)"
+	@echo "LDLIBS = $(LDLIBS)"
 	@echo "-----diving into subdirectories-----"
 	$(subdirs_macro)
 
@@ -67,20 +69,29 @@ test_% : %_test
 	@echo ...  passed	
 
 % : %.o $(LIBRARY)
+	@echo Building executable from $<
 	$(LINK.cc) -o $@ $< $(LDLIBS)
 	@echo done with $@ $<
 
 %_test : $(SRC_AREA)%_test.cc $(LIBRARY)
+	@echo Building test from $<
 	$(LINK.cc) -o $@ $< $(LDLIBS)
-	@echo done with f $@ $<
+	@echo done with $@ $<
 
 %_test : $(SRC_AREA)%_test.c $(LIBRARY)
+	@echo Building test from $<
 	$(LINK.c) -o $@ $< $(LDLIBS)
-	@echo done with f $@ $<
+	@echo done with $@ $<
 
-lib%_module.so: %_module.o
-	$(LINK.cc) -shared -o $@ $+ $(LDLIBS)
+%_module.so: %_module.o $(LIBRARY)
+	@echo Building module from $<
+	$(LINK.cc) -shared -o $@ $+ $(USER_LDLIBS)
 	@echo done with module library $@, using $<
+
+# lib%_module.so: $(SRC_AREA)%_module.c $(LIBRARY)
+# 	@echo Building module from $+
+# 	$(LINK.c) -shared -o $@ $+ $(LDLIBS)
+# 	@echo done with module library $@, using $<
 
 # Macro for post-processing dependency files.
 # Thanks, SRT.
@@ -94,25 +105,13 @@ dep_tmp.$$$$ ; \
 mv dep_tmp.$$$$ $(dir $@)$(basename $(notdir $<)).d
 endef
 
-# %.o : $(SRC_AREA)%.c
-# 	$(COMPILE.c) -MMD -o $@ $<
-# 	@cp $*.d $*.P; \
-# 		sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-# 		-e '/^$$/ d' -e 's/$$/ :/' < $*.d >> $*.P; \
-# 	rm -f $*.d
-
-# %.o : $(SRC_AREA)%.cc
-# 	$(COMPILE.cc) -MMD -o $@ $<
-# 	@cp $*.d $*.P; \
-# 		sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-# 		-e '/^$$/ d' -e 's/$$/ :/' < $*.d >> $*.P; \
-# 	rm -f $*.d
-
 %.o : $(SRC_AREA)%.cc
+	@echo Compiling source $<
 	$(COMPILE.cc) -MMD -o $@ $<
 	$(postprocess_d)
 
 %.o : $(SRC_AREA)%.c
+	@echo Compiling source $<
 	$(COMPILE.c) -MMD -o $@ $<
 	$(postprocess_d)
 
