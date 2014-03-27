@@ -53,7 +53,7 @@ namespace cosmosis
 
     // Return DBS_SUCCESS if the datablock has a value in the given
     // section with the given name, and an error status otherwise.
-    DATABLOCK_STATUS has_val(std::string const& section,
+    bool has_val(std::string const& section,
                              std::string const& name) const;
 
     // Return -1 if no parameter of the given name in the given section

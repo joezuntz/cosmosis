@@ -38,7 +38,7 @@ extern "C"
     return p->num_sections();
   }
 
-  DATABLOCK_STATUS c_datablock_has_value(c_datablock const* s,
+  _Bool c_datablock_has_value(c_datablock const* s,
                                          const char* section,
                                          const char* name)
   {

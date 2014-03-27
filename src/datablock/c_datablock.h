@@ -41,7 +41,7 @@ extern "C" {
     with the given name, and an error status otherwise. The associated
     value can be of any supported type.
   */
-  DATABLOCK_STATUS c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
+  _Bool c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
 
   /*
     If the section and name correspond to a value that is an array,
