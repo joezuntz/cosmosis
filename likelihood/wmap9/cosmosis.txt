@@ -1,0 +1,1 @@
+This is a placeholder for the WMAP9 module.  Once it is here this file can be removed.
