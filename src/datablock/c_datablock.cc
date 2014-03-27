@@ -16,6 +16,9 @@ using std::vector;
 
 extern "C"
 {
+  // This seems to be the appropriate incantation to export this
+  extern const int cosmosis_enum_size = sizeof(datablock_type_t);
+
   c_datablock* make_c_datablock(void)
   {
     return new cosmosis::DataBlock();
@@ -252,6 +255,34 @@ extern "C"
     return DBS_SUCCESS;
   }
 
+
+  DATABLOCK_STATUS
+  c_datablock_get_double_array_1d_preallocated(c_datablock const* s,
+                                            const char* section,
+                                            const char* name,
+                                            double* val,
+                                            int* sz,
+                                            int maxsize)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (sz == nullptr) return DBS_SIZE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    vector<double> const& r = p->view<vector<double>>(section, name);
+    *sz = r.size();
+    if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
+    std::copy(r.cbegin(), r.cend(), val);
+    // If we are asked to clear out the remainder of the input buffer,
+    // the following line should be used.
+    //    std::fill(val + *sz, val+maxsize, 0);
+    return DBS_SUCCESS;
+  }
+
+
+
   DATABLOCK_STATUS
   c_datablock_put_int(c_datablock* s,
 		      const char* section,
@@ -328,6 +359,25 @@ extern "C"
   }
 
   DATABLOCK_STATUS
+  c_datablock_put_double_array_1d(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               double const*  val,
+                               int sz)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == NULL) return DBS_VALUE_NULL;
+    if (sz < 0) return DBS_SIZE_NEGATIVE;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->put_val(section, name, vector<double>(val, val+sz));
+  }
+
+
+
+  DATABLOCK_STATUS
   c_datablock_replace_int(c_datablock* s,
 			  const char* section,
 			  const char* name,
@@ -400,6 +450,23 @@ extern "C"
 
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, vector<int>(val, val+sz));
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_replace_double_array_1d(c_datablock* s,
+                                   const char* section,
+                                   const char* name,
+                                   double const* val,
+                                   int sz)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (sz  < 0) return DBS_SIZE_NEGATIVE;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->replace_val(section, name, vector<double>(val, val+sz));
   }
 
 } // extern "C"
