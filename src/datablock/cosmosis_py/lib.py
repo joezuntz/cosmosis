@@ -1,8 +1,23 @@
 import ctypes as ct
+from . import types
+
 
 dll = ct.cdll.LoadLibrary("libcosmosis.so")
 
+# We export a symbol in the C code to tell us this
+enum_size = ct.c_int.in_dll(dll, "cosmosis_enum_size").value
+
+#Assuming that enums are signed ...
+c_enum = {
+	1:ct.c_int8,
+	2:ct.c_int16,
+	4:ct.c_int32,
+	8:ct.c_int64,
+}[enum_size]
+
+
 c_block = ct.c_size_t
+c_datatype = c_enum
 c_status = ct.c_int
 c_str = ct.c_char_p
 c_int = ct.c_int
@@ -37,6 +52,8 @@ load_function_types(locals(), c_complex, 'complex')
 load_function_types(locals(), c_str, 'string')
 
 load_array_function_types(locals(), ct.c_int, 'int')
+load_array_function_types(locals(), ct.c_double, 'double')
+#load_array_function_types(locals(), ct.c_complex, 'complex')
 
 load_library_function(
 	locals(), 
@@ -65,3 +82,27 @@ load_library_function(
 	[c_block, c_str, c_str],
 	c_int
 	)
+
+load_library_function(
+	locals(),
+	"c_datablock_get_type",
+	[c_block, c_str, c_str, ct.POINTER(c_datatype)],
+	c_status
+	)
+
+load_library_function(
+	locals(),
+	"c_datablock_has_section",
+	[c_block, c_str],
+	ct.c_bool
+	)
+
+load_library_function(
+	locals(),
+	"c_datablock_has_value",
+	[c_block, c_str, c_str],
+	ct.c_bool
+	)
+
+
+
