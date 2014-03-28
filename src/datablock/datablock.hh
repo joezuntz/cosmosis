@@ -100,6 +100,9 @@ namespace cosmosis
     // Return the number of sections in this DataBlock.
     std::size_t num_sections() const;
 
+    // Get the number of values in a named section
+    DATABLOCK_STATUS get_number_values(std::string const& section, int &n) const;  
+
     // Return the name of the i'th section. Throws BadDataBlockAccess if
     // the index is out-of-range.
     std::string const& section_name(std::size_t i) const;

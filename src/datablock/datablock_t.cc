@@ -19,9 +19,9 @@ void test(T const& x, T const& y, W const& wrong)
   assert(not b.has_section("sect_a"));
   assert(b.put_val("sect_a", "param", x) == DBS_SUCCESS);
   assert(b.has_section("sect_a"));
-  assert(b.has_val("no such section", "x") == DBS_SECTION_NOT_FOUND);
-  assert(b.has_val("sect_a", "no such parameter") == DBS_NAME_NOT_FOUND);
-  assert(b.has_val("sect_a", "param") == DBS_SUCCESS);
+  assert(b.has_val("no such section", "x") == false);
+  assert(b.has_val("sect_a", "no such parameter") == false);
+  assert(b.has_val("sect_a", "param") == true);
 
   T val;
   assert(b.get_val("sect_a", "param", val) == DBS_SUCCESS);
@@ -67,12 +67,18 @@ void test_sections()
 {
   DataBlock b;
   b.put_val("ints", "a", 10);
+  int n = -1;
+  assert(b.get_number_values("ints", n)==DBS_SUCCESS);
+  assert(n==1);
   b.put_val("doubles", "a", 2.5);
   b.put_val("strings", "a", string("cow says moo"));
   assert(b.num_sections() == 3);
   assert(b.section_name(0) == "doubles");
   assert(b.section_name(1) == "ints");
   assert(b.section_name(2) == "strings");
+  b.put_val("doubles", "b", 3.5);  
+  assert(b.get_number_values("doubles", n)==DBS_SUCCESS);
+  assert(n==2);
   try { b.section_name(3); assert(0 == "section_name failed to throw required exception\n"); }
   catch (DataBlock::BadDataBlockAccess const&) { }
   catch (...) { assert(0 == "section_name threw the wrong type of exception\n"); }

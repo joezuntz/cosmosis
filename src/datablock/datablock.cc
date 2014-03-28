@@ -32,6 +32,16 @@ bool cosmosis::DataBlock::has_section(string const& name) const
   return sections_.find(name) != sections_.end();
 }
 
+DATABLOCK_STATUS cosmosis::DataBlock::get_number_values(string const& section, int &n) const
+{
+  n = -1;
+  auto isec = sections_.find(section);
+  if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
+  n = isec->second.number_values();
+  return DBS_SUCCESS;
+}
+
+
 std::size_t cosmosis::DataBlock::num_sections() const
 {
   return sections_.size();
