@@ -31,9 +31,9 @@ void test(T const& x, T const& y, W const& wrong)
   assert(b.get_val("sect_a", "no such parameter", y, val) == DBS_SUCCESS);
   assert(val == y);
 
-  assert(b.has_val("no such section", "x") == DBS_SECTION_NOT_FOUND);
-  assert(b.has_val("sect_a", "no such parameter") == DBS_NAME_NOT_FOUND);
-  assert(b.has_val("sect_a", "param") == DBS_SUCCESS);
+  assert(b.has_val("no such section", "x") == false);
+  assert(b.has_val("sect_a", "no such parameter") == false);
+  assert(b.has_val("sect_a", "param") == true);
 
   assert(b.get_val("sect_a", "param", val) == DBS_SUCCESS);
   assert(val == x);
