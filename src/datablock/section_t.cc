@@ -44,6 +44,18 @@ void test_crossing_types()
   assert(s.has_value<int>("a"));
 }
 
+void test_section_size()
+{
+  Section s;
+  assert(s.number_values() == 0);
+  assert(s.put_val("a", 1) == DBS_SUCCESS);
+  assert(s.number_values() == 1);
+  assert(s.put_val("b", 2.5) == DBS_SUCCESS);
+  assert(s.number_values() == 2);
+  assert(s.replace_val("b",3.4)==DBS_SUCCESS);
+  assert(s.number_values() == 2);
+}
+
 void test_size()
 {
   Section s;
@@ -125,5 +137,6 @@ int main()
 
   test_crossing_types();
   test_size();
+  test_section_size();
   test_type_finding();
 }

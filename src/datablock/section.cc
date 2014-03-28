@@ -9,6 +9,12 @@ cosmosis::Section::has_val(string const& name) const
 }
 
 int
+cosmosis::Section::number_values() const
+{
+  return vals_.size();
+}
+
+int
 cosmosis::Section::get_size(string const& name) const
 {
   auto ival = vals_.find(name);
