@@ -107,6 +107,11 @@ namespace cosmosis
     // the index is out-of-range.
     std::string const& section_name(std::size_t i) const;
 
+    // Return the name of the value in the given section and position
+    // in that section.  Specify section either by number or name
+    std::string const& value_name(std::string section, int j) const;
+    std::string const& value_name(int i, int j) const;
+
     // Remove all the sections.
     void clear();
 

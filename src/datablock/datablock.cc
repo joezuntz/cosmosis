@@ -54,6 +54,22 @@ std::string const& cosmosis::DataBlock::section_name(std::size_t i) const
 
 }
 
+
+std::string const& cosmosis::DataBlock::value_name(int i, int j) const
+{
+  std::string section = section_name(i);
+  return value_name(section,j);
+}
+
+
+std::string const& cosmosis::DataBlock::value_name(std::string section, int j) const
+{
+  auto isec = sections_.find(section);
+  if (isec == sections_.end()) throw BadDataBlockAccess();
+  return isec->second.value_name(j);
+}
+
+
 void cosmosis::DataBlock::clear()
 {
   sections_.clear();

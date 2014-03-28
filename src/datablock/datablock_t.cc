@@ -19,6 +19,8 @@ void test(T const& x, T const& y, W const& wrong)
   assert(not b.has_section("sect_a"));
   assert(b.put_val("sect_a", "param", x) == DBS_SUCCESS);
   assert(b.has_section("sect_a"));
+  assert(b.value_name(0,0)=="param");
+  assert(b.value_name("sect_a",0)=="param");
   assert(b.has_val("no such section", "x") == false);
   assert(b.has_val("sect_a", "no such parameter") == false);
   assert(b.has_val("sect_a", "param") == true);
