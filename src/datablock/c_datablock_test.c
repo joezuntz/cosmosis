@@ -1,5 +1,6 @@
 #include "c_datablock.h"
 
+
 #include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -54,10 +55,19 @@ void test_sections()
   destroy_c_datablock(s);
 }
 
+#include "test_c_datablock_scalars.h"
+
+#if 0
 void test_scalar_int()
 {
   c_datablock* s = make_c_datablock();
   assert(s);
+
+  /* Get with a default returns the supplied default when no such
+     parameter is found. */
+  int val = 0;
+  assert(c_datablock_get_int_default(s, "x", "cow", 5, &val) == DBS_SUCCESS);
+  assert(val == 5);
 
   int expected = -4;
 
@@ -65,6 +75,7 @@ void test_scalar_int()
 
   /* Put with no previous value should save the right value. */
   assert(c_datablock_put_int(s, "x", "cow", expected) == DBS_SUCCESS);
+
   int val = 0;
   assert(c_datablock_num_values(s,"x")==1);
 
@@ -313,6 +324,7 @@ void test_scalar_string()
 
   destroy_c_datablock(s);
 }
+#endif
 
 #define TEST_ARRAY(length, val, expected) \
   for (int i = 0; i != length; ++i) assert(val[i] == expected[i])
@@ -450,6 +462,5 @@ int main()
   test_scalar_complex();
 
   test_array_int();
-
   return 0;
 }

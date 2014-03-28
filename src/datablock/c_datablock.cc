@@ -108,9 +108,9 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS c_datablock_get_type(c_datablock const * s,
-    const char* section,
-    const char* name,
-    datablock_type_t * t)
+                                        const char* section,
+                                        const char* name,
+                                        datablock_type_t * t)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
@@ -118,7 +118,6 @@ if (name == nullptr) return false;
     DataBlock const* p = static_cast<DataBlock const*>(s);
     return p->get_type(section, name, *t);
   }
-
 
   DATABLOCK_STATUS
   c_datablock_get_int(c_datablock const* s,
@@ -136,6 +135,22 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
+  c_datablock_get_int_default(c_datablock const* s,
+                              const char* section,
+                              const char* name,
+                              int def,
+                              int* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    return p->get_val(section, name, def, *val);
+  }
+
+  DATABLOCK_STATUS
   c_datablock_get_double(c_datablock const* s,
 			 const char* section,
 			 const char* name,
@@ -148,6 +163,22 @@ if (name == nullptr) return false;
 
     auto p = static_cast<DataBlock const*>(s);
     return p->get_val(section, name, *val);
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_double_default(c_datablock const* s,
+                                 const char* section,
+                                 const char* name,
+                                 double def,
+                                 double* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    return p->get_val(section, name, def, *val);
   }
 
   DATABLOCK_STATUS
@@ -180,6 +211,28 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
+  c_datablock_get_complex_default(c_datablock const* s,
+                                  const char* section,
+                                  const char* name,
+                                  double _Complex def,
+                                  double _Complex* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    complex_t default_z(def);
+    complex_t z;
+    auto rc = p->get_val(section, name, default_z, z);
+    // See comment in c_datablock_get_complex for an explanation of this
+    // reinterpret_cast.
+    if (rc == DBS_SUCCESS) *val = * reinterpret_cast<double _Complex*>(&z);
+    return rc;
+  }
+
+  DATABLOCK_STATUS
   c_datablock_get_string(c_datablock const* s,
                          const char* section,
                          const char* name,
@@ -193,6 +246,30 @@ if (name == nullptr) return false;
     auto p = static_cast<DataBlock const*>(s);
     string tmp;
     auto rc = p->get_val(section, name, tmp);
+    if (rc != DBS_SUCCESS) return rc;
+    *val = strdup(tmp.c_str());
+    if (*val == nullptr) return DBS_MEMORY_ALLOC_FAILURE;
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_string_default(c_datablock const* s,
+                                 const char* section,
+                                 const char* name,
+                                 const char* def,
+                                 char**  val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    /* Do we need a new enumeration value for the following? */
+    if (def == nullptr) return DBS_VALUE_NULL; 
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    string tmp;
+    string default_string(def);
+    auto rc = p->get_val(section, name, default_string, tmp);
     if (rc != DBS_SUCCESS) return rc;
     *val = strdup(tmp.c_str());
     if (*val == nullptr) return DBS_MEMORY_ALLOC_FAILURE;
