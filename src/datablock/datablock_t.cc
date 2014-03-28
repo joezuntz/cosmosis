@@ -66,10 +66,9 @@ void test_size()
 void test_sections()
 {
   DataBlock b;
+  assert(b.get_num_values("ints")==-1);
   b.put_val("ints", "a", 10);
-  int n = -1;
-  assert(b.get_number_values("ints", n)==DBS_SUCCESS);
-  assert(n==1);
+  assert(b.get_num_values("ints")==1);
   b.put_val("doubles", "a", 2.5);
   b.put_val("strings", "a", string("cow says moo"));
   assert(b.num_sections() == 3);
@@ -77,8 +76,7 @@ void test_sections()
   assert(b.section_name(1) == "ints");
   assert(b.section_name(2) == "strings");
   b.put_val("doubles", "b", 3.5);  
-  assert(b.get_number_values("doubles", n)==DBS_SUCCESS);
-  assert(n==2);
+  assert(b.get_num_values("doubles")==2);
   try { b.section_name(3); assert(0 == "section_name failed to throw required exception\n"); }
   catch (DataBlock::BadDataBlockAccess const&) { }
   catch (...) { assert(0 == "section_name threw the wrong type of exception\n"); }
