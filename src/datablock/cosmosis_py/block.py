@@ -5,7 +5,7 @@ from . import types
 from .errors import BlockError
 import numpy as np
 
-class Block(object):
+class DataBlock(object):
 	GET=0
 	PUT=1
 	REPLACE=2
@@ -286,3 +286,16 @@ class Block(object):
 		n = lib.c_datablock_num_sections(self._ptr)
 		return [lib.c_datablock_get_section_name(self._ptr, i) for i in xrange(n)]
 
+
+	def keys(self, section=None):
+		if section is None:
+			sections = self.sections()
+		else:
+			sections = [section]
+		keys = []
+		for section in sections:
+			n_value = lib.c_datablock_num_values(self._ptr, section)
+			for i in xrange(n_value):
+				name = lib.c_datablock_get_value_name(self._ptr, section, i)
+				keys.append((section,name))
+		return keys

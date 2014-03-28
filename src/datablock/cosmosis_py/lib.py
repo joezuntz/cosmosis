@@ -62,12 +62,6 @@ load_library_function(
 	c_block
 )
 
-load_library_function(
-	locals(), 
-	"make_c_datablock",
-	[],
-	c_block
-)
 
 load_library_function(
 	locals(), 
@@ -111,5 +105,24 @@ load_library_function(
 	c_str
 	)
 
+load_library_function(
+	locals(),
+	"c_datablock_get_value_name",
+	[c_block, c_str, ct.c_int],
+	c_str
+	)
 
+load_library_function(
+	locals(),
+	"c_datablock_get_value_name_by_section_index",
+	[c_block, ct.c_int, ct.c_int],
+	c_str
+	)
+
+load_library_function(
+	locals(),
+	"c_datablock_num_values",
+	[c_block, c_str],
+	ct.c_int
+	)
 

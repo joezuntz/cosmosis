@@ -43,6 +43,12 @@ extern "C" {
   */
   _Bool c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
 
+
+  const char* c_datablock_get_value_name(c_datablock const* s, const char* section, int j);
+  const char* c_datablock_get_value_name_by_section_index(c_datablock const* s, 
+    int i, int j);
+
+
   /*
     If the section and name correspond to a value that is an array,
     return the length of the array. Otherwise return -1. If any of the
@@ -59,7 +65,7 @@ extern "C" {
     Otherwise return -1.
 
   */
-  int c_datablock_get_num_values(
+  int c_datablock_num_values(
     c_datablock const* s, const char* section);
 
 

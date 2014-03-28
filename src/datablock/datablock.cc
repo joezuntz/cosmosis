@@ -32,7 +32,7 @@ bool cosmosis::DataBlock::has_section(string const& name) const
   return sections_.find(name) != sections_.end();
 }
 
-int cosmosis::DataBlock::get_num_values(string const& section) const
+int cosmosis::DataBlock::num_values(string const& section) const
 {
   auto isec = sections_.find(section);
   if (isec == sections_.end()) return -1;

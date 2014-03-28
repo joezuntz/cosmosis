@@ -7,7 +7,7 @@ from . import errors
 class TestBlockFunctions(unittest.TestCase):
 	def test_int(self):
 		# make sure the shuffled sequence does not lose any elements
-		b = block.Block()
+		b = block.DataBlock()
 		section = 'test'
 		b.put_int(section,'a',1)
 		assert b.get_int(section,'a')==1
@@ -17,7 +17,7 @@ class TestBlockFunctions(unittest.TestCase):
 		self.assertRaises(errors.BlockNameAlreadyExists, b.put_int, 'test', 'a', 3)
 
 	def test_string(self):
-		b = block.Block()
+		b = block.DataBlock()
 		section = 'test'
 		b.put_string(section, 's', 'my_string')
 		assert b.get_string(section,'s')=='my_string'
@@ -26,21 +26,37 @@ class TestBlockFunctions(unittest.TestCase):
 
 
 	def test_int_array(self):
-		b = block.Block()
+		b = block.DataBlock()
 		section='test'
 		b.put_int_array_1d(section, 'x', [1,2,3])
 		r = b.get_int_array_1d(section, 'x')
 		assert (r==[1,2,3]).all()
 
 	def test_double_array(self):
-		b = block.Block()
+		b = block.DataBlock()
 		section='test'
 		b.put_double_array_1d(section, 'x', [1.4,2.1,3.6])
 		r = b.get_double_array_1d(section, 'x')
 		assert (r==[1.4,2.1,3.6]).all()	
 
+	def test_keys(self):
+		b = block.DataBlock()
+		section='dogs'
+		b.put(section, 'x', [1.4,2.1,3.6])
+		b.put(section, "n", 14)
+		b.put(section, 's', 'my_string')
+		section='other'
+		b.put(section, 'a', 98)
+		b.put(section, "b", 1.4)
+		b.put_string(section, 's', 'my_string')
+		keys = b.keys()
+		assert sorted(keys) == sorted([('dogs','x'), ('dogs','n'),('dogs','s'),('other','a'),('other','b'),('other','s')])
+		for k in keys:
+			assert k in b
+
+
 	def test_has(self):
-		b = block.Block()
+		b = block.DataBlock()
 		assert not b.has_section("cats")		
 		b.put("cats", "n", 14)
 		assert b.has_section("cats")
@@ -50,7 +66,7 @@ class TestBlockFunctions(unittest.TestCase):
 		assert not b.has_value("dogs", "n")
 
 	def test_special(self):
-		b = block.Block()
+		b = block.DataBlock()
 		section = 'test'
 		b.put(section, 'a', 4)
 		assert b[section, 'a']==4
@@ -63,7 +79,7 @@ class TestBlockFunctions(unittest.TestCase):
 
 
 	def test_generic(self):
-		b = block.Block()
+		b = block.DataBlock()
 		section = 'test'
 		b.put(section, 'a', 4)
 		assert b.get_int(section, 'a')==4

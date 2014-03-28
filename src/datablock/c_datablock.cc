@@ -38,13 +38,13 @@ extern "C"
     return p->num_sections();
   }
 
-  int c_datablock_get_num_values(
+  int c_datablock_num_values(
     c_datablock const* s, const char* section)
   {
     if (s == nullptr) return -1;
     if (section == nullptr) return -1;
     DataBlock const* p = static_cast<DataBlock const*>(s);
-    return p->get_num_values(section);
+    return p->num_values(section);
   }
 
   _Bool c_datablock_has_value(c_datablock const* s,
@@ -76,6 +76,22 @@ if (name == nullptr) return false;
     DataBlock const* p = static_cast<DataBlock const*>(s);
     if (n >= p->num_sections()) return nullptr;
     return p->section_name(n).c_str();
+  }
+
+  const char* c_datablock_get_value_name(c_datablock const* s, 
+    const char* section, int j)
+  {
+    if (j < 0) return nullptr;
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    return p->value_name(section, j).c_str();
+  }
+
+  const char* c_datablock_get_value_name_by_section_index(c_datablock const* s, 
+    int i, int j)
+  {
+    if (i<0 || j<0) return nullptr;
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    return p->value_name(i, j).c_str();
   }
 
   DATABLOCK_STATUS destroy_c_datablock(c_datablock* s)

@@ -101,7 +101,7 @@ namespace cosmosis
     std::size_t num_sections() const;
 
     // Get the number of values in a named section
-    int get_num_values(std::string const& section) const;
+    int num_values(std::string const& section) const;
 
     // Return the name of the i'th section. Throws BadDataBlockAccess if
     // the index is out-of-range.
