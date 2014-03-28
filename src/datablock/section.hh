@@ -50,6 +50,10 @@ namespace cosmosis
     // Return true if we have a value of any type with the given name.
     bool has_val(std::string const& name) const;
 
+
+    //Return the name of the key at position i
+    std::string const& value_name(std::size_t i) const;
+
     // The view functions provide readonly access to the data in the
     // Section without copying the data. The reference returned by a
     // call to view is invalidated if any replace function is called for

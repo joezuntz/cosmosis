@@ -22,6 +22,16 @@ cosmosis::Section::get_size(string const& name) const
   return ival->second.size();
 }
 
+
+std::string const& cosmosis::Section::value_name(std::size_t i) const
+{
+  if (i >= (std::size_t) number_values()) throw BadSectionAccess();
+  auto isec = vals_.begin();
+  std::advance(isec, i);
+  return isec->first;
+
+}
+
 DATABLOCK_STATUS 
 cosmosis::Section::get_type(std::string const&name, datablock_type_t &t) const
 {
