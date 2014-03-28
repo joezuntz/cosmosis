@@ -104,5 +104,12 @@ load_library_function(
 	ct.c_bool
 	)
 
+load_library_function(
+	locals(),
+	"c_datablock_get_section_name",
+	[c_block, ct.c_int],
+	c_str
+	)
+
 
 

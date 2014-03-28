@@ -59,6 +59,8 @@ class TestBlockFunctions(unittest.TestCase):
 		b[section,'b'] = 6
 		assert b[section,"b"]==6
 		assert (section,'b') in b
+		self.assertRaises(errors.BlockNameNotFound, b.get, section, 'fff',)
+
 
 	def test_generic(self):
 		b = block.Block()
@@ -75,3 +77,4 @@ class TestBlockFunctions(unittest.TestCase):
 		assert b.get(section, 'a')==4
 		assert b.get(section, 'b')==2.0
 		assert b.get(section, 'c')=="hello"
+

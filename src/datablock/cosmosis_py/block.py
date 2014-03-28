@@ -150,7 +150,7 @@ class Block(object):
 		return None
 
 	def _method_for_datatype_code(self, code, method_type):
-		method={ 
+		T={ 
 			types.DBT_INT:     (self.get_int,     self.put_int,     self.replace_int),
 			types.DBT_DOUBLE:         (self.get_double,  self.put_double,  self.replace_double),
 			types.DBT_COMPLEX: (self.get_complex, self.put_complex, self.replace_complex),
@@ -163,8 +163,10 @@ class Block(object):
 			# types.DBT_DOUBLE2D:(self.get_double_array_2d,  self.put_double_array_2d,  self.replace_double_array_2d)
 			# types.COMPLEX2D:   (self.get_complex_array_2d, self.put_complex_array_2d, self.replace_complex_array_2d)
 			# types.STRING2D:    (self.get_string_array_2d,  self.put_string_array_2d,  self.replace_string_array_2d)
-		         }.get(code)[method_type]
-		return method
+		         }.get(code)
+		if T is not None:
+			return T[method_type]
+		return None
 
 
 	def _method_for_value(self, value, method_type):
@@ -189,10 +191,14 @@ class Block(object):
 	
 	def get(self, section, name):
 		type_code_c = lib.c_datatype()
-		value_type = lib.c_datablock_get_type(self._ptr, section, name, ct.byref(type_code_c))
+		status = lib.c_datablock_get_type(self._ptr, section, name, ct.byref(type_code_c))
+		if status:
+			raise BlockError.exception_for_status(status, section, name)
 		type_code = type_code_c.value
 		method = self._method_for_datatype_code(type_code,self.GET)
-		return method(section, name)
+		if method:
+			return method(section,name)
+		raise ValueError("Cosmosis internal error; unknown type of data")
 
 	def put(self, section, name, value):
 		method = self._method_for_value(value,self.PUT)
@@ -257,6 +263,7 @@ class Block(object):
 		return self.get(section, name)
 
 	def __setitem__(self, section_name, value):
+
 		try:
 			(section,name) = section_name
 		except ValueError:
@@ -267,8 +274,15 @@ class Block(object):
 			self.put(section, name, value)
 
 	def __contains__(self, section_name):
+		if isinstance(section_name, basestring):
+			return self.has_section(section_name)
 		try:
 			(section,name) = section_name
 		except ValueError:
 			raise ValueError("You must specify both a section and a name to get or set a block item: b['section','name']")
-		return self.has_value(section, name)		
+		return self.has_value(section, name)
+
+	def sections(self):
+		n = lib.c_datablock_num_sections(self._ptr)
+		return [lib.c_datablock_get_section_name(self._ptr, i) for i in xrange(n)]
+
