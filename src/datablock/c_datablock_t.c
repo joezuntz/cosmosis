@@ -15,9 +15,9 @@ void test_sections()
   assert(c_datablock_has_section(NULL, NULL) == false);
   assert(c_datablock_has_section(s, NULL) == false);
   assert(c_datablock_num_sections(NULL) == -1);
-  assert(c_datablock_has_value(NULL, NULL, NULL) == DBS_DATABLOCK_NULL);
-  assert(c_datablock_has_value(s, NULL, NULL) == DBS_SECTION_NULL);
-  assert(c_datablock_has_value(s, "boo", NULL) == DBS_NAME_NULL);
+  assert(c_datablock_has_value(NULL, NULL, NULL) == false);
+  assert(c_datablock_has_value(s, NULL, NULL) == false);
+  assert(c_datablock_has_value(s, "boo", NULL) == false);
 
   assert(c_datablock_has_section(s, "cow") == false);
   assert(c_datablock_num_sections(s) == 0);
@@ -30,9 +30,9 @@ void test_sections()
   assert(c_datablock_put_int(s, "s1", "a", 10) == DBS_SUCCESS);
   assert(c_datablock_has_section(s, "s1") == true);
   assert(c_datablock_num_sections(s) == 1);
-  assert(c_datablock_has_value(s, "s1", "a") == DBS_SUCCESS);
-  assert(c_datablock_has_value(s, "no such section", "a") == DBS_SECTION_NOT_FOUND);
-  assert(c_datablock_has_value(s, "s1", "no such parameter") == DBS_NAME_NOT_FOUND);
+  assert(c_datablock_has_value(s, "s1", "a") == true);
+  assert(c_datablock_has_value(s, "no such section", "a") == false);
+  assert(c_datablock_has_value(s, "s1", "no such parameter") == false);
 
   /* Make a few more sections. */
   assert(c_datablock_put_int(s, "s2", "a", 10) == DBS_SUCCESS);
@@ -61,16 +61,22 @@ void test_scalar_int()
 
   int expected = -4;
 
+  assert(c_datablock_get_num_values(s,"x")==-1);
+
   /* Put with no previous value should save the right value. */
   assert(c_datablock_put_int(s, "x", "cow", expected) == DBS_SUCCESS);
   int val = 0;
+  assert(c_datablock_get_num_values(s,"x")==1);
+
   assert(c_datablock_get_int(s, "x", "cow", &val) == DBS_SUCCESS);
   assert(val == expected);
+  assert(c_datablock_get_num_values(s,"x")==1);
 
   /* Put of the same name into a different section should not collide. */
   assert(c_datablock_put_int(s, "y", "cow", expected) == DBS_SUCCESS);
   assert(c_datablock_get_int(s, "y", "cow", &val) == DBS_SUCCESS);
   assert(val == expected);
+  assert(c_datablock_get_num_values(s,"y")==1);
 
   /* Second put of the same name with same type should fail, and the
      value should be unaltered. */

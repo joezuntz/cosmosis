@@ -51,6 +51,19 @@ extern "C" {
   int c_datablock_get_array_length(c_datablock const* s, const char* section, const char* name);
 
   /*
+    Get the number of values in the named section.
+    If block and section are non-NULL and there is a section
+    with the given name then return the number of values in that
+    section.
+
+    Otherwise return -1.
+
+  */
+  int c_datablock_get_num_values(
+    c_datablock const* s, const char* section);
+
+
+  /*
     Return the name of the i'th section of the datablock. Note that if a
     new section is added, the ordinal position of some or all of the
     named sections may change; this is because the sections are stored

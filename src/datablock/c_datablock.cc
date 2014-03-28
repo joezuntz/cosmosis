@@ -38,13 +38,24 @@ extern "C"
     return p->num_sections();
   }
 
+  int c_datablock_get_num_values(
+    c_datablock const* s, const char* section)
+  {
+    if (s == nullptr) return -1;
+    if (section == nullptr) return -1;
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    return p->get_num_values(section);
+  }
+
   _Bool c_datablock_has_value(c_datablock const* s,
                                          const char* section,
                                          const char* name)
   {
-    if (s == nullptr) return DBS_DATABLOCK_NULL;
-    if (section == nullptr) return DBS_SECTION_NULL;
-    if (name == nullptr) return DBS_NAME_NULL;
+    if (s == nullptr) return false;
+    if (section == nullptr) return false;
+        if (s == nullptr) return false;
+    if (section == nullptr) return false;
+if (name == nullptr) return false;
     DataBlock const* p = static_cast<DataBlock const*>(s);
     return p->has_val(section, name);
   }
