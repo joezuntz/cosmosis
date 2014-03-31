@@ -1,9 +1,4 @@
 import numpy as np
-import pymc
-import sys
-import os
-from mpi4py import  MPI
-
 
 
 class Diagnostics(object):
@@ -131,12 +126,12 @@ class Diagnostics(object):
 			R = V/W
 			return [B_over_n*n,W,R]
 
-	@staticmethod
-	def finished_chain_diag(trace):
-		"""convergence diagnostics on one trace"""
-		z_scores = pymc.geweke(trace, first=.1, last=.5, intervals=20)
-		RL_output = pymc.raftery_lewis(trace, 0.025, 0.05, s=.95, epsilon=.001, verbose=1)
-		return z_scores
+#	@staticmethod
+#	def finished_chain_diag(trace):
+#		"""convergence diagnostics on one trace"""
+#		z_scores = pymc.geweke(trace, first=.1, last=.5, intervals=20)
+#		RL_output = pymc.raftery_lewis(trace, 0.025, 0.05, s=.95, epsilon=.001, verbose=1)
+#		return z_scores
 
 		
 
