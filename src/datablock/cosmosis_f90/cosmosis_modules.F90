@@ -49,7 +49,8 @@ module cosmosis_modules
 		type(c_ptr) :: c_name
 		c_name = c_datablock_get_section_name_wrapper(block, i)
 		name = c_string_to_fortran(c_name, DATABLOCK_MAX_STRING_LENGTH)
-
+		!No free here because we do not get
+		!a newly allocated copy
 	end function datablock_get_section_name
 
 	!Save an integer with the given name to the given section
@@ -174,6 +175,55 @@ module cosmosis_modules
 			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value)
 
 	end function datablock_get_complex
+
+
+
+	function datablock_put_string(block, section, name, value) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		character(len=*) :: value
+
+		status = c_datablock_put_string_wrapper(block, &
+			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, trim(value)//C_NULL_CHAR)
+
+	end function datablock_put_string
+
+	function datablock_replace_string(block, section, name, value) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		character(len=*) :: value
+
+		status = c_datablock_replace_string_wrapper(block, &
+			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, trim(value)//C_NULL_CHAR)
+
+	end function datablock_replace_string
+
+	function datablock_get_string(block, section, name, value) result(status)
+		integer(cosmosis_status) :: status
+		integer(cosmosis_block) :: block
+		character(len=*) :: section
+		character(len=*) :: name
+		character(len=*) :: value
+		type(c_ptr) :: c_string  !This is actually a pointer-to-a-pointer, I think.
+
+		!Call the C function, which returns a c_ptr.
+		status = c_datablock_get_string_wrapper(block, &
+			trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, c_string)
+
+		! Convert the c_ptr into a fortran string.
+		! This will (silently) truncate the string if
+		! the value put in is not long enough,
+		! but this is apparently standard in Fortran.
+		value = c_string_to_fortran(c_string, len(value))
+		!Need to free the C string!  Becuase it was allocated with strdup
+		call wrap_free(c_string)
+
+	end function datablock_get_string
+
 
 !		function c_datablock_put_int_array_1d_wrapper(s, section, name, value, size)
 

@@ -11,6 +11,7 @@ program test_cosmosis
 	integer, dimension(:), allocatable :: int_arr_recovered
 	integer, dimension(10,10) :: int_arr_2d
 	complex(c_double_complex) :: z
+	character(len=20) :: s
 
 	n=15
 	x=14.8
@@ -81,7 +82,12 @@ program test_cosmosis
 	call cosmosis_assert(all(slice==int_arr_recovered), "Slice dim 2 fail")
 	deallocate(int_arr_recovered)
 
-
+	s = "cat"
+	status = datablock_put_string(block, "STRINGS", "ANIMALS", s)
+	s = ""
+	call cosmosis_assert(status==0, "Put string failed")
+	status = datablock_get_string(block, "STRINGS", "ANIMALS", s)
+	call cosmosis_assert(s=="cat", "Put string failed")
 
 
 	contains 

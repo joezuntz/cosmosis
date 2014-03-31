@@ -56,10 +56,12 @@ ERROR_MESSAGES.update({
 
 ERROR_CLASSES = {}
 
+class CosmosisError(Exception):
+	pass
 
  #Might want to create more of a subclass structure here.
  #Have them all inherit from BlockError
-class BlockError(Exception):
+class BlockError(CosmosisError):
 	def __init__(self, status, section, name):
 		self.name=name
 		self.status=status

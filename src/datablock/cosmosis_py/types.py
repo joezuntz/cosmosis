@@ -1,0 +1,15 @@
+import ctypes as ct
+
+DBT_INT       =  0
+DBT_DOUBLE    =  1
+DBT_COMPLEX   =  2
+DBT_STRING    =  3
+DBT_INT1D     =  4
+DBT_DOUBLE1D  =  5
+DBT_COMPLEX1D =  6
+DBT_STRING1D  =  7
+DBT_INT2D     =  8
+DBT_DOUBLE2D  =  9
+DBT_COMPLEX2D = 10
+DBT_STRING2D  = 11
+DBT_UNKNOWN   = 12

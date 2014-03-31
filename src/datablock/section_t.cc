@@ -17,6 +17,7 @@ void test_type(T && x, T && y)
   Section s;
   assert(s.put_val("a", x) == DBS_SUCCESS);
   assert(s.put_val("a", y) == DBS_NAME_ALREADY_EXISTS);
+  assert(s.value_name(0)=="a");
   T result;
   assert(s.get_val("a", result) == DBS_SUCCESS);
   assert(s.get_val("no such parameter", result) == DBS_NAME_NOT_FOUND);
@@ -42,6 +43,18 @@ void test_crossing_types()
   assert(s.put_val("a", 2.0) == DBS_NAME_ALREADY_EXISTS);
   assert(s.replace_val("a", vector<string>()) == DBS_WRONG_VALUE_TYPE);
   assert(s.has_value<int>("a"));
+}
+
+void test_section_size()
+{
+  Section s;
+  assert(s.number_values() == 0);
+  assert(s.put_val("a", 1) == DBS_SUCCESS);
+  assert(s.number_values() == 1);
+  assert(s.put_val("b", 2.5) == DBS_SUCCESS);
+  assert(s.number_values() == 2);
+  assert(s.replace_val("b",3.4)==DBS_SUCCESS);
+  assert(s.number_values() == 2);
 }
 
 void test_size()
@@ -125,5 +138,6 @@ int main()
 
   test_crossing_types();
   test_size();
+  test_section_size();
   test_type_finding();
 }

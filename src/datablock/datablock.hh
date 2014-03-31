@@ -53,7 +53,7 @@ namespace cosmosis
 
     // Return DBS_SUCCESS if the datablock has a value in the given
     // section with the given name, and an error status otherwise.
-    DATABLOCK_STATUS has_val(std::string const& section,
+    bool has_val(std::string const& section,
                              std::string const& name) const;
 
     // Return -1 if no parameter of the given name in the given section
@@ -100,9 +100,17 @@ namespace cosmosis
     // Return the number of sections in this DataBlock.
     std::size_t num_sections() const;
 
+    // Get the number of values in a named section
+    int num_values(std::string const& section) const;
+
     // Return the name of the i'th section. Throws BadDataBlockAccess if
     // the index is out-of-range.
     std::string const& section_name(std::size_t i) const;
+
+    // Return the name of the value in the given section and position
+    // in that section.  Specify section either by number or name
+    std::string const& value_name(std::string section, int j) const;
+    std::string const& value_name(int i, int j) const;
 
     // Remove all the sections.
     void clear();

@@ -41,7 +41,13 @@ extern "C" {
     with the given name, and an error status otherwise. The associated
     value can be of any supported type.
   */
-  DATABLOCK_STATUS c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
+  _Bool c_datablock_has_value(c_datablock const* s, const char* section, const char* name);
+
+
+  const char* c_datablock_get_value_name(c_datablock const* s, const char* section, int j);
+  const char* c_datablock_get_value_name_by_section_index(c_datablock const* s, 
+    int i, int j);
+
 
   /*
     If the section and name correspond to a value that is an array,
@@ -49,6 +55,19 @@ extern "C" {
     arguments is NULL, return -1.
    */
   int c_datablock_get_array_length(c_datablock const* s, const char* section, const char* name);
+
+  /*
+    Get the number of values in the named section.
+    If block and section are non-NULL and there is a section
+    with the given name then return the number of values in that
+    section.
+
+    Otherwise return -1.
+
+  */
+  int c_datablock_num_values(
+    c_datablock const* s, const char* section);
+
 
   /*
     Return the name of the i'th section of the datablock. Note that if a

@@ -9,11 +9,27 @@ cosmosis::Section::has_val(string const& name) const
 }
 
 int
+cosmosis::Section::number_values() const
+{
+  return vals_.size();
+}
+
+int
 cosmosis::Section::get_size(string const& name) const
 {
   auto ival = vals_.find(name);
   if (ival == vals_.end()) return -1;
   return ival->second.size();
+}
+
+
+std::string const& cosmosis::Section::value_name(std::size_t i) const
+{
+  if (i >= (std::size_t) number_values()) throw BadSectionAccess();
+  auto isec = vals_.begin();
+  std::advance(isec, i);
+  return isec->first;
+
 }
 
 DATABLOCK_STATUS 
