@@ -132,7 +132,7 @@ def output_traces(mcmc,param_info,output_file,output_header):
 		traces = np.concatenate((traces,value),axis=0)
 	if output_header:
 		output_file.write('\n')
-	np.savetxt(output_file, np.c_[traces.T],fmt = '%.6e')
+	np.savetxt(output_file, np.c_[traces.T],fmt = '%.7e')
 	output_file.flush()
 
 
@@ -402,7 +402,6 @@ def mpi_sampling(comm, model, param_info, ini):
 			output_header = 0
 
 		totalsteps = 0
-		print "len",len(param_info)
 		Diag=Diagnostics(Rcrit,len(param_info)) #instance of Diagnostic class
 		if  nsteps <= sampling_steps: #checking cvg every nsteps  - make sure that there are nsteps left after burn
 			for i in range(int(sampling_steps/nsteps)):
