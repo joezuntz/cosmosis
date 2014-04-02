@@ -58,30 +58,42 @@ class DataBlock(object):
 
 
 
-	def get_int(self, section, name):
+	def get_int(self, section, name, default=None):
 		r = ct.c_int()
-		status = lib.c_datablock_get_int(self._ptr,section,name,r)
+		if default is None:
+			status = lib.c_datablock_get_int(self._ptr,section,name,r)
+		else:
+			status = lib.c_datablock_get_int_default(self._ptr,section,name,default,r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
-	def get_double(self, section, name):
+	def get_double(self, section, name, default=None):
 		r = ct.c_double()
-		status = lib.c_datablock_get_double(self._ptr,section,name,r)
+		if default is None:
+			status = lib.c_datablock_get_double(self._ptr,section,name,r)
+		else:
+			status = lib.c_datablock_get_double_default(self._ptr,section,name,default,r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
-	def get_complex(self, section, name):
+	def get_complex(self, section, name, default=None):
 		r = lib.c_complex()
-		status = lib.c_datablock_get_complex(self._ptr,section,name,r)
+		if default is None:
+			status = lib.c_datablock_get_complex(self._ptr,section,name,r)
+		else:
+			status = lib.c_datablock_get_complex_default(self._ptr,section,name,default,default,r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r.real+1j*r.imag
 
-	def get_string(self, section, name):
+	def get_string(self, section, name, default=None):
 		r = lib.c_str()
-		status = lib.c_datablock_get_string(self._ptr,section,name,r)
+		if default is None:
+			status = lib.c_datablock_get_string(self._ptr,section,name,r)
+		else:
+			status = lib.c_datablock_get_string_default(self._ptr,section,name,default,r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return str(r.value)

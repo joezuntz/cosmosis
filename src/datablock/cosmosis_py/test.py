@@ -5,6 +5,19 @@ import unittest
 from . import errors
 
 class TestBlockFunctions(unittest.TestCase):
+
+	def test_default(self):
+		b = block.DataBlock()
+		section = 'test'
+#		b.put_int(section, "b", 1)
+		assert b.get_int(section, 'a', default=14)==14
+		self.assertRaises(errors.BlockSectionNotFound, b.get_int, section, 'a')
+		assert b.get_double(section, 'a', default=1.0)==1.0
+		assert b.get_string(section, 'a', default="QQQ")=="QQQ"
+
+	def test_complex(self):
+		pass
+
 	def test_int(self):
 		# make sure the shuffled sequence does not lose any elements
 		b = block.DataBlock()
