@@ -57,6 +57,8 @@ void test_sections()
 
 #include "test_c_datablock_scalars.h"
 
+
+
 #if 0
 void test_scalar_int()
 {
@@ -460,6 +462,7 @@ int main()
   test_scalar_double();
   test_scalar_string();
   test_scalar_complex();
+  test_scalar_bool();
 
   test_array_int();
   return 0;

@@ -150,6 +150,40 @@ if (name == nullptr) return false;
     return p->get_val(section, name, def, *val);
   }
 
+
+  DATABLOCK_STATUS
+  c_datablock_get_bool(c_datablock const* s,
+          const char* section,
+          const char* name,
+          bool* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    return p->get_val(section, name, *val);
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_bool_default(c_datablock const* s,
+                              const char* section,
+                              const char* name,
+                              bool def,
+                              bool* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    return p->get_val(section, name, def, *val);
+  }
+
+
+
   DATABLOCK_STATUS
   c_datablock_get_double(c_datablock const* s,
 			 const char* section,
@@ -389,9 +423,23 @@ if (name == nullptr) return false;
 
   DATABLOCK_STATUS
   c_datablock_put_int(c_datablock* s,
-		      const char* section,
-		      const char* name,
-		      int val)
+          const char* section,
+          const char* name,
+          int val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->put_val(section, name, val);
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_put_bool(c_datablock* s,
+          const char* section,
+          const char* name,
+          bool val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
@@ -483,9 +531,9 @@ if (name == nullptr) return false;
 
   DATABLOCK_STATUS
   c_datablock_replace_int(c_datablock* s,
-			  const char* section,
-			  const char* name,
-			  int val)
+        const char* section,
+        const char* name,
+        int val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
@@ -494,6 +542,21 @@ if (name == nullptr) return false;
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, val);
   }
+
+  DATABLOCK_STATUS
+  c_datablock_replace_bool(c_datablock* s,
+        const char* section,
+        const char* name,
+        bool val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->replace_val(section, name, val);
+  }
+
 
   DATABLOCK_STATUS
   c_datablock_replace_double(c_datablock* s,
