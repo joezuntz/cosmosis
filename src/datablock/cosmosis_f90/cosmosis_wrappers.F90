@@ -248,6 +248,57 @@ module cosmosis_wrappers
 			type(c_ptr) :: value
 		end function c_datablock_get_string_wrapper
 
+
+		!DATABLOCK_STATUS c_datablock_get_int(c_datablock* s, const char* section, const char* name, int *val);
+		function c_datablock_get_int_default_wrapper(s, section, name, default, value) bind(C, name="c_datablock_get_int_default")
+			use iso_c_binding
+			use cosmosis_types
+			implicit none
+			integer (cosmosis_status) :: c_datablock_get_int_default_wrapper
+			integer(kind=cosmosis_block), value :: s
+			character(kind=c_char), dimension(*) :: section
+			character(kind=c_char), dimension(*) :: name
+			integer(kind=c_int) :: value
+			integer(kind=c_int), value :: value
+		end function c_datablock_get_int_default_wrapper
+
+		function c_datablock_get_double_default_wrapper(s, section, name, default, value) bind(C, name="c_datablock_get_double_default")
+			use iso_c_binding
+			use cosmosis_types
+			implicit none
+			integer (cosmosis_status) :: c_datablock_get_double_default_wrapper
+			integer(kind=cosmosis_block), value :: s
+			character(kind=c_char), dimension(*) :: section
+			character(kind=c_char), dimension(*) :: name
+			real(kind=c_double) :: value
+			real(kind=c_double), value :: value
+		end function c_datablock_get_double_default_wrapper
+
+		function c_datablock_get_complex_default_wrapper(s, section, name, value) bind(C, name="c_datablock_get_complex_default")
+			use iso_c_binding
+			use cosmosis_types
+			implicit none
+			integer (cosmosis_status) :: c_datablock_get_complex_default_wrapper
+			integer(kind=cosmosis_block), value :: s
+			character(kind=c_char), dimension(*) :: section
+			character(kind=c_char), dimension(*) :: name
+			complex(kind=c_double_complex) :: value
+			complex(kind=c_double_complex), value :: value
+		end function c_datablock_get_complex_default_wrapper
+
+
+		function c_datablock_get_string_default_wrapper(s, section, name, default, value) bind(C, name="c_datablock_get_string")
+			use iso_c_binding
+			use cosmosis_types
+			implicit none
+			integer (cosmosis_status) :: c_datablock_get_string_default_wrapper
+			integer(kind=cosmosis_block), value :: s
+			character(kind=c_char), dimension(*) :: section
+			character(kind=c_char), dimension(*) :: name
+			character(kind=c_char), dimension(*) :: default
+			type(c_ptr) :: value
+		end function c_datablock_get_string_default_wrapper
+
 		function c_datablock_get_int_array_1d_preallocated_wrapper(s, section, name, value, size, maxsize) &
 		bind(C, name="c_datablock_get_int_array_1d_preallocated")
 			use iso_c_binding
