@@ -108,6 +108,67 @@ module cosmosis_modules
 
     end function datablock_get_int_default
 
+
+    function datablock_put_logical(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        logical :: value
+        logical(c_bool) c_value
+
+        c_value = value
+        status = c_datablock_put_bool_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, c_value)
+
+    end function datablock_put_logical
+
+    function datablock_replace_logical(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        logical :: value
+        logical(c_bool) c_value
+
+        c_value = value
+        status = c_datablock_replace_bool_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, c_value)
+
+    end function datablock_replace_logical
+
+    !Load the named integer from the given section
+    function datablock_get_logical(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(*) :: section
+        character(*) :: name
+        logical :: value
+        logical(c_bool) :: c_value
+
+        status = c_datablock_get_bool_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, c_value)
+        value = c_value
+
+    end function datablock_get_logical
+
+    !Load the named integer from the given section
+    function datablock_get_logical_default(block, section, name, default, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(*) :: section
+        character(*) :: name
+        logical :: default, value
+        logical(c_bool) :: c_default, c_value
+
+        c_default = default
+        status = c_datablock_get_bool_default_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, c_default, c_value)
+        c_value = value
+
+    end function datablock_get_logical_default
+
+
     !Save a double with the given name to the given section
     function datablock_put_double(block, section, name, value) result(status)
         integer(cosmosis_status) :: status

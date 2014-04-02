@@ -73,6 +73,17 @@ module cosmosis_wrappers
             integer(kind=c_int), value :: value
         end function c_datablock_put_int_wrapper
 
+        function c_datablock_put_bool_wrapper(s, section, name, value) bind(C, name="c_datablock_put_bool")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_put_bool_wrapper
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            logical(kind=c_bool), value :: value
+        end function c_datablock_put_bool_wrapper
+
         function c_datablock_put_double_wrapper(s, section, name, value) bind(C, name="c_datablock_put_double")
             use iso_c_binding
             use cosmosis_types
@@ -150,6 +161,17 @@ module cosmosis_wrappers
             integer(kind=c_int)  :: value
         end function c_datablock_replace_int_wrapper
 
+        function c_datablock_replace_bool_wrapper(s, section, name, value) bind(C, name="c_datablock_replace_bool")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_replace_bool_wrapper
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            logical(kind=c_bool)  :: value
+        end function c_datablock_replace_bool_wrapper
+
         function c_datablock_replace_double_wrapper(s, section, name, value) bind(C, name="c_datablock_replace_double")
             use iso_c_binding
             use cosmosis_types
@@ -224,6 +246,18 @@ module cosmosis_wrappers
             integer(kind=c_int) :: value
         end function c_datablock_get_int_wrapper
 
+        !DATABLOCK_STATUS c_datablock_get_int(c_datablock* s, const char* section, const char* name, int *val);
+        function c_datablock_get_bool_wrapper(s, section, name, value) bind(C, name="c_datablock_get_bool")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_get_bool_wrapper
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            logical(kind=c_bool) :: value
+        end function c_datablock_get_bool_wrapper
+
         function c_datablock_get_double_wrapper(s, section, name, value) bind(C, name="c_datablock_get_double")
             use iso_c_binding
             use cosmosis_types
@@ -270,6 +304,19 @@ module cosmosis_wrappers
             integer(kind=c_int) :: value
             integer(kind=c_int), value :: default
         end function c_datablock_get_int_default_wrapper
+
+        function c_datablock_get_bool_default_wrapper(s, section, name, default, value) bind(C, name="c_datablock_get_bool_default")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_get_bool_default_wrapper
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            logical(kind=c_bool) :: value
+            logical(kind=c_bool), value :: default
+        end function c_datablock_get_bool_default_wrapper
+
 
         function c_datablock_get_double_default_wrapper(s, section, name, default, value) bind(C, name="c_datablock_get_double_default")
             use iso_c_binding

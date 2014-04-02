@@ -83,7 +83,7 @@ program test_cosmosis
         real(8) :: x
         complex(c_double_complex) :: z
         character(len=20) :: s
-
+        logical :: b
 
         block = make_datablock()
 
@@ -91,24 +91,28 @@ program test_cosmosis
         n=15
         x=14.8
         z=dcmplx(1.4,-1.2)
+        b = .true.
         status = 0
         status = datablock_put_int(block, "MAGIC", "NUMBER", n)
         status = status + datablock_put_double(block, "MAGIC", "WEIGHT", x)
         status = status + datablock_put_complex(block, "MAGIC", "FOURIER", z)
+        status = status + datablock_put_logical(block, "MAGIC", "LOGIC", b)
         call cosmosis_assert(status==0, "Put scalar failed")
 
         n=666
         x=666.
         z=dcmplx(666.,666.)
-
+        b = .false.
         status = datablock_get_int(block, "MAGIC", "NUMBER", n)
         status = status + datablock_get_double(block, "MAGIC", "WEIGHT", x)
         status = status + datablock_get_complex(block, "MAGIC", "FOURIER", z)
+        status = status + datablock_get_logical(block, "MAGIC", "LOGIC", b)
 
         call cosmosis_assert(status==0, "Get scalar failed")
         call cosmosis_assert(n==15, "Get int wrong answer")
         call cosmosis_assert(x==14.8, "Get float wrong answer")
         call cosmosis_assert(z==dcmplx(1.4,-1.2), "Get int wrong answer")
+        call cosmosis_assert(b, "Get bool wrong answer")
 
         s = "cat"
         status = datablock_put_string(block, "STRINGS", "ANIMALS", s)
