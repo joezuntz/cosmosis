@@ -8,6 +8,7 @@ program test_cosmosis
     call test_scalar()
     call test_defaults()
     call test_array()
+    call test_double_array()
 
 
 
@@ -185,6 +186,69 @@ program test_cosmosis
         status = destroy_c_datablock(block)
         call cosmosis_assert(status==0, "Destroy failed")
     end subroutine test_array
+
+
+    subroutine test_double_array()
+        integer(cosmosis_block) :: block
+        integer(cosmosis_status) :: status
+        integer size_recovered, i, j
+        real(8), dimension(10) :: arr, slice
+        real(8), dimension(:), allocatable :: arr_recovered
+        real(8), dimension(10,10) :: arr_2d
+
+
+        block = make_datablock()
+
+        do i=1,10
+            arr(i) = i*i*2.0
+        enddo
+
+
+        status = datablock_put_double_array_1d(block, "MAGIC", "FIELD", arr)
+        call cosmosis_assert(status==0, "Put double array failed")
+
+        call cosmosis_assert(.not. allocated(arr_recovered), "Put double array did not allocate")
+        status = datablock_get_double_array_1d(block, "MAGIC", "FIELD", arr_recovered, size_recovered)
+        call cosmosis_assert(status==0, "Put double array did not work")
+        call cosmosis_assert(allocated(arr_recovered), "Put double array did not allocate")
+        call cosmosis_assert(size(arr_recovered)==10, "Wrong size array back")
+        call cosmosis_assert(size_recovered==10, "Wrong size array back")
+        do i=1,10
+            call cosmosis_assert(arr_recovered(i)==i*i*2.0, "get double array wrong answer")
+        enddo
+
+        call cosmosis_assert(datablock_num_sections(block)==1, "wrong section count")
+        deallocate(arr_recovered)
+
+        call cosmosis_assert(trim(datablock_get_section_name(block,0))=="magic", "Wrong section name")
+
+        do i=1,10
+            do j=1,10
+                arr_2d(i,j) = i+0.1*j
+            enddo
+        enddo
+
+        slice = arr_2d(1,:)
+        status = datablock_put_double_array_1d(block, "MAGIC", "SLICE", arr_2d(1,:))
+        call cosmosis_assert(status==0, "Put double slice did not work")
+        status = datablock_get_double_array_1d(block, "MAGIC", "SLICE", arr_recovered, size_recovered)
+        call cosmosis_assert(status==0, "Get double slice did not work")
+        call cosmosis_assert(all(slice==arr_recovered), "Slice dim 1 fail")
+        deallocate(arr_recovered)
+
+
+        slice = arr_2d(:,1)
+        status = datablock_replace_double_array_1d(block, "MAGIC", "SLICE", arr_2d(:,1))
+        call cosmosis_assert(status==0, "Replace double slice 2 did not work")
+        status = datablock_get_double_array_1d(block, "MAGIC", "SLICE", arr_recovered, size_recovered)
+        call cosmosis_assert(status==0, "Get double slice 2 did not work")
+        call cosmosis_assert(all(slice==arr_recovered), "Slice dim 2 fail")
+        deallocate(arr_recovered)
+
+
+        status = destroy_c_datablock(block)
+        call cosmosis_assert(status==0, "Destroy failed")
+    end subroutine test_double_array
 
 
 end program test_cosmosis
