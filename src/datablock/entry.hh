@@ -62,7 +62,9 @@ namespace cosmosis
     // A default-constructed Entry carries a double, with value 0.0
     Entry();
     explicit Entry(int v);
+    explicit Entry(bool v);
     explicit Entry(double v);
+    explicit Entry(const char * v);
     explicit Entry(std::string v);
     explicit Entry(complex_t v);
     explicit Entry(vint_t const& a);
@@ -98,9 +100,11 @@ namespace cosmosis
 
     // Replace the existing value (of whatever type) with the given
     // value.
+    void set_val(bool v);
     void set_val(int v);
     void set_val(double v);
     void set_val(std::string const& v);
+    void set_val(const char * v);
     void set_val(complex_t v);
     void set_val(vint_t const& v);
     void set_val(vdouble_t const& v);
@@ -114,6 +118,7 @@ namespace cosmosis
     // the anonymous union contains the value.
     union
     {
+      bool b;
       int i;
       double d;
       std::string s;
@@ -157,8 +162,18 @@ cosmosis::Entry::Entry(int v) :
 {}
 
 inline
+cosmosis::Entry::Entry(bool v) :
+  type_(typeid(bool)), b(v)
+{}
+
+inline
 cosmosis::Entry::Entry(double v) :
   type_(typeid(double)), d(v)
+{}
+
+inline
+cosmosis::Entry::Entry(const char * v) :
+  type_(typeid(std::string)), s(v)
 {}
 
 inline
@@ -224,6 +239,7 @@ namespace cosmosis
   template <class T> void emplace(T* addr, T const& val) { new(addr) T(val); }
   template <class T> bool Entry::is() const { return (type_ == typeid(T)); }
 
+  template <> inline bool Entry::val<bool>() const { return _val(&b); }
   template <> inline int Entry::val<int>() const { return _val(&i); }
   template <> inline double Entry::val<double>() const { return _val(&d); }
   template <> inline std::string Entry::val<std::string>() const { return _val(&s); }
@@ -233,6 +249,7 @@ namespace cosmosis
   template <> inline vstring_t Entry::val<vstring_t>() const { return _val(&vs); }
   template <> inline vcomplex_t Entry::val<vcomplex_t>() const { return _val(&vz); }
 
+  template <> inline bool const& Entry::view<bool>() const { return _val(&b); }
   template <> inline int const& Entry::view<int>() const { return _val(&i); }
   template <> inline double const& Entry::view<double>() const { return _val(&d); }
   template <> inline std::string const& Entry::view<std::string>() const { return _val(&s); }
