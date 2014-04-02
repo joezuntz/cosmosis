@@ -23,6 +23,7 @@ typedef enum {
   DBT_DOUBLE2D,
   DBT_COMPLEX2D,
   DBT_STRING2D,
+  DBT_BOOL,
   DBT_UNKNOWN,
 } datablock_type_t;
 

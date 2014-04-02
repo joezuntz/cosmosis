@@ -112,6 +112,7 @@ void test_types()
   b.put_val("double_vec", "a", vector<double>{3.,2.,1.});
   b.put_val("string_vec", "a", vector<string>{"3","2","1"});
   b.put_val("complex_vec", "a", vector<complex_t>{{1,2},{2.5, 3}});
+  b.put_val("bools", "a", true);
   datablock_type_t t;
   assert (b.get_type("ints","a",t)==DBS_SUCCESS);
   assert(t==DBT_INT);
@@ -129,6 +130,8 @@ void test_types()
   assert(t==DBT_STRING1D);
   assert (b.get_type("complex_vec","a",t)==DBS_SUCCESS);
   assert(t==DBT_COMPLEX1D);
+  assert (b.get_type("bools","a",t)==DBS_SUCCESS);
+  assert(t==DBT_BOOL);
 
 }
 
@@ -138,6 +141,7 @@ int main()
   test(2.5, -1.25e20, string("dog"));
   test(complex_t{10.5, 3.5}, complex_t{-2.5, -1.5}, 10);
   test(string("cow"), string("moose"), 20);
+  test(true, false, 2);
   test(vector<int>{1,2,3}, vector<int>{3,2,1}, vector<double>{1.5,25.});
   test(vector<double>{1,2,3}, vector<double>{3,2,1}, string("moo"));
   test(vector<complex_t>{{1,2},{2.5, 3}}, vector<complex_t>{{2,1}}, 100);
