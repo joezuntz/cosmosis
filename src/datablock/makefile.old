@@ -23,6 +23,7 @@ CXXFLAGS=-std=c++11 -O3 -Wall -Wextra -pedantic -fPIC -g
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 CCFLAGS=-std=c99 -O3 -Wall -Wextra -pedantic -fPIC -g
 #CCFLAGS=-std=c99 -O0 -Wall -Wextra -pedantic -fPIC -g
+F90FLAGS = -Wall -fPIC -ffree-line-length-none
 
 ifdef MEMCHECK
   MEMCHECK_CMD=valgrind --error-exitcode=1 --leak-check=yes --errors-for-leak-kinds=definite --track-origins=yes --suppressions=cosmosis_tests.supp
@@ -59,14 +60,21 @@ test_entry: lib entry_t
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@echo  ... passed
 
+libcosmosis_fortran.so: libcosmosis.so cosmosis_f90/cosmosis_types.F90 cosmosis_f90/cosmosis_wrappers.F90 cosmosis_f90/cosmosis_modules.F90   
+	$(F90) $(F90FLAGS) -shared -o $@ $+
+
+fortran_test: libcosmosis_fortran.so  cosmosis_f90/cosmosis_test.F90
+	$(F90) $(F90FLAGS)  -o $@ cosmosis_f90/cosmosis_test.F90  -L. -lcosmosis_fortran -lcosmosis
+
+
 libcosmosis.so: datablock.o entry.o section.o c_datablock.o
 	$(CXX) $(CXXFLAGS) -shared -o $@ $+
 
 datablock_t: datablock_test.cc datablock.hh libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ datablock_test.cc -L . -lcosmosis
 
-c_datablock_t: c_datablock_t.c c_datablock.h libcosmosis.so
-	$(CC) $(CCFLAGS) -o $@ c_datablock_t.c -L . -lcosmosis
+c_datablock_t: c_datablock_test.c c_datablock.h libcosmosis.so
+	$(CC) $(CCFLAGS) -o $@ c_datablock_test.c -L . -lcosmosis
 
 entry_t: entry_test.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis

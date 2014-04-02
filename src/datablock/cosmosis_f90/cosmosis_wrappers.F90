@@ -11,6 +11,15 @@ module cosmosis_wrappers
             integer(kind=cosmosis_block) :: make_c_datablock
         end function make_c_datablock
 
+        function destroy_c_datablock(block) bind(C, name="destroy_c_datablock")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer(kind=cosmosis_block), value :: block
+            integer (cosmosis_status) :: destroy_c_datablock
+        end function destroy_c_datablock
+
+
         function c_datablock_num_sections_wrapper(block) bind(C, name="c_datablock_num_sections")
             use iso_c_binding
             use cosmosis_types
@@ -259,7 +268,7 @@ module cosmosis_wrappers
             character(kind=c_char), dimension(*) :: section
             character(kind=c_char), dimension(*) :: name
             integer(kind=c_int) :: value
-            integer(kind=c_int), value :: value
+            integer(kind=c_int), value :: default
         end function c_datablock_get_int_default_wrapper
 
         function c_datablock_get_double_default_wrapper(s, section, name, default, value) bind(C, name="c_datablock_get_double_default")
@@ -271,10 +280,10 @@ module cosmosis_wrappers
             character(kind=c_char), dimension(*) :: section
             character(kind=c_char), dimension(*) :: name
             real(kind=c_double) :: value
-            real(kind=c_double), value :: value
+            real(kind=c_double), value :: default
         end function c_datablock_get_double_default_wrapper
 
-        function c_datablock_get_complex_default_wrapper(s, section, name, value) bind(C, name="c_datablock_get_complex_default")
+        function c_datablock_get_complex_default_wrapper(s, section, name, default, value) bind(C, name="c_datablock_get_complex_default")
             use iso_c_binding
             use cosmosis_types
             implicit none
@@ -283,11 +292,11 @@ module cosmosis_wrappers
             character(kind=c_char), dimension(*) :: section
             character(kind=c_char), dimension(*) :: name
             complex(kind=c_double_complex) :: value
-            complex(kind=c_double_complex), value :: value
+            complex(kind=c_double_complex), value :: default
         end function c_datablock_get_complex_default_wrapper
 
 
-        function c_datablock_get_string_default_wrapper(s, section, name, default, value) bind(C, name="c_datablock_get_string")
+        function c_datablock_get_string_default_wrapper(s, section, name, default, value) bind(C, name="c_datablock_get_string_default")
             use iso_c_binding
             use cosmosis_types
             implicit none
@@ -355,7 +364,7 @@ module cosmosis_wrappers
         type(c_ptr) :: c_str
         integer :: max_len
         integer(c_size_t) :: n, shpe(1)
-        integer i
+        integer(c_size_t) :: i
 
         !Initialize an empty string
         do i=1,max_len
