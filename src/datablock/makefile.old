@@ -31,14 +31,14 @@ else
   MEMCHECK_CMD=
 endif
 
-all: verify_setup lib
+all: lib
 
 lib: libcosmosis.so
 
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
 
-test:  test_entry test_section test_datablock test_c_datablock
+test:  test_entry test_section test_datablock test_c_datablock test_fortran
 
 test_datablock: lib datablock_t
 	@echo -n Running datablock_t
@@ -60,10 +60,22 @@ test_entry: lib entry_t
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@echo  ... passed
 
+test_fortran: fortran_t
+	@echo -n Running fortran_t
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./fortran_t >  fortran_t.log
+	@echo  ... passed
+
+test_python:
+	@echo -n Running python tests - needs nose package
+	@nosetests cosmosis_py &> python_t.log
+	@echo ... passed
+
+.PHONY: test_datablock test_c_datablock test_section test_entry test_fortran test clean test_python
+
 libcosmosis_fortran.so: libcosmosis.so cosmosis_f90/cosmosis_types.F90 cosmosis_f90/cosmosis_wrappers.F90 cosmosis_f90/cosmosis_modules.F90   
 	$(F90) $(F90FLAGS) -shared -o $@ $+
 
-fortran_test: libcosmosis_fortran.so  cosmosis_f90/cosmosis_test.F90
+fortran_t: libcosmosis_fortran.so  cosmosis_f90/cosmosis_test.F90
 	$(F90) $(F90FLAGS)  -o $@ cosmosis_f90/cosmosis_test.F90  -L. -lcosmosis_fortran -lcosmosis
 
 
