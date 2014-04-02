@@ -6,10 +6,18 @@ from . import errors
 
 class TestBlockFunctions(unittest.TestCase):
 
+	def test_bool(self):
+		b = block.DataBlock()
+		section = 'test'
+		b.put_bool(section, 'b', True)
+		assert b.get_bool(section, 'b')==True
+		assert b.get_bool(section, 'c', default=False)==False
+		assert b.get_bool(section, 'c', default=True)==True
+		self.assertRaises(errors.BlockSectionNotFound, b.get_bool, 'ddd', 'c')
+
 	def test_default(self):
 		b = block.DataBlock()
 		section = 'test'
-#		b.put_int(section, "b", 1)
 		assert b.get_int(section, 'a', default=14)==14
 		self.assertRaises(errors.BlockSectionNotFound, b.get_int, section, 'a')
 		assert b.get_double(section, 'a', default=1.0)==1.0

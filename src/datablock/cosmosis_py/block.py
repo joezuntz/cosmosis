@@ -68,6 +68,16 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
+	def get_bool(self, section, name, default=None):
+		r = ct.c_bool()
+		if default is None:
+			status = lib.c_datablock_get_bool(self._ptr,section,name,r)
+		else:
+			status = lib.c_datablock_get_bool_default(self._ptr,section,name,default,r)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+		return r.value
+
 	def get_double(self, section, name, default=None):
 		r = ct.c_double()
 		if default is None:
@@ -123,6 +133,11 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
+	def put_bool(self, section, name, value):
+		status = lib.c_datablock_put_bool(self._ptr,section,name,bool(value))
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+
 	def put_double(self, section, name, value):
 		status = lib.c_datablock_put_double(self._ptr,section,name,float(value))
 		if status!=0:
@@ -154,6 +169,7 @@ class DataBlock(object):
 	def _method_for_type(self, T, method_type):
 		method={ int:    (self.get_int,     self.put_int,     self.replace_int),
 		         float:  (self.get_double,  self.put_double,  self.replace_double),
+		         bool:   (self.get_bool,    self.put_bool,    self.replace_bool),
 		         complex:(self.get_complex, self.put_complex, self.replace_complex),
 		         str:    (self.get_string,  self.put_string,  self.replace_string)
 		         }.get(T)
@@ -164,6 +180,7 @@ class DataBlock(object):
 	def _method_for_datatype_code(self, code, method_type):
 		T={ 
 			types.DBT_INT:     (self.get_int,     self.put_int,     self.replace_int),
+			types.DBT_BOOL:    (self.get_bool,     self.put_bool,     self.replace_bool),
 			types.DBT_DOUBLE:         (self.get_double,  self.put_double,  self.replace_double),
 			types.DBT_COMPLEX: (self.get_complex, self.put_complex, self.replace_complex),
 			types.DBT_STRING:  (self.get_string,  self.put_string,  self.replace_string),
@@ -222,6 +239,11 @@ class DataBlock(object):
 
 
 	def replace_int(self, section, name, value):
+		status = lib.c_datablock_replace_int(self._ptr,section,name,value)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+
+	def replace_bool(self, section, name, value):
 		status = lib.c_datablock_replace_int(self._ptr,section,name,value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)

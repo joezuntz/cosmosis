@@ -48,6 +48,7 @@ def load_array_function_types(namespace, c_type, c_name):
 
 
 load_function_types(locals(), ct.c_int, 'int')
+load_function_types(locals(), ct.c_bool, 'bool')
 load_function_types(locals(), ct.c_double, 'double')
 load_function_types(locals(), c_complex, 'complex')
 load_function_types(locals(), c_str, 'string')
