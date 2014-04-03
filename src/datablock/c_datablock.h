@@ -267,6 +267,16 @@ extern "C" {
                                int sz);
 
 
+
+DATABLOCK_STATUS  datablock_put_double_grid(
+  const char * section, 
+  const char * name_x, int n_x, double * x,  
+  const char * name_y, int n_y, double * y, 
+  double ** P);
+
+
+
+
 #ifdef __cplusplus
 }
 #endif

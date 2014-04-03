@@ -635,5 +635,73 @@ if (name == nullptr) return false;
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, vector<double>(val, val+sz));
   }
+/*
+DATABLOCK_STATUS  datablock_put_double_grid(
+  c_datablock* s,
+  const char * section, 
+  const char * name_x, int n_x, double * x,  
+  const char * name_y, int n_y, double * y, 
+  const char * name_z, double ** z)
+{
+    DATABLOCK_STATUS status=0;
+
+    int ndim = 2;
+    int dims[2] = {n_x, n_y};
+
+    status |= c_datablock_put_double_array_1d(s, section, name_x, x, n_x);
+    status |= c_datablock_put_double_array_1d(s, section, name_y, y, n_y);
+    status |= c_datablock_put_double_array(s, section, name_z, z, ndim, dims);
+
+    // We could rely on n_x and n_y to record in the block what ordering the array has.
+    // But that would break down if n_x == n_y
+    char sentinel_key[512];
+    char sentinel_value[512];
+
+    snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
+    snprintf(sentinel_value, 512, "%s_cosmosis_%s",name_x, name_y);
+
+    status |= c_datablock_put_string(s, section, sentinel_key, sentinel_value);
+    return status;
+}
+
+DATABLOCK_STATUS  datablock_get_double_grid(
+  c_datablock* s,
+  const char * section, 
+  const char * name_x, int *n_x, double ** x,  
+  const char * name_y, int *n_y, double ** y, 
+  const char * name_z, double *** z)
+{
+    DATABLOCK_STATUS status;
+
+    status = c_datablock_get_double_array_1d(s, section, name_x, x, n_x);
+    status |= c_datablock_get_double_array_1d(s, section, name_y, y, n_y);
+    int n_z = n_x * n_y;
+    //Now we need to check if the ordering requested here is the same
+    //as the saved ordering.  If not we need to transpose.
+    char sentinel_key[512];
+    char * sentinel_value;
+    char * sentinel_test[512];
+
+    snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
+    status |= c_datablock_get_string(s,section, sentinel_key, &sentinel_value);
+    snprintf(sentinel_test, 512, "%s_cosmosis_%s",name_x, name_y);
+    if (0==strcmp(sentinel_test, sentinel_value, 512)){
+      // This indicates that the requested ordering is the same as the stored one.
+      // So we do not need to do any flipping.
+      NOT FINISHED
+      status |= c_datablock_get_double_array_2d(s, section, name_y, y, n_y);
+    }
+    else{
+      if (0!=strcmp(sentinel_test, sentinel_value)){
+        //This means something has gone wrong.
+      }
+      // If this has worked then everything is fine.
+    }
+  return status;
+}
+*/
+
+
+
 
 } // extern "C"
