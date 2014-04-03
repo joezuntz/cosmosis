@@ -35,15 +35,11 @@ class ParallelSampler(Sampler):
         Sampler.__init__(self, ini, pipeline)
         self.pool = pool
 
-    def execute(self):
-        if self.pool:
-            self.pool.map()
-
-        else:
-            self.worker()
-
     def worker(self):
-        raise NotImplementedError
+        ''' Default to a map-style worker '''
+        if self.pool:
+            while True:
+                self.pool.wait()
 
     def is_master(self):
-        return self.pool.is_master()
+        return self.pool is None or self.pool.is_master()

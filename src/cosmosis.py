@@ -9,7 +9,8 @@ sys.path.append("datablock")
 
 from config import Inifile
 from pipeline import LikelihoodPipeline
-
+from sampler import sampler_registry
+import samplers
 
 RUNTIME_INI_SECTION = "runtime"
 
@@ -24,8 +25,37 @@ class ParseExtraParameters(argparse.Action):
             result[(section,param)] = value
         setattr(args, self.dest, result)
 
+def main(args, pool=None):
+    # load configuration 
+    ini = Inifile(args.inifile, override=args.variables)
 
-def main(argv):
+    # create pipeline
+    pipeline = LikelihoodPipeline(ini) 
+
+    # create sampler object
+    sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")
+
+    if sample_method not in samplers.sample_registry:
+        raise ValueError("Unknown sampler method %s" % (sample_method,))
+
+    if pool:
+        if not issubclass(samplers.sample_registry[sample_method],ParallelSampler):
+            raise ValueError("Sampler does not support parallel execution!")
+        sampler = samplers.sample_registry[sample_method](ini, pipeline, pool)
+    else:
+        sampler = samplers.sample_registry[sample_method](ini, pipeline)
+ 
+    sampler.config()
+
+    if not pool or pool.is_master():
+        # run the sampler
+        while not sampler.is_converged():
+            sampler.execute()
+    else:
+        sampler.worker()
+
+
+if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
     parser.add_argument("inifile", help="Input ini file of parameters")
 #    parser.add_argument("outfile", help="Output results to file")
@@ -35,42 +65,12 @@ def main(argv):
     parser.add_argument("-t", "--timing", action='store_true', default=False, help='Time each module in the pipeline')
     parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Over-ride parameters in inifile, with format section.name=value")
     parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Over-ride variables in values file, with format section.name=value")
-    args = parser.parse_args(argv)
+    args = parser.parse_args(sys.argv[1:])
 
-    # load configuration 
-    ini = Inifile(args.inifile, override=args.variables)
-
-    # create pipeline
-    pipeline = LikelihoodPipeline(ini) 
-
-    # create sampler object
-    # TODO: better job of selecting sampler and importing/instantiating
-    sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")
-    sys.path.append("samplers/"+sample_method)
-
-    if sample_method == "pymc":
-        import pymc_sampler
-        sampler = pymc_sampler.PyMCSampler(ini, pipeline)
-    elif sample_method == "emcee":
-        import emcee_sampler
-        sampler = EmceeSampler(ini, pipeline)
-    elif sample_method == "maxlike":
-        import maxlike_sampler
-        sampler = MaxlikeSampler(ini, pipeline)
-    elif sample_method == "grid":
-        import grid_sampler
-        sampler = grid_sampler.GridSampler(ini, pipeline)
-    elif sample_method == "test":
-        import test_sampler
-        sampler = test_sampler.TestSampler(ini, pipeline)
-    else:
-        raise ValueError("Unknown sampler method %s" % (sample_method,))
-
-    sampler.config()
-
-    # run the sampler
-    while not sampler.is_converged():
-        sampler.execute()
-
-if __name__=="__main__":
-    main(sys.argv[1:])
+    # initialize parallel workers
+#    if mpi:
+#        pool = MPIPool()
+#    elif parallel:
+#        pool = ProcessPool()
+#    else:
+#        main(args)

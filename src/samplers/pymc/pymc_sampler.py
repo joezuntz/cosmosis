@@ -10,9 +10,14 @@ import np
 PYMC_INI_SECTION = "pymc"
 
 
-class PyMCSampler(Sampler):
+class PyMCSampler(ParallelSampler):
 
     def config(self):
+        # load sampling parameters
+        burn = self.ini.getfloat(PYMC_INI_SECTION, "burn", 0.0)
+        self.nsteps = self.ini.getint(PYMC_INI_SECTION, "nsteps", 100)
+        self.samples = self.ini.getint(PYMC_INI_SECTION, "samples", 1000)
+        
         params = self.define_parameters()
 
         @pymc.data
@@ -25,13 +30,41 @@ class PyMCSampler(Sampler):
                                      'params':params}, 
                               db='ram', verbose=2)
 
-        covmat = self.load_covariance_matrix(covmat_filename)
-
         # determine step method
-        do_adaptive = self.ini.getboolean(PYMC_INI_SECTION, "adaptive_mcmc", False)
+        self.do_adaptive = self.ini.getboolean(PYMC_INI_SECTION, 
+                                               "adaptive_mcmc",
+                                               False)
+        if self.do_adaptive:
+            covmat = self.load_covariance_matrix()
+            self.mcmc.use_step_method(pymc.AdaptiveMetropolis,
+                                      params,
+                                      cov=covmat,
+                                      interval=100,
+                                      delay=100,
+                                      verbose=0) 
+        else:
+            for p in params:
+                self.mcmc.use_step_method(pymc.Metropolis, p, verbose=0)
+
+        # create Diagnostics object
+
+    def sample(self):
+        mcmc.sample(self.nsteps, progress_bar=False, tune_throughout=False)
+
+    def worker(self):
+        while True:
+            self.sample()
+            # send data to root
 
     def execute(self):
-        mcmc.sample(self.num_samples, progress_bar=False)
+        self.sample()
+
+        # add traces to diagnostics    
+        # output traces
+        # collect trace information from other workers for diagnostics
+
+    def is_converged(Self):
+        return self.num_samples > self.samples
 
     def load_covariance_matrix(self):
         covmat_filename = self.ini.get(PYMC_INI_SECTION, "covmat", "")
@@ -53,7 +86,6 @@ class PyMCSampler(Sampler):
             covmat[:,i] /= r
 
         # reorder to PyMC variable ordering
-        
 
         return covmat
 
