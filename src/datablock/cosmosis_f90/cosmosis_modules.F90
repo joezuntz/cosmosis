@@ -317,9 +317,13 @@ module cosmosis_modules
         ! This will (silently) truncate the string if
         ! the value put in is not long enough,
         ! but this is apparently standard in Fortran.
-        value = c_string_to_fortran(c_string, len(value))
-        !Need to free the C string!  Becuase it was allocated with strdup
-        call wrap_free(c_string)
+        if (status==0) then
+            value = c_string_to_fortran(c_string, len(value))
+            !Need to free the C string!  Becuase it was allocated with strdup
+            call wrap_free(c_string)
+        else 
+            value=""
+        endif
 
     end function datablock_get_string
 

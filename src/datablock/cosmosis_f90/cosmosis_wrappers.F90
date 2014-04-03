@@ -419,7 +419,7 @@ module cosmosis_wrappers
         enddo
 
         !Check for NULL pointer.  If so translate as blank
-        if(.not. c_associated(c_str)) return
+        if(.not. c_associated(c_str) .or. c_str==C_NULL_PTR) return
 
         !Otherwise, get string length and copy that many chars
         n = wrap_strlen(c_str)
