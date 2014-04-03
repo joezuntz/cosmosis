@@ -1,10 +1,9 @@
-include ../../Makefile.mine
+#include ../../Makefile.mine
 -include Makefile.mine
 
 FITSDIR = $(CFITSIO_LIB)
 FITSLIB = cfitsio
 
-LDFLAGS += -lini
 F90C = $(F90)
 FFLAGS += -fPIC 
 

@@ -1,17 +1,15 @@
-function setup(options) result(config)
-	use f90_desglue
-	use iso_c_binding
+function setup(options_block) result(config)
+	use cosmosis_modules
 	use camb_interface_tools
-	use f90_des_options
 
 	implicit none
 
 	integer(c_int) :: status
-	integer(c_size_t), value :: options
-	integer(c_size_t) :: config
+	integer(cosmosis_block), value :: options_block
+	integer(cosmosis_status) :: config
 	integer :: mode
 
-	status = camb_initial_setup(options, mode)
+	status = camb_initial_setup(options_block, mode)
 	if (status .ne. 0) then
 		write(*,*) "CAMB setup error.  Quitting."
 		write(*,*) trim(global_error_message)
@@ -22,33 +20,30 @@ function setup(options) result(config)
 
 end function setup
 
-function execute_all(handle, config) result(status)
-	use f90_desglue
-	use iso_c_binding
+function execute_all(block, config) result(status)
+	use cosmosis_modules
 	use camb
 	use camb_interface_tools
 	
 	implicit none
-	integer(c_size_t), value :: handle, config
-	integer(c_int) :: status, ignored_status
-	integer(c_size_t) :: fitsfile
+	integer(cosmosis_status) :: status
+	integer(cosmosis_block), value :: block
+	integer(c_size_t), value :: config
 	type(CAMBparams) :: params
 	
 	status = 0
 
-	fitsfile = fitsfile_from_internal(handle)
-	if (fitsfile==0) then
-		write(*,*) "Could not get fitsfile in CAMB. Error", status
+	if (block==0) then
+		write(*,*) "Could not get block in CAMB. Error", status
 		status=1
 		return
 	endif
 	
-	status = camb_interface_set_params(fitsfile, params)
-	status = status + camb_interface_setup_zrange(fitsfile, params)
+	status = camb_interface_set_params(block, params)
+	status = status + camb_interface_setup_zrange(params)
 	
 	if (status .ne. 0) then
 		write(*,*) "Failed to get parameters in CAMB. Error", status
-		ignored_status = close_fits_object(fitsfile)
 		status=3
 		return
 	endif
@@ -58,42 +53,34 @@ function execute_all(handle, config) result(status)
 	if (status .ne. 0) then
 		write(*,*) "Failed to run camb_getresults.  Error", status
 		write(*,*) "Message:", trim(global_error_message)
-		ignored_status = close_fits_object(fitsfile)
 		return
 	endif
 	
-	status = camb_interface_save_cls(fitsfile)
+	status = camb_interface_save_cls(block)
 	if (status .ne. 0) then
-		write(*,*) "Failed to write cmb column data in fits section. Error", status
-		ignored_status = close_fits_object(fitsfile)
+		write(*,*) "Failed to write cmb cls section. Error", status
 		return
 	endif
 
-	status = camb_interface_save_transfer(fitsfile)
+	status = camb_interface_save_transfer(block)
 	if (status .ne. 0) then
-		write(*,*) "Failed to write transfer column data in fits section. Error", status
-		ignored_status = close_fits_object(fitsfile)
+		write(*,*) "Failed to write transfer section. Error", status
 		return
 	endif
 	
-	status = camb_interface_save_sigma8(fitsfile)
+	status = camb_interface_save_sigma8(block)
 	if (status .ne. 0) then
-		write(*,*) "Failed to save sigma8 parameter to fits section. Error", status
-		ignored_status = close_fits_object(fitsfile)
-		return
-	endif
-	
-	
-	status = camb_interface_save_da(params, fitsfile)
-	if (status .ne. 0) then
-		write(*,*) "Failed to write angular diameter distance data in fits section. Error", status
-		ignored_status = close_fits_object(fitsfile)
+		write(*,*) "Failed to save sigma8 parameter. Error", status
 		return
 	endif
 	
 	
-	status = close_fits_object(fitsfile)
-	!There is probably some clean up to be done here, but not sure what.
+	status = camb_interface_save_da(params, block)
+	if (status .ne. 0) then
+		write(*,*) "Failed to write angular diameter distance data. Error", status
+		return
+	endif
+	
 	return
 
 
@@ -101,38 +88,28 @@ end function execute_all
 
 
 
-function execute_cmb(handle) result(status)
-	use f90_desglue
-	use iso_c_binding
+function execute_cmb(block, config) result(status)
+	use cosmosis_modules
 	use camb
 	use camb_interface_tools
 	implicit none
-	integer(c_size_t), value :: handle
-	integer(c_int) :: status, ignored_status
-	integer(c_size_t) :: fitsfile
+	integer(cosmosis_status) :: status
+	integer(cosmosis_block), value :: block
+	integer(c_size_t), value :: config
 	type(CAMBparams) :: params
 	
 	status = 0
-
-	fitsfile = fitsfile_from_internal(handle)
-	if (fitsfile==0) then
-		write(*,*) "Could not get fitsfile in CAMB"
-		status=1
-		return
-	endif
 	
-	status = camb_interface_set_params(fitsfile, params)
+	status = camb_interface_set_params(block, params)
 	if (status .ne. 0) then
 		write(*,*) "Failed to get parameters in CAMB"
-		ignored_status = close_fits_object(fitsfile)
 		status=3
 		return
 	endif
 	
-	status = status + camb_interface_setup_zrange(fitsfile, params)
+	status = status + camb_interface_setup_zrange(params)
 	if (status .ne. 0) then
 		write(*,*) "Failed to set redshift ranges in CAMB"
-		ignored_status = close_fits_object(fitsfile)
 		status=4
 		return
 	endif
@@ -142,27 +119,23 @@ function execute_cmb(handle) result(status)
 	call CAMB_GetResults(params, status)
 	if (status .ne. 0) then
 		write(*,*) "Failed to run camb_getresults."
-		ignored_status = close_fits_object(fitsfile)
 		return
 	endif
 
 
-	status = camb_interface_save_cls(fitsfile)
+	status = camb_interface_save_cls(block)
 	if (status .ne. 0) then
 		write(*,*) "Failed to save camb cls."
-		ignored_status = close_fits_object(fitsfile)
 		return
 	endif
 	
-	status = camb_interface_save_da(params, fitsfile, .false.)
+	status = camb_interface_save_da(params, block, .false.)
 	if (status .ne. 0) then
 		write(*,*) "Failed to save camb distances."
-		ignored_status = close_fits_object(fitsfile)
 		return
 	endif
 
 
-	status = close_fits_object(fitsfile)
 	!There is probably some CAMB clean up to be done here, but not sure what.
 	return
 
@@ -172,34 +145,25 @@ end function execute_cmb
 
 
 
-function execute_bg(handle, config) result(status)
-	use f90_desglue
-	use iso_c_binding
+function execute_bg(block, config) result(status)
+	use cosmosis_modules
 	use camb
 	use camb_interface_tools
 	
 	implicit none
-	integer(c_size_t), value :: handle, config
-	integer(c_int) :: status, ignored_status
-	integer(c_size_t) :: fitsfile
+	integer(cosmosis_status) :: status
+	integer(cosmosis_block), value :: block
+	integer(c_size_t), value :: config
 	type(CAMBparams) :: params
 	
 	status = 0
 
-	fitsfile = fitsfile_from_internal(handle)
-	if (fitsfile==0) then
-		write(*,*) "Could not get fitsfile in CAMB. Error", status
-		status=1
-		return
-	endif
-	
-	status = camb_interface_set_params(fitsfile, params, background_only=.true.)
-	status = status + camb_interface_setup_zrange(fitsfile, params)
+	status = camb_interface_set_params(block, params, background_only=.true.)
+	status = status + camb_interface_setup_zrange(params)
 	
 
 	if (status .ne. 0) then
 		write(*,*) "Failed to get parameters in CAMB. Error", status
-		ignored_status = close_fits_object(fitsfile)
 		status=3
 		return
 	endif
@@ -214,21 +178,17 @@ function execute_bg(handle, config) result(status)
 		if (status .ne. 0) then
 		write(*,*) "Failed to set camb params in camb_bg. Error", status
 		write(*,*) trim(global_error_message)
-		ignored_status = close_fits_object(fitsfile)
 		return
 	endif
 
 	
-	status = camb_interface_save_da(params, fitsfile, save_density=.false., save_thermal=.false.)
+	status = camb_interface_save_da(params, block, save_density=.false., save_thermal=.false.)
 	if (status .ne. 0) then
 		write(*,*) "Failed to write angular diameter distance data in fits section. Error", status
-		ignored_status = close_fits_object(fitsfile)
 		return
 	endif
 	
-	
-	status = close_fits_object(fitsfile)
-	!There is probably some clean up to be done here, but not sure what.
+		!There is probably some clean up to be done here, but not sure what.
 	return
 
 
@@ -236,33 +196,24 @@ end function execute_bg
 
 
 
-function execute_thermal(handle, config) result(status)
-	use f90_desglue
-	use iso_c_binding
+function execute_thermal(block, config) result(status)
+	use cosmosis_modules
 	use camb
 	use camb_interface_tools
 	
 	implicit none
-	integer(c_size_t), value :: handle, config
-	integer(c_int) :: status, ignored_status
-	integer(c_size_t) :: fitsfile
+	integer(cosmosis_status) :: status
+	integer(cosmosis_block), value :: block
+	integer(c_size_t), value :: config
 	type(CAMBparams) :: params
 	
 	status = 0
-
-	fitsfile = fitsfile_from_internal(handle)
-	if (fitsfile==0) then
-		write(*,*) "Could not get fitsfile in CAMB. Error", status
-		status=1
-		return
-	endif
 	
-	status = camb_interface_set_params(fitsfile, params, background_only=.true.)
-	status = status + camb_interface_setup_zrange(fitsfile, params)
+	status = camb_interface_set_params(block, params, background_only=.true.)
+	status = status + camb_interface_setup_zrange(params)
 
 	if (status .ne. 0) then
 		write(*,*) "Failed to get parameters in CAMB. Error", status
-		ignored_status = close_fits_object(fitsfile)
 		status=3
 		return
 	endif
@@ -277,7 +228,6 @@ function execute_thermal(handle, config) result(status)
 		if (status .ne. 0) then
 		write(*,*) "Failed to set camb params in camb_bg. Error", status
 		write(*,*) trim(global_error_message)
-		ignored_status = close_fits_object(fitsfile)
 		return
 	endif
 
@@ -286,71 +236,71 @@ function execute_thermal(handle, config) result(status)
 	if (status .ne. 0) then
 		write(*,*) "Failed to run camb_getresults.  Error", status
 		write(*,*) "Message:", trim(global_error_message)
-		ignored_status = close_fits_object(fitsfile)
 		return
 	endif
 	
-	status = camb_interface_save_da(params, fitsfile, save_density=.false.)
+	status = camb_interface_save_da(params, block, save_density=.false.)
 	if (status .ne. 0) then
 		write(*,*) "Failed to write angular diameter distance data in fits section. Error", status
-		ignored_status = close_fits_object(fitsfile)
 		return
 	endif
 	
-	
-	status = close_fits_object(fitsfile)
 	!There is probably some clean up to be done here, but not sure what.
 	return
 
 
 end function execute_thermal
 
-function execute(handle,config) result(status)
-	use f90_desglue
-	use iso_c_binding
+function execute(block,config) result(status)
+	use cosmosis_modules
 	use camb_interface_tools
 	implicit none
 
 	interface
-		function execute_bg(handle,config) result(status)
-			use iso_c_binding
-			integer(c_size_t), value :: handle, config
-			integer(c_int) :: status
+		function execute_bg(block,config) result(status)
+			use cosmosis_modules
+			integer(cosmosis_status) :: status
+			integer(cosmosis_block), value :: block
+			integer(c_size_t), value :: config
 		end function execute_bg
 
-		function execute_cmb(handle,config) result(status)
-			use iso_c_binding
-			integer(c_size_t), value :: handle, config
-			integer(c_int) :: status
+		function execute_cmb(block,config) result(status)
+			use cosmosis_modules
+			integer(cosmosis_status) :: status
+			integer(cosmosis_block), value :: block
+			integer(c_size_t), value :: config
 		end function execute_cmb
 
-		function execute_thermal(handle,config) result(status)
-			use iso_c_binding
-			integer(c_size_t), value :: handle, config
-			integer(c_int) :: status
+		function execute_thermal(block,config) result(status)
+			use cosmosis_modules
+			integer(cosmosis_status) :: status
+			integer(cosmosis_block), value :: block
+			integer(c_size_t), value :: config
 		end function execute_thermal
 
-		function execute_all(handle,config) result(status)
-			use iso_c_binding
-			integer(c_size_t), value :: handle, config
-			integer(c_int) :: status
+		function execute_all(block,config) result(status)
+			use cosmosis_modules
+			integer(cosmosis_status) :: status
+			integer(cosmosis_block), value :: block
+			integer(c_size_t), value :: config
 		end function execute_all
     end interface
 
 
-	integer(c_size_t), value :: handle, config
-	integer(c_int) :: status
+	integer(cosmosis_status) :: status
+	integer(cosmosis_block), value :: block
+	integer(c_size_t), value :: config
 	integer :: mode
 
 	mode=config
 	if (mode==CAMB_MODE_BG) then
-		status = execute_bg(handle,config)
+		status = execute_bg(block,config)
 	else if (mode==CAMB_MODE_CMB) then
-		status = execute_cmb(handle,config)
+		status = execute_cmb(block,config)
 	else if (mode==CAMB_MODE_ALL) then
-		status = execute_all(handle,config)
+		status = execute_all(block,config)
 	else if (mode==CAMB_MODE_THERMAL) then
-		status = execute_thermal(handle,config)
+		status = execute_thermal(block,config)
 	else
 		write(*,*) "Unknown camb mode.  Was expecting one of:"
 		write(*,*) CAMB_MODE_BG,  " -- background_only"

@@ -76,7 +76,7 @@ camb_fits: writefits.f90 $(CAMBOBJ) $(DRIVER)
 	$(F90C) $(F90FLAGS) -I$(HEALPIXDIR)/include $(CAMBOBJ) writefits.f90 $(DRIVER) $(HEALPIXLD) -DWRITE_FITS -o $@
 
 interface: $(CAMBLIB) camb_interface.F90
-	$(F90C) $(F90FLAGS) -shared camb_interface.F90 camb_mode.F90 -fPIC -o camb.so $(LDFLAGS) -L../../glue/lib -lffitswrap -lcfitswrap -lini  -L$(FITSDIR) -lcfitsio -L. -lcamb_$(RECOMBINATION) -I../../glue/include
+	$(F90C) $(F90FLAGS) -shared camb_interface.F90 camb_mode.F90 -fPIC -o camb.so $(LDFLAGS)   -L. -lcamb_$(RECOMBINATION)
 
 
 %.o: %.f90
