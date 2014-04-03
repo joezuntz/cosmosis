@@ -70,7 +70,7 @@ class Pipeline(object):
                                  "debug", 
                                  module.name]
 
-            config_block = block.Block()
+            config_block = block.DataBlock()
 
             for (section, name), value in self.options:
                 if section in relevant_sections:
@@ -205,7 +205,7 @@ class LikelihoodPipeline(Pipeline):
             if self.is_out_of_range(params_by_section):
                 return None
 
-        data = block.Block()
+        data = block.DataBlock()
 
         # add varied parameters
         for param, x in zip(self.varied_params, p):

@@ -6,7 +6,7 @@ class TestSampler(Sampler):
         self.converged = False
 
     def execute(self):
-        # load 
+        # load initial parameter values
         p = np.array([param.start for param in self.pipeline.varied_params])
         try:
             prior  = self.pipeline.prior(p)

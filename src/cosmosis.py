@@ -12,6 +12,7 @@ from pipeline import LikelihoodPipeline
 from sampler import sampler_registry
 import samplers
 
+
 RUNTIME_INI_SECTION = "runtime"
 
 
@@ -35,15 +36,15 @@ def main(args, pool=None):
     # create sampler object
     sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")
 
-    if sample_method not in samplers.sample_registry:
+    if sample_method not in sampler_registry:
         raise ValueError("Unknown sampler method %s" % (sample_method,))
 
     if pool:
-        if not issubclass(samplers.sample_registry[sample_method],ParallelSampler):
+        if not issubclass(sampler_registry[sample_method],ParallelSampler):
             raise ValueError("Sampler does not support parallel execution!")
-        sampler = samplers.sample_registry[sample_method](ini, pipeline, pool)
+        sampler = sampler_registry[sample_method](ini, pipeline, pool)
     else:
-        sampler = samplers.sample_registry[sample_method](ini, pipeline)
+        sampler = sampler_registry[sample_method](ini, pipeline)
  
     sampler.config()
 
@@ -59,7 +60,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
     parser.add_argument("inifile", help="Input ini file of parameters")
 #    parser.add_argument("outfile", help="Output results to file")
-#    parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
+    parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
 #    parser.add_argument("--parallel",action='store_true',help="Run in multiprocess parallel mode.")
 #    parser.add_argument("--debug", action='store_true', default=False, help="Print additional debugging information")
     parser.add_argument("-t", "--timing", action='store_true', default=False, help='Time each module in the pipeline')
@@ -68,9 +69,9 @@ if __name__=="__main__":
     args = parser.parse_args(sys.argv[1:])
 
     # initialize parallel workers
-#    if mpi:
-#        pool = MPIPool()
+    if args.mpi:
+        pool = MPIPool()
 #    elif parallel:
 #        pool = ProcessPool()
-#    else:
-#        main(args)
+    else:
+        main(args)
