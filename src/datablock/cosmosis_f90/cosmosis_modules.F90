@@ -4,6 +4,7 @@
 module cosmosis_modules
     use cosmosis_types
     use cosmosis_wrappers
+    use cosmosis_section_names
     implicit none
 
     integer, parameter :: DATABLOCK_MAX_STRING_LENGTH=256
