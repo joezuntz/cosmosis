@@ -1,5 +1,5 @@
 #Top level Makefile
-include ../../Makefile.mine
+#include ../../Makefile.mine
 
 #Optional (that's what the dash means) Makefile locally
 -include Makefile.mine
@@ -61,8 +61,8 @@ F90    = gfortran
 #INCS   = -I. -I$(CFITSIO_INC)
 #LIBS = -L. -L/usr/local/lib -llapack -lblas -lcfitsio
 
-FFLAGS+= -fPIC -I. -I$(CFITSIO_INC) -DWMAP9_DATA_DIR='"$(WMAP9_DATA_DIR)/"'
-LDFLAGS+=-L. -L$(CFITSIO_LIB) -lcfitsio
+FFLAGS+= -fPIC -I.  -DWMAP9_DATA_DIR='"$(WMAP9_DATA_DIR)/"'
+LDFLAGS+=-L. -lcfitsio
 
 #
 #			Rules.
@@ -100,7 +100,7 @@ distclean: clean
 	$(RM) $(WMAPLIB) $(PROGRAMS)
 
 interface: $(WMAPLIB)
-	$(F90) $(FFLAGS) wmap_interface.f90 -shared -fPIC -o wmap_interface.so  -L. -l${WMAPLIBNAME} -L../../glue/lib -lcfitswrap -lffitswrap $(INCS) $(LDFLAGS) -I../../glue/include -lcfitsio
+	$(F90) $(FFLAGS) wmap_interface.f90 -shared -fPIC -o wmap_interface.so  -L. -l${WMAPLIBNAME}  $(INCS) $(LDFLAGS) -lcosmosis_fortran -lcfitsio
 
 
 

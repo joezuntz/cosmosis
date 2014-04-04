@@ -1,7 +1,7 @@
 from numpy import log, pi
 
-cosmo_section = "cosmological_parameters"
-like_section = "likelihoods"
+cosmo = cosmosis_py.names.cosmological_parameters_section
+likes = cosmosis_py.names.likelihoods_section
 
 HST_H0_MEAN = 0.71
 HST_H0_SIGMA = 0.02
@@ -22,7 +22,7 @@ def execute(block, config):
 
 	#compute the likelihood - just a simple Gaussian
 	like = -(h0-mean)**2/sigma**2/2.0 - norm
-	block[like_section, 'HST_LIKE'] = like
+	block[likes, 'HST_LIKE'] = like
 
 	#signal that everything went fine
 	return 0

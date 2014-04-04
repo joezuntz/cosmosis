@@ -1,49 +1,50 @@
+function setup(options) result(output)
+	use cosmosis_modules
+	implicit none
+	integer(c_size_t), value :: options
+	integer(c_size_t) :: output
+
+	! The publically released WMAP code
+	! does not have any generally useful 
+	! options that we could set here from the ini
+	! file, though if you wanted to change some
+	! of the internals you could do it here by reading
+	! from options
 
 
-function execute(handle) result(status)
+	! We do not need to save anything so just return 0.
+	! We could have returned anything we wanted here;
+	! the execute function will get it back later.
+	output = 0
+
+end function
+
+
+function execute(block, config) result(status)
 	use wmap_options
 	use wmap_likelihood_9yr
 	use wmap_util
-	use f90_desglue
+	use cosmosis_modules
 	implicit none
 	real(8), allocatable, dimension(:) :: tt,te,ee,bb
 	integer(4), allocatable, dimension(:) :: ell
     real(8)  :: total_like, like(8)
 	integer n_ell
-	integer(c_size_t), value :: handle
-	integer(c_size_t) :: fitsfile
-	integer status
+	integer(cosmosis_status) :: status
+	integer(cosmosis_block), value :: block
+	integer(c_size_t) :: config
+
 	integer ell_start
 	status=0
 
-	if (handle .eq. 0) then
-		status=1
-		write(*,*) "NULL handle passed to wmap9 interface"
-		return
-	endif
-	
-	!Open the fits file interface using function from f90_desglue
-	fitsfile = fitsfile_from_internal(handle)
-	!Check for errors in opening file
-	if (fitsfile==0) then
-		status=1
-		return
-	endif
-	
-	!Go to the CMB section of the file.  "cmb_cl_section" is a constant defined in f90_desglue.f90
-	status = fits_goto_extension(fitsfile, cmb_cl_section)
-	!Check for error in finding extension
-	if (status .ne. 0) then
-		return
-	endif
-	
+
 	!Load all the columns 
 	n_ell=0
-	status = status + fits_get_column(fitsfile, "ELL", ell, n_ell)
-	status = status + fits_get_column(fitsfile, "TT",  tt,  n_ell)
-	status = status + fits_get_column(fitsfile, "EE",  ee,  n_ell)
-	status = status + fits_get_column(fitsfile, "BB",  bb,  n_ell)
-	status = status + fits_get_column(fitsfile, "TE",  te,  n_ell)
+	status = status + datablock_get_int_array_1d(block, cmb_cl_section, "ELL", ell, n_ell)
+	status = status + datablock_get_double_array_1d(block, cmb_cl_section, "TT",  tt,  n_ell)
+	status = status + datablock_get_double_array_1d(block, cmb_cl_section, "EE",  ee,  n_ell)
+	status = status + datablock_get_double_array_1d(block, cmb_cl_section, "BB",  bb,  n_ell)
+	status = status + datablock_get_double_array_1d(block, cmb_cl_section, "TE",  te,  n_ell)
 	!Check for errors in loading the columns.  Free any allocated mem if so
 	if (status .ne. 0 .or. n_ell .le. 0) then
 		if (allocated(ell)) deallocate(ell)
@@ -51,6 +52,7 @@ function execute(handle) result(status)
 		if (allocated(ee)) deallocate(ee)
 		if (allocated(bb)) deallocate(bb)
 		if (allocated(te)) deallocate(te)
+		status = max(status, 1)
 		return
 	endif
 		
@@ -101,12 +103,7 @@ function execute(handle) result(status)
 	if (allocated(te)) deallocate(te)
 	
 	
-	!Save result back to the correct extension (which may not exist yet, this might be the first likelihood function)
-	status = fits_goto_or_create_extension(fitsfile, likelihoods_section)
-	!Save the total likelihood.  If we wanted to save the likelihood components separately we could do it here.
-	status = status + fits_put_double_parameter(fitsfile, "WMAP9_LIKE", total_like, "WMAP9 total likelihood")
-	
-	!Close interface
-	status = close_fits_object(fitsfile)
+	status = datablock_put_double(block, likelihoods_section, "WMAP9_LIKE", total_like)
+
 
 end function execute

@@ -11,12 +11,6 @@ module camb_interface_tools
 
 	real(8) :: linear_zmin=0.0, linear_zmax=4.0
 	integer :: linear_nz = 401
-	character(*), parameter :: cosmological_parameters_section = "cosmological_parameters"
-	character(*), parameter :: cmb_cl_section = "cmb_cl"
-	character(*), parameter :: linear_cdm_transfer_section = 'linear_transfer'
-	character(*), parameter :: matter_power_lin_section = 'linear_matter_power'
-	character(*), parameter :: distances_section = 'distances'
-	character(*), parameter :: de_equation_of_state_section = 'de_equation_of_state'
 
 
 
@@ -61,7 +55,7 @@ module camb_interface_tools
 		integer default_lmax
 		integer(c_size_t) :: block
 		integer status
-		character(64) :: mode_name
+		character(64) :: mode_name=""
 		integer :: mode
 		integer, optional :: fixed_mode
 		integer::  use_tabulated_w_int
@@ -75,6 +69,7 @@ module camb_interface_tools
 			mode=fixed_mode
 		else
 			!Otherwise read from ini file
+
 			status = datablock_get_string(block, default_option_section, "mode", mode_name)
 			if (trim(mode_name) == "background") then
 				mode=CAMB_MODE_BG
@@ -92,6 +87,8 @@ module camb_interface_tools
 				write(*,*) "mode=all         ; For background + cmb + linear matter power spectra"
 				write(*,*) "mode=thermal     ; For background + thermal history params"
 				write(*,*) ""
+				write(*,*) "We found error status: ", status
+				write(*,*) "And mode=", mode_name
 				write(*,*) "Quitting now."
 				stop 1
 			endif

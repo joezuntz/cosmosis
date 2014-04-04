@@ -1,9 +1,9 @@
 from numpy import log, pi
-import cosmosis
+import cosmosis_py
 
-#Should load these from cosmosis
-cosmo_section = "cosmological_parameters"
-like_section = "likelihoods"
+cosmo = cosmosis_py.names.cosmological_parameters_section
+likes = cosmosis_py.names.likelihoods_section
+
 
 #Steigman 2008, equation 9
 BBN_OMBH2_MEAN = 0.0218
@@ -27,7 +27,7 @@ def execute(block, config):
 	#compute the likelihood - just a simple Gaussian
 	ombh2 = omega_b * h0**2
 	like = -(ombh2-mean)**2/sigma**2/2.0 - norm
-	block[like_section, 'BBN_LIKE'] = like
+	block[likes, 'BBN_LIKE'] = like
 
 	#signal that everything went fine
 	return 0
