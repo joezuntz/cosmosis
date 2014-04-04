@@ -1,0 +1,69 @@
+# this code cannot be run directly
+# do 'source PREFIX/bin/clik_profile.csh' from your csh shell or put it in your profile
+
+ 
+
+if !($?PATH) then
+setenv PATH PREFIX/bin
+else
+set newvar=$PATH
+set newvar=`echo ${newvar} | sed s@:PREFIX/bin:@:@g`
+set newvar=`echo ${newvar} | sed s@:PREFIX/bin\$@@` 
+set newvar=`echo ${newvar} | sed s@^PREFIX/bin:@@`  
+set newvar=PREFIX/bin:${newvar}                     
+setenv PATH PREFIX/bin:${newvar} 
+endif
+if !($?PYTHONPATH) then
+setenv PYTHONPATH MPYTHONPATH
+else
+set newvar=$PYTHONPATH
+set newvar=`echo ${newvar} | sed s@:MPYTHONPATH:@:@g`
+set newvar=`echo ${newvar} | sed s@:MPYTHONPATH\$@@` 
+set newvar=`echo ${newvar} | sed s@^MPYTHONPATH:@@`  
+set newvar=PREFIX/lib/python2.7/site-packages:${newvar}                     
+setenv PYTHONPATH PREFIX/lib/python2.7/site-packages:${newvar} 
+endif
+if !($?DYLD_LIBRARY_PATH) then
+setenv DYLD_LIBRARY_PATH FORTRANLIBPATH
+else
+set newvar=$DYLD_LIBRARY_PATH
+set newvar=`echo ${newvar} | sed s@:FORTRANLIBPATH:@:@g`
+set newvar=`echo ${newvar} | sed s@:FORTRANLIBPATH\$@@` 
+set newvar=`echo ${newvar} | sed s@^FORTRANLIBPATH:@@`  
+set newvar=FORTRANLIBPATH:${newvar}                     
+setenv DYLD_LIBRARY_PATH FORTRANLIBPATH:${newvar} 
+endif
+if !($?DYLD_LIBRARY_PATH) then
+setenv DYLD_LIBRARY_PATH PREFIX/lib
+else
+set newvar=$DYLD_LIBRARY_PATH
+set newvar=`echo ${newvar} | sed s@:PREFIX/lib:@:@g`
+set newvar=`echo ${newvar} | sed s@:PREFIX/lib\$@@` 
+set newvar=`echo ${newvar} | sed s@^PREFIX/lib:@@`  
+set newvar=PREFIX/lib:${newvar}                     
+setenv DYLD_LIBRARY_PATH PREFIX/lib:${newvar} 
+endif
+if !($?DYLD_LIBRARY_PATH) then
+setenv DYLD_LIBRARY_PATH LAPACKLIBPATH
+else
+set newvar=$DYLD_LIBRARY_PATH
+set newvar=`echo ${newvar} | sed s@:LAPACKLIBPATH:@:@g`
+set newvar=`echo ${newvar} | sed s@:LAPACKLIBPATH\$@@` 
+set newvar=`echo ${newvar} | sed s@^LAPACKLIBPATH:@@`  
+set newvar=LAPACKLIBPATH:${newvar}                     
+setenv DYLD_LIBRARY_PATH LAPACKLIBPATH:${newvar} 
+endif
+if !($?DYLD_LIBRARY_PATH) then
+setenv DYLD_LIBRARY_PATH CFITSIOLIBPATH
+else
+set newvar=$DYLD_LIBRARY_PATH
+set newvar=`echo ${newvar} | sed s@:CFITSIOLIBPATH:@:@g`
+set newvar=`echo ${newvar} | sed s@:CFITSIOLIBPATH\$@@` 
+set newvar=`echo ${newvar} | sed s@^CFITSIOLIBPATH:@@`  
+set newvar=LAPACKLIBPATH:${newvar}                     
+setenv DYLD_LIBRARY_PATH LAPACKLIBPATH:${newvar} 
+endif
+setenv CLIK_DATA PREFIX/share/clik
+
+setenv CLIK_PLUGIN basic,ffp6_foreground,pep_cib
+

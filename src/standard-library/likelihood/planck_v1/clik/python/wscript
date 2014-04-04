@@ -1,0 +1,138 @@
+import os.path as osp
+import os
+
+import waflib
+import waflib.Logs as _msg
+from waflib import Task
+from waflib.TaskGen import extension, feature, before_method, after_method
+
+@extension('.pyx')
+def add_cython_file(self, node):
+  """
+  Process a *.pyx* file given in the list of source files. No additional
+  feature is required::
+
+    def build(bld):
+      bld(features='c cshlib pyext', source='main.c foo.pyx', target='app')
+  """
+  ext = '.pyx.c'
+  if 'cxx' in self.features:
+    self.env.append_unique('CYTHONFLAGS', '--cplus')
+    ext = '.cc'
+  tsk = self.create_task('cython', node, node.change_ext(ext))
+  self.source += tsk.outputs
+
+def build(ctx):
+  def injectpath(task):
+    import re
+    src = task.inputs[0].abspath()
+    tgt = task.outputs[0].abspath() 
+    f=open(src)
+    txt = f.read()
+    txt = re.sub("REPLACEPATH",ctx.env.PYTHONDIR,txt)
+    txt = re.sub("PYTHONEXE",ctx.env.PYTHON[0],txt)
+    f=open(tgt,"w")
+    print >>f,txt,
+    f.close()
+    
+  ctx.load("execconfig","waf_tools")
+  if ctx.env.CYTHON:
+    ctx(
+      features = "c cshlib pyext",
+      source = "clik/lkl.pyx",
+      target  = "lkl",
+      includes = "../"+" ../minipmc/"*(not ctx.env.has_pmc),
+      use = "clik",
+      cflags = "-fopenmp",
+      install_path = "${PYTHONDIR}/clik"
+    )
+    if ctx.env.has_lenslike:
+      ctx(
+        features = "c cshlib pyext",
+        source = "clik/lkl_lensing.pyx",
+        target  = "lkl_lensing",
+        includes = "../"+" ../minipmc/"*(not ctx.env.has_pmc),
+        use = "clik",
+        cflags = "-fopenmp",
+        install_path = "${PYTHONDIR}/clik",
+        defines = ["CLIK_LENSING"]
+      ) 
+    if (ctx.env.has_plik):
+      ctx(
+        features = "c cshlib pyext",
+        source = "clik/parametric.pyx",
+        target  = "parametric",
+        includes = "../"+" ../minipmc/"*(not ctx.env.has_pmc),
+        use = "clik",
+        cflags = "-fopenmp",
+        install_path = "${PYTHONDIR}/clik"
+      )
+    if (ctx.env.has_f90 and ctx.env.has_egfs):
+      ctx(
+        features = "c cshlib pyext",
+        source = "clik/egfs.pyx",
+        target  = "egfs",
+        includes = "../"+" ../minipmc/"*(not ctx.env.has_pmc),
+        use = "clik",
+        cflags = "-fopenmp",
+        install_path = "${PYTHONDIR}/clik"
+      )
+    for plg in ctx.env.PLG:
+      ctx.env.append_unique("CYTHONFLAGS","-I"+osp.join(os.getcwd(),"src/python/clik"))
+      for prc in getattr(ctx.env,"PLG_%s_PYTHON"%plg):
+        ctx(
+        features = "c cshlib pyext",
+        source = osp.join("../component_plugin",plg,prc),
+        target  = prc.split(".")[0],
+        includes = "clik/ ./ ../"+" ../minipmc/"*(not ctx.env.has_pmc),
+        use = "clik",
+        cflags = "-fopenmp",
+        install_path = "${PYTHONDIR}/clik"
+      ) 
+  
+  ctx(
+    source = "clik/parobject.py clik/__init__.py clik/miniparse.py clik/smicahlp.py clik/hpy.py clik/cldf.py",
+    install_path = "${PYTHONDIR}/clik"
+  )
+  
+  # python execs
+
+  execlist = ["clik_add_free_calib",
+              "clik_hdf2cldf",
+              "prepare_gibbs",
+              "clik_smica_changelmax",
+              "clik_smica_change_criterion",
+              "clik_explore_1d",
+              "prepare_actspt",
+              "clik_add_selfcheck",
+              "clik_get_selfcheck",
+              "clik_add_default",
+              "clik_example_py",
+              "clik_join",
+              "clik_disjoin",
+              "clik_print",
+              "clik_add_prior",
+              "prepare_wmap",
+              "prepare_lowlike",
+              "clik_include_external",
+              "clik_extract_external",
+              "prepare_CAMspec",
+              "clik_smica_add_gcal",
+              "clik_remove_smica_component"]
+  old =   [
+              "synthetic_smica",
+              "create_lowl_problem",
+              "prepare_lowl",
+              "prepare_bopix",
+              "clik_add_egfs",
+              "clik_add_plugin_component",
+  ]
+  tls = os.listdir("src/python")
+  execlist = [ex for ex in execlist if ex+".py" in tls]
+  for cde in execlist:
+    ctx(
+      execrule = injectpath,
+      source = cde+".py",
+      target = cde,
+      install_path = ctx.env.BINDIR
+      )    

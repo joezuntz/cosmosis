@@ -1,0 +1,302 @@
+---------------------------------------
+CHANGE LOG FOR V4P1 (7-YEAR DATA) RELEASE
+---------------------------------------
+D.L.Larson, June 4, 2010
+
+The diagnostic program test.F90 wsa updated to be consistent with the V4P1
+release; and lines 660-665 of WMAP_7yr_tetbeebbeb_pixlike.F90, which write
+debugging information to a file, were commented out to avoid problems with some
+compilers.  Neither change affects the actually likelihood function.
+
+
+J.Dunkley, E.Komatsu, D.L.Larson, M.R.Nolta, May 27, 2010
+
+** Two small bugs have been fixed, which involve the high-ell TT, TE, TB, and
+point source power spectra:
+
+1) The original computation of the TT spectrum used an incorrect monopole
+subtraction which resulted in a small amount of excess power at high ell, and a
+corresponding elevation of the best-fit residual point source amplitude. 
+Correcting the monopole subtraction reduced the high-ell power slightly which
+produced a correspondingly lower residual point source amplitude, from 11.0 to
+9.0 uK2 sr.
+
+2) Due to a simulation configuration error, the TE fsky recalibration factor
+used in version 4.0 was 1.049 instead of the factor 1.011 used in this version.
+
+---------------------------------------
+CHANGE LOG FOR V4 (7-YEAR DATA) RELEASE
+---------------------------------------
+J.Dunkley, E.Komatsu, D.L.Larson, M.R.Nolta, January 2010
+
+** The 5-year data files and routines have been replaced by
+the 7-year ones.
+
+---------------------------
+CHANGE LOG FOR V3P2 RELEASE
+---------------------------
+E.Komatsu, March 5, 2009
+
+The orders of many do-loops have been changed to speed up 
+the calculations significantly. We thank Raphael Flauger for
+making these improvements.
+
+The V3P1 patch has not been integrated into this release.
+
+The following codes have been modified:
+
+br_mod_dist.f90
+WMAP_5yr_likelihood.F90
+WMAP_5yr_teeebb_pixlike.F90
+WMAP_5yr_tetbeebbeb_pixlike.F90
+WMAP_5yr_tt_pixlike.F90
+
+The timing output for the V3 release:
+        .......  wmap_likelihood_init:
+         7.6650    teeebb_lowl_like_setup
+        10.7410  wmap_likelihood_init
+        .......  wmap_likelihood_compute:
+         0.1680    compute_tt_gibbslike
+        .......    teeebb_lowl_likelihood:
+         0.4740     - finished Dp
+         0.4670     - finished spotrf
+         0.0000     - finished dpotri
+         0.9540    teeebb_lowl_likelihood
+         1.1900  wmap_likelihood_compute
+
+The timing output for this release:
+        .......  wmap_likelihood_init:
+         1.3230    teeebb_lowl_like_setup
+         2.9590  wmap_likelihood_init
+        .......  wmap_likelihood_compute:
+         0.1640    compute_tt_gibbslike
+        .......    teeebb_lowl_likelihood:
+         0.0970     - finished Dp
+         0.4640     - finished spotrf
+         0.0000     - finished dpotri
+         0.5740    teeebb_lowl_likelihood
+         0.7730  wmap_likelihood_compute
+
+---------------------------
+CHANGE LOG FOR V3P1 RELEASE
+---------------------------
+
+-- Patch to make the data directory selectable through an environment variable.
+   T. Kinser, Lawrence Berkeley National Laboratory, Oct 2008
+   This patch is available as a separate download from LAMBDA.
+
+---------------------------------------
+CHANGE LOG FOR V3 (5-YEAR DATA) RELEASE
+---------------------------------------
+J.Dunkley, E.Komatsu, D.L.Larson, M.R.Nolta, February 2008
+
+** The 3-year data files and routines have been replaced by 
+the 5-year ones.
+
+WMAP_5yr_tt_pixlike.F90
+-- The resolution 3 option has been removed. This module supports
+only the resolution 4. For a quicker estimation of low-l temperature 
+likelihood (with the same precision) the Gibbs sampling is recommended. 
+To use the Gibbs sampling (and disable pixlike option), set 
+"use_gibbs = .true." in wmap_options.F90.
+
+** The following new routines have been added:
+
+WMAP_5yr_tetbeebbeb_pixlike.F90
+-- This module computes the low-l polarization likelihood of
+TE/TB/EE/BB/EB spectra. To use this, compile the codes with
+"WMAPFLAGS += -DUSE_LOWELL_TBEB" enabled in Makefile, and
+call wmap_likelihood_compute(cl_tt,cl_te,cl_tb,cl_ee,cl_eb,cl_bb,like)
+
+WMAP_5yr_gibbs.F90 [together with br_mod_dist.f90]
+-- This module computes the low-l temperature likelihood by
+using the Gibbs sampling. To use this, set "use_gibbs = .true." 
+in wmap_options.F90.
+
+** The following new compiler options (see Makefile) have been added:
+WMAPFLAGS += -DUSE_LOWELL_TBEB
+-- enable the pixel-based polarization likelihood option for TB/EB at l=2-23
+
+WMAPFLAGS += -DUSE_HIGHELL_TB
+-- enable the master likelihood option for TB at l=2-450
+
+
+-----------------------------
+CHANGE LOG FOR V2P2P2 RELEASE
+-----------------------------
+M.R.Nolta, November 2006
+
+WMAP_3yr_tt_pixlike.F90:
+-- Sped up the TT pixel likelihood module by a factor of 10 using
+   signal-to-noise eigenvalue compression (suggested by Jon Sievers; see
+   http://www.cita.utoronto.ca/~sievers/WMAP3TTfaster/ for more details).
+   To enable, set -DFASTERTT during compilation.
+
+WMAP_3yr_likelihood.F90:
+-- Minor bug fix; TE sanity check is now abs(TE)/sqrt(TT*EE)<1 instead of
+   TE/sqrt(TT*EE)<1.
+-- Moved fisher matrix from the stack to the heap to fix crash when using the
+   XLF compiler.
+
+WMAP_3yr_teeebb_pixlike.F90:
+-- Added deallocation statements to fix crash when using the XLF compiler.
+
+-----------------------------
+CHANGE LOG FOR V2P2P1 RELEASE
+-----------------------------
+M.R.Nolta, October 2006
+
+WMAP_3yr_likelihood.f90:
+-- A beam error is now treated as a warning instead of an error.  Warnings are
+   not fatal to a run; instead the correction is set to zero and the issue is
+   reported.
+
+WMAP_3yr_util.f90:
+-- New status variables were added to track warnings and to indicate whether or
+   not there were errors and/or warnings.
+-- A subroutine was added to report warnings, and the error reporting subroutine
+   was modified to also report warnings.
+
+
+---------------------------
+CHANGE LOG FOR V2P2 RELEASE
+---------------------------
+E.Komatsu & M.R.Nolta, October 2006
+
+Makefile:
+-- <healpix> removed. The code no longer needs installation of Healpix.
+-- Added compile switches -DOPTIMIZE and -DOPTIMIZE2, which enable
+   various speed and memory optimizations. -DOPTIMIZE streamlines the code
+   in WMAP_3yr_teeebb_pixlike.f90 without changing the logic. It is enabled
+   by default. When -DOPTIMIZE2 is defined some elements of the TT signal
+   covariance matrix (in WMAP_3yr_tt_pixlike.f90) are found by interpolating
+   the 2-pt correlation function C(theta). In tests this approximation changes
+   -2lnL by O(0.01), but to be conservative -DOPTIMIZE2 is not enabled by
+   default. If both -DOPTIMIZE and -DOPTIMIZE2 are enabled the code is twice
+   as fast:
+
+	pass2_compute_likelihood() run times (sec)
+	------------------------------------------
+	(no optimizations)		5.2722001
+	-DOPTIMIZE			4.0882001
+	-DOPTIMIZE -DOPTIMIZE2		2.6022999
+
+   These times are from a dual Intel Xeon 2.4GHz node.
+-- Added compile switch -DTIMING. If enabled the code prints out
+   timing messages useful for gauging performance. Should not be
+   enabled when running chains.
+
+
+WMAP_3yr_options.f90:
+-- character(len=*), parameter :: WMAP_data_dir = './data/'
+                     ^^^^^^^^^ 
+*** AN IMPORTANT CHANGE WITH REGARD TO THE RESOLUTION ***
+The TT pixel likelihood code now supports either resolution 4 (nside=16) or 
+resolution 3 (nside=8) for the input temperature map. The resolution 4 map
+should be used for the most accurate results. On the other hand, the 
+resolution 3 map runs much more quickly. Therefore, if you would like to use 
+the resolution 3 map for testing your code, please change
+
+	integer :: lowl_tt_res          = 4
+	integer :: lowl_max             = 30
+to 
+	integer :: lowl_tt_res          = 3
+	integer :: lowl_max             = 12
+
+in WMAP_3yr_options.f90. MAKE SURE TO CHANGE BOTH lowl_tt_res AND lowl_max.
+
+
+WMAP_3yr_likelihood.f90:
+-- Now the code stops when the input clte/sqrt(cltt*clee) is greater than 1.
+-- Invalidate the beam correction when ln(likelihood_beam) >=
+   ln(likelihood_total)/4
+-- Removed ptsrc and SZ spectra from wmap_likelihood_inputs_tt.dat file, and
+   clps, clsz, and sz_amp from the code. The point-source marginalization is
+   done in "WMAP_3yr_tt_beam_and_ptsrc_corr.f90". If you wish to include the
+   SZ marginalization, download a "Predicted SZ Power Spectrum" file from
+   LAMBDA and use the V-band prediction with its amplitude being marginalized.
+   You may do it by adding an SZ contribution to the TT spectrum, cl_tt = cl_tt
+   + sz_amp*clsz, and vary sz_amp. 
+-- A constant offset, te_lndet_offset defined in WMAP_3yr_options.f90,
+   is now subtracted from the raw TETE lndet term.
+
+
+WMAP_3yr_teeebb_pixlike.f90:
+-- Marginalization over polarized foreground errors has been added.
+-- Pixel-window function is now provided as an ascii file.
+-- Loss imbalance mode projected out of N^{-1}.
+-- A constant offset, teeebb_pixlike_lndet_offset defined in
+   WMAP_3yr_options.f90, is now subtracted from the raw EE/BB lndet term.
+-- Added speed and memory optimizations, enabled by defining -DOPTIMIZE during
+   compilation. 
+
+
+WMAP_3yr_tt_beam_and_ptsrc_corr.f90:
+-- ptsrc correction reduced by 18% and uncertainty doubled.
+-- fixed bug triggered when lmin,lmax changed from default values of 2,1000.
+
+
+WMAP_3yr_tt_pixlike.f90:
+-- Healpix functions have been replaced by the pre-computed data.
+   >> The ILC and V-band maps have been smoothed and degraded already.
+   >> V1 and V2 maps have been coadded.
+-- The res4 (nside=16) smoothing scale is 9.1831 degrees.
+   (Note that the ILC map has already been smoothed by a 1-degree beam, so 
+   the FWHM of an additional smoothing is 9.1285 degrees.)
+-- The res3 (nside=8) smoothing scale is 18.3 degrees.
+-- A white noise term (1uK per pixel at nside=8 or 16) is added to regularize
+   S+N matrix.
+-- Foreground marginalization using the difference between ILC and V-band maps
+   is explicitly imposed.
+-- Using res3 or res4 maps is an option (lowl_tt_res).
+   MAKE SURE TO CHANGE lowl_max ALSO! lowl_max=30 and 12 are recommended for
+   lowl_tt_res=4 and 3, respectively.
+-- A constant offset, tt_pixlike_lndet_offset defined in WMAP_3yr_options.f90,
+   is now subtracted from the raw TTTT lndet term.
+-- Added optional faster approximate calculation of TT signal covariance matrix,
+   enabled by defining -DOPTIMIZE2 during compilation. 
+
+
+NEW DATA FILES
+./data/test_cls.dat
+./data/wmap_likelihood_inputs_tt.dr2p2.dat
+./data/clps.dr2p2.dat
+./data/alm/alm_tt_fs_r9_ilc_nopixwin_3yr_v2.dat
+./data/healpix_data/pixel_window_n0008.txt
+./data/healpix_data/pixel_window_n0016.txt
+./data/maps/low_resolution_map_fs_r3_ilc_smooth_18.3deg.fits 
+./data/maps/low_resolution_map_fs_r3_vband_smooth_18.3deg.fits 
+./data/maps/wmap_fs_r4_ilc_smooth_9.1285deg.fits
+./data/maps/wmap_fs_r4_vband_smooth_9.1831deg.fits
+./data/maps/wt_r3_p2_3yr_pxim.K1.QV.map_q
+./data/maps/wt_r3_p2_3yr_pxim.K1.QV.map_u
+./data/maps/wt_r3_p2_3yr_pxim.QV.map_q
+./data/maps/wt_r3_p2_3yr_pxim.QV.map_u
+./data/mask/mask_r3_kp2.fits
+./data/mask/mask_r4_kp2.fits
+./data/ninv/masked_bb_ninvplninv_qu_r3_p2_norm_corrected_3yr_pxim.QV.fits
+./data/ninv/masked_ee_ninvplninv_qu_r3_p2_norm_corrected_3yr_pxim.QV.fits
+./data/ninv/masked_ninv_qu_r3_p2_norm_corrected_3yr_pxim.QV.fits
+./data/ninv/masked_ninvy_qu_r3_p2_norm_corrected_3yr_pxim.QV.fits
+
+
+NEW DATA FILES (Optional; not being used)
+./data/maps/low_resolution_map_fs_r3_vband_clean_smooth_18.3deg.fits 
+./data/maps/wmap_fs_r4_vband_clean_smooth_9.1831deg.fits
+
+
+DATA FILES REMOVED
+./data/wmap_likelihood_inputs_tt.p2.dat
+./data/clps.p2.dat
+./data/bias_corrected_pass2_3yr_ilc.fits
+./data/pass2f_fltFiltBZFL_fs_spm_r9_ximb_xsd_yr1_itf.V1.map_i 
+./data/pass2f_fltFiltBZFL_fs_spm_r9_ximb_xsd_yr2_itf.V1.map_i 
+./data/pass2f_fltFiltBZFL_fs_spm_r9_ximb_xsd_yr3_itf.V1.map_i 
+./data/wmap_kp2_mask_2yr_v2p3.fits
+./data/alm/alm_tt_fs_r9_ilc_nopixwin_3yr.dat
+./data/maps/wt_r3_p2_3yr.QV.map_q
+./data/maps/wt_r3_p2_3yr.QV.map_u
+./data/ninv/masked_bb_ninvplninv_qu_r3_p2_norm_corrected_3yr.QV.fits
+./data/ninv/masked_ee_ninvplninv_qu_r3_p2_norm_corrected_3yr.QV.fits
+./data/ninv/masked_ninv_qu_r3_p2_norm_corrected_3yr.QV.fits
+./data/ninv/masked_ninvy_qu_r3_p2_norm_corrected_3yr.QV.fits
