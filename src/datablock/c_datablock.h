@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-
+#define OPTION_SECTION "module_options"
 
   /*
     The type c_datablock represents groups of named values.

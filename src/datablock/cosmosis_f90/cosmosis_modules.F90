@@ -8,7 +8,7 @@ module cosmosis_modules
     implicit none
 
     integer, parameter :: DATABLOCK_MAX_STRING_LENGTH=256
-    character(*), parameter :: default_option_section = "module_options"
+    character(*), parameter :: option_section = "module_options"
 
     contains
 

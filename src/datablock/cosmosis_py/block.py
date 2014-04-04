@@ -5,6 +5,9 @@ from . import types
 from .errors import BlockError
 import numpy as np
 
+option_section = "module_options"
+
+
 class DataBlock(object):
 	GET=0
 	PUT=1
