@@ -1,0 +1,28 @@
+#! /usr/bin/env python
+# don't do much for now
+from optparse import OptionParser
+parser = OptionParser()
+
+parser.add_option("--cflags", action="store_true",
+                  help="only the cflags")
+parser.add_option("--libs", action="store_true",
+                  help="only libflags")
+
+(options, args) = parser.parse_args()
+
+
+res={}
+cflags = """CFLAG"""
+libs = """LIB"""
+
+if (not options.libs) and (not options.cflags):
+  options.libs=True
+  options.cflags=True
+
+if options.cflags:
+  print cflags,
+if options.libs:
+  print libs,
+print
+
+

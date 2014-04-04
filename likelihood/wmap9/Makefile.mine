@@ -1,0 +1,2 @@
+LDFLAGS+= -framework veclib
+WMAP9_DATA_DIR=/Users/jaz/data/wmap_likelihood_v5/data/
