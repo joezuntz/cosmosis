@@ -65,14 +65,24 @@ test_fortran: fortran_t
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./fortran_t >  fortran_t.log
 	@echo  ... passed
 
-test_python:
+test_python: 
 	@echo -n Running python tests - needs nose package
 	@nosetests cosmosis_py &> python_t.log
 	@echo ... passed
 
-.PHONY: test_datablock test_c_datablock test_section test_entry test_fortran test clean test_python
 
-libcosmosis_fortran.so: libcosmosis.so cosmosis_f90/cosmosis_types.F90 cosmosis_f90/cosmosis_wrappers.F90 cosmosis_f90/cosmosis_modules.F90   
+cosmosis_f90/cosmosis_section_names.F90: gen_py
+
+section_names.h: gen_py
+
+cosmosis_py/section_names.py: gen_py
+
+gen_py: generate_sections.py
+	python generate_sections.py
+
+.PHONY: test_datablock test_c_datablock test_section test_entry test_fortran test clean test_python gen_py
+
+libcosmosis_fortran.so: libcosmosis.so cosmosis_f90/cosmosis_section_names.F90 cosmosis_f90/cosmosis_types.F90 cosmosis_f90/cosmosis_wrappers.F90 cosmosis_f90/cosmosis_modules.F90    
 	$(F90) $(F90FLAGS) -shared -o $@ $+
 
 fortran_t: libcosmosis_fortran.so  cosmosis_f90/cosmosis_test.F90
@@ -94,8 +104,8 @@ entry_t: entry_test.o libcosmosis.so
 section_t: section_test.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
 
-datablock.o: datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
-c_datablock.o: c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
+datablock.o: section_names.h datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
+c_datablock.o: section_names.h c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
 entry.o: entry.cc entry.hh datablock_status.h
 entry_t.o: entry_t.cc entry.hh
 section.o: section.cc section.hh entry.hh datablock_status.h
