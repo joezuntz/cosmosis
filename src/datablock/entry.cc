@@ -1,5 +1,6 @@
 #include "entry.hh"
 #include <limits>
+#include "stdio.h"
 
 using std::string;
 using std::vector;
@@ -10,6 +11,7 @@ cosmosis::Entry::Entry(Entry const& e) :
   i(0)
 {
   if      (type_ == typeid(int)) i = e.i;
+  else if (type_ == typeid(bool)) b = e.b;
   else if (type_ == typeid(double)) d = e.d;
   else if (type_ == typeid(string)) emplace(&s, e.s);
   else if (type_ == typeid(complex_t)) z = e.z;
@@ -30,6 +32,7 @@ cosmosis::Entry::operator==(Entry const& rhs) const
 {
   if (type_ != rhs.type_) return false;
   if (type_ == typeid(int)) return i == rhs.i;
+  else if (type_ == typeid(bool)) return b == rhs.b;
   else if (type_ == typeid(double)) return d == rhs.d;
   else if (type_ == typeid(string)) return s == rhs.s;
   else if (type_ == typeid(complex_t)) return z == rhs.z;
@@ -76,7 +79,9 @@ int cosmosis::Entry::size() const
 }
 
 void cosmosis::Entry::set_val(int v) { _set(v, i); }
+void cosmosis::Entry::set_val(bool v) { _set(v, b); }
 void cosmosis::Entry::set_val(double v) { _set(v, d); }
+void cosmosis::Entry::set_val(const char * v) { _vset(string(v), s); }
 void cosmosis::Entry::set_val(string const& v) { _vset(v, s); }
 void cosmosis::Entry::set_val(cosmosis::complex_t v) { _set(v, z); }
 void cosmosis::Entry::set_val(vector<int> const& v) { _vset(v, vi); }

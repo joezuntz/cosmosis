@@ -3,3 +3,7 @@
 *.so
 *.a
 *.dSYM
+src/datablock/cosmosis_modules.mod
+src/datablock/cosmosis_types.mod
+src/datablock/cosmosis_wrappers.mod
+src/datablock/fortran_test

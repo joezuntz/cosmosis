@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-
+#define OPTION_SECTION "module_options"
 
   /*
     The type c_datablock represents groups of named values.
@@ -102,6 +102,9 @@ extern "C" {
   c_datablock_get_int(c_datablock const* s, const char* section, const char* name, int* val);
 
   DATABLOCK_STATUS
+  c_datablock_get_bool(c_datablock const* s, const char* section, const char* name, bool* val);
+
+  DATABLOCK_STATUS
   c_datablock_get_double(c_datablock const* s, const char* section, const char* name, double* val);
 
   DATABLOCK_STATUS
@@ -112,11 +115,40 @@ extern "C" {
 
   /* Only scalars have default in the C and Fortran interfaces. */
   DATABLOCK_STATUS
+  c_datablock_get_int_default(c_datablock const* s,
+                              const char* section,
+                              const char* name,
+                              int def,
+                              int* val);
+
+  DATABLOCK_STATUS
+  c_datablock_get_bool_default(c_datablock const* s,
+                              const char* section,
+                              const char* name,
+                              bool def,
+                              bool* val);
+
+  DATABLOCK_STATUS
   c_datablock_get_double_default(c_datablock const* s,
                                  const char* section,
                                  const char* name,
-                                 double* val,
-                                 double dflt);
+                                 double def,
+                                 double* val);
+
+  DATABLOCK_STATUS
+  c_datablock_get_string_default(c_datablock const* s,
+                                 const char* section,
+                                 const char* name,
+                                 const char* def,
+                                 char** val);
+
+  DATABLOCK_STATUS
+  c_datablock_get_complex_default(c_datablock const* s,
+                                  const char* section,
+                                  const char* name,
+                                  double _Complex def,
+                                  double _Complex* val);
+
 
   /*
     Return 0 if the put worked, and nonzero to indicate failure.
@@ -125,6 +157,9 @@ extern "C" {
   */
   DATABLOCK_STATUS
   c_datablock_put_int(c_datablock* s, const char* section, const char* name, int val);
+
+  DATABLOCK_STATUS
+  c_datablock_put_bool(c_datablock* s, const char* section, const char* name, bool val);
 
   DATABLOCK_STATUS
   c_datablock_put_double(c_datablock* s, const char* section, const char* name, double val);
@@ -143,6 +178,9 @@ extern "C" {
   */
   DATABLOCK_STATUS
   c_datablock_replace_int(c_datablock* s, const char* section, const char* name, int val);
+
+  DATABLOCK_STATUS
+  c_datablock_replace_bool(c_datablock* s, const char* section, const char* name, bool val);
 
   DATABLOCK_STATUS
   c_datablock_replace_double(c_datablock* s, const char* section, const char* name, double val);
@@ -227,6 +265,16 @@ extern "C" {
                                const char* name,
                                double const*  val,
                                int sz);
+
+
+
+DATABLOCK_STATUS  datablock_put_double_grid(
+  const char * section, 
+  const char * name_x, int n_x, double * x,  
+  const char * name_y, int n_y, double * y, 
+  double ** P);
+
+
 
 
 #ifdef __cplusplus

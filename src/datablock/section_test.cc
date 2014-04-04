@@ -15,11 +15,18 @@ template <class T>
 void test_type(T && x, T && y)
 {
   Section s;
+  T result;
+
+  assert(s.get_val("no such parameter", x, result) == DBS_SUCCESS);
+  assert(result == x);
+
   assert(s.put_val("a", x) == DBS_SUCCESS);
   assert(s.put_val("a", y) == DBS_NAME_ALREADY_EXISTS);
   assert(s.value_name(0)=="a");
-  T result;
   assert(s.get_val("a", result) == DBS_SUCCESS);
+  assert(result == x);
+  assert(s.get_val("a", y, result) == DBS_SUCCESS);
+  assert(result == x);
   assert(s.get_val("no such parameter", result) == DBS_NAME_NOT_FOUND);
   try { s.view<T>("no such parameter"); assert(0 =="view<T> failed to throw an exception"); }
   catch (Section::BadSectionAccess const&) { }

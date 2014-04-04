@@ -1,13 +1,10 @@
 import numpy as np
-<<<<<<< HEAD:src/runtime/diagnostics.py
-=======
 import pymc
 import sys
 import os
 from math import log10, floor
 from mpi4py import  MPI
 
->>>>>>> a76f87d3e2268c3649fff429bcde1a571427e953:src/samplers/pymc/cvg_diagnostics.py
 
 
 class Diagnostics(object):
@@ -143,12 +140,12 @@ class Diagnostics(object):
 			R = V/W
 			return [B_over_n*n,W,R]
 
-#	@staticmethod
-#	def finished_chain_diag(trace):
-#		"""convergence diagnostics on one trace"""
-#		z_scores = pymc.geweke(trace, first=.1, last=.5, intervals=20)
-#		RL_output = pymc.raftery_lewis(trace, 0.025, 0.05, s=.95, epsilon=.001, verbose=1)
-#		return z_scores
+	@staticmethod
+	def finished_chain_diag(trace):
+		"""convergence diagnostics on one trace"""
+		z_scores = pymc.geweke(trace, first=.1, last=.5, intervals=20)
+		RL_output = pymc.raftery_lewis(trace, 0.025, 0.05, s=.95, epsilon=.001, verbose=1)
+		return z_scores
 
 		
 

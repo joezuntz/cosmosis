@@ -17,6 +17,14 @@ using cosmosis::vcomplex_t;
 using std::vector;
 using std::string;
 
+void test_copy2()
+{
+  using namespace std::rel_ops;
+
+  Entry c(std::string("cow"));
+
+}
+
 void test_copy()
 {
   using namespace std::rel_ops;
@@ -72,6 +80,31 @@ void test_mapusage()
 
   vals.insert(map_t::value_type("pi", Entry(4.0 * std::atan(1.0))));
   assert(vals.size()==2);
+}
+
+void test_bool()
+{
+  Entry e(false);
+  assert(e.is<bool>());
+  assert(not e.is<int>());
+  assert(not e.is<double>());
+  assert(not e.is<string>());
+  assert(not e.is<complex_t>());
+  e.set_val(true);
+  assert (e.val<bool>() == true);
+  try {
+    assert(e.val<double>() == 10.0);
+    assert(0 == "failed throw exception");
+  }
+  catch ( Entry::BadEntry const & ) { }
+  catch (...) {
+    assert(0 == "threw wrong kind of exception");
+  }
+  assert(e.is<bool>());
+  e.set_val("cow");
+  assert(e.is<string>());
+  assert(e.val<string>() == "cow");
+
 }
 
 void test_int()
@@ -210,6 +243,7 @@ void test_vector(vector<T> const& vals)
 
 int main()
 {
+  test_bool();
   test_int();
   test_double();
   test_string();

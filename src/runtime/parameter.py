@@ -93,7 +93,7 @@ class Parameter(object):
         try:
             values = [float(p) for p in line.split()]
             if len(values) == 1:
-                return start, None
+                return values[0], None
             elif len(values) == 2:
                 return 0.5*(values[0]+values[1]), tuple(values)
             elif len(values) == 3:

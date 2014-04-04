@@ -108,9 +108,9 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS c_datablock_get_type(c_datablock const * s,
-    const char* section,
-    const char* name,
-    datablock_type_t * t)
+                                        const char* section,
+                                        const char* name,
+                                        datablock_type_t * t)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
@@ -118,7 +118,6 @@ if (name == nullptr) return false;
     DataBlock const* p = static_cast<DataBlock const*>(s);
     return p->get_type(section, name, *t);
   }
-
 
   DATABLOCK_STATUS
   c_datablock_get_int(c_datablock const* s,
@@ -136,6 +135,56 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
+  c_datablock_get_int_default(c_datablock const* s,
+                              const char* section,
+                              const char* name,
+                              int def,
+                              int* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    return p->get_val(section, name, def, *val);
+  }
+
+
+  DATABLOCK_STATUS
+  c_datablock_get_bool(c_datablock const* s,
+          const char* section,
+          const char* name,
+          bool* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    return p->get_val(section, name, *val);
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_bool_default(c_datablock const* s,
+                              const char* section,
+                              const char* name,
+                              bool def,
+                              bool* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    return p->get_val(section, name, def, *val);
+  }
+
+
+
+  DATABLOCK_STATUS
   c_datablock_get_double(c_datablock const* s,
 			 const char* section,
 			 const char* name,
@@ -148,6 +197,22 @@ if (name == nullptr) return false;
 
     auto p = static_cast<DataBlock const*>(s);
     return p->get_val(section, name, *val);
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_double_default(c_datablock const* s,
+                                 const char* section,
+                                 const char* name,
+                                 double def,
+                                 double* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    return p->get_val(section, name, def, *val);
   }
 
   DATABLOCK_STATUS
@@ -180,6 +245,28 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
+  c_datablock_get_complex_default(c_datablock const* s,
+                                  const char* section,
+                                  const char* name,
+                                  double _Complex def,
+                                  double _Complex* val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    complex_t default_z(def);
+    complex_t z;
+    auto rc = p->get_val(section, name, default_z, z);
+    // See comment in c_datablock_get_complex for an explanation of this
+    // reinterpret_cast.
+    if (rc == DBS_SUCCESS) *val = * reinterpret_cast<double _Complex*>(&z);
+    return rc;
+  }
+
+  DATABLOCK_STATUS
   c_datablock_get_string(c_datablock const* s,
                          const char* section,
                          const char* name,
@@ -193,6 +280,30 @@ if (name == nullptr) return false;
     auto p = static_cast<DataBlock const*>(s);
     string tmp;
     auto rc = p->get_val(section, name, tmp);
+    if (rc != DBS_SUCCESS) return rc;
+    *val = strdup(tmp.c_str());
+    if (*val == nullptr) return DBS_MEMORY_ALLOC_FAILURE;
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_string_default(c_datablock const* s,
+                                 const char* section,
+                                 const char* name,
+                                 const char* def,
+                                 char**  val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    /* Do we need a new enumeration value for the following? */
+    if (def == nullptr) return DBS_VALUE_NULL; 
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock const*>(s);
+    string tmp;
+    string default_string(def);
+    auto rc = p->get_val(section, name, default_string, tmp);
     if (rc != DBS_SUCCESS) return rc;
     *val = strdup(tmp.c_str());
     if (*val == nullptr) return DBS_MEMORY_ALLOC_FAILURE;
@@ -312,9 +423,23 @@ if (name == nullptr) return false;
 
   DATABLOCK_STATUS
   c_datablock_put_int(c_datablock* s,
-		      const char* section,
-		      const char* name,
-		      int val)
+          const char* section,
+          const char* name,
+          int val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->put_val(section, name, val);
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_put_bool(c_datablock* s,
+          const char* section,
+          const char* name,
+          bool val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
@@ -406,9 +531,9 @@ if (name == nullptr) return false;
 
   DATABLOCK_STATUS
   c_datablock_replace_int(c_datablock* s,
-			  const char* section,
-			  const char* name,
-			  int val)
+        const char* section,
+        const char* name,
+        int val)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
@@ -417,6 +542,21 @@ if (name == nullptr) return false;
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, val);
   }
+
+  DATABLOCK_STATUS
+  c_datablock_replace_bool(c_datablock* s,
+        const char* section,
+        const char* name,
+        bool val)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    return p->replace_val(section, name, val);
+  }
+
 
   DATABLOCK_STATUS
   c_datablock_replace_double(c_datablock* s,
@@ -495,5 +635,73 @@ if (name == nullptr) return false;
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, vector<double>(val, val+sz));
   }
+/*
+DATABLOCK_STATUS  datablock_put_double_grid(
+  c_datablock* s,
+  const char * section, 
+  const char * name_x, int n_x, double * x,  
+  const char * name_y, int n_y, double * y, 
+  const char * name_z, double ** z)
+{
+    DATABLOCK_STATUS status=0;
+
+    int ndim = 2;
+    int dims[2] = {n_x, n_y};
+
+    status |= c_datablock_put_double_array_1d(s, section, name_x, x, n_x);
+    status |= c_datablock_put_double_array_1d(s, section, name_y, y, n_y);
+    status |= c_datablock_put_double_array(s, section, name_z, z, ndim, dims);
+
+    // We could rely on n_x and n_y to record in the block what ordering the array has.
+    // But that would break down if n_x == n_y
+    char sentinel_key[512];
+    char sentinel_value[512];
+
+    snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
+    snprintf(sentinel_value, 512, "%s_cosmosis_%s",name_x, name_y);
+
+    status |= c_datablock_put_string(s, section, sentinel_key, sentinel_value);
+    return status;
+}
+
+DATABLOCK_STATUS  datablock_get_double_grid(
+  c_datablock* s,
+  const char * section, 
+  const char * name_x, int *n_x, double ** x,  
+  const char * name_y, int *n_y, double ** y, 
+  const char * name_z, double *** z)
+{
+    DATABLOCK_STATUS status;
+
+    status = c_datablock_get_double_array_1d(s, section, name_x, x, n_x);
+    status |= c_datablock_get_double_array_1d(s, section, name_y, y, n_y);
+    int n_z = n_x * n_y;
+    //Now we need to check if the ordering requested here is the same
+    //as the saved ordering.  If not we need to transpose.
+    char sentinel_key[512];
+    char * sentinel_value;
+    char * sentinel_test[512];
+
+    snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
+    status |= c_datablock_get_string(s,section, sentinel_key, &sentinel_value);
+    snprintf(sentinel_test, 512, "%s_cosmosis_%s",name_x, name_y);
+    if (0==strcmp(sentinel_test, sentinel_value, 512)){
+      // This indicates that the requested ordering is the same as the stored one.
+      // So we do not need to do any flipping.
+      NOT FINISHED
+      status |= c_datablock_get_double_array_2d(s, section, name_y, y, n_y);
+    }
+    else{
+      if (0!=strcmp(sentinel_test, sentinel_value)){
+        //This means something has gone wrong.
+      }
+      // If this has worked then everything is fine.
+    }
+  return status;
+}
+*/
+
+
+
 
 } // extern "C"

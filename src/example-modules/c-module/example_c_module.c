@@ -1,7 +1,7 @@
-#include "c_datablock.h"
-#include "stdlib.h"
-#include "stdio.h"
-#include "math.h"
+#include "datablock/c_datablock.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
 /* 
 
 	Trivial single parameter likelihood.

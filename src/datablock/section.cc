@@ -43,9 +43,9 @@ cosmosis::Section::get_type(std::string const&name, datablock_type_t &t) const
   	return DBS_NAME_NOT_FOUND;
   }
   if      (ival->second.is<int>())        t = DBT_INT;
+  else if      (ival->second.is<bool>())  t = DBT_BOOL;
   else if (ival->second.is<double>())     t = DBT_DOUBLE;
   else if (ival->second.is<complex_t>())  t = DBT_COMPLEX;
-  else if (ival->second.is<string>())     t = DBT_STRING;
   else if (ival->second.is<string>())     t = DBT_STRING;
   else if (ival->second.is<vint_t>())     t = DBT_INT1D;
   else if (ival->second.is<vdouble_t>())  t = DBT_DOUBLE1D;

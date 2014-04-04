@@ -17,17 +17,34 @@ void test(T const& x, T const& y, W const& wrong)
 {
   DataBlock b;
   assert(not b.has_section("sect_a"));
-  assert(b.put_val("sect_a", "param", x) == DBS_SUCCESS);
+  T val;
+
+  assert(b.get_val("no such section", "a", y, val) == DBS_SUCCESS);
+  assert(val == y);
+
+  assert(b.put_val("SECT_A", "param", x) == DBS_SUCCESS);
   assert(b.has_section("sect_a"));
   assert(b.value_name(0,0)=="param");
   assert(b.value_name("sect_a",0)=="param");
+  assert(b.has_section("Sect_a"));
+  assert(b.has_section("Sect_A"));
+  assert(b.get_val("sect_a", "no such parameter", y, val) == DBS_SUCCESS);
+  assert(val == y);
+
   assert(b.has_val("no such section", "x") == false);
   assert(b.has_val("sect_a", "no such parameter") == false);
   assert(b.has_val("sect_a", "param") == true);
 
-  T val;
   assert(b.get_val("sect_a", "param", val) == DBS_SUCCESS);
   assert(val == x);
+  assert(b.get_val("sect_A", "param", val) == DBS_SUCCESS);
+  assert(val == x);
+  assert(b.get_val("Sect_A", "PARAM", val) == DBS_SUCCESS);
+  assert(val == x);
+
+  assert(b.get_val("sect_a", "param", y, val) == DBS_SUCCESS);
+  assert(val == x);
+
   assert(b.get_val("no such section", "param", val) == DBS_SECTION_NOT_FOUND);
   assert(b.get_val("sect_a", "no such parameter", val) == DBS_NAME_NOT_FOUND);
 
@@ -95,6 +112,7 @@ void test_types()
   b.put_val("double_vec", "a", vector<double>{3.,2.,1.});
   b.put_val("string_vec", "a", vector<string>{"3","2","1"});
   b.put_val("complex_vec", "a", vector<complex_t>{{1,2},{2.5, 3}});
+  b.put_val("bools", "a", true);
   datablock_type_t t;
   assert (b.get_type("ints","a",t)==DBS_SUCCESS);
   assert(t==DBT_INT);
@@ -112,6 +130,8 @@ void test_types()
   assert(t==DBT_STRING1D);
   assert (b.get_type("complex_vec","a",t)==DBS_SUCCESS);
   assert(t==DBT_COMPLEX1D);
+  assert (b.get_type("bools","a",t)==DBS_SUCCESS);
+  assert(t==DBT_BOOL);
 
 }
 
@@ -121,6 +141,7 @@ int main()
   test(2.5, -1.25e20, string("dog"));
   test(complex_t{10.5, 3.5}, complex_t{-2.5, -1.5}, 10);
   test(string("cow"), string("moose"), 20);
+  test(true, false, 2);
   test(vector<int>{1,2,3}, vector<int>{3,2,1}, vector<double>{1.5,25.});
   test(vector<double>{1,2,3}, vector<double>{3,2,1}, string("moo"));
   test(vector<complex_t>{{1,2},{2.5, 3}}, vector<complex_t>{{2,1}}, 100);

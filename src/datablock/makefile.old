@@ -19,10 +19,11 @@
 #   1) dependencies for targets are not automatically generated.
 #
 #----------------------------------------------------------------------
-CXXFLAGS=-std=c++11 -O3 -Wall -Wextra -pedantic -fPIC -g
+CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
-CCFLAGS=-std=c99 -O3 -Wall -Wextra -pedantic -fPIC -g
+CCFLAGS=-std=c99 -O0 -Wall -Wextra -pedantic -fPIC -g
 #CCFLAGS=-std=c99 -O0 -Wall -Wextra -pedantic -fPIC -g
+F90FLAGS = -Wall -fPIC -ffree-line-length-none
 
 ifdef MEMCHECK
   MEMCHECK_CMD=valgrind --error-exitcode=1 --leak-check=yes --errors-for-leak-kinds=definite --track-origins=yes --suppressions=cosmosis_tests.supp
@@ -30,14 +31,14 @@ else
   MEMCHECK_CMD=
 endif
 
-all: verify_setup lib
+all: lib
 
 lib: libcosmosis.so
 
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
 
-test:  test_entry test_section test_datablock test_c_datablock
+test:  test_entry test_section test_datablock test_c_datablock test_fortran
 
 test_datablock: lib datablock_t
 	@echo -n Running datablock_t
@@ -59,23 +60,52 @@ test_entry: lib entry_t
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@echo  ... passed
 
+test_fortran: fortran_t
+	@echo -n Running fortran_t
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./fortran_t >  fortran_t.log
+	@echo  ... passed
+
+test_python: 
+	@echo -n Running python tests - needs nose package
+	@nosetests cosmosis_py &> python_t.log
+	@echo ... passed
+
+
+cosmosis_f90/cosmosis_section_names.F90: gen_py
+
+section_names.h: gen_py
+
+cosmosis_py/section_names.py: gen_py
+
+gen_py: generate_sections.py
+	python generate_sections.py
+
+.PHONY: test_datablock test_c_datablock test_section test_entry test_fortran test clean test_python gen_py
+
+libcosmosis_fortran.so: libcosmosis.so cosmosis_f90/cosmosis_section_names.F90 cosmosis_f90/cosmosis_types.F90 cosmosis_f90/cosmosis_wrappers.F90 cosmosis_f90/cosmosis_modules.F90    
+	$(F90) $(F90FLAGS) -shared -o $@ $+
+
+fortran_t: libcosmosis_fortran.so  cosmosis_f90/cosmosis_test.F90
+	$(F90) $(F90FLAGS)  -o $@ cosmosis_f90/cosmosis_test.F90  -L. -lcosmosis_fortran -lcosmosis
+
+
 libcosmosis.so: datablock.o entry.o section.o c_datablock.o
 	$(CXX) $(CXXFLAGS) -shared -o $@ $+
 
-datablock_t: datablock_t.cc datablock.hh libcosmosis.so
-	$(CXX) $(CXXFLAGS) -o $@ datablock_t.cc -L . -lcosmosis
+datablock_t: datablock_test.cc datablock.hh libcosmosis.so
+	$(CXX) $(CXXFLAGS) -o $@ datablock_test.cc -L . -lcosmosis
 
-c_datablock_t: c_datablock_t.c c_datablock.h libcosmosis.so
-	$(CC) $(CCFLAGS) -o $@ c_datablock_t.c -L . -lcosmosis
+c_datablock_t: c_datablock_test.c  test_c_datablock_scalars.h c_datablock.h libcosmosis.so
+	$(CC) $(CCFLAGS) -o $@ c_datablock_test.c -L . -lcosmosis
 
-entry_t: entry_t.o libcosmosis.so
+entry_t: entry_test.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
 
-section_t: section_t.o libcosmosis.so
+section_t: section_test.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
 
-datablock.o: datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
-c_datablock.o: c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
+datablock.o: section_names.h datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
+c_datablock.o: section_names.h c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
 entry.o: entry.cc entry.hh datablock_status.h
 entry_t.o: entry_t.cc entry.hh
 section.o: section.cc section.hh entry.hh datablock_status.h
