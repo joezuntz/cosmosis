@@ -1,3 +1,0 @@
-F90=gfortran
-FFLAGS=-ffree-line-length-none -I ../../../datablock 
-LDFLAGS= -L../../../datablock -lcosmosis_fortran -lcosmosis
