@@ -1,8 +1,6 @@
-include ../../Makefile.mine
--include Makefile.mine
+include ../../../Makefile.mine
+#-include Makefile.mine
 
-FFLAGS += -I../../glue/include
-LDFLAGS += -L../../glue/lib -lffitswrap -lcfitswrap -lcfitsio
 
 default: interface
 

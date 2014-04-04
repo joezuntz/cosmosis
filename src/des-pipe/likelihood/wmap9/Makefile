@@ -1,5 +1,5 @@
 #Top level Makefile
-#include ../../Makefile.mine
+include ../../../Makefile.mine
 
 #Optional (that's what the dash means) Makefile locally
 -include Makefile.mine

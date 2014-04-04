@@ -1,32 +1,32 @@
 module halofit_interface_tools
+use cosmosis_modules
 implicit none
-contains
-!Function to load matter power structure from a FITS file.
 
-function save_matter_power(fitsfile, nk, k, nz, z, p) result(status)
-	use iso_c_binding
+	type halofit_settings
+		real(8) :: kmin, kmax
+		integer :: nk
+	end type
+
+
+contains
+
+function save_matter_power(block, nk, k, nz, z, p) result(status)
 	use halofit1
-	use f90_desglue
-	integer(c_size_t) :: fitsfile
-	integer(c_int) :: status
+	integer(cosmosis_block) :: block
+	integer(cosmosis_status) :: status
 	integer nk, nz, i
 	real(dl), dimension(nk) :: k
 	real(dl), dimension(nz) :: z
 	real(dl), dimension(nk,nz) :: p
 	real(dl), allocatable, dimension(:) :: col
 	integer nt
-	character(*), dimension(3), parameter :: column_names = (/ "K_H", "Z  ","P_K" /)
-	character(*), dimension(3), parameter :: column_units = (/ "Mpc","N/A","N/A" /)
-	character(*), dimension(3), parameter :: column_fmts  = (/ "D","D","D" /)
 	
 	nt = nk*nz
 	
-	
 	status = 0
-	status = status + fits_create_new_table(fitsfile, matter_power_nl_section, column_names, column_fmts, column_units)
-	status = status + fits_put_int_parameter(fitsfile, 'NK', nk, "Number of k values")
-	status = status + fits_put_int_parameter(fitsfile, 'NZ', nz, "Number of z values")
-	status = status + fits_put_int_parameter(fitsfile, 'NT', nt, "Number of k*z values")
+	status = status + datablock_put_int(block, matter_power_nl_section ,'NK', nk)
+	status = status + datablock_put_int(block, matter_power_nl_section, 'NZ', nz)
+	status = status + datablock_put_int(block, matter_power_nl_section, 'NT', nt)
 	if (status .ne. 0) return
 
 
@@ -35,29 +35,28 @@ function save_matter_power(fitsfile, nk, k, nz, z, p) result(status)
 	do i=1,nk
 		col( (i-1)*nz+1:i*nz) = k(i)
 	enddo
-	status = status + fits_write_column(fitsfile, "K_H", col)
+	status = status + datablock_put_double_array_1d(block, matter_power_nl_section, "K_H", col)
 	
 	do i=1,nk
 		col( (i-1)*nz+1:i*nz) = z(:)
 	enddo
-	status = status + fits_write_column(fitsfile, "Z", col)
+	status = status + datablock_put_double_array_1d(block, matter_power_nl_section, "Z", col)
 	
 	do i=1,nk
 		col( (i-1)*nz+1:i*nz) = p(i,:)
 	enddo
-	status = status + fits_write_column(fitsfile, "P_K", col)
+	status = status + datablock_put_double_array_1d(block, matter_power_nl_section, "P_K", col)
 	
 	deallocate(col)
 	
 end function 
 
 
-function load_matter_power(fitsfile, PK) result(status)
-	use iso_c_binding
-	use f90_desglue
+function load_matter_power(block, PK) result(status)
+	use cosmosis_modules
 	use halofit1
-	integer(c_size_t) :: fitsfile
-	integer(c_int) :: status
+	integer(cosmosis_block) :: block
+	integer(cosmosis_status) :: status
 	type(MatterPowerData) :: PK
 	real(dl), allocatable, dimension(:) :: k_col, z_col, p_col
 	logical :: k_changes_fastest
@@ -66,12 +65,11 @@ function load_matter_power(fitsfile, PK) result(status)
 	
 	!Get the data columns from the fits data
 	status = 0
-	status = fits_goto_extension(fitsfile, matter_power_lin_section)
-	status = status + fits_get_int_parameter(fitsfile, "NK", PK%num_k)
-	status = status + fits_get_int_parameter(fitsfile, "NZ", PK%num_z)
-	status = status + fits_get_column_double(fitsfile,"Z", z_col,nkz)
-	status = status + fits_get_column_double(fitsfile,"K_H", k_col,nkz)
-	status = status + fits_get_column_double(fitsfile,"P_K", p_col,nkz)
+	status = status + datablock_get_int(block, matter_power_lin_section, "NK", PK%num_k)
+	status = status + datablock_get_int(block, matter_power_lin_section, "NZ", PK%num_z)
+	status = status + datablock_get_double_array_1d(block, matter_power_lin_section, "Z", z_col,   nkz)
+	status = status + datablock_get_double_array_1d(block, matter_power_lin_section, "K_H", k_col, nkz)
+	status = status + datablock_get_double_array_1d(block, matter_power_lin_section, "P_K", p_col, nkz)
 	if (PK%num_k * PK%num_z .ne. nkz) status = status + 1
 	if (status .ne. 0) then
 		write(*,*) "Failed to read data in properly from fits file"
@@ -132,16 +130,29 @@ end function
 
 end module halofit_interface_tools
 
+function setup(options) result(settings)
+	use cosmosis_modules
+	use halofit_interface_tools
+	implicit none
+	integer(cosmosis_block) :: options
+	integer(cosmosis_status) :: status
+	type(halofit_settings), pointer :: settings
+	allocate(settings)
+	status = 0
+	status = status + datablock_get_double_default(options, option_section, "kmin", 1.0D-04, settings%kmin)
+	status = status + datablock_get_double_default(options, option_section, "kmax", 1.0D+02, settings%kmax)
+	status = status + datablock_get_int_default(options, option_section, "nk", 200, settings%nk)
 
-function execute(handle) result(status)
+end function setup
+
+function execute(block, settings) result(status)
 	use halofit1
 	use halofit_interface_tools
-	use iso_c_binding
-	use f90_desglue
+	use cosmosis_modules
 	implicit none
-	integer(c_size_t), value :: handle
-	integer(c_int) :: status
-	integer(c_size_t) :: fitsfile
+	integer(cosmosis_block), value :: block
+	integer(cosmosis_status) :: status
+	type(halofit_settings) :: settings	
 	type(MatterPowerdata) :: PK
 	type(MatterPowerdata) :: PK_NL
 	real(dl), dimension(:,:), allocatable :: nonlin_ratio, p
@@ -152,47 +163,26 @@ function execute(handle) result(status)
 	integer iz
 
 	status = 0
-	!Check for zero handle
-	if (handle==0) then
-		write(*,*) "Null handle in halofit"
-		status=1
-		return
-	endif
 	
-	!Open the fitsfile and check it has worked
-	fitsfile = fitsfile_from_internal(handle)
-	if (fitsfile==0) then
-		write(*,*) "Could not open fitsfile"
-		status=2
-		return
-	endif
-
-	!Get some important parameters 
-	status = fits_goto_extension(fitsfile, cosmological_parameters_section)
-	if (status .ne. 0) then
-		write(*,*) "No parameters section present in halofit"
-		return
-	endif
 	
 	!Set Halofit internal numbers
-	status = status + fits_get_double_parameter(fitsfile, "OMEGA_B", omega_baryon)
-	status = status + fits_get_double_parameter(fitsfile, "OMEGA_M", omega_matter)
+	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_B", omega_baryon)
+	status = status + datablock_get_double(block, cosmological_parameters_section, "OMEGA_M", omega_matter)
 	omegav = 1 - omega_matter
 
-	!Load suggested output numbers or just use defaults
-	status = status + fits_get_double_parameter_default(fitsfile, "NL_KMIN", kmin, 1.0D-04)
-	status = status + fits_get_double_parameter_default(fitsfile, "NL_KMAX", kmax, 1.0D+02)
-	status = status + fits_get_int_parameter_default(fitsfile, "NL_NK",   nk,   200)
-	
     if (status .ne. 0) then
 		write(*,*) "Required parameters not found in halofit."
 		return
 	endif
-	
 
+	!Load suggested output numbers or just use defaults
+	kmin = settings%kmin
+	kmin = settings%kmax
+	nk = settings%nk
+	
 	
 	!Run halofit
-	status = load_matter_power(fitsfile,PK)
+	status = load_matter_power(block,PK)
 	if (status .ne. 0) then
 		write(*,*) "Could not load matter power"
 		status=3
@@ -226,11 +216,9 @@ function execute(handle) result(status)
 		enddo
 	enddo
 
-	status = save_matter_power(fitsfile, nk, k, PK%num_z, PK%redshifts, p)
+	status = save_matter_power(block, nk, k, PK%num_z, PK%redshifts, p)
 
 	deallocate(k)
-
-	status = close_fits_object(fitsfile)
 	deallocate(nonlin_ratio)
 	deallocate(p)
 end function

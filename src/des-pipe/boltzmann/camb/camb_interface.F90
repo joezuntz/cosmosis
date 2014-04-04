@@ -70,7 +70,7 @@ module camb_interface_tools
 		else
 			!Otherwise read from ini file
 
-			status = datablock_get_string(block, default_option_section, "mode", mode_name)
+			status = datablock_get_string(block, option_section, "mode", mode_name)
 			if (trim(mode_name) == "background") then
 				mode=CAMB_MODE_BG
 			else if (trim(mode_name) == "cmb") then
@@ -96,18 +96,18 @@ module camb_interface_tools
 
 		!We do not use the CMB lmax if only using the background mode
 		if (mode .ne. CAMB_MODE_BG) then
-			status = status + datablock_get_int_default(block, default_option_section, "cmb_lmax", default_lmax, standard_lmax)
+			status = status + datablock_get_int_default(block, option_section, "cmb_lmax", default_lmax, standard_lmax)
 		endif
 		!We can always set an optional feedback level,
 		!which defaults to zero (silent)
-		status = status + datablock_get_int_default(block, default_option_section, "feedback", 0, FeedbackLevel)
+		status = status + datablock_get_int_default(block, option_section, "feedback", 0, FeedbackLevel)
 		use_tabulated_w = .false.
-		status = status + datablock_get_logical_default(block, default_option_section, "use_tabulated_w", .false., use_tabulated_w)
+		status = status + datablock_get_logical_default(block, option_section, "use_tabulated_w", .false., use_tabulated_w)
 
 		if (mode == CAMB_MODE_ALL) then
-			status = status + datablock_get_double_default(block,default_option_section,"zmin", linear_zmin, linear_zmin)
-			status = status + datablock_get_double_default(block,default_option_section,"zmax", linear_zmax, linear_zmax)
-			status = status + datablock_get_int_default(block,default_option_section,"nz", linear_nz, linear_nz)
+			status = status + datablock_get_double_default(block, option_section,"zmin", linear_zmin, linear_zmin)
+			status = status + datablock_get_double_default(block, option_section,"zmax", linear_zmax, linear_zmax)
+			status = status + datablock_get_int_default(block, option_section,"nz", linear_nz, linear_nz)
 		endif
 
 		!Error check
