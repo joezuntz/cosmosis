@@ -29,6 +29,9 @@ class Parameter(object):
             return (self.section == other.section and
                     self.name == other.name)
 
+    def __str__(self):
+        return self.section + "--" + self.name
+
     def is_fixed(self):
         return self.limits[0] == self.limits[1]
 
@@ -46,7 +49,7 @@ class Parameter(object):
         return random.uniform(*self.limits)
 
     def normalize(self, p):
-        if self.is_fixed(p):
+        if self.is_fixed:
             return 0.0
         else:
             return (p - self.limits[0]) / (self.limits[1] - self.limits[0])
