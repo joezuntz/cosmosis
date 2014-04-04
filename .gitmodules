@@ -1,0 +1,3 @@
+[submodule "src/standard-library"]
+	path = src/standard-library
+	url = https://bitbucket.org/joezuntz/cosmosis-standard-library
