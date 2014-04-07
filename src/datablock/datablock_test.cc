@@ -101,6 +101,21 @@ void test_sections()
   catch (...) { assert(0 == "section_name threw the wrong type of exception\n"); }
 }
 
+void test_delete()
+{
+  DataBlock b;
+  assert(b.put_val("ints", "a", 10)==DBS_SUCCESS);
+  assert(b.num_sections() == 1);
+  assert(b.has_val("ints", "a") == true);  
+  assert(b.delete_section("ints")==DBS_SUCCESS);
+  assert(b.num_sections() == 0);
+  assert(b.has_val("ints", "a") == false);
+  assert(b.delete_section("ints")==DBS_SECTION_NOT_FOUND);
+  assert(b.put_val("ints", "a", 10)==DBS_SUCCESS);
+  assert(b.has_val("ints", "a") == true);
+
+}
+
 void test_types()
 {
   DataBlock b;
@@ -149,4 +164,5 @@ int main()
   test_size();
   test_sections();
   test_types();
+  test_delete();
 }

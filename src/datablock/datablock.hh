@@ -107,6 +107,9 @@ namespace cosmosis
     // Return true if the DataBlock has a section with the given name.
     bool has_section(std::string name) const;
 
+    DATABLOCK_STATUS 
+    delete_section(std::string section);
+
     // Return the number of sections in this DataBlock.
     std::size_t num_sections() const;
 
@@ -202,5 +205,6 @@ cosmosis::DataBlock::view(std::string section, std::string name) const
   if (isec == sections_.end()) throw BadDataBlockAccess();
   return isec->second.view<T>(name);
 }
+
 
 #endif

@@ -128,3 +128,10 @@ load_library_function(
 	ct.c_int
 	)
 
+
+load_library_function(
+	locals(),
+	"c_datablock_delete_section",
+	[c_block, c_str],
+	ct.c_int
+	)

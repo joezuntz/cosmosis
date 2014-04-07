@@ -6,6 +6,13 @@ from . import errors
 
 class TestBlockFunctions(unittest.TestCase):
 
+	def test_delete(self):
+		b = block.DataBlock()
+		section = 'test'
+		b.put_bool(section, 'b', True)
+		b._delete_section(section)
+		assert len(b.keys())==0
+
 	def test_bool(self):
 		b = block.DataBlock()
 		section = 'test'

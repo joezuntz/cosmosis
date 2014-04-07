@@ -336,3 +336,9 @@ class DataBlock(object):
 				name = lib.c_datablock_get_value_name(self._ptr, section, i)
 				keys.append((section,name))
 		return keys
+
+
+	def _delete_section(self, section):
+		"Internal use only!"
+		lib.c_datablock_delete_section(self._ptr, section)
+

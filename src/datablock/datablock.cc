@@ -78,3 +78,14 @@ void cosmosis::DataBlock::clear()
 {
   sections_.clear();
 }
+
+DATABLOCK_STATUS 
+cosmosis::DataBlock::delete_section(std::string section)
+{
+  downcase(section);
+  auto isec = sections_.find(section);
+  if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
+  sections_.erase(isec);
+  return DBS_SUCCESS;
+}
+
