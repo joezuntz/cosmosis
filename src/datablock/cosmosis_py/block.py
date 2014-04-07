@@ -340,5 +340,8 @@ class DataBlock(object):
 
 	def _delete_section(self, section):
 		"Internal use only!"
-		lib.c_datablock_delete_section(self._ptr, section)
+		status = lib.c_datablock_delete_section(self._ptr, section)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, "")
+
 

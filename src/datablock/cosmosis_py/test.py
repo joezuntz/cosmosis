@@ -12,6 +12,7 @@ class TestBlockFunctions(unittest.TestCase):
 		b.put_bool(section, 'b', True)
 		b._delete_section(section)
 		assert len(b.keys())==0
+		self.assertRaises(errors.BlockSectionNotFound, b._delete_section, section)
 
 	def test_bool(self):
 		b = block.DataBlock()
