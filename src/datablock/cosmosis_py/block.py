@@ -4,6 +4,7 @@ from . import errors
 from . import types
 from .errors import BlockError
 import numpy as np
+import os
 
 option_section = "module_options"
 
@@ -171,11 +172,11 @@ class DataBlock(object):
 
 	def _method_for_type(self, T, method_type):
 		method={ int:    (self.get_int,     self.put_int,     self.replace_int),
-		         float:  (self.get_double,  self.put_double,  self.replace_double),
-		         bool:   (self.get_bool,    self.put_bool,    self.replace_bool),
-		         complex:(self.get_complex, self.put_complex, self.replace_complex),
-		         str:    (self.get_string,  self.put_string,  self.replace_string)
-		         }.get(T)
+				 float:  (self.get_double,  self.put_double,  self.replace_double),
+				 bool:   (self.get_bool,    self.put_bool,    self.replace_bool),
+				 complex:(self.get_complex, self.put_complex, self.replace_complex),
+				 str:    (self.get_string,  self.put_string,  self.replace_string)
+				 }.get(T)
 		if method:
 			return method[method_type]
 		return None
@@ -195,7 +196,7 @@ class DataBlock(object):
 			# types.DBT_DOUBLE2D:(self.get_double_array_2d,  self.put_double_array_2d,  self.replace_double_array_2d)
 			# types.COMPLEX2D:   (self.get_complex_array_2d, self.put_complex_array_2d, self.replace_complex_array_2d)
 			# types.STRING2D:    (self.get_string_array_2d,  self.put_string_array_2d,  self.replace_string_array_2d)
-		         }.get(code)
+				 }.get(code)
 		if T is not None:
 			return T[method_type]
 		return None
@@ -344,4 +345,32 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, "")
 
-
+	def save_to_directory(self, dirname, clobber=False):
+		try:
+			os.mkdir(dirname)
+		except OSError:
+			if not clobber:
+				print "Not clobbering", clobber
+				raise
+		keys = self.keys()
+		sections = set(k[0] for k in keys)
+		for section in sections:
+			try:
+				os.mkdir(os.path.join(dirname,section))
+			except OSError:
+				if not clobber:
+					raise
+			scalar_outputs = []
+			for k in keys:
+				sec, name = k
+				if sec!=section: continue
+				value = self[section,name]
+				if np.isscalar(value):
+					scalar_outputs.append((name,value))
+				else:
+					np.savetxt(os.path.join(dirname,section,name+'.txt'), value)
+			if scalar_outputs:
+				f=open(os.path.join(dirname,section,"values.txt"), 'w')
+				for s in scalar_outputs:
+					f.write("%s = %r\n"%s)
+				f.close()
