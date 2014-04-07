@@ -89,3 +89,8 @@ cosmosis::DataBlock::delete_section(std::string section)
   return DBS_SUCCESS;
 }
 
+void cosmosis::DataBlock::log_access(const std::string& log_type, const std::string& section, const std::string &name, const std::type_info& type)
+{
+  auto entry = log_entry(log_type, section, name, type);
+  access_log_.push_back(entry);
+}

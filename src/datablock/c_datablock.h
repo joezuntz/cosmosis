@@ -99,51 +99,51 @@ extern "C" {
     defined.
   */
   DATABLOCK_STATUS
-  c_datablock_get_int(c_datablock const* s, const char* section, const char* name, int* val);
+  c_datablock_get_int(c_datablock * s, const char* section, const char* name, int* val);
 
   DATABLOCK_STATUS
-  c_datablock_get_bool(c_datablock const* s, const char* section, const char* name, bool* val);
+  c_datablock_get_bool(c_datablock * s, const char* section, const char* name, bool* val);
 
   DATABLOCK_STATUS
-  c_datablock_get_double(c_datablock const* s, const char* section, const char* name, double* val);
+  c_datablock_get_double(c_datablock * s, const char* section, const char* name, double* val);
 
   DATABLOCK_STATUS
-  c_datablock_get_complex(c_datablock const* s, const char* section, const char* name, double _Complex* val);
+  c_datablock_get_complex(c_datablock * s, const char* section, const char* name, double _Complex* val);
 
   DATABLOCK_STATUS
-  c_datablock_get_string(c_datablock const* s, const char* section, const char* name, char** val);
+  c_datablock_get_string(c_datablock * s, const char* section, const char* name, char** val);
 
   /* Only scalars have default in the C and Fortran interfaces. */
   DATABLOCK_STATUS
-  c_datablock_get_int_default(c_datablock const* s,
+  c_datablock_get_int_default(c_datablock * s,
                               const char* section,
                               const char* name,
                               int def,
                               int* val);
 
   DATABLOCK_STATUS
-  c_datablock_get_bool_default(c_datablock const* s,
+  c_datablock_get_bool_default(c_datablock * s,
                               const char* section,
                               const char* name,
                               bool def,
                               bool* val);
 
   DATABLOCK_STATUS
-  c_datablock_get_double_default(c_datablock const* s,
+  c_datablock_get_double_default(c_datablock * s,
                                  const char* section,
                                  const char* name,
                                  double def,
                                  double* val);
 
   DATABLOCK_STATUS
-  c_datablock_get_string_default(c_datablock const* s,
+  c_datablock_get_string_default(c_datablock * s,
                                  const char* section,
                                  const char* name,
                                  const char* def,
                                  char** val);
 
   DATABLOCK_STATUS
-  c_datablock_get_complex_default(c_datablock const* s,
+  c_datablock_get_complex_default(c_datablock * s,
                                   const char* section,
                                   const char* name,
                                   double _Complex def,
@@ -202,7 +202,7 @@ extern "C" {
     'free') when it is no longer needed.
    */
   DATABLOCK_STATUS
-  c_datablock_get_int_array_1d(c_datablock const* s,
+  c_datablock_get_int_array_1d(c_datablock * s,
                                const char* section,
                                const char* name,
                                int** val,
@@ -223,7 +223,7 @@ extern "C" {
     is still written into 'size' in this case.
    */
   DATABLOCK_STATUS
-  c_datablock_get_int_array_1d_preallocated(c_datablock const* s,
+  c_datablock_get_int_array_1d_preallocated(c_datablock * s,
                                             const char* section,
                                             const char* name,
                                             int* array,
@@ -245,14 +245,14 @@ extern "C" {
                                    int sz);
 
   DATABLOCK_STATUS
-  c_datablock_get_double_array_1d(c_datablock const* s,
+  c_datablock_get_double_array_1d(c_datablock * s,
                                const char* section,
                                const char* name,
                                double** val,
                                int* size);
 
   DATABLOCK_STATUS
-  c_datablock_get_double_array_1d_preallocated(c_datablock const* s,
+  c_datablock_get_double_array_1d_preallocated(c_datablock * s,
                                             const char* section,
                                             const char* name,
                                             double* array,

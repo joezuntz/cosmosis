@@ -42,6 +42,7 @@
 
 #include "datablock_status.h"
 #include "section.hh"
+#include "datablock_logging.h"
 
 namespace cosmosis
 {
@@ -80,13 +81,13 @@ namespace cosmosis
     template <class T>
     DATABLOCK_STATUS get_val(std::string section,
                              std::string name,
-                             T& val) const;
+                             T& val);
 
     template <class T>
     DATABLOCK_STATUS get_val(std::string section,
                              std::string name,
                              T const& def,
-                             T& val) const;
+                             T& val);
 
     // put and replace functions return the status of the or
     // replace. They modify the state of the object only on success.
@@ -139,6 +140,9 @@ namespace cosmosis
 
   private:
     std::map<std::string, Section> sections_;
+    std::vector<log_entry> access_log_;
+
+    void log_access(const std::string &log_type, const std::string &section, const std::string &name, const std::type_info &type);
   };
 }
 
@@ -148,11 +152,15 @@ template <class T>
 DATABLOCK_STATUS
 cosmosis::DataBlock::get_val(std::string section,
                              std::string name,
-                             T& val) const
+                             T& val)
 {
   downcase(section); downcase(name);
   auto isec = sections_.find(section);
-  if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
+  if (isec == sections_.end()) {
+    log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(val));
+    return DBS_SECTION_NOT_FOUND;
+  }
+  log_access(BLOCK_LOG_READ, section, name, typeid(val));
   return isec->second.get_val(name, val);
 }
 
@@ -161,15 +169,17 @@ DATABLOCK_STATUS
 cosmosis::DataBlock::get_val(std::string section,
                              std::string name,
                              T const& def,
-                             T& val) const
+                             T& val)
 {
   downcase(section); downcase(name);
   auto isec = sections_.find(section);
   if (isec == sections_.end())
     {
       val = def;
+      log_access(BLOCK_LOG_READ_DEFAULT, section, name, typeid(val));
       return DBS_SUCCESS;
     }
+  log_access(BLOCK_LOG_READ, section, name, typeid(val));
   return isec->second.get_val(name, def, val);
 }
 
@@ -181,7 +191,15 @@ cosmosis::DataBlock::put_val(std::string section,
 {
   downcase(section); downcase(name);
   auto& sec = sections_[section]; // create one if needed
-  return sec.put_val(name, val);
+  DATABLOCK_STATUS status = sec.put_val(name, val);
+  if (status==DBS_SUCCESS){
+    log_access(BLOCK_LOG_WRITE, section, name, typeid(val));
+  }
+  else{
+    log_access(BLOCK_LOG_WRITE_FAIL, section, name, typeid(val));
+  }
+  
+  return status;
 }
 
 template <class T>
@@ -193,7 +211,15 @@ cosmosis::DataBlock::replace_val(std::string section,
   downcase(section); downcase(name);
   auto isec = sections_.find(section);
   if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
-  return isec->second.replace_val(name, val);
+  DATABLOCK_STATUS status = isec->second.replace_val(name, val);
+  if (status==DBS_SUCCESS){
+    log_access(BLOCK_LOG_REPLACE, section, name, typeid(val));
+  }
+  else{
+    log_access(BLOCK_LOG_REPLACE_FAIL, section, name, typeid(val));
+  }
+
+  return status;
 }
 
 template <class T>
