@@ -12,6 +12,7 @@ import parameter
 import prior
 import module
 from cosmosis_py import block
+import cosmosis_py.section_names
 
 
 PIPELINE_INI_SECTION = "pipeline"
@@ -179,7 +180,6 @@ class LikelihoodPipeline(Pipeline):
         #pull out all the section names and likelihood names for later
         self.likelihood_names = self.options.get(PIPELINE_INI_SECTION,
                                                 "likelihoods").split()
-
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
 
@@ -231,21 +231,27 @@ class LikelihoodPipeline(Pipeline):
         like, extra = self.likelihood(p)
         return prior + like, extra
 
-    def likelihood(self, p):
+    def likelihood(self, p, return_data=False):
         #Set the parameters by name from the parameter vector
         #If one is out of range then return -infinity as the log-likelihood
         #i.e. likelihood is zero.  Or if something else goes wrong do the same
         data = self.run_parameters(p)
         if data is None:
-            return -np.inf, utils.everythingIsNan
+            if return_data:
+                return -np.inf, utils.everythingIsNan, data
+            else:
+                return -np.inf, utils.everythingIsNan
 
         # loop through named likelihoods and sum their values
         try:
-            like = sum([data.get_double("LIKELIHOOD",
+            like = sum([data.get_double(cosmosis_py.section_names.likelihoods,
                                         likelihood_name+"_like")
                         for likelihood_name in self.likelihood_names])
         except block.BlockError as e:
-            return -np.inf, utils.everythingIsNan
+            if return_data:
+                return -np.inf, utils.everythingIsNan, data
+            else:
+                return -np.inf, utils.everythingIsNan
 
         if not self.quiet:
             sys.stdout.write("Likelihood %e\n" % (like,))
@@ -261,4 +267,7 @@ class LikelihoodPipeline(Pipeline):
         extra_saves['LIKE'] = like
 
         self.n_iterations += 1
-        return like, extra_saves
+        if return_data:
+            return like, extra_saves, data
+        else:
+            return like, extra_saves
