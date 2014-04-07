@@ -2,6 +2,7 @@ import os
 import ctypes
 import sys
 import numpy as np
+from cosmosis_py import block
 
 MODULE_TYPE_EXECUTE_SIMPLE = "execute"
 MODULE_TYPE_EXECUTE_CONFIG = "execute_config"
@@ -38,7 +39,16 @@ class Module(object):
                                                      cleanup_function,
                                                      MODULE_TYPE_CLEANUP)      
 
+
+    def copy_section_to_module_options(self, config):
+        if config.has_section(block.option_section):
+            config._delete_section(block.option_section)
+        for (section,name) in config.keys(self.name):
+            config[block.option_section,name] = config[section,name]
+
     def setup(self, config):
+        self.copy_section_to_module_options(config)
+        
         if self.setup_function:
             self.data = self.setup_function(config._ptr)
         else:
