@@ -9,7 +9,7 @@ sys.path.append("datablock")
 
 from config import Inifile
 from pipeline import LikelihoodPipeline
-from sampler import sampler_registry
+from sampler import sampler_registry, ParallelSampler
 import samplers
 
 
@@ -70,8 +70,11 @@ if __name__=="__main__":
 
     # initialize parallel workers
     if args.mpi:
-        pool = MPIPool()
+        import mpi_pool
+        pool = mpi_pool.MPIPool()
 #    elif parallel:
 #        pool = ProcessPool()
     else:
-        main(args)
+        pool = None
+
+    main(args,pool=pool)

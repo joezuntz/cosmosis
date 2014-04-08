@@ -145,7 +145,7 @@ class Pipeline(object):
 
 class LikelihoodPipeline(Pipeline):
     def __init__(self, arg=None, id="", debug=False,
-                 quiet=False, timing=False):
+                 quiet=True, timing=False):
         super(LikelihoodPipeline, self).__init__(arg=arg, quiet=quiet,
                                                  debug=debug, timing=timing)
 
@@ -247,7 +247,7 @@ class LikelihoodPipeline(Pipeline):
             like = sum([data.get_double(cosmosis_py.section_names.likelihoods,
                                         likelihood_name+"_like")
                         for likelihood_name in self.likelihood_names])
-        except block.BlockError as e:
+        except block.BlockError:
             if return_data:
                 return -np.inf, utils.everythingIsNan, data
             else:
