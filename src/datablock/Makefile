@@ -1,7 +1,7 @@
 # --- user defined environment
 
 TARGETS =
-USER_CXXFLAGS = 
+USER_CXXFLAGS =
 USER_LDFLAGS =
 USER_LDLIBS =
 
