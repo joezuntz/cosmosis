@@ -89,7 +89,7 @@ fortran_t: libcosmosis_fortran.so  cosmosis_f90/cosmosis_test.F90
 	$(F90) $(F90FLAGS)  -o $@ cosmosis_f90/cosmosis_test.F90  -L. -lcosmosis_fortran -lcosmosis
 
 
-libcosmosis.so: datablock.o entry.o section.o c_datablock.o
+libcosmosis.so: datablock.o entry.o section.o c_datablock.o datablock_logging.o
 	$(CXX) $(CXXFLAGS) -shared -o $@ $+
 
 datablock_t: datablock_test.cc datablock.hh libcosmosis.so
@@ -104,8 +104,9 @@ entry_t: entry_test.o libcosmosis.so
 section_t: section_test.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
 
-datablock.o: section_names.h datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
+datablock.o: section_names.h datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h datablock_logging.h
 c_datablock.o: section_names.h c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
+datablock_logging.o: datablock_logging.cc datablock_logging.h
 entry.o: entry.cc entry.hh datablock_status.h
 entry_t.o: entry_t.cc entry.hh
 section.o: section.cc section.hh entry.hh datablock_status.h

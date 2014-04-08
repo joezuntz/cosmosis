@@ -46,7 +46,7 @@ extern "C"
   int c_datablock_num_sections(c_datablock const* s)
   {
     if (s == nullptr) return -1;
-    DataBlock const* p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock const*>(s);
     return p->num_sections();
   }
 
@@ -132,7 +132,7 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_int(c_datablock const* s,
+  c_datablock_get_int(c_datablock * s,
 		      const char* section,
 		      const char* name,
 		      int* val)
@@ -142,12 +142,12 @@ if (name == nullptr) return false;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     return p->get_val(section, name, *val);
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_int_default(c_datablock const* s,
+  c_datablock_get_int_default(c_datablock * s,
                               const char* section,
                               const char* name,
                               int def,
@@ -158,13 +158,13 @@ if (name == nullptr) return false;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     return p->get_val(section, name, def, *val);
   }
 
 
   DATABLOCK_STATUS
-  c_datablock_get_bool(c_datablock const* s,
+  c_datablock_get_bool(c_datablock * s,
           const char* section,
           const char* name,
           bool* val)
@@ -174,12 +174,12 @@ if (name == nullptr) return false;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     return p->get_val(section, name, *val);
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_bool_default(c_datablock const* s,
+  c_datablock_get_bool_default(c_datablock * s,
                               const char* section,
                               const char* name,
                               bool def,
@@ -190,14 +190,14 @@ if (name == nullptr) return false;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     return p->get_val(section, name, def, *val);
   }
 
 
 
   DATABLOCK_STATUS
-  c_datablock_get_double(c_datablock const* s,
+  c_datablock_get_double(c_datablock * s,
 			 const char* section,
 			 const char* name,
 			 double* val)
@@ -207,12 +207,12 @@ if (name == nullptr) return false;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     return p->get_val(section, name, *val);
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_double_default(c_datablock const* s,
+  c_datablock_get_double_default(c_datablock * s,
                                  const char* section,
                                  const char* name,
                                  double def,
@@ -223,12 +223,12 @@ if (name == nullptr) return false;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     return p->get_val(section, name, def, *val);
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_complex(c_datablock const* s,
+  c_datablock_get_complex(c_datablock * s,
 			  const char* section,
 			  const char* name,
 			  double _Complex* val)
@@ -238,7 +238,7 @@ if (name == nullptr) return false;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     complex_t z;
     auto rc = p->get_val(section, name, z);
     // C11 provides a function macro to create a double _Complex from
@@ -257,7 +257,7 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_complex_default(c_datablock const* s,
+  c_datablock_get_complex_default(c_datablock * s,
                                   const char* section,
                                   const char* name,
                                   double _Complex def,
@@ -268,7 +268,7 @@ if (name == nullptr) return false;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     complex_t default_z(def);
     complex_t z;
     auto rc = p->get_val(section, name, default_z, z);
@@ -279,7 +279,7 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_string(c_datablock const* s,
+  c_datablock_get_string(c_datablock * s,
                          const char* section,
                          const char* name,
                          char**  val)
@@ -289,7 +289,7 @@ if (name == nullptr) return false;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     string tmp;
     auto rc = p->get_val(section, name, tmp);
     if (rc != DBS_SUCCESS) return rc;
@@ -299,7 +299,7 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_string_default(c_datablock const* s,
+  c_datablock_get_string_default(c_datablock * s,
                                  const char* section,
                                  const char* name,
                                  const char* def,
@@ -312,7 +312,7 @@ if (name == nullptr) return false;
     if (def == nullptr) return DBS_VALUE_NULL; 
     if (val == nullptr) return DBS_VALUE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     string tmp;
     string default_string(def);
     auto rc = p->get_val(section, name, default_string, tmp);
@@ -323,7 +323,7 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_int_array_1d(c_datablock const* s,
+  c_datablock_get_int_array_1d(c_datablock * s,
                                const char* section,
                                const char* name,
                                int** val,
@@ -335,7 +335,7 @@ if (name == nullptr) return false;
     if (val == nullptr) return DBS_VALUE_NULL;
     if (sz == nullptr) return DBS_SIZE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     try {
       vector<int> const& r = p->view<vector<int>>(section, name);
       *val = static_cast<int*>(malloc(r.size() * sizeof(int)));
@@ -352,7 +352,7 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_double_array_1d(c_datablock const* s,
+  c_datablock_get_double_array_1d(c_datablock * s,
                                const char* section,
                                const char* name,
                                double** val,
@@ -364,7 +364,7 @@ if (name == nullptr) return false;
     if (val == nullptr) return DBS_VALUE_NULL;
     if (sz == nullptr) return DBS_SIZE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     try {
       vector<double> const& r = p->view<vector<double>>(section, name);
       *val = static_cast<double*>(malloc(r.size() * sizeof(double)));
@@ -381,7 +381,7 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
-  c_datablock_get_int_array_1d_preallocated(c_datablock const* s,
+  c_datablock_get_int_array_1d_preallocated(c_datablock * s,
                                             const char* section,
                                             const char* name,
                                             int* val,
@@ -394,7 +394,7 @@ if (name == nullptr) return false;
     if (val == nullptr) return DBS_VALUE_NULL;
     if (sz == nullptr) return DBS_SIZE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     vector<int> const& r = p->view<vector<int>>(section, name);
     *sz = r.size();
     if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
@@ -407,7 +407,7 @@ if (name == nullptr) return false;
 
 
   DATABLOCK_STATUS
-  c_datablock_get_double_array_1d_preallocated(c_datablock const* s,
+  c_datablock_get_double_array_1d_preallocated(c_datablock * s,
                                             const char* section,
                                             const char* name,
                                             double* val,
@@ -420,7 +420,7 @@ if (name == nullptr) return false;
     if (val == nullptr) return DBS_VALUE_NULL;
     if (sz == nullptr) return DBS_SIZE_NULL;
 
-    auto p = static_cast<DataBlock const*>(s);
+    auto p = static_cast<DataBlock *>(s);
     vector<double> const& r = p->view<vector<double>>(section, name);
     *sz = r.size();
     if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
