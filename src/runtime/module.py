@@ -9,6 +9,8 @@ MODULE_TYPE_EXECUTE_CONFIG = "execute_config"
 MODULE_TYPE_SETUP = "setup"
 MODULE_TYPE_CLEANUP = "cleanup"
 
+MODULE_LANG_PYTHON = "python"
+MODULE_LANG_DYLIB = "dylib"
 
 class SetupError(Exception):
     pass
@@ -29,7 +31,8 @@ class Module(object):
         if not os.path.isabs(filename):
             filename = os.path.join(rootpath, filename)
 
-        self.library = Module.load_library(filename)
+        self.library, language = Module.load_library(filename)
+        self.is_python = (language==MODULE_LANG_PYTHON)
 
         # attempt to load setup and cleanup functions
         self.setup_function = Module.load_function(self.library,
@@ -48,9 +51,11 @@ class Module(object):
 
     def setup(self, config):
         self.copy_section_to_module_options(config)
-        
+        if not self.is_python:
+            config = config._ptr
+
         if self.setup_function:
-            self.data = self.setup_function(config._ptr)
+            self.data = self.setup_function(config)
         else:
             self.data = None
 
@@ -64,10 +69,12 @@ class Module(object):
                                                      module_type)
 
     def execute(self, data_block):
+        if not self.is_python:
+            data_block = data_block._ptr
         if self.data:
-            self.execute_function(data_block._ptr, self.data)
+            self.execute_function(data_block, self.data)
         else:
-            self.execute_function(data_block._ptr)
+            self.execute_function(data_block)
 
     def cleanup(self):
         if self.cleanup_function:
@@ -79,6 +86,7 @@ class Module(object):
     @staticmethod
     def load_library(filepath):
         if filepath.endswith('so') or filepath.endswith('dylib'):
+            language = MODULE_LANG_DYLIB
             try:
                 library = ctypes.cdll.LoadLibrary(filepath)
             except OSError as error:
@@ -88,8 +96,9 @@ class Module(object):
                 else:
                     raise SetupError("You specified a path %s for a module. File does not exist.  Error was %s" % (filepath, error))
         else:
+            language = MODULE_LANG_PYTHON
             dirname, filename = os.path.split(filepath)
-            imname, ext = os.path.splitext(filename)  # allows .pyc and .py modules to be used
+            impname, ext = os.path.splitext(filename)  # allows .pyc and .py modules to be used
             sys.path.insert(0, dirname)
             try:
                 library = __import__(impname)
@@ -97,7 +106,7 @@ class Module(object):
                 raise SetupError("You specified a path %s for a module. I looked for a python module there but was unable to load it.  Error was %s" % (filepath, error))
             sys.path.pop(0)
 
-        return library
+        return library, language
 
     @staticmethod
     def load_function(library, function_name,
