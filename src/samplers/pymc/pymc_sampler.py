@@ -95,7 +95,7 @@ class PyMCSampler(ParallelSampler):
         if self.num_samples >= self.samples:
             return True
         elif self.num_samples > 0 and self.pool is not None:
-            return np.all(self.diagnostics.gelman_rubin() <= self.Rmin)
+            return np.all(self.diagnostics.gelman_rubin() <= self.Rconverge)
         else:
             return False
 
