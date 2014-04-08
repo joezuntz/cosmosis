@@ -72,7 +72,7 @@ int execute(c_datablock * block, void * config)
 	double like = -0.5 * pow((omega - data->omega)/data->sigma, 2);
 
 	// Save the likelihood
-	status = c_datablock_put_double(block, "LIKELIHOOD", "omega_like", like);
+	status = c_datablock_put_double(block, "LIKELIHOODS", "omega_like", like);
 
 	// More error checking
 	if (status) {

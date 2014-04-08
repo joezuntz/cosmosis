@@ -49,7 +49,7 @@ class Parameter(object):
         return random.uniform(*self.limits)
 
     def normalize(self, p):
-        if self.is_fixed:
+        if self.is_fixed():
             return 0.0
         else:
             return (p - self.limits[0]) / (self.limits[1] - self.limits[0])
