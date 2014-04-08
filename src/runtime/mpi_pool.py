@@ -1,6 +1,3 @@
-import itertools
-from mpi4py import MPI
-
 class _close_pool_message(object):
     def __repr__(self):
         return "<Close pool message>"
@@ -18,6 +15,12 @@ def _error_function(task):
 
 class MPIPool(object):
     def __init__(self, comm=MPI.COMM_WORLD, debug=False):
+        try:
+            from mpi4py import MPI
+            self.MPI = MPI
+        except ImportError:
+            raise RuntimeError("MPI environment not found!")
+
         self.comm = comm
         self.rank = comm.Get_rank()
         self.size = comm.Get_size()
@@ -31,9 +34,9 @@ class MPIPool(object):
     def wait(self):
         if self.is_master():
             raise RuntimeError("Master node told to await jobs")
-        status = MPI.Status()
+        status = self.MPI.Status()
         while True:
-            task = self.comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
+            task = self.comm.recv(source=0, tag=self.MPI.ANY_TAG, status=status)
 
             if isinstance(task, _close_pool_message):
                 break
@@ -57,7 +60,7 @@ class MPIPool(object):
             F = _function_wrapper(function)
             requests = [self.comm.isend(F, dest=i)
                         for i in range(1,self.size)]
-            MPI.Request.waitall(requests)
+            self.MPI.Request.waitall(requests)
 
         requests = []
         for i in range(1, self.size):
@@ -66,9 +69,9 @@ class MPIPool(object):
 
         results = [None]*len(tasks)
         results[::self.size] = map(self.function, tasks[0::self.size])
-        status = MPI.Status()
+        status = self.MPI.Status()
         for i in range(self.size - 1):
-            result = self.comm.recv(source=MPI.ANY_SOURCE, status=status)
+            result = self.comm.recv(source=self.MPI.ANY_SOURCE, status=status)
             results[status.source::self.size] = result
         return results
 
