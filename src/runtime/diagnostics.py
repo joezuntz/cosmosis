@@ -1,154 +1,50 @@
 import numpy as np
-<<<<<<< HEAD:src/runtime/diagnostics.py
-=======
-import pymc
 import sys
 import os
-from math import log10, floor
-from mpi4py import  MPI
-
->>>>>>> a76f87d3e2268c3649fff429bcde1a571427e953:src/samplers/pymc/cvg_diagnostics.py
 
 
 class Diagnostics(object):
-	def __init__(self,Rcrit,nparams):
-		self.rcrit = Rcrit
-		self.totalsteps = 0
-		self.traces = []
-		self.means = [0]*nparams
-		self.variances = [0]*nparams
-		self.m2 = [0]*nparams
-		self.keys = []
+    def __init__(self, params, pool=None):
+        self.params = params
+        self.pool = pool
 
+        self.total_steps = 0
+        self.means = np.zeros(len(params))
+        self.m2 = np.zeros(len(params))
 
-	def write_diagnostic_file(self,all_diagnostics,flag):
-		output_file = open('gelman_rubin_txt','w')
-		if not bool(flag): output_file.write('Warning:  chains may not have converged as R statistic is greater then %s \n'%self.rcrit)
-		output_file.write('number of steps in chain =  %s \t R = %s \n'% (self.totalsteps,self.rcrit))
-		output_file.write('Parameter \t between chain \t within chain \t R estimate \n')
-		i=0
-		for key in self.keys:
-			output_file.write('%s \t %.4f \t %.4f \t%.4f \n '% (key,all_diagnostics[i][0], all_diagnostics[i][1],all_diagnostics[i][2]))
-			i += 1
+    def add_traces(self, traces):
+        if traces.shape[1] != len(self.params):
+            raise RuntimeError("The number of traces added to Diagnostics does not match the number of varied parameters!")
 
+        num = float(self.total_steps)
+        for x in traces:
+            num += 1.0
+            delta = x - self.means
+            self.means += delta/num
+            self.m2 += delta*(x - self.means)
+        self.total_steps += traces.shape[0]
 
-	def get_rstat(self,varchains, meanchains,size):
-		"""Brooks and Gelman (1998), Gelman and Rubin (1992)"""
-		B_over_n = ( np.var(meanchains,ddof=1))
-		B = B_over_n*self.totalsteps
-		W = 1.0/size*(np.sum(varchains))
-		mpv = (self.totalsteps - 1)/self.totalsteps * W + B_over_n  #marginal posterior variance of parameter
-		V = mpv + B_over_n/size
-		if W ==0:
-			return [B,W,np.inf] # zero variance in chain
-		else:
-			Rhat = V/W
-			diagnostics = [B,W,Rhat]
-			return diagnostics
+    def gelman_rubin(self):
+        # takes current traces and returns 
+        if self.pool is None:
+            raise RuntimeError("Gelman-Rubin statistic is only valid for multiple chains")
 
-	@staticmethod
-	def round_sig(x, sig=6):
-		return round(x, abs(sig-int(floor(log10(x)))-1))
+        if self.total_steps == 0:
+            raise RuntimeError("Gelman-Rubin statistic not defined for 0-length chains")
 
+        # gather trace statistics to master process
+        means = np.array(self.pool.gather(self.means)).T
+        variances = np.array(self.pool.gather(self.m2/float(self.total_steps-1))).T
 
-	def gather_stats(self,comm):
-		size = comm.Get_size()
-		rank = comm.Get_rank()
-		try:
-			varchains = comm.gather(self.variances, root=0)  #gather list of variances for each parameter to root
-		except:
-			print "MPI gather error"
-			comm.Abort()
-		try:
-			meanchains = comm.gather(self.means, root=0)  #gather list of means for each parameter to root
-		except:
-			print "MPI gather error"
-			comm.Abort()
-		
-		vs = np.array( varchains)
-		single_parameter_variances = vs.T
-		ms = np.array(meanchains)
-		single_parameter_means = ms.T
-		if rank == 0:
-			all_diagnostics=[]
-			flag = 1
-			for i in range(len(single_parameter_variances)):
-				#check for convergence of all parameters
-				diagnostics =  self.get_rstat(single_parameter_variances[i],single_parameter_means[i],size)
-				all_diagnostics.append(diagnostics)
-				if float(diagnostics[2]) <= float(self.rcrit):
-					pass
-				else:
-					flag =0  # continue chain
-			self.write_diagnostic_file(all_diagnostics,flag)
-		else:
-			flag = 0
-		# broadcast the stop or continue message
-		try:
-			msg = comm.bcast(flag,root=0)
-			return msg
-		except:
-			print "MPI broadcast error"
-			comm.Abort()
-	
-
-
-	def update_moments(self,trace,mean,m2):
-		num=self.totalsteps-len(trace)
-		for x in trace:
-			num = num + 1
-			delta  = x - mean
-			mean  = mean + delta/float(num)
-			m2 = m2 + delta*(x-mean)
-			if num >1:
-				s = m2/(num-1.00)
-			else:
-				s=0.0
-		return mean,s,m2
-
-
-	def get_moments(self):
-		mu_new = []
-		sigma_new = []
-		m2_new = []
-		for i in range(len(self.traces)):
-			m,s,m2 = self.update_moments(self.traces[i],self.means[i],self.m2[i])
-			mu_new.append(m)
-			sigma_new.append(s)
-			m2_new.append(m2)
-		return mu_new , sigma_new, m2_new
-
-
-	def get_convergence(self,comm,traces,totalsteps,keys):
-		"""mpi_sampler checks for convergence every len(traces), totalsteps are total in chain so far"""
-		self.traces=traces
-		self.totalsteps=totalsteps
-		self.keys=keys
-		self.means,self.variances,self.m2 = self.get_moments()
-		msg = self.gather_stats(comm)
-		return msg
-
-	@staticmethod
-	def gelman_rubin(traces):
-		"""IO module reads in finished  chains for one parameter"""
-		x=traces
-		m,n= np.shape(traces)
-		B_over_n = np.sum((np.mean(x, 1) - np.mean(x)) ** 2) / (m - 1)
-		W = np.sum([(x[i] - xbar) ** 2 for i,xbar in enumerate(np.mean(x,1))]) / (m * (n - 1))
-		s2 = W * (n - 1) / n + B_over_n
-		V = s2 + B_over_n / m
-		if W ==0:
-			return [B_over_n*n,W,np.inf] # zero variance in chain
-		else:
-			R = V/W
-			return [B_over_n*n,W,R]
-
-#	@staticmethod
-#	def finished_chain_diag(trace):
-#		"""convergence diagnostics on one trace"""
-#		z_scores = pymc.geweke(trace, first=.1, last=.5, intervals=20)
-#		RL_output = pymc.raftery_lewis(trace, 0.025, 0.05, s=.95, epsilon=.001, verbose=1)
-#		return z_scores
-
-		
-
+        if self.pool.is_master():
+            B_over_n = np.var(means, ddof=1, axis=1)
+            B = B_over_n * self.total_steps
+            W = np.mean(variances, axis=1)
+            V = (1. - 1./self.total_steps) * W + (1. + 1./self.pool.size) * B_over_n
+            # TODO: check for 0-values in W
+            Rhat = np.sqrt(V/W)
+        else:
+            Rhat = None
+ 
+        Rhat = self.pool.bcast(Rhat)
+        return Rhat
