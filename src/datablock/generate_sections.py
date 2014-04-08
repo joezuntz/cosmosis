@@ -37,7 +37,7 @@ def generate_fortran(section_names, filename):
 	open(filename,'w').write(fortran_template.format(sections))
 
 def generate_c(section_names, filename):
-	sections = "\n".join('#define {0}_SECTION {1}'.format(name.upper(),name) for name in section_names)
+	sections = "\n".join('#define {0}_SECTION "{1}"'.format(name.upper(),name) for name in section_names)
 	open(filename,'w').write(c_template.format(sections))
 
 def generate(section_list_filename):
