@@ -7,3 +7,7 @@ src/datablock/cosmosis_modules.mod
 src/datablock/cosmosis_types.mod
 src/datablock/cosmosis_wrappers.mod
 src/datablock/fortran_test
+src/datablock/cosmosis_f90/cosmosis_section_names.F90
+src/datablock/cosmosis_py/section_names.py
+src/datablock/cosmosis_section_names.mod
+src/datablock/section_names.h
