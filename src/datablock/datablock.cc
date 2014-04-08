@@ -90,6 +90,8 @@ void cosmosis::DataBlock::print_log()
 
 void cosmosis::DataBlock::clear()
 {
+  std::string t = std::string("");
+  log_access(BLOCK_LOG_CLEAR, "", "", typeid(t));
   sections_.clear();
 }
 
@@ -100,10 +102,14 @@ cosmosis::DataBlock::delete_section(std::string section)
   auto isec = sections_.find(section);
   if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
   sections_.erase(isec);
+  std::string t = std::string("");
+  log_access(BLOCK_LOG_DELETE, section, "", typeid(t));
+
   return DBS_SUCCESS;
 }
 
-void cosmosis::DataBlock::log_access(const std::string& log_type, const std::string& section, const std::string &name, const std::type_info& type)
+void cosmosis::DataBlock::log_access(const std::string& log_type, 
+  const std::string& section, const std::string &name, const std::type_info& type)
 {
   auto entry = log_entry(log_type, section, name, type);
   access_log_.push_back(entry);
