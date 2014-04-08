@@ -1,4 +1,5 @@
 #include "datablock.hh"
+#include <iostream>
 
 using namespace std;
 
@@ -71,6 +72,19 @@ std::string const& cosmosis::DataBlock::value_name(std::string section, int j) c
   auto isec = sections_.find(section);
   if (isec == sections_.end()) throw BadDataBlockAccess();
   return isec->second.value_name(j);
+}
+
+
+void cosmosis::DataBlock::print_log()
+{
+  for (auto L=access_log_.begin(); L!=access_log_.end(); ++L){
+    auto l = *L;
+    auto access_type = std::get<0>(l);
+    auto section = std::get<1>(l);
+    auto name = std::get<2>(l);
+    std::cout << access_type << "    " << section << "    " << name << std::endl;
+  }
+
 }
 
 

@@ -138,6 +138,8 @@ namespace cosmosis
     template <class T>
     T const& view(std::string section, std::string name) const;
 
+    void print_log();
+
   private:
     std::map<std::string, Section> sections_;
     std::vector<log_entry> access_log_;
