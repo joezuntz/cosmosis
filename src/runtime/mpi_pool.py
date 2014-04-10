@@ -14,16 +14,16 @@ def _error_function(task):
 
 
 class MPIPool(object):
-    def __init__(self, comm=MPI.COMM_WORLD, debug=False):
+    def __init__(self, debug=False):
         try:
             from mpi4py import MPI
             self.MPI = MPI
         except ImportError:
             raise RuntimeError("MPI environment not found!")
 
-        self.comm = comm
-        self.rank = comm.Get_rank()
-        self.size = comm.Get_size()
+        self.comm = MPI.COMM_WORLD
+        self.rank = self.comm.Get_rank()
+        self.size = self.comm.Get_size()
         self.debug = debug
 
         self.function = _error_function
@@ -62,15 +62,19 @@ class MPIPool(object):
                         for i in range(1,self.size)]
             self.MPI.Request.waitall(requests)
 
+        # distribute tasks to workers
         requests = []
         for i in range(1, self.size):
             req = self.comm.isend(tasks[i::self.size], dest=i)
             requests.append(req)
 
+        # process local work
         results = [None]*len(tasks)
         results[::self.size] = map(self.function, tasks[0::self.size])
+
+        # recover results from workers (in any order)
         status = self.MPI.Status()
-        for i in range(self.size - 1):
+        for i in range(self.size-1):
             result = self.comm.recv(source=self.MPI.ANY_SOURCE, status=status)
             results[status.source::self.size] = result
         return results

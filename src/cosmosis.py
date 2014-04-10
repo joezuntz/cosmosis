@@ -9,6 +9,7 @@ sys.path.append("datablock")
 
 from config import Inifile
 from pipeline import LikelihoodPipeline
+import mpi_pool
 from sampler import sampler_registry, ParallelSampler
 import samplers
 
@@ -49,12 +50,13 @@ def main(args, pool=None):
     sampler.config()
 
     if not pool or pool.is_master():
-        # run the sampler
         while not sampler.is_converged():
             sampler.execute()
     else:
         sampler.worker()
 
+#    if pool:
+#        pool.close()
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
@@ -70,11 +72,9 @@ if __name__=="__main__":
 
     # initialize parallel workers
     if args.mpi:
-        import mpi_pool
-        pool = mpi_pool.MPIPool()
+        with mpi_pool.MPIPool() as pool:
+            main(args,pool)
 #    elif parallel:
 #        pool = ProcessPool()
     else:
-        pool = None
-
-    main(args,pool=pool)
+        main(args)

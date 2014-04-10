@@ -38,8 +38,7 @@ class ParallelSampler(Sampler):
     def worker(self):
         ''' Default to a map-style worker '''
         if self.pool:
-            while True:
-                self.pool.wait()
+            self.pool.wait()
 
     def is_master(self):
         return self.pool is None or self.pool.is_master()
