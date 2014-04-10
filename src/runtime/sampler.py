@@ -10,7 +10,7 @@ class Sampler(object):
                 return
             if not name.endswith("Sampler"):
                 raise ValueError("Sampler classes must be named [Name]Sampler")
-            config_name = name.rstrip("Sampler").lower()
+            config_name = name[:-len("Sampler")].lower()
             sampler_registry[config_name] = cls
             print "Registering: %s as %s" % (config_name, name)
     
