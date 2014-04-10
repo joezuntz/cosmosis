@@ -146,6 +146,18 @@ module cosmosis_wrappers
             real(kind=c_double), dimension(sz) :: value
         end function c_datablock_put_double_array_1d_wrapper
 
+        function c_datablock_put_complex_array_1d_wrapper(s, section, name, value, sz) &
+        bind(C, name="c_datablock_put_complex_array_1d")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_put_complex_array_1d_wrapper
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            integer(kind=c_int), value :: sz
+            complex(kind=c_double_complex), dimension(sz) :: value
+        end function c_datablock_put_complex_array_1d_wrapper
 
 
 
@@ -233,6 +245,18 @@ module cosmosis_wrappers
             real(kind=c_double), dimension(sz) :: value
         end function c_datablock_replace_double_array_1d_wrapper
 
+        function c_datablock_replace_complex_array_1d_wrapper(s, section, name, value, sz) &
+        bind(C, name="c_datablock_replace_complex_array_1d")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_replace_complex_array_1d_wrapper
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            integer(kind=c_int), value :: sz
+            complex(kind=c_double_complex), dimension(sz) :: value
+        end function c_datablock_replace_complex_array_1d_wrapper
 
         !DATABLOCK_STATUS c_datablock_get_int(c_datablock* s, const char* section, const char* name, int *val);
         function c_datablock_get_int_wrapper(s, section, name, value) bind(C, name="c_datablock_get_int")
@@ -382,6 +406,21 @@ module cosmosis_wrappers
             real(kind=c_double) :: value(maxsize)
             integer(kind=c_int) :: size
         end function c_datablock_get_double_array_1d_preallocated_wrapper
+
+        function c_datablock_get_complex_array_1d_preallocated_wrapper(s, section, name, value, size, maxsize) &
+        bind(C, name="c_datablock_get_complex_array_1d_preallocated")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_get_complex_array_1d_preallocated_wrapper
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            integer(kind=c_int), value :: maxsize
+            complex(kind=c_double_complex) :: value(maxsize)
+            integer(kind=c_int) :: size
+        end function c_datablock_get_complex_array_1d_preallocated_wrapper
+
 
     function wrap_strlen(str) bind(C, name='strlen')
         use iso_c_binding

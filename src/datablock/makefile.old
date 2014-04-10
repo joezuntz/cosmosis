@@ -31,7 +31,7 @@ else
   MEMCHECK_CMD=
 endif
 
-all: lib
+all: libcosmosis.so libcosmosis_fortran.so datablock_t section_t entry_t fortran_t
 
 lib: libcosmosis.so
 
