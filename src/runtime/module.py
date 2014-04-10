@@ -12,13 +12,15 @@ MODULE_TYPE_CLEANUP = "cleanup"
 MODULE_LANG_PYTHON = "python"
 MODULE_LANG_DYLIB = "dylib"
 
+
 class SetupError(Exception):
     pass
 
 
 class Module(object):
     def __init__(self, module_name, file_path,
-                 setup_function, execute_function, cleanup_function, rootpath="."):
+                 setup_function, execute_function,
+                 cleanup_function, rootpath="."):
 
         self.name = module_name
 
@@ -32,7 +34,7 @@ class Module(object):
             filename = os.path.join(rootpath, filename)
 
         self.library, language = Module.load_library(filename)
-        self.is_python = (language==MODULE_LANG_PYTHON)
+        self.is_python = (language == MODULE_LANG_PYTHON)
 
         # attempt to load setup and cleanup functions
         self.setup_function = Module.load_function(self.library,
@@ -40,14 +42,13 @@ class Module(object):
                                                    MODULE_TYPE_SETUP)
         self.cleanup_function = Module.load_function(self.library,
                                                      cleanup_function,
-                                                     MODULE_TYPE_CLEANUP)      
-
+                                                     MODULE_TYPE_CLEANUP)
 
     def copy_section_to_module_options(self, config):
         if config.has_section(block.option_section):
             config._delete_section(block.option_section)
-        for (section,name) in config.keys(self.name):
-            config[block.option_section,name] = config[section,name]
+        for (section, name) in config.keys(self.name):
+            config[block.option_section, name] = config[section, name]
 
     def setup(self, config):
         self.copy_section_to_module_options(config)
@@ -92,25 +93,33 @@ class Module(object):
             except OSError as error:
                 exists = os.path.exists(filepath)
                 if exists:
-                    raise SetupError("You specified a path %s for a module. File exists, but could not be opened. Error was %s" % (filepath, error))
+                    raise SetupError("You specified a path %s for a module. "
+                                     "File exists, but could not be opened. "
+                                     "Error was %s" % (filepath, error))
                 else:
-                    raise SetupError("You specified a path %s for a module. File does not exist.  Error was %s" % (filepath, error))
+                    raise SetupError("You specified a path %s for a module. "
+                                     "File does not exist.  Error was %s" %
+                                     (filepath, error))
         else:
             language = MODULE_LANG_PYTHON
             dirname, filename = os.path.split(filepath)
-            impname, ext = os.path.splitext(filename)  # allows .pyc and .py modules to be used
+            # allows .pyc and .py modules to be used
+            impname, ext = os.path.splitext(filename)
             sys.path.insert(0, dirname)
             try:
                 library = __import__(impname)
             except ImportError as error:
-                raise SetupError("You specified a path %s for a module. I looked for a python module there but was unable to load it.  Error was %s" % (filepath, error))
+                raise SetupError("You specified a path %s for a module. "
+                                 "I looked for a python module there but "
+                                 "was unable to load it.  Error was %s" %
+                                 (filepath, error))
             sys.path.pop(0)
 
         return library, language
 
     @staticmethod
     def load_function(library, function_name,
-                               module_type=MODULE_TYPE_EXECUTE_SIMPLE):
+                      module_type=MODULE_TYPE_EXECUTE_SIMPLE):
         "Load a module from a shared library"
         function = getattr(library, function_name, None)
         if not function:
@@ -130,5 +139,6 @@ class Module(object):
                 function.argtypes = [ctypes.c_voidp]
                 function.restype = ctypes.c_int
             else:
-                raise ValueError("Unknown module type passed to load_interface")
+                raise ValueError("Unknown module type passed "
+                                 "to load_interface")
         return function

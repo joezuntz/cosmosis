@@ -19,19 +19,21 @@ class GridSampler(ParallelSampler):
         pipeline = self.pipeline
 
         self.converged = False
-        self.nsample = self.ini.getint(GRID_INI_SECTION, "nsample_dimension", 1)
+        self.nsample = self.ini.getint(GRID_INI_SECTION,
+                                       "nsample_dimension", 1)
 
     def execute(self):
-        samples = list(itertools.product(*[np.linspace(*p.limits, 
+        samples = list(itertools.product(*[np.linspace(*param.limits,
                                                        num=self.nsample)
-                                         for p in self.pipeline.varied_params]))
+                                           for param
+                                           in self.pipeline.varied_params]))
         if self.pool:
             results = self.pool.map(task, samples)
         else:
             results = map(task, samples)
 
-        print zip(samples,results)
+        print zip(samples, results)
         self.converged = True
 
     def is_converged(self):
-        return self.converged 
+        return self.converged

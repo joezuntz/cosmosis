@@ -36,7 +36,8 @@ class MPIPool(object):
             raise RuntimeError("Master node told to await jobs")
         status = self.MPI.Status()
         while True:
-            task = self.comm.recv(source=0, tag=self.MPI.ANY_TAG, status=status)
+            task = self.comm.recv(source=0, tag=self.MPI.ANY_TAG,
+                                  status=status)
 
             if isinstance(task, _close_pool_message):
                 break
@@ -46,7 +47,7 @@ class MPIPool(object):
                 continue
 
             results = map(self.function, task)
-            self.comm.send(results, dest=0, tag=status.tag) 
+            self.comm.send(results, dest=0, tag=status.tag)
 
     def map(self, function, tasks):
         # Should be called by the master only
@@ -59,7 +60,7 @@ class MPIPool(object):
             self.function = function
             F = _function_wrapper(function)
             requests = [self.comm.isend(F, dest=i)
-                        for i in range(1,self.size)]
+                        for i in range(1, self.size)]
             self.MPI.Request.waitall(requests)
 
         # distribute tasks to workers

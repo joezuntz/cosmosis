@@ -20,7 +20,8 @@ PIPELINE_INI_SECTION = "pipeline"
 
 class Pipeline(object):
     def __init__(self, arg=None, quiet=True, debug=False, timing=False):
-        """Initialize with a single filename or a list of them, a ConfigParser, or nothing for an empty pipeline"""
+        """ Initialize with a single filename or a list of them,
+            a ConfigParser, or nothing for an empty pipeline"""
         if arg is None:
             arg = list()
 
@@ -36,9 +37,11 @@ class Pipeline(object):
         # initialize modules
         self.modules = []
         if PIPELINE_INI_SECTION in self.options.sections():
-            rootpath = self.options.get(PIPELINE_INI_SECTION, "root", os.curdir)
+            rootpath = self.options.get(PIPELINE_INI_SECTION,
+                                        "root",
+                                        os.curdir)
             module_list = self.options.get(PIPELINE_INI_SECTION,
-                                          "modules", "").split()
+                                           "modules", "").split()
 
             for module_name in module_list:
                 # identify module file
@@ -46,11 +49,11 @@ class Pipeline(object):
 
                 # identify relevant functions
                 setup_function = self.options.get(module_name,
-                                                 "setup", "setup")
+                                                  "setup", "setup")
                 exec_function = self.options.get(module_name,
                                                  "function", "execute")
                 cleanup_function = self.options.get(module_name,
-                                                  "cleanup", "cleanup")
+                                                    "cleanup", "cleanup")
 
                 self.modules.append(module.Module(module_name,
                                                   filename,
@@ -66,9 +69,9 @@ class Pipeline(object):
         for module in self.modules:
             # identify parameters needed for module setup
             relevant_sections = [PIPELINE_INI_SECTION,
-                                 "general", 
+                                 "general",
                                  "logging",
-                                 "debug", 
+                                 "debug",
                                  module.name]
 
             config_block = block.DataBlock()
@@ -113,8 +116,10 @@ class Pipeline(object):
 
             if status:
                 if not self.quiet:
-                    sys.stderr.write("Error running pipeline (%d)- hopefully printed above here.\n")
-                    sys.stderr.write("Aborting this run and returning error status.\n")
+                    sys.stderr.write("Error running pipeline (%d)- "
+                                     "hopefully printed above here.\n")
+                    sys.stderr.write("Aborting this run and returning "
+                                     "error status.\n")
 
                     if self.timing:
                         sys.stdout.write("Module timing:\n")
@@ -134,14 +139,6 @@ class Pipeline(object):
         # return something
         return True
 
-#    def get_option(self, section, name, default=None):
-#        try:
-#            return self.options.get(section, name)
-#        except ConfigParser.NoOptionError:
-#            if default is not None:
-#                return default
-#            raise ValueError("Could not find entry in the ini file for section %s, parameter %s, which was needed." % (section, name))
-
 
 class LikelihoodPipeline(Pipeline):
     def __init__(self, arg=None, id="", debug=False,
@@ -157,7 +154,7 @@ class LikelihoodPipeline(Pipeline):
 
         values_file = self.options.get(PIPELINE_INI_SECTION, "values")
         priors_files = self.options.get(PIPELINE_INI_SECTION,
-                                       "priors", "").split()
+                                        "priors", "").split()
 
         self.parameters = parameter.Parameter.load_parameters(values_file,
                                                               priors_files)
@@ -169,7 +166,8 @@ class LikelihoodPipeline(Pipeline):
 
         #We want to save some parameter results from the run for further output
         extra_saves = self.options.get(PIPELINE_INI_SECTION,
-                                      "extra_output", "")
+                                       "extra_output", "")
+
         self.extra_saves = []
         for extra_save in extra_saves.split():
             section, name = extra_save.upper().split('/')
@@ -179,13 +177,14 @@ class LikelihoodPipeline(Pipeline):
 
         #pull out all the section names and likelihood names for later
         self.likelihood_names = self.options.get(PIPELINE_INI_SECTION,
-                                                "likelihoods").split()
+                                                 "likelihoods").split()
+
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
 
     def randomized_start(self):
-        # should have different randomization strategies (uniform, gaussian)
-        # possibly depending on prior?
+        # should have different randomization strategies
+        # (uniform, gaussian) possibly depending on prior?
         return np.array([p.random_point() for p in self.varied_params])
 
     def is_out_of_range(self, p):
@@ -193,12 +192,16 @@ class LikelihoodPipeline(Pipeline):
                     param, x in zip(self.varied_params, p)])
 
     def denormalize_vector(self, p):
-        return np.array([param.denormalize(x) for
-                         param, x in zip(self.varied_params, p)])
+        return np.array([param.denormalize(x) for param, x
+                         in zip(self.varied_params, p)])
 
     def normalize_vector(self, p):
-        return np.array([param.normalize(x) for
-                         param, x in zip(self.varied_params, p)])
+        return np.array([param.normalize(x) for param, x
+                         in zip(self.varied_params, p)])
+
+    def start_vector(self, p):
+        return np.array([param.start for
+                         param in self.varied_params])
 
     def run_parameters(self, p, check_ranges=False):
         if check_ranges:
