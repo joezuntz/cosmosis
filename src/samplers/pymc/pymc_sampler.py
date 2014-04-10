@@ -1,10 +1,6 @@
 from sampler import ParallelSampler
-import config
-import pipeline
-import prior
-import diagnostics
-
 import numpy as np
+import diagnostics
 
 
 PYMC_INI_SECTION = "pymc"
