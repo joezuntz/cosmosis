@@ -72,7 +72,7 @@ class PyMCSampler(ParallelSampler):
         #for param in self.pipeline.varied_params:
         #    self.trace[param] = np.append( self.trace[param], np.array([param.denormalize(x) for x in self.mcmc.trace(str(param))]))
 
-        if self.is_converged():
+        #if self.is_converged():
         #    if self.pool:
         #        suffix = "_%02d.txt" % (self.pool.rank,)
         #    else:
@@ -129,7 +129,6 @@ class PyMCSampler(ParallelSampler):
         for param in self.pipeline.varied_params:
             prior = param.prior
             start_value = param.normalize(param.random_point())
-            print self.pool.rank, start_value
 
             if prior is None or isinstance(prior, UniformPrior):
                 # uniform prior
