@@ -193,11 +193,11 @@ class LikelihoodPipeline(Pipeline):
                     param, x in zip(self.varied_params, p)])
 
     def denormalize_vector(self, p):
-        return np.array([param.normalize(x) for
+        return np.array([param.denormalize(x) for
                          param, x in zip(self.varied_params, p)])
 
     def normalize_vector(self, p):
-        return np.array([param.denormalize(x) for
+        return np.array([param.normalize(x) for
                          param, x in zip(self.varied_params, p)])
 
     def run_parameters(self, p, check_ranges=False):
