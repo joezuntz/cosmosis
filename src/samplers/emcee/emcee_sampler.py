@@ -1,44 +1,46 @@
-import numpy as np
-import sys
-import emcee
-import os
-
+from sampler import ParallelSampler
 
 EMCEE_INI_SECTION = "emcee"
-				
 
-def EmceeSampler(ParallelSampler):
+
+def log_probability_function(p):
+    return pipeline.posterior(p)
+
+
+class EmceeSampler(ParallelSampler):
 
     def config(self):
-        def log_probability_function(p):
-            return self.pipeline.posterior(p)
-
-        if self.pool:
-            self.pool.worker_function = log_probability_function
+        global pipeline
+        pipeline = self.pipeline
 
         if self.is_master():
-            self.nwalkers = self.ini.getint(EMCEE_INI_SECTION, "walkers", 1)
+            import emcee
+            self.emcee = emcee
+
+            self.nwalkers = self.ini.getint(EMCEE_INI_SECTION, "walkers", 2)
             self.samples = self.ini.getint(EMCEE_INI_SECTION, "samples", 1000)
+            self.nsteps = self.ini.getint(EMCEE_INI_SECTION, "nsteps", 100)
+            self.num_samples = 0
 
             ndim = len(self.pipeline.varied_params)
-            self.p0 = [self.pipeline.randomized_start() for i in xrange(nwalkers)]
+            self.p0 = [self.pipeline.randomized_start() for i in xrange(self.nwalkers)]
 
-            self.ensemble = emcee.EnsembleSampler(self.nwalkers, ndim, 
-                                                  log_probabilty_function, 
-                                                  pool=self.pool)
+            self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, ndim, 
+                                                       log_probability_function, 
+                                                       pool=self.pool)
             self.sampler = None
 
     def execute(self):
         if not self.sampler:
-            self.sampler = self.ensemble(self.p0, 
-                                         iterations=self.nsample,
-                                         storechain=True)
+            self.sampler = self.ensemble.sample(self.p0, 
+                                                iterations=self.nsteps,
+                                                storechain=True)
 
         try:
             pos, prob, rstate, extra_info = self.sampler.next()
-            self.num_samples += self.nsample
+            self.num_samples += self.nsteps
         except StopIteration:
             raise RuntimeError("Emcee sampler stopped before Cosmosis determined convergence")
 
     def is_converged(self):
-        return self.num_samples >= self.sample
+        return self.num_samples >= self.samples
