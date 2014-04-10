@@ -1,29 +1,38 @@
+from sampler import Sampler
 import numpy as np
-import scipy.optimize
-import scipy.misc
 
 
 MAXLIKE_INI_SECTION = "maxlike"
 
 
-def MaxlikeSampler(Sampler):
+class MaxlikeSampler(Sampler):
     
     def config(self):
-        self.tolerance = self.ini.getfloat(MAXLIKE_INI_SECTION,"tolerance",0.0)
+        self.tolerance = self.ini.getfloat(MAXLIKE_INI_SECTION, "tolerance", 1e-3)
+        self.maxiter = self.ini.getint(MAXLIKE_INI_SECTION, "maxiter", 1000)
 
         self.start_vector = np.array([param.normalize(param.start)
-                                 from self.pipeline.varied_params])
+                                      for param in self.pipeline.varied_params])
+        self.converged = False
         
     def execute(self):
-        def likefn(p):
+        import scipy.optimize
+        
+        def likefn(p_in):
             p = self.pipeline.denormalize_vector(p_in)
-            like, extra = pipeline.likelihood(p)
+            like, extra = self.pipeline.likelihood(p)
             return -like
 
         opt_norm = scipy.optimize.fmin(likefn, 
                                        self.start_vector,
-                                       xtol=self.tolerance)
-        opt = pipeline.denormalize_vector(opt_norm)
+                                       xtol=self.tolerance,
+                                       disp=False,
+                                       maxiter=self.maxiter)
 
-        # for now print optimzied values
-        sys.stdout.write(opt)
+        opt = self.pipeline.denormalize_vector(opt_norm)
+        print opt
+
+        self.converged = True
+
+    def is_converged(self):
+        return self.converged
