@@ -20,7 +20,8 @@ class Sampler(object):
         self.pipeline = pipeline
         self.output = output
         if self.output:
-            self.output.columns = pipeline.output_names()
+            for p in pipeline.output_names():
+                self.output.add_column(p, float)
 
     def config(self):
         ''' Set up sampler (could instead use __init__) '''

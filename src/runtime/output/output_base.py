@@ -1,9 +1,9 @@
 import abc
 import logging
 
-logger = logging.getLogger(__name__)
 
 output_registry = {}
+LOG_LEVEL_NOISY = 15
 
 class OutputMetaclass(abc.ABCMeta):
     def __init__(cls, name, b, d):
@@ -21,7 +21,6 @@ class OutputMetaclass(abc.ABCMeta):
         		if alias not in output_registry:
         			output_registry[alias] = cls
 
-
 class OutputBase(object):
 	__metaclass__ = OutputMetaclass
 
@@ -31,16 +30,18 @@ class OutputBase(object):
 		self.closed=False
 		self.begun_sampling = False
 
-	def log_debug(self, message, *args):
-		logger.debug(message, *args)
-	def log_info(self, message, *args):
-		logger.info(message, *args)
-	def log_warning(self, message, *args):
-		logger.warning(message, *args)
-	def log_error(self, message, *args):
-		logger.error(message, *args)
-	def log_critical(self, message, *args):
-		logger.critical(message, *args)
+	def log_debug(self, message, *args, **kwargs):
+		logging.debug(message, *args, **kwargs)
+	def log_noisy(self, message, *args, **kwargs):
+		logging.log(LOG_LEVEL_NOISY, message, *args, **kwargs)
+	def log_info(self, message, *args, **kwargs):
+		logging.info(message, *args, **kwargs)
+	def log_warning(self, message, *args, **kwargs):
+		logging.warning(message, *args, **kwargs)
+	def log_error(self, message, *args, **kwargs):
+		logging.error(message, *args, **kwargs)
+	def log_critical(self, message, *args, **kwargs):
+		logging.critical(message, *args, **kwargs)
 
 	@property
 	def columns(self):
@@ -76,7 +77,7 @@ class OutputBase(object):
 	def column_names(self):
 		return [c[0] for c in self._columns]
 
-	def parameters(self, params):
+	def parameters(self, params, extra=None):
 		""" 
 		Tell the outputter to save a vector of parameters.
 		The number of parameters and their types
@@ -85,6 +86,12 @@ class OutputBase(object):
 		#Check that the length is correct
 		if self.closed:
 			raise RuntimeError("Tried to write parameters to closed output")
+		if extra:
+			params = list(params[:])
+			nstandard = len(params)
+			for i in xrange(nstandard,len(self._columns)):
+				name = self._columns[i][0]
+				params.append(extra[name])
 		if not len(params)==len(self._columns):
 			raise ValueError("Sampler error - tried to save wrong number of parameters, or failed to set column names")
 		#If this is our first sample then 
