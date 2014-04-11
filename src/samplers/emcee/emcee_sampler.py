@@ -40,9 +40,13 @@ class EmceeSampler(ParallelSampler):
 
     def execute(self):
         #Run the emcee sampler.
+        outputs = []
         for (pos, prob, rstate, extra_info) in self.ensemble.sample(
                 self.p0, lnprob0=self.prob0, blobs0=self.blob0,
                 iterations=self.nsteps, storechain=False):
+            outputs.append((pos.copy(), prob.copy(),extra_info[:]))
+    
+        for (pos, prob, extra_info) in outputs:
             self.output_samples(pos, extra_info)
 
         #Set the starting positions for the next chunk of samples
