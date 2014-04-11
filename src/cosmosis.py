@@ -37,6 +37,9 @@ def main(args, pool=None):
 
     #create the output files and methods
     output_options = dict(ini.items('output'))
+    # NOTE will need to change this if other non-MPI things are used
+    if pool is not None:
+        output_options['mpi'] = True
     output = output_module.output_from_options(output_options)
 
     # create sampler object
