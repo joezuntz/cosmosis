@@ -2,6 +2,8 @@ from .output_base import OutputBase
 from . import utils
 import numpy as np
 class TextColumnOutput(OutputBase):
+	_aliases = ["text", "txt"]
+
 	def __init__(self, filename, delimiter='\t'):
 		super(TextColumnOutput, self).__init__()
 		self.delimiter=delimiter
@@ -45,11 +47,11 @@ class TextColumnOutput(OutputBase):
 		self._file.write('#{k}={v}{c}\n'.format(k=key,v=value,c=c))
 
 	@classmethod
-	def from_ini(cls, ini):
+	def from_options(cls, options):
 		#look something up required parameters in the ini file.
-		#how this looks will depend on the ini 
-		filename = ini['filename']
-		delimiter = ini.get('delimiter','\t')
+		#how this looks will depend on the ini
+		filename = options['filename']
+		delimiter = options.get('delimiter','\t')
 		return cls(filename, delimiter=delimiter)
 
 	@staticmethod

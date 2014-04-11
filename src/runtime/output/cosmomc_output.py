@@ -61,14 +61,14 @@ class CosmoMCOutput(OutputBase):
 		self._file.write('#{k}={v}{c}\n'.format(k=key,v=value,c=c))
 
 	@classmethod
-	def from_ini(cls, ini):
+	def from_options(cls, options):
 		#look something up required parameters in the ini file.
 		#how this looks will depend on the ini 
-		dirname = ini['dirname']
-		filename = ini['filename']
-		delimiter = ini.get('delimiter','\t')
-		mpi = ini['mpi']
-		nchain = ini['nchain']
+		dirname = options['dirname']
+		filename = options['filename']
+		delimiter = options.get('delimiter','\t')
+		mpi = options['mpi']
+		nchain = options['nchain']
 		return cls(dirname,filename,mpi,nchain, delimiter=delimiter)
 
 	@staticmethod

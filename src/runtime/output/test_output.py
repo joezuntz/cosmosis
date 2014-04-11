@@ -25,7 +25,7 @@ def populate_table(out, nparam, ns):
 def test_text():
 	filename='temp_output_test.txt'
 	ini = {'filename':filename, 'format':'text'}
-	out = TextColumnOutput.from_ini(ini)
+	out = TextColumnOutput.from_options(ini)
 	nparam = 8
 	ns = 20 
 	populate_table(out, nparam, ns)

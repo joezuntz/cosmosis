@@ -3,8 +3,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+output_registry = {}
+
+class OutputMetaclass(abc.ABCMeta):
+    def __init__(cls, name, b, d):
+        abc.ABCMeta.__init__(cls, name, b, d)
+        if name == "OutputBase":
+            return
+        if not name.endswith("Output"):
+            raise ValueError("Output classes must be named [Name]Output")
+        config_name = name[:-len("Output")].lower()
+
+        output_registry[config_name] = cls
+        if hasattr(cls, "_aliases"):
+        	for alias in cls._aliases:
+        		#Do not over-ride superclass aliases
+        		if alias not in output_registry:
+        			output_registry[alias] = cls
+
+
 class OutputBase(object):
-	__metaclass__ = abc.ABCMeta
+	__metaclass__ = OutputMetaclass
 
 	def __init__(self):
 		super(OutputBase,self).__init__()
@@ -121,7 +140,7 @@ class OutputBase(object):
 		pass
 
 	@classmethod
-	def from_ini(cls, ini):
+	def from_options(cls, options):
 		""" This method should create an output object from the section of ini file it is given"""
 		raise NotImplemented("The format mode you tried to use is incomplete - sorry")
 

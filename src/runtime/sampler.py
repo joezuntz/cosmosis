@@ -14,9 +14,12 @@ class Sampler(object):
             sampler_registry[config_name] = cls
             print "Registering: %s as %s" % (config_name, name)
     
-    def __init__(self, ini, pipeline):
+    def __init__(self, ini, pipeline, output):
         self.ini = ini
         self.pipeline = pipeline
+        self.output = output
+        if self.output:
+            self.output.columns = pipeline.output_names()
 
     def config(self):
         ''' Set up sampler (could instead use __init__) '''
@@ -31,8 +34,8 @@ class Sampler(object):
 
 
 class ParallelSampler(Sampler):
-    def __init__(self, ini, pipeline, pool=None):
-        Sampler.__init__(self, ini, pipeline)
+    def __init__(self, ini, pipeline, output, pool=None):
+        Sampler.__init__(self, ini, pipeline, output)
         self.pool = pool
 
     def worker(self):

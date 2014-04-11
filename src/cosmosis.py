@@ -12,6 +12,7 @@ from pipeline import LikelihoodPipeline
 import mpi_pool
 from sampler import sampler_registry, ParallelSampler
 import samplers
+import output as output_module
 
 
 RUNTIME_INI_SECTION = "runtime"
@@ -34,6 +35,10 @@ def main(args, pool=None):
     # create pipeline
     pipeline = LikelihoodPipeline(ini) 
 
+    #create the output files and methods
+    output_options = dict(ini.items('output'))
+    output = output_module.output_from_options(output_options)
+
     # create sampler object
     sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")
 
@@ -43,9 +48,9 @@ def main(args, pool=None):
     if pool:
         if not issubclass(sampler_registry[sample_method],ParallelSampler):
             raise ValueError("Sampler does not support parallel execution!")
-        sampler = sampler_registry[sample_method](ini, pipeline, pool)
+        sampler = sampler_registry[sample_method](ini, pipeline, output, pool)
     else:
-        sampler = sampler_registry[sample_method](ini, pipeline)
+        sampler = sampler_registry[sample_method](ini, pipeline, output)
  
     sampler.config()
 

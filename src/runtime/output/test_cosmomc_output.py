@@ -44,7 +44,7 @@ def test_text():
 	msg = comm.bcast(msg,root=0)
 
 	ini = {'dirname':dirname,'filename':filename, 'format':'multitext','nchain':rank,'mpi':True}
-	out = CosmoMCOutput.from_ini(ini)
+	out = CosmoMCOutput.from_options(ini)
 	nparam = 10
 	ns = 10 
 	populate_table(out, nparam, ns)

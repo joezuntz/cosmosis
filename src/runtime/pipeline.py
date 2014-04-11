@@ -183,6 +183,11 @@ class LikelihoodPipeline(Pipeline):
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
 
+    def output_names(self):
+        param_names = [str(p) for p in self.varied_params]
+        extra_names = ['%s--%s'%p for p in self.extra_saves]
+        return param_names + extra_names
+
     def randomized_start(self):
         # should have different randomization strategies (uniform, gaussian)
         # possibly depending on prior?
@@ -259,6 +264,7 @@ class LikelihoodPipeline(Pipeline):
         extra_saves = {}
         for option in self.extra_saves:
             try:
+                #JAZ - should this be just .get(*option) ?
                 value = data.get_double(*option)
             except BlockError:
                 value = np.nan

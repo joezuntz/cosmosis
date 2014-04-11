@@ -13,6 +13,7 @@ CHAIN_NAME = 'chain_%d.txt'
 
 
 class MultiTextOutput(OutputBase):
+	_aliases = ["multi"]
 	def __init__(self, dirname,nchain, delimiter='\t'):
 		super(MultiTextOutput, self).__init__()
 		self.delimiter=delimiter
@@ -57,12 +58,12 @@ class MultiTextOutput(OutputBase):
 		self._file.write('#{k}={v}{c}\n'.format(k=key,v=value,c=c))
 
 	@classmethod
-	def from_ini(cls, ini):
+	def from_options(cls, options):
 		#look something up required parameters in the ini file.
 		#how this looks will depend on the ini 
-		dirname = ini['filename']
-		delimiter = ini.get('delimiter','\t')
-		nchain = ini['nchain']
+		dirname = options['filename']
+		delimiter = options.get('delimiter','\t')
+		nchain = options['nchain']
 		return cls(dirname,nchain, delimiter=delimiter)
 
 	@staticmethod

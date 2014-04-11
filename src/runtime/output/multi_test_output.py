@@ -44,7 +44,7 @@ def test_text():
 	msg = comm.bcast(msg,root=0)
 
 	ini = {'filename':dirname, 'format':'multitext','nchain':rank}
-	out = MultiTextOutput.from_ini(ini)
+	out = MultiTextOutput.from_options(ini)
 	nparam = 8
 	ns = 50 
 	populate_table(out, nparam, ns)
