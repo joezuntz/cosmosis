@@ -64,11 +64,11 @@ class CosmoMCOutput(OutputBase):
 	def from_options(cls, options):
 		#look something up required parameters in the ini file.
 		#how this looks will depend on the ini 
-		dirname = options['dirname']
+		dirname = options.get('dirname','.')
 		filename = options['filename']
 		delimiter = options.get('delimiter','\t')
-		mpi = options['mpi']
-		nchain = options['nchain']
+		mpi = options.get('mpi',False)
+		nchain = options.get('nchain',1)
 		return cls(dirname,filename,mpi,nchain, delimiter=delimiter)
 
 	@staticmethod
