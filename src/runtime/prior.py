@@ -28,9 +28,11 @@ class Prior(object):
                         elif prior_type.startswith("exp"):
                             prior[option] = ExponentialPrior(*parameters)
                         else:
-                            raise ValueError("Unable to parse %s as prior" % (value,))
+                            raise ValueError("Unable to parse %s as prior" %
+                                             (value,))
                     except TypeError:
-                        raise ValueError("Unable to parse %s as prior" % (value,))
+                        raise ValueError("Unable to parse %s as prior" %
+                                         (value,))
         return priors
 
 

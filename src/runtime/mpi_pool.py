@@ -4,8 +4,9 @@ class _close_pool_message(object):
 
 
 class _function_wrapper(object):
-    def __init__(self, function):
+    def __init__(self, function, callback=None):
         self.function = function
+        self.callback = callback
 
 
 def _error_function(task):
@@ -27,6 +28,7 @@ class MPIPool(object):
         self.debug = debug
 
         self.function = _error_function
+        self.callback = None
 
     def is_master(self):
         return self.rank == 0
@@ -36,30 +38,40 @@ class MPIPool(object):
             raise RuntimeError("Master node told to await jobs")
         status = self.MPI.Status()
         while True:
-            task = self.comm.recv(source=0, tag=self.MPI.ANY_TAG, status=status)
+            task = self.comm.recv(source=0, tag=self.MPI.ANY_TAG,
+                                  status=status)
 
             if isinstance(task, _close_pool_message):
                 break
 
             if isinstance(task, _function_wrapper):
                 self.function = task.function
+                self.callback = task.callback
                 continue
 
-            results = map(self.function, task)
-            self.comm.send(results, dest=0, tag=status.tag) 
+            if self.callback:
+                def compose(x):
+                    result = self.function(x)
+                    self.callback(x, result)
+                    return result
+                results = map(compose, task)
+            else:
+                results = map(self.function, task)
+            self.comm.send(results, dest=0, tag=status.tag)
 
-    def map(self, function, tasks):
+    def map(self, function, tasks, callback=None):
         # Should be called by the master only
         if not self.is_master():
             self.wait()
             return
 
         # send function if necessary
-        if function is not self.function:
+        if function is not self.function or callback is not self.callback:
             self.function = function
-            F = _function_wrapper(function)
+            self.callback = callback
+            F = _function_wrapper(function, callback)
             requests = [self.comm.isend(F, dest=i)
-                        for i in range(1,self.size)]
+                        for i in range(1, self.size)]
             self.MPI.Request.waitall(requests)
 
         # distribute tasks to workers
@@ -70,12 +82,21 @@ class MPIPool(object):
 
         # process local work
         results = [None]*len(tasks)
-        results[::self.size] = map(self.function, tasks[0::self.size])
+
+        if self.callback:
+            def compose(x):
+                result = self.function(x)
+                self.callback(x, result)
+                return result
+            results[::self.size] = map(compose, tasks[::self.size])
+        else:
+            results[::self.size] = map(self.function, tasks[::self.size])
 
         # recover results from workers (in any order)
         status = self.MPI.Status()
         for i in range(self.size-1):
-            result = self.comm.recv(source=self.MPI.ANY_SOURCE, status=status)
+            result = self.comm.recv(source=self.MPI.ANY_SOURCE,
+                                    status=status)
             results[status.source::self.size] = result
         return results
 

@@ -25,16 +25,16 @@ class PyMCSampler(ParallelSampler):
 
         @pymc.data
         @pymc.stochastic(verbose=self.verbose)
-        def data_likelihood(params = params, value = 0.0):
+        def data_likelihood(params=params, value=0.0):
             like, extra = self.pipeline.likelihood(params)
             return like
-        
-        self.mcmc = self.pymc.MCMC(input={'data_likelihood':data_likelihood,
-                                          'params':params}, 
-                                   db='ram', verbose=2)
+
+        self.mcmc = self.pymc.MCMC(input={'data_likelihood': data_likelihood,
+                                          'params': params},
+                                   db='ram', verbose=0)
 
         # determine step method
-        self.do_adaptive = self.ini.getboolean(PYMC_INI_SECTION, 
+        self.do_adaptive = self.ini.getboolean(PYMC_INI_SECTION,
                                                "adaptive_mcmc",
                                                False)
         if self.do_adaptive:
@@ -44,7 +44,7 @@ class PyMCSampler(ParallelSampler):
                                       cov=covmat,
                                       interval=100,
                                       delay=100,
-                                      verbose=0) 
+                                      verbose=0)
         else:
             for p in params:
                 self.mcmc.use_step_method(self.pymc.Metropolis, p, verbose=0)
@@ -60,8 +60,9 @@ class PyMCSampler(ParallelSampler):
         self.mcmc.sample(steps, progress_bar=False, tune_throughout=False)
         self.num_samples += steps
 
-        traces = np.array([[param.denormalize(x) for x in self.mcmc.trace(str(param))]
-                  for param in self.pipeline.varied_params]).T
+        traces = np.array([[param.denormalize(x)
+                           for x in self.mcmc.trace(str(param))]
+                           for param in self.pipeline.varied_params]).T
         self.diagnostics.add_traces(traces)
 
         #self.trace["likelihood"] = np.append(self.trace["likelihood"], -0.5*np.array(self.mcmc.trace('deviance')[:]))
@@ -89,6 +90,7 @@ class PyMCSampler(ParallelSampler):
 
     def is_converged(self):
         if self.num_samples >= self.samples:
+            print "samples done"
             return True
         elif self.num_samples > 0 and self.pool is not None:
             return np.all(self.diagnostics.gelman_rubin() <= self.Rconverge)
@@ -100,19 +102,22 @@ class PyMCSampler(ParallelSampler):
         covmat = np.loadtxt(covmat_filename)
 
         if covmat.ndim == 0:
-            covmat = covmat.reshape((1,1))
+            covmat = covmat.reshape((1, 1))
         elif covmat.ndim == 1:
             covmat = np.diag(covmat**2)
 
         nparams = len(self.pipeline.varied_params)
         if covmat.shape != (nparams, nparams):
-            raise ValueError("The covariance matrix was shape (%d x %d), but there are %d varied parameters." % (covmat.shape[0], covmat.shape[1], nparams))
+            raise ValueError("The covariance matrix was shape (%d x %d), "
+                             "but there are %d varied parameters." %
+                             (covmat.shape[0], covmat.shape[1], nparams))
 
         # normalize covariance matrix
-        r = np.array([param.width() for param in self.pipeline.varied_params])
+        r = np.array([param.width() for param
+                      in self.pipeline.varied_params])
         for i in xrange(covmat.shape[0]):
-            covmat[i,:] /= r
-            covmat[:,i] /= r
+            covmat[i, :] /= r
+            covmat[:, i] /= r
 
         # reorder to PyMC variable ordering
 
@@ -129,23 +134,23 @@ class PyMCSampler(ParallelSampler):
             if prior is None or isinstance(prior, UniformPrior):
                 # uniform prior
                 priors.append(self.pymc.Uniform(str(param),
-                                           lower = 0.0,
-                                           upper = 1.0,
-                                           value = start_value))
+                                                lower=0.0,
+                                                upper=1.0,
+                                                value=start_value))
             elif isinstance(prior, GaussianPrior):
                 width = param.width()
                 mu = (prior.mu-param.limits[0])/width
                 tau = width**2/prior.sigma2
 
                 priors.append(self.pymc.Normal(str(param),
-                                          mu = mu,
-                                          tau = tau,
-                                          value = start_value))
+                                               mu=mu,
+                                               tau=tau,
+                                               value=start_value))
             elif isinstance(prior, ExponentialPrior):
                 width = param.width()
                 priors.append(self.pymc.Exponential(str(param),
-                                               beta = width / prior.beta,
-                                               value = start_value))
+                                                    beta=width / prior.beta,
+                                                    value=start_value))
             else:
                 raise RuntimeError("Unknown prior type in PyMC sampler")
         return priors

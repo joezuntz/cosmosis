@@ -15,7 +15,7 @@ class Parameter(object):
         self.start = start
 
         self.prior = prior
-        # TODO: check consistency of prior with limits 
+        # TODO: check consistency of prior with limits
 
     def __eq__(self, other):
         if instance(other, (list, tuple)):
@@ -99,6 +99,9 @@ class Parameter(object):
             elif len(values) == 3:
                 return values[1], (values[0], values[2])
             else:
-                raise ValueError("Was expecting 1-3 values for parameter value %s" % (line,))
+                raise ValueError("Was expecting 1-3 values for "
+                                 "parameter value %s" % (line,))
         except ValueError as error:
-            raise ValueError("Unable to parse numeric value for parameter value %s, error %s" % (line, error))
+            raise ValueError("Unable to parse numeric value for "
+                             "parameter value %s, error %s" %
+                             (line, error))

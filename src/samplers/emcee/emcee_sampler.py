@@ -23,16 +23,17 @@ class EmceeSampler(ParallelSampler):
             self.num_samples = 0
 
             ndim = len(self.pipeline.varied_params)
-            self.p0 = [self.pipeline.randomized_start() for i in xrange(self.nwalkers)]
+            self.p0 = [self.pipeline.randomized_start()
+                       for i in xrange(self.nwalkers)]
 
-            self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, ndim, 
-                                                       log_probability_function, 
+            self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, ndim,
+                                                       log_probability_function,
                                                        pool=self.pool)
             self.sampler = None
 
     def execute(self):
         if not self.sampler:
-            self.sampler = self.ensemble.sample(self.p0, 
+            self.sampler = self.ensemble.sample(self.p0,
                                                 iterations=self.nsteps,
                                                 storechain=True)
 
@@ -40,7 +41,8 @@ class EmceeSampler(ParallelSampler):
             pos, prob, rstate, extra_info = self.sampler.next()
             self.num_samples += self.nsteps
         except StopIteration:
-            raise RuntimeError("Emcee sampler stopped before Cosmosis determined convergence")
+            raise RuntimeError("Emcee sampler stopped before "
+                               "Cosmosis determined convergence")
 
     def is_converged(self):
         return self.num_samples >= self.samples

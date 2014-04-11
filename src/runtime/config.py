@@ -63,26 +63,34 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
                     include_statement, filename = line.split()
                     filename = filename.strip('"')
                     filename = filename.strip("'")
-                    sys.stdout.write("Reading included ini file: " % (filename,))
+                    sys.stdout.write("Reading included ini file: " %
+                                     (filename,))
                     if not os.path.exists(filename):
-                        sys.stderr.write("Tried to include non-existent ini file: %s\n" % (filename,))
-                        raise IOError("Tried to include non-existent ini file: %s\n" % (filename,))
+                        # TODO: remove direct sys.stderr writes
+                        sys.stderr.write("Tried to include non-existent "
+                                         "ini file: %s\n" % (filename,))
+                        raise IOError("Tried to include non-existent "
+                                      "ini file: %s\n" % (filename,))
                     self.read(filename)
                     cursect = None
                 elif cursect is None:
-                    raise ConfigParser.MissingSectionHeaderError(fpname, lineno, line)
+                    raise ConfigParser.MissingSectionHeaderError(fpname,
+                                                                 lineno,
+                                                                 line)
                 # an option line?
                 else:
                     mo = self._optcre.match(line)
                     if mo:
-                        optname, vi, optval = mo.group('option', 'vi', 'value')
+                        optname, vi, optval = mo.group('option',
+                                                       'vi',
+                                                       'value')
                         optname = self.optionxform(optname.rstrip())
                         # This check is fine because the OPTCRE cannot
                         # match if it would set optval to None
                         if optval is not None:
                             if vi in ('=', ':') and ';' in optval:
-                                # ';' is a comment delimiter only if it follows
-                                # a spacing character
+                                # ';' is a comment delimiter only if it
+                                # follows a spacing character
                                 pos = optval.find(';')
                                 if pos != -1 and optval[pos-1].isspace():
                                     optval = optval[:pos]
@@ -97,8 +105,8 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
                     else:
                         # a non-fatal parsing error occurred.  set up the
                         # exception but keep going. the exception will be
-                        # raised at the end of the file and will contain a
-                        # list of all bogus lines
+                        # raised at the end of the file and will contain
+                        # a list of all bogus lines
                         if not e:
                             e = ConfigParser.ParsingError(fpname)
                         e.append(lineno, repr(line))
@@ -136,7 +144,7 @@ class Inifile(IncludingConfigParser):
     def get(self, section, name, default=None):
         try:
             return IncludingConfigParser.get(self, section, name)
-        except (ConfigParser.NoSectionError,ConfigParser.NoOptionError) as e:
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
             if default is None:
                 raise e
             else:
@@ -146,7 +154,7 @@ class Inifile(IncludingConfigParser):
     def getint(self, section, name, default=None):
         try:
             return IncludingConfigParser.getint(self, section, name)
-        except (ConfigParser.NoSectionError,ConfigParser.NoOptionError) as e:
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
             if default is None:
                 raise e
             elif not isinstance(default, int):
@@ -157,18 +165,18 @@ class Inifile(IncludingConfigParser):
     def getfloat(self, section, name, default=None):
         try:
             return IncludingConfigParser.getfloat(self, section, name)
-        except (ConfigParser.NoSectionError,ConfigParser.NoOptionError) as e:
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
             if default is None:
                 raise e
             elif not isinstance(default, float):
                 raise TypeError("Default not float")
             else:
-                return default       
+                return default
 
     def getboolean(self, section, name, default=False):
         try:
             return IncludingConfigParser.getboolean(self, section, name)
-        except (ConfigParser.NoSectionError,ConfigParser.NoOptionError) as e:
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
             if default is None:
                 raise e
             elif not isinstance(default, bool):
@@ -183,7 +191,8 @@ class Inifile(IncludingConfigParser):
             elif value.startswith('n') or value.startswith('f'):
                 return False
             else:
-                raise ValueError("Unable to parse parameter %s--%s = %s into boolean form"
+                raise ValueError("Unable to parse parameter "
+                                 "%s--%s = %s into boolean form"
                                  % (section, name, value))
 
     def gettyped(self, section, name):

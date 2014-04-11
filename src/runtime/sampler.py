@@ -2,11 +2,12 @@ import config
 
 sampler_registry = {}
 
+
 class Sampler(object):
     class __metaclass__(type):
         def __init__(cls, name, b, d):
             type.__init__(cls, name, b, d)
-            if name in ["Sampler","ParallelSampler"]:
+            if name in ["Sampler", "ParallelSampler"]:
                 return
             if not name.endswith("Sampler"):
                 raise ValueError("Sampler classes must be named [Name]Sampler")
@@ -26,7 +27,8 @@ class Sampler(object):
         pass
 
     def execute(self):
-        ''' Run one (self-determined) iteration of sampler.  Should be enough to test convergence '''
+        ''' Run one (self-determined) iteration of sampler.
+            Should be enough to test convergence '''
         raise NotImplementedError
 
     def is_converged(self):
