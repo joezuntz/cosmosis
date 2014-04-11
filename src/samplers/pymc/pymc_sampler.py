@@ -1,7 +1,7 @@
 from sampler import ParallelSampler
 import numpy as np
 import diagnostics
-
+import logging
 
 PYMC_INI_SECTION = "pymc"
 
@@ -18,7 +18,7 @@ class PyMCSampler(ParallelSampler):
         burn = self.ini.getfloat(PYMC_INI_SECTION, "burn", 0.0)
         self.nsteps = self.ini.getint(PYMC_INI_SECTION, "nsteps", 100)
         self.samples = self.ini.getint(PYMC_INI_SECTION, "samples", 1000)
-        self.verbose = self.ini.getboolean(PYMC_INI_SECTION, "verbose", False)
+        self.verbose = logging.getLogger().level > logging.WARNING
         self.Rconverge = self.ini.getfloat(PYMC_INI_SECTION, "Rconverge", 1.02)
 
         params = self.define_parameters()
@@ -63,6 +63,11 @@ class PyMCSampler(ParallelSampler):
         traces = np.array([[param.denormalize(x)
                            for x in self.mcmc.trace(str(param))]
                            for param in self.pipeline.varied_params]).T
+        for trace in traces:
+            self.output.parameters(trace)
+
+        self.output.log_noisy("Done %d iterations"%self.num_samples)
+
         self.diagnostics.add_traces(traces)
 
         #self.trace["likelihood"] = np.append(self.trace["likelihood"], -0.5*np.array(self.mcmc.trace('deviance')[:]))
