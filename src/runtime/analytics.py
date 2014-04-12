@@ -3,7 +3,7 @@ import sys
 import os
 
 
-class Diagnostics(object):
+class Analytics(object):
     def __init__(self, params, pool=None):
         self.params = params
         self.pool = pool
