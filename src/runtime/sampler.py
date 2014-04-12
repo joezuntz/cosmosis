@@ -45,6 +45,8 @@ class ParallelSampler(Sampler):
         ''' Default to a map-style worker '''
         if self.pool:
             self.pool.wait()
+        else:
+            raise RuntimeError("Worker function called when no parallel pool exists!")
 
     def is_master(self):
         return self.pool is None or self.pool.is_master()
