@@ -52,6 +52,8 @@ CFLAGS=-O3 -g -std=c99 -fPIC -Wall -Wextra -pedantic -I$(SRC_AREA) $(USER_CFLAGS
 LDFLAGS=$(USER_LDFLAGS) -L.
 LDLIBS=$(USER_LDLIBS) -l$(LIBNAME)
 
+PYTHON=python
+
 ifdef MEMCHECK
 	MEMCHECK_CMD=valgrind --error-exitcode=1 --leak-check=yes --errors-for-leak-kinds=definite --track-origins=yes --suppressions=$(SOURCE_DIR)/cosmosis_tests.supp
 else
