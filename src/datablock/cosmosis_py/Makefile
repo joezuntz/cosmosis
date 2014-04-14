@@ -11,3 +11,6 @@ section_names.py: $(SOURCE_DIR)/datablock/generate_sections.py $(SOURCE_DIR)/dat
 	$(PYTHON) $+ "python" $@
 
 include ${COSMOSIS_DIR}/config/rules.mk
+
+library: section_names.py
+

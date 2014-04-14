@@ -11,3 +11,5 @@ cosmosis_section_names.F90: $(SOURCE_DIR)/datablock/generate_sections.py $(SOURC
 	$(PYTHON) $+ "fortran" $@
 
 include ${COSMOSIS_DIR}/config/rules.mk
+
+library: cosmosis_section_names.F90

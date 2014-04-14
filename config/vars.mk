@@ -3,7 +3,8 @@
 
 DOLLAR := $$
 VAR := (MAKECMDGOALS)
-BLD_AREA:=./
+#BLD_AREA:=./
+BLD_AREA:=$(PWD)
 SRC_AREA:=$(firstword $(dir $(MAKEFILE_LIST)))
 
 SRC_TARGETS:=$(TARGETS)
@@ -47,8 +48,9 @@ EXE_TARGETS = $(basename $(OBJ_TARGETS))
 
 CXX=g++
 CC=gcc
-CXXFLAGS=-O3 -g -std=c++11 -fPIC -Wall -Wextra -pedantic -I$(SRC_AREA) $(USER_CXXFLAGS)
-CFLAGS=-O3 -g -std=c99 -fPIC -Wall -Wextra -pedantic -I$(SRC_AREA) $(USER_CFLAGS)
+COMMON_C_FLAGS=-O3 -g -fPIC -Wall -Wextra -pedantic -I$(SRC_AREA) -I$(BUILD_TOP) -I$(COSMOSIS_DIR)/src $(USER_CXXFLAGS)
+CXXFLAGS=$(COMMON_C_FLAGS) -std=c++11
+CFLAGS=$(COMMON_C_FLAGS) -std=c99
 LDFLAGS=$(USER_LDFLAGS) -L.
 LDLIBS=$(USER_LDLIBS) -l$(LIBNAME)
 
