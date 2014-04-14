@@ -1,14 +1,21 @@
 from sampler import Sampler
+import numpy as np
 
-RUNTIME_INI_SECTION = "runtime"
+TEST_INI_SECTION = "test"
 
 
 class TestSampler(Sampler):
+    needs_output = False
+
     def config(self):
         self.converged = False
-        self.fatal_errors = self.ini.getboolean(RUNTIME_INI_SECTION,
+        self.fatal_errors = self.ini.getboolean(TEST_INI_SECTION,
                                                 "fatal-errors",
                                                 default=False)
+        self.save_dir = self.ini.get(TEST_INI_SECTION,
+                                           "save_dir",
+                                           default=False)
+
 
     def execute(self):
         # load initial parameter values
@@ -25,11 +32,8 @@ class TestSampler(Sampler):
                 raise
             print "(Could not get a likelihood) Error:"+str(e)
         try:
-            if self.ini.has_option(RUNTIME_INI_SECTION, "save_dir"):
-                output_data_dir = self.ini.get(RUNTIME_INI_SECTION,
-                                               "save_dir")
-                if output_data_dir:
-                    data.save_to_directory(output_data_dir, clobber=True)
+            if self.save_dir:
+                data.save_to_directory(self.save_dir, clobber=True)
         except Exception as e:
             if self.fatal_errors:
                 raise
