@@ -1,3 +1,5 @@
+import sys
+
 fortran_template = """
 ! This module is auto-generated from the file section_list.txt.
 ! Edit that and then re-make to add your own pre-defined section names.
@@ -40,7 +42,7 @@ def generate_c(section_names, filename):
 	sections = "\n".join('#define {0}_SECTION "{1}"'.format(name.upper(),name) for name in section_names)
 	open(filename,'w').write(c_template.format(sections))
 
-def generate(section_list_filename):
+def generate(section_list_filename, language, output_filename):
 	section_names = []
 	for line in open(section_list_filename):
 		line=line.strip()
@@ -48,10 +50,22 @@ def generate(section_list_filename):
 			continue
 		line=line.split('#')[0].strip()
 		section_names.append(line)
-	generate_c(section_names, 'section_names.h')
-	generate_python(section_names, 'cosmosis_py/section_names.py')
-	generate_fortran(section_names, 'cosmosis_f90/cosmosis_section_names.F90')
 
+	if language == "c":
+		generate_c(section_names, output_filename)
+	elif language == "python":
+		generate_python(section_names, output_filename)
+        elif language == "fortran":
+		generate_fortran(section_names, output_filename)
+	else:
+		print "Unknown language specified: %s" % language
+		sys.exit(2)
 
 if __name__ == '__main__':
-	generate("section_list.txt")
+	# Required syntax is:
+	#   $ python generate_sections.py <template-file> <target-language> <output-file>
+	# 
+	if len(sys.argv) != 4:
+		print "%s requires 4 arguments" % sys.argv[0]
+		sys.exit(1)
+	generate(sys.argv[1], sys.argv[2], sys.argv[3])
