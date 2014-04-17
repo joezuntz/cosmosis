@@ -44,6 +44,8 @@
 #include "section.hh"
 #include "datablock_logging.h"
 
+#define OPTION_SECTION "module_options"
+
 namespace cosmosis
 {
   inline

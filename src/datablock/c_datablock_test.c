@@ -453,10 +453,65 @@ void test_array_int()
   assert(z[1] == 2);
   */
 
+void test_grid(){
+  c_datablock* s = make_c_datablock();
+  printf("In test_grid\n");
+  DATABLOCK_STATUS status; 
+
+  int nx = 50;
+  int ny = 100;
+  double x[nx];
+  double y[ny];
+  double **z = allocate_2d_double(nx, ny);
+
+  for (int i=0; i<nx; i++){
+    x[i] = 100.0 * i;
+  }
+
+  for (int i=0; i<ny; i++){
+    y[i] = -1.0 * i;
+  }
+
+  for (int i=0; i<nx; i++){
+   for (int j=0; j<ny; j++){
+    z[i][j] = x[i] + y[j];
+   }
+  }
+
+
+  status = datablock_put_double_grid(s, "test", 
+  "X", nx, x,
+  "Y", ny, y,
+  "Z", z);
+
+  assert(status==0);
+
+  int na, nb;
+  double *a, *b, **c;
+
+  status =  datablock_get_double_grid(s, "test",
+  "X", &na, &a,
+  "Y", &nb, &b,
+  "Z", &c);
+
+  for (int i=0; i<nx; i++){
+   for (int j=0; j<ny; j++){
+    assert (c[i][j] == x[i] + y[j]);
+   }
+  }
+
+
+  assert(status==0);
+
+
+
+}
+
 
 int main()
 {
   test_sections();
+  test_grid();
 
   test_scalar_int();
   test_scalar_double();

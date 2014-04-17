@@ -745,7 +745,6 @@ if (name == nullptr) return false;
 
 
 
-/*
 DATABLOCK_STATUS  datablock_put_double_grid(
   c_datablock* s,
   const char * section, 
@@ -753,14 +752,26 @@ DATABLOCK_STATUS  datablock_put_double_grid(
   const char * name_y, int n_y, double * y, 
   const char * name_z, double ** z)
 {
-    DATABLOCK_STATUS status=0;
+    DATABLOCK_STATUS status=DBS_SUCCESS;
 
-    int ndim = 2;
-    int dims[2] = {n_x, n_y};
+    // const int ndim = 2;
+    // int dims[ndim] = {n_x, n_y};
 
-    status |= c_datablock_put_double_array_1d(s, section, name_x, x, n_x);
-    status |= c_datablock_put_double_array_1d(s, section, name_y, y, n_y);
-    status |= c_datablock_put_double_array(s, section, name_z, z, ndim, dims);
+    status = c_datablock_put_double_array_1d(s, section, name_x, x, n_x);
+    if (status) {return status;}
+    status = c_datablock_put_double_array_1d(s, section, name_y, y, n_y);
+    if (status) {return status;}
+    // status |= c_datablock_put_double_array(s, section, name_z, z, ndim, dims);
+    int n_z = n_x * n_y;
+    double * z_flat = (double*)malloc(sizeof(double)*n_z);
+    int p=0;
+    for (int i=0; i<n_x; i++){
+      for (int j=0; j<n_y; j++){
+        z_flat[p++] = z[i][j];
+      }
+    }
+    status = c_datablock_put_double_array_1d(s, section, name_z, z_flat, n_z);
+    if (status) {return status;}
 
     // We could rely on n_x and n_y to record in the block what ordering the array has.
     // But that would break down if n_x == n_y
@@ -770,8 +781,24 @@ DATABLOCK_STATUS  datablock_put_double_grid(
     snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
     snprintf(sentinel_value, 512, "%s_cosmosis_%s",name_x, name_y);
 
-    status |= c_datablock_put_string(s, section, sentinel_key, sentinel_value);
+    status = c_datablock_put_string(s, section, sentinel_key, sentinel_value);
     return status;
+}
+
+double ** allocate_2d_double(int nx, int ny){
+  double ** z = (double**)malloc(nx*sizeof(double*));
+  for (int i=0; i<nx; i++){
+    z[i] = (double*)malloc(sizeof(double)*ny);
+  }
+  return z;
+}
+
+void deallocate_2d_double(double *** z, int nx){
+  for (int i=0; i<nx; i++){
+    free((*z)[i]);
+  }
+  free(*z);
+  *z = NULL;
 }
 
 DATABLOCK_STATUS  datablock_get_double_grid(
@@ -782,34 +809,62 @@ DATABLOCK_STATUS  datablock_get_double_grid(
   const char * name_z, double *** z)
 {
     DATABLOCK_STATUS status;
+    *x = NULL;
+    *y = NULL;
+    *z = NULL;
+    int nx, ny;
 
-    status = c_datablock_get_double_array_1d(s, section, name_x, x, n_x);
-    status |= c_datablock_get_double_array_1d(s, section, name_y, y, n_y);
-    int n_z = n_x * n_y;
+    status = c_datablock_get_double_array_1d(s, section, name_x, x, &nx);
+    if (status) {return status;}
+    status = c_datablock_get_double_array_1d(s, section, name_y, y, &ny);
+    if (status) {free(*x); *x=NULL; return status;}
+    int n_z;
+    double * z_flat;
+    status = c_datablock_get_double_array_1d(s, section, name_z, &z_flat, &n_z);
+    if (status) {free(*x); free(*y); *x=NULL; *y=NULL; return status;}
+    double ** z_2d = allocate_2d_double(nx, ny);
+
     //Now we need to check if the ordering requested here is the same
     //as the saved ordering.  If not we need to transpose.
     char sentinel_key[512];
     char * sentinel_value;
-    char * sentinel_test[512];
+    char sentinel_test[512];
 
     snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
-    status |= c_datablock_get_string(s,section, sentinel_key, &sentinel_value);
+    status = c_datablock_get_string(s,section, sentinel_key, &sentinel_value);
+    if (status) {free(*x); free(*y); free(z_flat); *x=NULL; *y=NULL; deallocate_2d_double(&z_2d, nx); return status;}
+
     snprintf(sentinel_test, 512, "%s_cosmosis_%s",name_x, name_y);
-    if (0==strcmp(sentinel_test, sentinel_value, 512)){
+
+    if (0==strncmp(sentinel_test, sentinel_value, 512)){
       // This indicates that the requested ordering is the same as the stored one.
       // So we do not need to do any flipping.
-      NOT FINISHED
-      status |= c_datablock_get_double_array_2d(s, section, name_y, y, n_y);
+      for (int i=0; i<nx; i++){
+        for (int j=0; j<ny; j++){
+          z_2d[i][j] = z_flat[i*ny+j];
+        }
+      }
     }
     else{
-      if (0!=strcmp(sentinel_test, sentinel_value)){
-        //This means something has gone wrong.
+      snprintf(sentinel_test, 512, "%s_cosmosis_%s",name_y, name_x);
+      if (0==strncmp(sentinel_test, sentinel_value, 512)){
+        for (int i=0; i<nx; i++){
+          for (int j=0; j<ny; j++){
+            z_2d[i][j] = z_flat[j*nx+i];
+          }
+        }
       }
-      // If this has worked then everything is fine.
+      else{
+        // no match - something wrong. 
+        if (status) {free(*x); free(*y); free(z_flat); *x=NULL; *y=NULL; deallocate_2d_double(&z_2d, nx); free(sentinel_value); return status;}
+      }
     }
+  *n_x = nx;
+  *n_y = ny;
+  *z = z_2d;
   return status;
 }
-*/
+
 
 
 
