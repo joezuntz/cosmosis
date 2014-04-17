@@ -203,7 +203,13 @@ class DataBlock(object):
 
 
 	def _method_for_value(self, value, method_type):
+		if isinstance(value, np.float32) or isinstance(value, np.float64):
+			value = float(value)
+		if isinstance(value, np.int32) or isinstance(value, np.int64):
+			value = int(value)
+
 		T = type(value)
+
 		method = self._method_for_type(T, method_type)
 		if method: 
 			return method

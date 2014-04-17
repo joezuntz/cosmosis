@@ -171,8 +171,6 @@ class LikelihoodPipeline(Pipeline):
         self.extra_saves = []
         for extra_save in extra_saves.split():
             section, name = extra_save.upper().split('/')
-            if not (section, name) in parameters:
-                raise RuntimeError()
             self.extra_saves.append((section, name))
 
         #pull out all the section names and likelihood names for later
@@ -185,7 +183,7 @@ class LikelihoodPipeline(Pipeline):
     def output_names(self):
         param_names = [str(p) for p in self.varied_params]
         extra_names = ['%s--%s'%p for p in self.extra_saves]
-        return param_names + extra_names
+        return param_names + extra_names + ['LIKE']
 
     def randomized_start(self):
         # should have different randomization strategies

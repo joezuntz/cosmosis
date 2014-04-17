@@ -51,6 +51,8 @@ class CosmoMCOutput(OutputBase):
 
 	def _write_parameters(self, params):
 		line = self.delimiter.join(('%.7E'%x) for x in params) + '\n'
+		multiplicity = 1.0
+		line = ' %f   %s' % (multiplicity,line)
 		self._file.write(line)
 
 	def _write_final(self, key, value, comment=''):

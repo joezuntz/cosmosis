@@ -1,7 +1,7 @@
 import random
 import config
 import prior
-
+import numpy as np
 
 class Parameter(object):
     def __init__(self, section, name, start, limits=None, prior=None):
@@ -18,7 +18,7 @@ class Parameter(object):
         # TODO: check consistency of prior with limits
 
     def __eq__(self, other):
-        if instance(other, (list, tuple)):
+        if isinstance(other, (list, tuple)):
             try:
                 section, name = other
             except ValueError:
@@ -61,7 +61,9 @@ class Parameter(object):
             raise ValueError("parameter value not normalized")
 
     def evaluate_prior(self, p):
-        if self.prior:
+        if p < self.limits[0] or p > self.limits[1]:
+            return -np.inf
+        elif self.prior:
             return self.prior(p)
         else:
             return 0.0

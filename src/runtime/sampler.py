@@ -4,6 +4,7 @@ sampler_registry = {}
 
 
 class Sampler(object):
+    needs_output = True
     class __metaclass__(type):
         def __init__(cls, name, b, d):
             type.__init__(cls, name, b, d)

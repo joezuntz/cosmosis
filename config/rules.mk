@@ -65,7 +65,7 @@ test: $(patsubst %_test,test_%,$(TESTS))
 #
 test_% : %_test
 	@echo -n Running $<
-	@ $(MEMCHECK_CMD) ./$< > $<.log 2>&1
+	@LD_LIBRARY_PATH=.:$(LD_LIBRARY_PATH) $(MEMCHECK_CMD) ./$< > $<.log 2>&1
 	@echo ...  passed	
 
 % : %.o $(LIBRARY)

@@ -1,6 +1,6 @@
 from sampler import ParallelSampler
 import numpy as np
-import diagnostics
+from analytics import Analytics
 import logging
 
 PYMC_INI_SECTION = "pymc"
@@ -53,7 +53,7 @@ class PyMCSampler(ParallelSampler):
         #self.trace = { param:np.array([]) for param in self.pipeline.varied_params }
         #self.trace["likelihood"] = np.array([])
 
-        self.diagnostics = diagnostics.Diagnostics(self.pipeline.varied_params, self.pool)
+        self.analytics = Analytics(self.pipeline.varied_params, self.pool)
 
     def sample(self):
         steps = min(self.nsteps, self.samples - self.num_samples)
@@ -68,7 +68,7 @@ class PyMCSampler(ParallelSampler):
 
         self.output.log_noisy("Done %d iterations"%self.num_samples)
 
-        self.diagnostics.add_traces(traces)
+        self.analytics.add_traces(traces)
 
         #self.trace["likelihood"] = np.append(self.trace["likelihood"], -0.5*np.array(self.mcmc.trace('deviance')[:]))
         #for param in self.pipeline.varied_params:
@@ -98,7 +98,7 @@ class PyMCSampler(ParallelSampler):
             print "samples done"
             return True
         elif self.num_samples > 0 and self.pool is not None:
-            return np.all(self.diagnostics.gelman_rubin() <= self.Rconverge)
+            return np.all(self.analytics.gelman_rubin() <= self.Rconverge)
         else:
             return False
 

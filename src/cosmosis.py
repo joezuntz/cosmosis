@@ -35,36 +35,57 @@ def main(args, pool=None):
     # create pipeline
     pipeline = LikelihoodPipeline(ini) 
 
-    #create the output files and methods
-    output_options = dict(ini.items('output'))
-    # NOTE will need to change this if other non-MPI things are used
-    if pool is not None:
-        output_options['mpi'] = True
-    output = output_module.output_from_options(output_options)
-
-    # create sampler object
+    # determine the type of sampling we want
     sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")
-
     if sample_method not in sampler_registry:
         raise ValueError("Unknown sampler method %s" % (sample_method,))
 
-    if pool:
-        if not issubclass(sampler_registry[sample_method],ParallelSampler):
-            raise ValueError("Sampler does not support parallel execution!")
-        sampler = sampler_registry[sample_method](ini, pipeline, output, pool)
+    #Get that sampler from the system
+    sampler_class = sampler_registry[sample_method]
+
+    #Now that we have a sampler we know whether we will need an
+    #output file or not.  By default new samplers do need one.
+    if sampler_class.needs_output:
+        #create the output files and methods
+        output_options = dict(ini.items('output'))
+        # NOTE will need to change this if other non-MPI things are used
+        #Additionally we tell the output here if
+        #we are parallel or not
+        if pool is not None:
+            output_options['mpi'] = True
+        #Generat the output from a factory
+        output = output_module.output_from_options(output_options)
     else:
-        sampler = sampler_registry[sample_method](ini, pipeline, output)
+        #some samplers, like the test one, do not need an output
+        #file of the usual type.  In fact giving them one would be
+        #a bad idea, because they might over-write something important.
+        #so we just give them none.
+        output = None
+
+    #Initialize our sampler, with the class we got above.
+    #It needs an extra pool argument if it is a ParallelSampler.
+    #All the parallel samplers can also act serially too.
+    if pool:
+        if not issubclass(sampler_class,ParallelSampler):
+            raise ValueError("Sampler does not support parallel execution!")
+        sampler = sampler_class(ini, pipeline, output, pool)
+    else:
+        sampler = sampler_class(ini, pipeline, output)
  
+    #Set up the sampler - for example loading
+    #any resources it needs or checking the ini file
+    #for additional parameters
     sampler.config()
 
+    # Run the sampler until convergence
+    # which really means "finished" here - 
+    # a sampler can "converge" just by reaching the 
+    # limit of the number of samples it is allowed.
     if not pool or pool.is_master():
         while not sampler.is_converged():
             sampler.execute()
     else:
         sampler.worker()
-
-#    if pool:
-#        pool.close()
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)

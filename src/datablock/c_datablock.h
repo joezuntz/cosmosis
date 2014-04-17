@@ -7,11 +7,13 @@
 #include <complex.h>
 #include <stdbool.h>
 
+#define OPTION_SECTION "module_options"
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define OPTION_SECTION "module_options"
 
   /*
     The type c_datablock represents groups of named values.
@@ -268,12 +270,22 @@ extern "C" {
                                int sz);
 
 
+double ** allocate_2d_double(int nx, int ny);
+void deallocate_2d_double(double *** z, int nx);
 
-DATABLOCK_STATUS  datablock_put_double_grid(
+DATABLOCK_STATUS  c_datablock_put_double_grid(
+  c_datablock* s,
   const char * section, 
   const char * name_x, int n_x, double * x,  
   const char * name_y, int n_y, double * y, 
-  double ** P);
+  const char * name_z, double ** z);
+
+DATABLOCK_STATUS  c_datablock_get_double_grid(
+  c_datablock* s,
+  const char * section, 
+  const char * name_x, int *n_x, double ** x,  
+  const char * name_y, int *n_y, double ** y, 
+  const char * name_z, double *** z);
 
 
 

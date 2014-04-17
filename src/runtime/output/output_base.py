@@ -91,7 +91,11 @@ class OutputBase(object):
 			nstandard = len(params)
 			for i in xrange(nstandard,len(self._columns)):
 				name = self._columns[i][0]
-				params.append(extra[name])
+				if name is 'LIKE':
+					params.append(extra[name])
+				else:
+					(section, name) = name.split('--')
+					params.append(extra[section, name])
 		if not len(params)==len(self._columns):
 			raise ValueError("Sampler error - tried to save wrong number of parameters, or failed to set column names")
 		#If this is our first sample then 
