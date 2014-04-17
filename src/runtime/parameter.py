@@ -18,7 +18,7 @@ class Parameter(object):
         # TODO: check consistency of prior with limits
 
     def __eq__(self, other):
-        if instance(other, (list, tuple)):
+        if isinstance(other, (list, tuple)):
             try:
                 section, name = other
             except ValueError:
