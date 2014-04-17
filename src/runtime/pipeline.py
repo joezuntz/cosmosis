@@ -185,7 +185,7 @@ class LikelihoodPipeline(Pipeline):
     def output_names(self):
         param_names = [str(p) for p in self.varied_params]
         extra_names = ['%s--%s'%p for p in self.extra_saves]
-        return param_names + extra_names
+        return param_names + extra_names + ['LIKE']
 
     def randomized_start(self):
         # should have different randomization strategies
