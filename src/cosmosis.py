@@ -35,10 +35,6 @@ def main(args, pool=None):
     # create pipeline
     pipeline = LikelihoodPipeline(ini) 
 
-    #create the output files and methods
-    output_options = dict(ini.items('output'))
-    # NOTE will need to change this if other non-MPI things are used
-
     # determine the type of sampling we want
     sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")
     if sample_method not in sampler_registry:
@@ -50,6 +46,9 @@ def main(args, pool=None):
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.
     if sampler_class.needs_output:
+        #create the output files and methods
+        output_options = dict(ini.items('output'))
+        # NOTE will need to change this if other non-MPI things are used
         #Additionally we tell the output here if
         #we are parallel or not
         if pool is not None:
