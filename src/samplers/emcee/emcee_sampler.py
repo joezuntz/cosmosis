@@ -57,8 +57,5 @@ class EmceeSampler(ParallelSampler):
         self.num_samples += self.nsteps
         self.output.log_info("Done %d iterations", self.num_samples)
 
-        
-
-
     def is_converged(self):
         return self.num_samples >= self.samples
