@@ -171,8 +171,6 @@ class LikelihoodPipeline(Pipeline):
         self.extra_saves = []
         for extra_save in extra_saves.split():
             section, name = extra_save.upper().split('/')
-            if not (section, name) in parameters:
-                raise RuntimeError()
             self.extra_saves.append((section, name))
 
         #pull out all the section names and likelihood names for later
