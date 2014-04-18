@@ -3,7 +3,7 @@
 
 #include "datablock_status.h"
 #include "datablock_types.h"
-#include "section_names.h"
+#include "datablock/section_names.h"
 #include <complex.h>
 #include <stdbool.h>
 
