@@ -479,7 +479,7 @@ void test_grid(){
   }
 
 
-  status = datablock_put_double_grid(s, "test", 
+  status = c_datablock_put_double_grid(s, "test",
   "X", nx, x,
   "Y", ny, y,
   "Z", z);
@@ -489,7 +489,7 @@ void test_grid(){
   int na, nb;
   double *a, *b, **c;
 
-  status =  datablock_get_double_grid(s, "test",
+  status =  c_datablock_get_double_grid(s, "test",
   "X", &na, &a,
   "Y", &nb, &b,
   "Z", &c);
