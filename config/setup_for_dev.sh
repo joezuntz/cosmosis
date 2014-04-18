@@ -31,7 +31,7 @@ export BUILD_TOP=$(pwd -P)
 setup -B scipy v0_13_0b -q +e5:+prof
 
 echo "You are ready to build."
-echo "Use \"make -f \${COSMOSIS_DIR}/src/Makefile build\" and then \"./build\""
+echo "Use \"make -f \${SOURCE_DIR}/Makefile build\" and then \"./build\""
 echo "Use \"./build test\" to execute all the tests"
 echo "Any flags you supply to \"build\" are passed to \"make\""
 
