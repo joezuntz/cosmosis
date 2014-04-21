@@ -13,12 +13,19 @@ class PyMCSampler(ParallelSampler):
         import pymc
         self.pymc = pymc
 
+        self.verbose = logging.getLogger().level > logging.WARNING
+
         # load sampling parameters
         self.num_samples = 0
-        burn = self.ini.getfloat(PYMC_INI_SECTION, "burn", 0.0)
+
         self.nsteps = self.ini.getint(PYMC_INI_SECTION, "nsteps", 100)
         self.samples = self.ini.getint(PYMC_INI_SECTION, "samples", 1000)
-        self.verbose = logging.getLogger().level > logging.WARNING
+        fburn = self.ini.getfloat(PYMC_INI_SECTION, "burn_fraction", 0.0)
+        if not 0.0 <= fburn < 1.0:
+            raise RuntimeError("Error: burn_fraction outside "
+                               "allowed range: %f" % (fburn,))
+
+        self.nburn = int(fburn*self.samples)
         self.Rconverge = self.ini.getfloat(PYMC_INI_SECTION, "Rconverge", 1.02)
 
         params = self.define_parameters()
@@ -42,49 +49,36 @@ class PyMCSampler(ParallelSampler):
             self.mcmc.use_step_method(self.pymc.AdaptiveMetropolis,
                                       params,
                                       cov=covmat,
-                                      interval=100,
-                                      delay=100,
+                                      interval=self.nsteps,
+                                      delay=self.nburn,
                                       verbose=0)
         else:
             for p in params:
                 self.mcmc.use_step_method(self.pymc.Metropolis, p, verbose=0)
 
-        # track trace data for output at end (hack until Output is included)
-        #self.trace = { param:np.array([]) for param in self.pipeline.varied_params }
-        #self.trace["likelihood"] = np.array([])
-
         self.analytics = Analytics(self.pipeline.varied_params, self.pool)
 
     def sample(self):
-        steps = min(self.nsteps, self.samples - self.num_samples)
+        if self.num_samples < self.nburn:
+            steps = min(self.nsteps, self.nburn - self.num_samples)
+        else:
+            steps = min(self.nsteps, self.samples - self.num_samples)
+
+        # take steps MCMC steps
         self.mcmc.sample(steps, progress_bar=False, tune_throughout=False)
         self.num_samples += steps
 
         traces = np.array([[param.denormalize(x)
                            for x in self.mcmc.trace(str(param))]
                            for param in self.pipeline.varied_params]).T
+
+        # TODO: do we output burned samples?
         for trace in traces:
             self.output.parameters(trace)
 
-        self.output.log_noisy("Done %d iterations"%self.num_samples)
-
         self.analytics.add_traces(traces)
 
-        #self.trace["likelihood"] = np.append(self.trace["likelihood"], -0.5*np.array(self.mcmc.trace('deviance')[:]))
-        #for param in self.pipeline.varied_params:
-        #    self.trace[param] = np.append( self.trace[param], np.array([param.denormalize(x) for x in self.mcmc.trace(str(param))]))
-
-        #if self.is_converged():
-        #    if self.pool:
-        #        suffix = "_%02d.txt" % (self.pool.rank,)
-        #    else:
-        #        suffix = ".txt"
-        #
-        #    np.savetxt("likelihood"+suffix, self.trace["likelihood"])
-        #    min_index = np.argmin(self.trace["likelihood"])
-        #    for param in self.pipeline.varied_params:
-        #        print param, self.trace[param][min_index], np.mean(self.trace[param]), np.std(self.trace[param])
-        #        np.savetxt(str(param)+suffix, self.trace[param])
+        self.output.log_noisy("Done %d iterations"%self.num_samples)
 
     def worker(self):
         while not self.is_converged():
@@ -95,7 +89,6 @@ class PyMCSampler(ParallelSampler):
 
     def is_converged(self):
         if self.num_samples >= self.samples:
-            print "samples done"
             return True
         elif self.num_samples > 0 and self.pool is not None:
             return np.all(self.analytics.gelman_rubin() <= self.Rconverge)
