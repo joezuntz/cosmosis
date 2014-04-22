@@ -19,6 +19,10 @@
 #   1) dependencies for targets are not automatically generated.
 #
 #----------------------------------------------------------------------
+CC=gcc
+CXX=g++
+F90=gfortran
+
 CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 CCFLAGS=-std=c99 -O0 -Wall -Wextra -pedantic -fPIC -g
