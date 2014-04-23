@@ -19,6 +19,9 @@ class MaxlikeSampler(Sampler):
         import scipy.optimize
 
         def likefn(p_in):
+            #Check the normalization
+            if np.any(p_in<0) or np.any(p_in>1):
+                return np.inf
             p = self.pipeline.denormalize_vector(p_in)
             like, extra = self.pipeline.likelihood(p)
             return -like
