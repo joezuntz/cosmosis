@@ -1,4 +1,5 @@
 
+
 define subdirs_macro
 	@for d in $(SUBDIRS); \
 	do \
@@ -11,13 +12,17 @@ endef
 all: library $(MODULES) $(EXE_TARGETS) build_tests
 	$(subdirs_macro)
 
+# $(BUILD_TOP)/lib is the directory into which we build all dynamic libraries
+$(BUILD_TOP)/lib:
+	@echo "Creating $(BUILD_TOP)/lib"
+	@mkdir -p $(BUILD_TOP)/lib
+
 library: $(LIBRARY)
 	$(subdirs_macro)
 
-$(LIBRARY): $(OBJ_LIB)
-	@echo Working in directory $${PWD}
-	@echo Building library from $(OBJ_LIB)
-	$(LINK.cc) -shared -o $@ $+ $(USER_LDLIBS)
+$(LIBRARY): $(OBJ_LIB) $(BUILD_TOP)/lib
+	@echo Linking library $(LIBRARY) from $(OBJ_LIB)
+	$(LINK.cc) -shared -o $@ $(OBJ_LIB) $(USER_LDLIBS)
 
 build: ${COSMOSIS_DIR}/config/rules.mk
 	@echo "#!/usr/bin/env bash" > $@
@@ -83,6 +88,16 @@ test_% : %_test
 	$(LINK.c) -o $@ $< $(LDLIBS)
 	@echo done with $@ $<
 
+%_test : $(SRC_AREA)%_test.F90 $(LIBRARY)
+	@echo Building test from $<
+	$(LINK.f) -o $@ $< $(LDLIBS)
+	@echo done with $@ $<
+
+%_test : $(SRC_AREA)%_test.f90 $(LIBRARY)
+	@echo Building test from $<
+	$(LINK.f) -o $@ $< $(LDLIBS)
+	@echo done with $@ $<
+
 %_module.so: %_module.o $(LIBRARY)
 	@echo Building module from $<
 	$(LINK.cc) -shared -o $@ $+ $(USER_LDLIBS)
@@ -98,11 +113,11 @@ test_% : %_test
 # We include some fixes for old infelicities.
 # Thanks, Chris.
 define postprocess_d
-test -f $(dir $@)$(basename $(notdir $<)).d && \
-cat $(dir $@)$(basename $(notdir $<)).d | \
-sed 's?$*\.o?$(dir $@)$*.o ?g' > \
-dep_tmp.$$$$ ; \
-mv dep_tmp.$$$$ $(dir $@)$(basename $(notdir $<)).d
+	@test -f $(dir $@)$(basename $(notdir $<)).d && \
+	cat $(dir $@)$(basename $(notdir $<)).d | \
+	sed 's?$*\.o?$(dir $@)$*.o ?g' > \
+	dep_tmp.$$$$ ; \
+	mv dep_tmp.$$$$ $(dir $@)$(basename $(notdir $<)).d
 endef
 
 %.o : $(SRC_AREA)%.cc
@@ -115,6 +130,12 @@ endef
 	$(COMPILE.c) -MMD -o $@ $<
 	$(postprocess_d)
 
-#-include $(SRCS:%.c=$(DEPDIR)/%.P)
-#-include $(SRC_ALL:%.c=$(DEPDIR)/%.d)
+%.o : $(SRC_AREA)%.F90
+	@echo Compiling source $<
+	$(COMPILE.F) -MMD -o $@ $<
+
+%.o : $(SRC_AREA)%.f90
+	@echo Compiling source $<
+	$(COMPILE.f) -MMD -o $@ $<
+
 -include $(foreach x,$(notdir $(basename $(SRC_ALL))),$(DEPDIR)$(x).d)
