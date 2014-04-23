@@ -183,8 +183,7 @@ module cosmosis_modules
         c_default = default
         status = c_datablock_get_bool_default_wrapper(block, &
             trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, c_default, c_value)
-        c_value = value
-
+        value = c_value
     end function datablock_get_logical_default
 
 
