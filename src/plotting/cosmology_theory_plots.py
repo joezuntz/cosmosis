@@ -177,6 +177,9 @@ class TEPlot(CMBSpectrumPlot):
 
 class BBPlot(CMBSpectrumPlot):
 	name = filename = "bb"
+	def plot(self):
+		super(BBPlot,self).plot()
+		pylab.xlim(0,400)
 
 class GrandPlot(Plot):
 	"Grand CMB plot with all four spectra"

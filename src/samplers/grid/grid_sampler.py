@@ -8,8 +8,7 @@ GRID_INI_SECTION = "grid"
 
 
 def task(p):
-    posterior, extra = pipeline.posterior(p)
-    return posterior
+    return pipeline.posterior(p)
 
 
 class GridSampler(ParallelSampler):
@@ -32,7 +31,8 @@ class GridSampler(ParallelSampler):
         else:
             results = map(task, samples)
 
-        print zip(samples, results)
+        for sample, (prob, extra) in zip(samples, results):
+            self.output.parameters(sample, extra)
         self.converged = True
 
     def is_converged(self):

@@ -40,17 +40,26 @@ class PyMCSampler(ParallelSampler):
                                           'params': params},
                                    db='ram', verbose=0)
 
+        try:
+            covmat = self.load_covariance_matrix()
+        except IOError:
+            covmat = None
+
         # determine step method
         self.do_adaptive = self.ini.getboolean(PYMC_INI_SECTION,
                                                "adaptive_mcmc",
                                                False)
         if self.do_adaptive:
-            covmat = self.load_covariance_matrix()
+            delay = 100
+        else:
+            delay = 10000000000
+
+        if covmat is not None:
             self.mcmc.use_step_method(self.pymc.AdaptiveMetropolis,
                                       params,
                                       cov=covmat,
                                       interval=self.nsteps,
-                                      delay=self.nburn,
+                                      delay=delay,
                                       verbose=0)
         else:
             for p in params:
