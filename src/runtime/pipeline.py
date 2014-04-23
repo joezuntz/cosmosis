@@ -13,6 +13,7 @@ import prior
 import module
 from cosmosis_py import block
 import cosmosis_py.section_names
+import collections
 
 
 PIPELINE_INI_SECTION = "pipeline"
@@ -211,7 +212,7 @@ class LikelihoodPipeline(Pipeline):
 
     def run_parameters(self, p, check_ranges=False):
         if check_ranges:
-            if self.is_out_of_range(params_by_section):
+            if self.is_out_of_range(p):
                 return None
 
         data = block.DataBlock()
@@ -228,6 +229,23 @@ class LikelihoodPipeline(Pipeline):
             return data
         else:
             return None
+
+    def create_ini(self, p, filename):
+        "Dump the specified parameters as a new ini file"
+        output = collections.defaultdict(list)
+        for param, x in zip(self.varied_params, p):
+            output[param.section].append("%s  =  %r    %r    %r\n" % (
+                param.name, param.limits[0], x, param.limits[1]))
+        for param in self.fixed_params:
+            output[param.section].append("%s  =  %r\n" % (param.name, param.start))
+        ini = open(filename, 'w')
+        for section, params in sorted(output.items()):
+            ini.write("[%s]\n"%section)
+            for line in params:
+                ini.write(line)
+            ini.write("\n")
+        ini.close()
+
 
     def prior(self, p):
         return sum([param.evaluate_prior(x) for param, x in
@@ -270,7 +288,7 @@ class LikelihoodPipeline(Pipeline):
             try:
                 #JAZ - should this be just .get(*option) ?
                 value = data.get_double(*option)
-            except BlockError:
+            except block.BlockError:
                 value = np.nan
 
             extra_saves[option] = value

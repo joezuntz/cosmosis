@@ -12,6 +12,8 @@ class MaxlikeSampler(Sampler):
                                            "tolerance", 1e-3)
         self.maxiter = self.ini.getint(MAXLIKE_INI_SECTION,
                                        "maxiter", 1000)
+        self.output_ini = self.ini.get(MAXLIKE_INI_SECTION,
+                                       "output_ini", "")
 
         self.converged = False
 
@@ -24,6 +26,7 @@ class MaxlikeSampler(Sampler):
                 return np.inf
             p = self.pipeline.denormalize_vector(p_in)
             like, extra = self.pipeline.likelihood(p)
+            self.output.log_debug("%s  like=%le"%('   '.join(str(x) for x in p),like))
             return -like
 
         start_vector = np.array([param.normalize(param.start)
@@ -36,7 +39,20 @@ class MaxlikeSampler(Sampler):
                                        maxiter=self.maxiter)
 
         opt = self.pipeline.denormalize_vector(opt_norm)
-        print opt
+        
+        like, extra = self.pipeline.likelihood(opt)
+
+        #Some output - first log the parameters to the screen.
+        #It's not really a warning - that's just a level name
+        self.output.log_warning("Best fit:\n%s"%'   '.join(str(x) for x in opt))
+
+        #Next save them to the proper table file
+        self.output.parameters(opt, extra)
+
+        #And finally, if requested, create a new ini file for the
+        #best fit.
+        if self.output_ini:
+          self.pipeline.create_ini(opt, self.output_ini)
 
         self.converged = True
 

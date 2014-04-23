@@ -4,6 +4,9 @@ import numpy as np
 INI_SECTION = "gridmax"
 
 def task(p):
+    #pipeline here refers to a global variable
+    #created later.  This is the only way we know
+    #to get MPI task sharing to work
     return pipeline.posterior(p)
 
 
@@ -16,6 +19,8 @@ class GridMaxSampler(ParallelSampler):
         if self.is_master():
             self.nsteps = self.ini.getint(INI_SECTION, "nsteps", 24)
             self.tolerance = self.ini.getfloat(INI_SECTION, "tolerance", 0.1)
+            self.output_ini = self.ini.get(INI_SECTION,
+                                           "output_ini", "")
             self.ndim = len(self.pipeline.varied_params)
             self.p = self.pipeline.normalize_vector(self.pipeline.start_vector())
             self.dimension = 0
@@ -94,10 +99,15 @@ class GridMaxSampler(ParallelSampler):
             self.previous_maxlike = self.maxlike
             self.maxlike = results[best][0]
 
-        self.output.log_noisy("New best fit L = %lf at %s = %lf"%(posteriors.max(), self.pipeline.varied_params[d].name,points[best][d]))
+        self.output.log_noisy("New best fit L = %lf at %s = %le"%(posteriors.max(), self.pipeline.varied_params[d].name,points[best][d]))
 
         #and go on to the next dimension
         self.dimension = (d+1)%self.ndim
+
+        if self.is_converged() and self.output_ini:
+            self.pipeline.create_ini(points[best], self.output_ini)
+
+
 
     def is_converged(self):
         return self.dimension==1 and (0<self.maxlike-self.previous_maxlike<self.tolerance)
