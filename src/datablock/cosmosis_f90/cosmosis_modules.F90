@@ -521,6 +521,38 @@ module cosmosis_modules
  !   end function datablock_replace_complex_array_1d
  
 
+    function datablock_put_double_grid(s, section, &
+        name_x, x, name_y, y, name_z, z) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: s
+        character(*) :: section, name_x, name_y, name_z
+        integer :: nz
+        real(8) :: x(:), y(:), z(:,:)
+        real(8), allocatable, dimension(:) :: z_flat
+        character(512) :: sentinel_key, sentinel_value
+
+        status = 0
+
+        status = status + datablock_put_double_array_1d(s, section, name_x, x)
+        status = status + datablock_put_double_array_1d(s, section, name_x, y)
+        nz = size(z)
+
+        ! Save z as 1D for now, since 2D not ready
+        allocate(z_flat(nz))
+        z_flat = reshape(z, shape(z_flat))
+        status = status + datablock_put_double_array_1d(s, section, name_z, z_flat)
+        deallocate(z_flat)
+
+        write(sentinel_key, '("_cosmosis_order_", A)') trim(name_z)
+        write(sentinel_value, '(A,"_cosmosis_order_", A)') trim(name_x), trim(name_y)
+
+        status = status + datablock_put_string(s, section, trim(sentinel_key), trim(sentinel_value))
+    end function datablock_put_double_grid
+
+
+
+
+
     !Create a datablock.
     !Unless you are writing a sampler you should not
     !have to use this function - you will be given the 
