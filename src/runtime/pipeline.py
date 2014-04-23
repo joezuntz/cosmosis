@@ -202,7 +202,7 @@ class LikelihoodPipeline(Pipeline):
         return np.array([param.normalize(x) for param, x
                          in zip(self.varied_params, p)])
 
-    def start_vector(self, p):
+    def start_vector(self):
         return np.array([param.start for
                          param in self.varied_params])
 
