@@ -55,10 +55,7 @@ class Parameter(object):
             return (p - self.limits[0]) / (self.limits[1] - self.limits[0])
 
     def denormalize(self, p):
-        if 0.0 <= p <= 1.0:
-            return p*(self.limits[1]-self.limits[0]) + self.limits[0]
-        else:
-            raise ValueError("parameter value not normalized")
+        return p*(self.limits[1]-self.limits[0]) + self.limits[0]
 
     def evaluate_prior(self, p):
         if p < self.limits[0] or p > self.limits[1]:
