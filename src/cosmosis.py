@@ -30,10 +30,10 @@ class ParseExtraParameters(argparse.Action):
 
 def main(args, pool=None):
     # load configuration 
-    ini = Inifile(args.inifile, override=args.variables)
+    ini = Inifile(args.inifile, override=args.params)
 
     # create pipeline
-    pipeline = LikelihoodPipeline(ini) 
+    pipeline = LikelihoodPipeline(ini, override=args.variables) 
 
     # determine the type of sampling we want
     sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")

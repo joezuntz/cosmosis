@@ -142,9 +142,10 @@ class Pipeline(object):
 
 class LikelihoodPipeline(Pipeline):
     def __init__(self, arg=None, id="", debug=False,
-                 quiet=True, timing=False):
+                 quiet=True, timing=False, override=None):
         super(LikelihoodPipeline, self).__init__(arg=arg, quiet=quiet,
-                                                 debug=debug, timing=timing)
+                                                 debug=debug, timing=timing,
+                                                 )
 
         if id:
             self.id_code = "[%s] " % str(id)
@@ -157,7 +158,9 @@ class LikelihoodPipeline(Pipeline):
                                         "priors", "").split()
 
         self.parameters = parameter.Parameter.load_parameters(values_file,
-                                                              priors_files)
+                                                              priors_files,
+                                                              override,
+                                                              )
 
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]

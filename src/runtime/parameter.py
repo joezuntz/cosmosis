@@ -69,7 +69,7 @@ class Parameter(object):
             return 0.0
 
     @staticmethod
-    def load_parameters(value_file, priors_files=None):
+    def load_parameters(value_file, priors_files=None, override=None):
         values_ini = config.Inifile(value_file)
 
         if priors_files:
@@ -79,11 +79,16 @@ class Parameter(object):
 
         parameters = []
         for (section, name), value in values_ini:
+            #override if available
+            if (override is not None) and (section, name) in override:
+                value = override[(section,name)]
+
             # parse value line
             start, limits = Parameter.parse_parameter(value)
 
             # check for prior
             prior = priors.get((section, name), None)
+
 
             parameters.append(Parameter(section, name,
                                         start, limits, prior))
