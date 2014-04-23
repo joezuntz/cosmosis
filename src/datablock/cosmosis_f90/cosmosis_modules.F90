@@ -10,6 +10,24 @@ module cosmosis_modules
     integer, parameter :: DATABLOCK_MAX_STRING_LENGTH=256
     character(*), parameter :: option_section = "module_options"
 
+    interface datablock_put
+        module procedure datablock_put_int, datablock_put_double, &
+            datablock_put_logical, datablock_put_complex, datablock_put_double_array_1d, &
+            datablock_put_int_array_1d, datablock_put_string
+    end interface
+
+    interface datablock_get
+        module procedure datablock_get_int, datablock_get_double, &
+            datablock_get_logical, datablock_get_complex, datablock_get_double_array_1d, &
+            datablock_get_int_array_1d, datablock_get_string
+    end interface
+
+    interface datablock_replace
+        module procedure datablock_replace_int, datablock_replace_double, &
+            datablock_replace_logical, datablock_replace_complex, datablock_replace_double_array_1d, &
+            datablock_replace_int_array_1d, datablock_replace_string
+    end interface
+
     contains
 
 
