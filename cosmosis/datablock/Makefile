@@ -84,7 +84,14 @@ cosmosis_py/section_names.py: section_list.txt generate_sections.py
 
 .PHONY: test_datablock test_c_datablock test_section test_entry test_fortran test clean test_python 
 
-libcosmosis_fortran.so: libcosmosis.so cosmosis_f90/cosmosis_section_names.F90 cosmosis_f90/cosmosis_types.F90 cosmosis_f90/cosmosis_wrappers.F90 cosmosis_f90/cosmosis_modules.F90    
+# This rule will make us recompile the Fortran source code that goes into
+# libcomsosis_fortran.so every time that libcosmosis.so changes, when really
+# we should only have to relink libcomsosis_fortran.so from the
+# already-generated object files. However, this rule also does away with the
+# problem of generating dependencies for the Fortran modules within
+# libcomsosis_fortran.so. The tradeoff is worthwhile, unless so many source
+# files are added that the build time is excessive.
+libcosmosis_fortran.so: cosmosis_f90/cosmosis_section_names.F90 cosmosis_f90/cosmosis_types.F90 cosmosis_f90/cosmosis_wrappers.F90 cosmosis_f90/cosmosis_modules.F90 libcosmosis.so
 	$(FC) $(FFLAGS) -shared -o $@ $+
 
 fortran_t: libcosmosis_fortran.so  cosmosis_f90/cosmosis_test.F90
