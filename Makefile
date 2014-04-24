@@ -1,5 +1,4 @@
-#SUBDIRS = src cosmosis-standard-library
-SUBDIRS = src
+SUBDIRS = src cosmosis-standard-library
 
 # Include the standard variables and rules.
 include ${COSMOSIS_DIR}/config/vars.mk
