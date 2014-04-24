@@ -1,4 +1,4 @@
-#include "datablock/c_datablock.h"
+#include "cosmosis/datablock/c_datablock.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

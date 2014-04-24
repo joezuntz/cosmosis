@@ -24,8 +24,15 @@ then
     return 1
 fi
 
+if [ -z "$COSMOSIS_UPS_DIR" ]
+then
+    echo "The environment variable COSMOSIS_UPS_DIR must be set prior to setting up cosmosis"
+    return 1
+fi
+source $COSMOSIS_UPS_DIR/setup
+
+
 export COSMOSIS_DIR="$cosmosis_dir"
-export SOURCE_DIR=$COSMOSIS_DIR/src
 export BUILD_TOP=$(pwd -P)
 
 lib_dir="${BUILD_TOP}/lib"

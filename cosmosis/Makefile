@@ -1,20 +1,4 @@
-<<<<<<< HEAD
-SUBDIRS = datablock
-=======
-include ../config/compilers.mk
-include ../config/subdirs.mk
->>>>>>> 71ab551d29cbcdd111379af01291c059ca01efab
+include ${COSMOSIS_DIR}/config/compilers.mk
+include ${COSMOSIS_DIR}/config/subdirs.mk
 
 SUBDIRS=datablock
-
-.PHONY: all
-
-all:
-	$(process_subdirs)
-
-test:
-	$(process_subdirs)
-
-clean:
-	@echo Cleaning in $$(PWD)
-	$(process_subdirs)

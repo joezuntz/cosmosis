@@ -61,7 +61,7 @@ include $(COSMOSIS_DIR)/config/compilers.mk
 LDLIBS=$(USER_LDLIBS) -l$(LIBNAME)
 
 ifdef MEMCHECK
-	MEMCHECK_CMD=valgrind --error-exitcode=1 --leak-check=yes --errors-for-leak-kinds=definite --track-origins=yes --suppressions=$(SOURCE_DIR)/cosmosis_tests.supp
+	MEMCHECK_CMD=valgrind --error-exitcode=1 --leak-check=yes --errors-for-leak-kinds=definite --track-origins=yes --suppressions=${COSMOSIS_DIR}/cosmosis_tests.supp
 else
   MEMCHECK_CMD=
 endif

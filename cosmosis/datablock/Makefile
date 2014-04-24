@@ -1,22 +1,6 @@
 include ../../config/compilers.mk
-include ../../config/subdirs.mk
 
 SUBDIRS=
-
-.PHONY: all
-
-all:
-	$(process_subdirs)
-
-test:
-	$(process_subdirs)
-
-clean:
-	@echo Cleaning in $$(PWD)
-	rm -f *.o *~ *.so c_datablock_t *.log entry_t section_t datablock_t
-	rm -rf *.dSYM
-	rm -rf section_names.h cosmosis_py/section_names.py cosmosis_f90/cosmosis_section_names.F90
-	$(process_subdirs)
 
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
