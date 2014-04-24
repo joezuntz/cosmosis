@@ -1,5 +1,18 @@
-SUBDIRS = datablock example-modules
+include ../config/compilers.mk
+include ../config/subdirs.mk
 
-# Include the standard variables and rules.
-include ${COSMOSIS_DIR}/config/vars.mk
-include ${COSMOSIS_DIR}/config/rules.mk
+SUBDIRS=datablock
+
+.PHONY: all
+
+all:
+	$(process_subdirs)
+
+test:
+	$(process_subdirs)
+
+clean:
+	$(process_subdirs)
+
+
+

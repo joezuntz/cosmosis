@@ -7,3 +7,5 @@ section_t
 entry_t
 *~
 datablock_t
+fortran_t
+section_names.h

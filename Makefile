@@ -1,5 +1,25 @@
-SUBDIRS = src cosmosis-standard-library
 
-# Include the standard variables and rules.
-include ${COSMOSIS_DIR}/config/vars.mk
-include ${COSMOSIS_DIR}/config/rules.mk
+include config/compilers.mk
+
+SUBDIRS=cosmosis
+
+.PHONY: all
+
+all: 
+	$(process_subdirs)
+
+test:
+	$(process_subdirs)
+
+clean:
+	$(process_subdirs)
+
+
+include config/subdirs.mk
+
+#CC=gcc
+#F90=gfortran
+#FFLAGS=-ffree-line-length-none -I ../../../datablock  -I
+#../../../../../ -O0 -g
+#LDFLAGS= -L../../../datablock -lcosmosis_fortran -lcosmosis
+#CFLAGS=-DHAS_RTLD_DEFAULT -I ../../../../ -I ../../../datablock  -O0 -g
