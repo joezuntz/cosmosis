@@ -1,4 +1,4 @@
-SUBDIRS = datablock example-modules
+SUBDIRS = datablock
 
 # Include the standard variables and rules.
 include ${COSMOSIS_DIR}/config/vars.mk

@@ -1,4 +1,4 @@
-USER_CFLAGS = -I${COSMOSIS_DIR}/src
+USER_CFLAGS = -I${COSMOSIS_DIR}/cosmosis
 USER_LDFLAGS = -L../../datablock
 USER_LDLIBS = -lcosmosis
 
