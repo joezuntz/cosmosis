@@ -779,7 +779,7 @@ DATABLOCK_STATUS  c_datablock_put_double_grid(
     char sentinel_value[512];
 
     snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
-    snprintf(sentinel_value, 512, "%s_cosmosis_%s",name_x, name_y);
+    snprintf(sentinel_value, 512, "%s_cosmosis_order_%s",name_x, name_y);
 
     status = c_datablock_put_string(s, section, sentinel_key, sentinel_value);
     return status;
@@ -834,19 +834,19 @@ DATABLOCK_STATUS  c_datablock_get_double_grid(
     status = c_datablock_get_string(s,section, sentinel_key, &sentinel_value);
     if (status) {free(*x); free(*y); free(z_flat); *x=NULL; *y=NULL; deallocate_2d_double(&z_2d, nx); return status;}
 
-    snprintf(sentinel_test, 512, "%s_cosmosis_%s",name_x, name_y);
-
+    snprintf(sentinel_test, 512, "%s_cosmosis_order_%s",name_x, name_y);
     if (0==strncmp(sentinel_test, sentinel_value, 512)){
       // This indicates that the requested ordering is the same as the stored one.
       // So we do not need to do any flipping.
       for (int i=0; i<nx; i++){
         for (int j=0; j<ny; j++){
           z_2d[i][j] = z_flat[i*ny+j];
+            if (i==0) printf("IN %d  %le\n", j, z_2d[i][j]);
         }
       }
     }
     else{
-      snprintf(sentinel_test, 512, "%s_cosmosis_%s",name_y, name_x);
+      snprintf(sentinel_test, 512, "%s_cosmosis_order_%s",name_y, name_x);
       if (0==strncmp(sentinel_test, sentinel_value, 512)){
         for (int i=0; i<nx; i++){
           for (int j=0; j<ny; j++){
@@ -856,9 +856,19 @@ DATABLOCK_STATUS  c_datablock_get_double_grid(
       }
       else{
         // no match - something wrong. 
-        if (status) {free(*x); free(*y); free(z_flat); *x=NULL; *y=NULL; deallocate_2d_double(&z_2d, nx); free(sentinel_value); return status;}
+        status = DBS_WRONG_VALUE_TYPE;
+        free(*x); 
+        free(*y); 
+        free(z_flat); 
+        *x=NULL; 
+        *y=NULL; 
+        deallocate_2d_double(&z_2d, nx);
+        free(sentinel_value);     
+        return status;
       }
     }
+  free(z_flat);
+
   *n_x = nx;
   *n_y = ny;
   *z = z_2d;
