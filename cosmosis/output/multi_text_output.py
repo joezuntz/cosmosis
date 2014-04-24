@@ -3,12 +3,6 @@ import utils
 import numpy as np
 import os
 
-try:
-	import astropy.table
-except:
-	astropy = None
-
-
 CHAIN_NAME = 'chain_%d.txt'
 
 
