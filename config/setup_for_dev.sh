@@ -28,6 +28,16 @@ export COSMOSIS_DIR="$cosmosis_dir"
 export SOURCE_DIR=$COSMOSIS_DIR/src
 export BUILD_TOP=$(pwd -P)
 
+lib_dir="${BUILD_TOP}/lib"
+# What operating system are we using?
+flavor=$(ups flavor -1)
+if [ "$flavor" == "Darwin64bit" ]
+then
+    export DYLD_LIBRARY_PATH=${lib_dir}:$DYLD_LIBRARY_PATH
+else
+    export LD_LIBRARY_PATH=${lib_dir}:$LD_LIBRARY_PATH
+fi
+
 setup -B scipy v0_13_0b -q +e5:+prof
 
 echo "You are ready to build."
