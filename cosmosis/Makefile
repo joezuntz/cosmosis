@@ -12,7 +12,5 @@ test:
 	$(process_subdirs)
 
 clean:
+	@echo Cleaning in $$(PWD)
 	$(process_subdirs)
-
-
-

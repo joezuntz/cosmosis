@@ -12,6 +12,7 @@ test:
 	$(process_subdirs)
 
 clean:
+	@echo Cleaning in $$(PWD)
 	rm -f *.o *~ *.so c_datablock_t *.log entry_t section_t datablock_t
 	rm -rf *.dSYM
 	rm -rf section_names.h cosmosis_py/section_names.py cosmosis_f90/cosmosis_section_names.F90

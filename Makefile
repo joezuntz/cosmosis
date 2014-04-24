@@ -1,7 +1,7 @@
 
 include config/compilers.mk
 
-SUBDIRS=cosmosis
+SUBDIRS=cosmosis cosmosis-standard-library
 
 .PHONY: all
 
