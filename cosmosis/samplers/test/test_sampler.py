@@ -1,4 +1,4 @@
-from sampler import Sampler
+from .. import Sampler
 import numpy as np
 
 TEST_INI_SECTION = "test"

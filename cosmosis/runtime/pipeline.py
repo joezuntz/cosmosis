@@ -4,6 +4,7 @@ import sys
 import string
 import numpy as np
 import time
+import collections
 import ConfigParser
 
 import utils
@@ -11,9 +12,8 @@ import config
 import parameter
 import prior
 import module
-from cosmosis_py import block
-import cosmosis_py.section_names
-import collections
+from cosmosis.datablock.cosmosis_py import block
+import cosmosis.datablock.cosmosis_py.section_names
 
 
 PIPELINE_INI_SECTION = "pipeline"

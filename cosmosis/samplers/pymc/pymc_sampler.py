@@ -1,6 +1,6 @@
-from sampler import ParallelSampler
+from .. import ParallelSampler
 import numpy as np
-from analytics import Analytics
+from cosmosis.runtime.analytics import Analytics
 import logging
 
 PYMC_INI_SECTION = "pymc"

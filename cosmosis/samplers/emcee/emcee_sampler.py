@@ -1,4 +1,4 @@
-from sampler import ParallelSampler
+from .. import ParallelSampler
 
 EMCEE_INI_SECTION = "emcee"
 

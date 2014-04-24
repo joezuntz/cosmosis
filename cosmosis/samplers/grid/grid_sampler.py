@@ -1,7 +1,7 @@
 import itertools
 import numpy as np
 
-from sampler import ParallelSampler
+from .. import ParallelSampler
 
 
 GRID_INI_SECTION = "grid"

@@ -1,5 +1,3 @@
-import config
-
 sampler_registry = {}
 
 
