@@ -551,7 +551,7 @@ module cosmosis_modules
         status = 0
 
         status = status + datablock_put_double_array_1d(s, section, name_x, x)
-        status = status + datablock_put_double_array_1d(s, section, name_x, y)
+        status = status + datablock_put_double_array_1d(s, section, name_y, y)
         nz = size(z)
 
         ! Save z as 1D for now, since 2D not ready
@@ -561,7 +561,7 @@ module cosmosis_modules
         deallocate(z_flat)
 
         write(sentinel_key, '("_cosmosis_order_", A)') trim(name_z)
-        write(sentinel_value, '(A,"_cosmosis_order_", A)') trim(name_x), trim(name_y)
+        write(sentinel_value, '(A,"_cosmosis_order_", A)') trim(name_y), trim(name_x)
 
         status = status + datablock_put_string(s, section, trim(sentinel_key), trim(sentinel_value))
     end function datablock_put_double_grid
