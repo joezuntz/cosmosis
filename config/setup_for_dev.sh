@@ -34,7 +34,7 @@ source $COSMOSIS_UPS_DIR/setup
 
 export COSMOSIS_DIR="$cosmosis_dir"
 
-lib_dir="${COSMOSIS_DIR}/datablock"
+lib_dir="${COSMOSIS_DIR}/cosmosis/datablock"
 # What operating system are we using?
 flavor=$(ups flavor -1)
 if [ "$flavor" == "Darwin64bit" ]
