@@ -33,9 +33,8 @@ source $COSMOSIS_UPS_DIR/setup
 
 
 export COSMOSIS_DIR="$cosmosis_dir"
-export BUILD_TOP=$(pwd -P)
 
-lib_dir="${BUILD_TOP}/lib"
+lib_dir="${COSMOSIS_DIR}/datablock"
 # What operating system are we using?
 flavor=$(ups flavor -1)
 if [ "$flavor" == "Darwin64bit" ]
@@ -47,10 +46,10 @@ fi
 
 setup -B scipy v0_13_0b -q +e5:+prof
 
-echo "You are ready to build."
-echo "Use \"make -f \${SOURCE_DIR}/Makefile build\" and then \"./build\""
-echo "Use \"./build test\" to execute all the tests"
-echo "Any flags you supply to \"build\" are passed to \"make\""
+#echo "You are ready to build."
+#echo "Use \"make -f \${SOURCE_DIR}/Makefile build\" and then \"./build\""
+#echo "Use \"./build test\" to execute all the tests"
+#echo "Any flags you supply to \"build\" are passed to \"make\""
 
 
 
