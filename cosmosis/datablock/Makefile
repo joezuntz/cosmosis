@@ -1,6 +1,7 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-SUBDIRS=
+USER_CFLAGS=$(PEDANTIC_C_FLAGS)
+USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
