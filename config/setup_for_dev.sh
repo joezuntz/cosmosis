@@ -60,4 +60,4 @@ setup -B scipy v0_13_0b -q +e5:+prof
 setup -B gsl v1_16 -q +prof
 setup -B cfitsio v3_35_0 -q +prof
 setup -B pyfits v3_2a -q +e5:+prof
-
+setup -B wmapdata v5_00
