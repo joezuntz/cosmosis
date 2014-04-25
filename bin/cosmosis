@@ -3,16 +3,11 @@
 import sys
 import argparse
 
-# TODO: better search path handling or python module configuration
-sys.path.append("runtime")
-sys.path.append("datablock")
-
-from config import Inifile
-from pipeline import LikelihoodPipeline
-import mpi_pool
-from sampler import sampler_registry, ParallelSampler
-import samplers
-import output as output_module
+from cosmosis.runtime.config import Inifile
+from cosmosis.runtime.pipeline import LikelihoodPipeline
+import cosmosis.runtime.mpi_pool as mpi_pool
+import cosmosis.samplers as samplers
+import cosmosis.output as output_module
 
 
 RUNTIME_INI_SECTION = "runtime"
