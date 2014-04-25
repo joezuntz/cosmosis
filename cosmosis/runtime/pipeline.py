@@ -13,7 +13,7 @@ import parameter
 import prior
 import module
 from cosmosis.datablock.cosmosis_py import block
-import cosmosis.datablock.cosmosis_py.section_names
+import cosmosis.datablock.cosmosis_py as cosmosis_py
 
 
 PIPELINE_INI_SECTION = "pipeline"
