@@ -7,12 +7,12 @@ import argparse
 sys.path.append("runtime")
 sys.path.append("datablock")
 
-from config import Inifile
-from pipeline import LikelihoodPipeline
-import mpi_pool
-from sampler import sampler_registry, ParallelSampler
-import samplers
-import output as output_module
+from cosmosis.runtime.config import Inifile
+from cosmosis.runtime.pipeline import LikelihoodPipeline
+from cosmosis.runtime import mpi_pool
+from cosmosis.samplers.sampler import sampler_registry, ParallelSampler
+from cosmosis import output as output_module
+#import cosmosis.runtime.output as output_module
 
 
 RUNTIME_INI_SECTION = "runtime"
