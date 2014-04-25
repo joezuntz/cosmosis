@@ -587,7 +587,6 @@ module cosmosis_modules
         n=len(trim(s))
         do i=1,n
             ic = index(upper, s(i:i))
-            write(*,*) i, ic, n, s
             if (ic>0) s(i:i) = lower(ic:ic)
         enddo
     end subroutine lowercase_ascii
