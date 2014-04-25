@@ -203,13 +203,11 @@ class MatterPowerPlot(Plot):
 		z = self.load_file(section, "z")
 		p = self.load_file(section, "p_k")
 		values = self.load_values(section)
-		nk = values['nk']
-		nz = values['nz']
-		kh = kh.reshape((nk, nz))
-		z  = z.reshape((nk, nz))
-		p  = p.reshape((nk, nz))
-		z0 = (z==0)
-		pylab.loglog(kh[z0], p[z0], label=label)
+		nk = len(kh)
+		nz = len(z)
+		#soon this will be saved as a 2D array!
+		p  = p.reshape((nz, nk)).T
+		pylab.loglog(kh, p[:,0], label=label)
 
 	def plot(self):
 		super(MatterPowerPlot, self).plot()
