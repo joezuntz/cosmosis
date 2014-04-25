@@ -13,3 +13,4 @@ src/datablock/cosmosis_section_names.mod
 src/datablock/section_names.h
 cosmosis-standard-library/
 *.mod
+plots/*.png
