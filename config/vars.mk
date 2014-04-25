@@ -1,3 +1,4 @@
+$(error "vars.mk is obsolete; you should not be using it")
 
 # --- internal environment
 

@@ -3,53 +3,59 @@
 # your current working directory is the top-level directory for your
 # build.
 
-USAGE="Usage: source setup_for_dev.sh path-to-cosmosis-source"
+USAGE="Usage: source setup_for_dev.sh path-to-UPS-product-directory"
 
 if [ "$#" == "0" ]; then
     echo $USAGE
     return 1
 fi
 
-cosmosis_dir=$1
+product_db=$1
 
-if [ !  -d "$cosmosis_dir" ]
+if [ !  -d "$product_db" ]
 then
-    echo "The directory $cosmosis_dir does not exist"
+    echo "The directory $product_db does not exist."
     return 1
 fi
 
-if [ ! -f "$cosmosis_dir/config/rules.mk" ]
+if [ ! -f "$product_db/setups" ]
 then
-    echo "The directory $cosmosis_dir does not appear to contain the CosmoSIS source code"
+    echo "The directory $product_db does not appear to contain the UPS products."
     return 1
 fi
 
-if [ -z "$COSMOSIS_UPS_DIR" ]
+export COSMOSIS_SRC_DIR="$PWD"
+
+libdir=${COSMOSIS_SRC_DIR}/lib
+if [ ! -d ${libdir} ]
 then
-    echo "The environment variable COSMOSIS_UPS_DIR must be set prior to setting up cosmosis"
+    mkdir -p ${libdir}
+fi
+
+if [ ! -d ${libdir} ]
+then
+    echo "Failed to create the 'lib' directory under $PWD"
+    echo "Perhaps the directory is not writable."
     return 1
 fi
-source $COSMOSIS_UPS_DIR/setup
 
+source $product_db/setups
+if [ -z "$PRODUCTS" ]
+then
+    echo "The setup of the UPS system has failed; please ask a local expert for assistance."
+    return 1
+fi
 
-export COSMOSIS_DIR="$cosmosis_dir"
+# Set the library path appropriate for our flavor.
 
-lib_dir="${COSMOSIS_DIR}/cosmosis/datablock"
-# What operating system are we using?
 flavor=$(ups flavor -1)
 if [ "$flavor" == "Darwin64bit" ]
 then
-    export DYLD_LIBRARY_PATH=${lib_dir}:$DYLD_LIBRARY_PATH
+    export DYLD_LIBRARY_PATH=${libdir}:$DYLD_LIBRARY_PATH
 else
-    export LD_LIBRARY_PATH=${lib_dir}:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=${libdir}:$LD_LIBRARY_PATH
 fi
 
 setup -B scipy v0_13_0b -q +e5:+prof
-
-#echo "You are ready to build."
-#echo "Use \"make -f \${SOURCE_DIR}/Makefile build\" and then \"./build\""
-#echo "Use \"./build test\" to execute all the tests"
-#echo "Any flags you supply to \"build\" are passed to \"make\""
-
 
 

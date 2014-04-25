@@ -538,7 +538,7 @@ module cosmosis_modules
  !   end function datablock_replace_complex_array_1d
  
 
-    function datablock_put_double_grid(s, section, &
+    function c_datablock_put_double_grid(s, section, &
         name_x, x, name_y, y, name_z, z) result(status)
         integer(cosmosis_status) :: status
         integer(cosmosis_block) :: s
@@ -564,7 +564,7 @@ module cosmosis_modules
         write(sentinel_value, '(A,"_cosmosis_order_", A)') trim(name_y), trim(name_x)
 
         status = status + datablock_put_string(s, section, trim(sentinel_key), trim(sentinel_value))
-    end function datablock_put_double_grid
+    end function c_datablock_put_double_grid
 
 
 

@@ -1,4 +1,4 @@
-include ${COSMOSIS_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
 SUBDIRS=
 
@@ -24,7 +24,7 @@ all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t e
 lib: libcosmosis.so cosmosis_py/section_names.py
 
 clean:
-	@rm -f *.o *.d *.so *.log
+	@rm -f *.o *.d *.so *.log *.mod cosmosis_f90/*.mod cosmosis_f90/*.o
 
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi

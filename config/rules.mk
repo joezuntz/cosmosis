@@ -1,4 +1,4 @@
-
+$(error "rules.mk is obsolete; you should not be using it")
 
 #define subdirs_macro
 #	@for d in $(SUBDIRS); \
