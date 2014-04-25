@@ -1,6 +1,4 @@
-#SUBDIRS = src cosmosis-standard-library
-SUBDIRS = src
+include config/compilers.mk
+include config/subdirs.mk
 
-# Include the standard variables and rules.
-include ${COSMOSIS_DIR}/config/vars.mk
-include ${COSMOSIS_DIR}/config/rules.mk
+SUBDIRS=cosmosis example-modules cosmosis-standard-library

@@ -12,3 +12,4 @@ src/datablock/cosmosis_py/section_names.py
 src/datablock/cosmosis_section_names.mod
 src/datablock/section_names.h
 cosmosis-standard-library/
+*.mod

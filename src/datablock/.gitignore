@@ -1,9 +1,0 @@
-c_datablock_t
-*.log
-*.o
-*.so
-*.dylib
-section_t
-entry_t
-*~
-datablock_t

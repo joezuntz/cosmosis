@@ -1,10 +1,16 @@
 
 
+#define subdirs_macro
+#	@for d in $(SUBDIRS); \
+#	do \
+#	  (mkdir -p $$d && cd $$d && make -f $(SRC_AREA)$$d/Makefile $@); \
+#	done
+#endef
 define subdirs_macro
-	@for d in $(SUBDIRS); \
-	do \
-	  (mkdir -p $$d && cd $$d && make -f $(SRC_AREA)$$d/Makefile $@); \
-	done
+   @for d in $(SUBDIRS); \
+   do \
+     (cd $$d && make -f $(SRC_AREA)$$d/Makefile $@); \
+   done
 endef
 
 # ----- internal rules

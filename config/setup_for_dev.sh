@@ -24,11 +24,17 @@ then
     return 1
 fi
 
-export COSMOSIS_DIR="$cosmosis_dir"
-export SOURCE_DIR=$COSMOSIS_DIR/src
-export BUILD_TOP=$(pwd -P)
+if [ -z "$COSMOSIS_UPS_DIR" ]
+then
+    echo "The environment variable COSMOSIS_UPS_DIR must be set prior to setting up cosmosis"
+    return 1
+fi
+source $COSMOSIS_UPS_DIR/setup
 
-lib_dir="${BUILD_TOP}/lib"
+
+export COSMOSIS_DIR="$cosmosis_dir"
+
+lib_dir="${COSMOSIS_DIR}/cosmosis/datablock"
 # What operating system are we using?
 flavor=$(ups flavor -1)
 if [ "$flavor" == "Darwin64bit" ]
@@ -40,10 +46,10 @@ fi
 
 setup -B scipy v0_13_0b -q +e5:+prof
 
-echo "You are ready to build."
-echo "Use \"make -f \${SOURCE_DIR}/Makefile build\" and then \"./build\""
-echo "Use \"./build test\" to execute all the tests"
-echo "Any flags you supply to \"build\" are passed to \"make\""
+#echo "You are ready to build."
+#echo "Use \"make -f \${SOURCE_DIR}/Makefile build\" and then \"./build\""
+#echo "Use \"./build test\" to execute all the tests"
+#echo "Any flags you supply to \"build\" are passed to \"make\""
 
 
 
