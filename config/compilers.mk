@@ -11,6 +11,6 @@ COMMON_C_FLAGS=$(COMMON_FLAGS) -I${COSMOSIS_SRC_DIR}
 PEDANTIC_C_FLAGS=-Wall -Wextra -pedantic
 CXXFLAGS=$(COMMON_C_FLAGS) $(USER_CXXFLAGS) -std=c++11
 CFLAGS=$(COMMON_C_FLAGS) $(USER_CFLAGS) -std=c99
-FFLAGS=$(COMMON_FLAGS) -J${COSMOSIS_SRC_DIR}/cosmosis/datablock $(USER_FFLAGS) -std=gnu -fimplicit-none  -ffree-line-length-none
+FFLAGS=$(COMMON_FLAGS) -I${COSMOSIS_SRC_DIR}/cosmosis/datablock $(USER_FFLAGS) -std=gnu -ffree-line-length-none
 LDFLAGS=$(USER_LDFLAGS) -L${COSMOSIS_SRC_DIR}/cosmosis/datablock
 PYTHON=python
