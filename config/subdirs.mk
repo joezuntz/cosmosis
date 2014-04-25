@@ -5,7 +5,7 @@ define process_subdirs
 	done
 endef
 
-.PHONY: all
+.PHONY: all clean test
 
 all: 
 	$(process_subdirs)
