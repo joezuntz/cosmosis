@@ -26,18 +26,18 @@ fi
 
 export COSMOSIS_SRC_DIR="$PWD"
 
-libdir=${COSMOSIS_SRC_DIR}/lib
-if [ ! -d ${libdir} ]
-then
-    mkdir -p ${libdir}
-fi
-
-if [ ! -d ${libdir} ]
-then
-    echo "Failed to create the 'lib' directory under $PWD"
-    echo "Perhaps the directory is not writable."
-    return 1
-fi
+libdir=${COSMOSIS_SRC_DIR}/cosmosis/datablock
+#if [ ! -d ${libdir} ]
+#then
+#    mkdir -p ${libdir}
+#fi
+#
+#if [ ! -d ${libdir} ]
+#then
+#    echo "Failed to create the 'lib' directory under $PWD"
+#    echo "Perhaps the directory is not writable."
+#    return 1
+#fi
 
 source $product_db/setups
 if [ -z "$PRODUCTS" ]
@@ -55,6 +55,9 @@ then
 else
     export LD_LIBRARY_PATH=${libdir}:$LD_LIBRARY_PATH
 fi
+
+export PATH=${COSMOSIS_SRC_DIR}/bin:$PATH
+export PYTHONPATH=${COSMOSIS_SRC_DIR}:$PYTHONPATH
 
 setup -B scipy v0_13_0b -q +e5:+prof
 setup -B gsl v1_16 -q +prof
