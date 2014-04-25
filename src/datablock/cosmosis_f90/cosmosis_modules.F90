@@ -539,16 +539,23 @@ module cosmosis_modules
  
 
     function datablock_put_double_grid(s, section, &
-        name_x, x, name_y, y, name_z, z) result(status)
+        x_name, x, y_name, y, z_name, z) result(status)
         integer(cosmosis_status) :: status
         integer(cosmosis_block) :: s
-        character(*) :: section, name_x, name_y, name_z
+        character(*) :: section, x_name, y_name, z_name
+        character(256) :: name_x, name_y, name_z
         integer :: nz
         real(8) :: x(:), y(:), z(:,:)
         real(8), allocatable, dimension(:) :: z_flat
         character(512) :: sentinel_key, sentinel_value
 
         status = 0
+        name_x = x_name
+        name_y = y_name
+        name_z = z_name
+        call lowercase_ascii(name_x)
+        call lowercase_ascii(name_y)
+        call lowercase_ascii(name_z)
 
         status = status + datablock_put_double_array_1d(s, section, name_x, x)
         status = status + datablock_put_double_array_1d(s, section, name_y, y)
@@ -566,6 +573,84 @@ module cosmosis_modules
         status = status + datablock_put_string(s, section, trim(sentinel_key), trim(sentinel_value))
     end function datablock_put_double_grid
 
+    !There appears to be no intrinsic to do this!
+    !This does mean our code will not work for non-ascii characters
+    !When this becomes an issue because Mandarin becomes the international
+    !Lingua Franca then we should probably switch to wrapping
+    !something from libc.
+    subroutine lowercase_ascii(s)
+        character(*) :: s
+        integer i,n, ic
+        character(26), parameter :: lower = "abcdefghijklmnopqrstuvwxyz"
+        character(26), parameter :: upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+        n=len(trim(s))
+        do i=1,n
+            ic = index(upper, s(i:i))
+            write(*,*) i, ic, n, s
+            if (ic>0) s(i:i) = lower(ic:ic)
+        enddo
+    end subroutine lowercase_ascii
+
+    function datablock_get_double_grid(s, section, &
+        x_name, x, y_name, y, z_name, z) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: s
+        character(*) :: section, x_name, y_name, z_name
+        character(256) :: name_x, name_y, name_z
+        integer :: nx, ny, nz
+        real(8), allocatable :: x(:), y(:), z(:,:), z_T(:,:)
+        real(8), allocatable, dimension(:) :: z_flat
+        character(512) :: sentinel_key, sentinel_value
+
+        status = 0
+
+        name_x = x_name
+        name_y = y_name
+        name_z = z_name
+
+
+        call lowercase_ascii(name_x)
+        call lowercase_ascii(name_y)
+        call lowercase_ascii(name_z)
+
+
+        status = status + datablock_get_double_array_1d(s, section, name_x, x, nx)
+        status = status + datablock_get_double_array_1d(s, section, name_y, y, ny)
+        status = status + datablock_get_double_array_1d(s, section, name_z, z_flat, nz)
+
+        allocate(z(nx,ny))
+
+        !Ordering check
+        write(sentinel_key, '("_cosmosis_order_", A)') trim(name_z)
+        status = status + datablock_get_string(s, section, sentinel_key, sentinel_value)
+
+        if (status .ne. 0) then
+            if (allocated(x)) deallocate(x)
+            if (allocated(y)) deallocate(y)
+            if (allocated(z_flat)) deallocate(z_flat)
+            return
+        endif
+
+        if (sentinel_value==(trim(name_y) // "_cosmosis_order_" // trim(name_x))) then
+            !Simple ordering
+            z = reshape(z_flat, shape(z))
+        elseif (sentinel_value==(trim(name_x) // "_cosmosis_order_" // trim(name_y))) then
+            !Need to transpose first
+            allocate(z_T(ny,nx))
+            z_T = reshape(z_flat, shape(z_T))
+            z = transpose(z_T)
+            deallocate(z_T)
+        else
+            !Something went wrong
+            write(*,*) "Marker error", trim(sentinel_key), "  ",trim(sentinel_value)
+            write(*,*) (trim(name_y) // "_cosmosis_order_" // trim(name_x))
+            write(*,*) (trim(name_x) // "_cosmosis_order_" // trim(name_y))
+            status = 8
+        endif
+
+        if (allocated(z_flat)) deallocate(z_flat)    
+    end function datablock_get_double_grid
 
 
 
