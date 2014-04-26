@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <complex.h>
 #include <string.h>
+#include <iostream>
 
 #include "datablock.hh"
 #include "section.hh"
@@ -841,7 +842,6 @@ DATABLOCK_STATUS  c_datablock_get_double_grid(
       for (int i=0; i<nx; i++){
         for (int j=0; j<ny; j++){
           z_2d[i][j] = z_flat[i*ny+j];
-            if (i==0) printf("IN %d  %le\n", j, z_2d[i][j]);
         }
       }
     }
@@ -876,7 +876,15 @@ DATABLOCK_STATUS  c_datablock_get_double_grid(
 }
 
 
-
+DATABLOCK_STATUS
+c_datablock_report_failures(c_datablock* s)
+{
+  if (s == nullptr) return DBS_DATABLOCK_NULL;
+  auto p = static_cast<DataBlock*>(s);
+  std::cerr << "Error log:" << std::endl;
+  p->report_failures(std::cerr);
+  return DBS_SUCCESS;
+}
 
 
 } // extern "C"
