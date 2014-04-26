@@ -380,3 +380,8 @@ class DataBlock(object):
 				for s in scalar_outputs:
 					f.write("%s = %r\n"%s)
 				f.close()
+	def report_failures(self):
+		status = lib.c_datablock_report_failures(self._ptr)
+		if status!=0:
+			raise BlockError.exception_for_status(status, "", "")
+

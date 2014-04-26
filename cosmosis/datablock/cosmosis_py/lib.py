@@ -135,3 +135,11 @@ load_library_function(
 	[c_block, c_str],
 	ct.c_int
 	)
+
+
+load_library_function(
+	locals(),
+	"c_datablock_report_failures",
+	[c_block],
+	ct.c_int
+	)
