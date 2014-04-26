@@ -74,9 +74,9 @@ class Module(object):
         if not self.is_python:
             data_block = data_block._ptr
         if self.data:
-            self.execute_function(data_block, self.data)
+            return self.execute_function(data_block, self.data)
         else:
-            self.execute_function(data_block)
+            return self.execute_function(data_block)
 
     def cleanup(self):
         if self.cleanup_function:
