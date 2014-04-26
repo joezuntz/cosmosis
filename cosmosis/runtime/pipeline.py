@@ -20,7 +20,7 @@ PIPELINE_INI_SECTION = "pipeline"
 
 
 class Pipeline(object):
-    def __init__(self, arg=None, quiet=True, debug=False, timing=False):
+    def __init__(self, arg=None):
         """ Initialize with a single filename or a list of them,
             a ConfigParser, or nothing for an empty pipeline"""
         if arg is None:
@@ -31,9 +31,9 @@ class Pipeline(object):
         else:
             self.options = config.Inifile(arg)
 
-        self.quiet = quiet
-        self.debug = debug
-        self.timing = timing
+        self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
+        self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
+        self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
 
         # initialize modules
         self.modules = []
@@ -102,51 +102,44 @@ class Pipeline(object):
             module.cleanup()
 
     def run(self, data_package):
-        if self.timing:
-            timings = [time.clock()]
-
         for module in self.modules:
             if self.debug:
-                sys.stdout.write("Running %.20s ... " % module)
+                sys.stdout.write("Running %.20s ...\n" % module)
                 sys.stdout.flush()
+            if self.timing:
+                t1 = time.clock()
 
             status = module.execute(data_package)
+            if self.debug:
+                sys.stdout.write("Done %.20s status = %d \n" % (module,status))
+                sys.stdout.flush()
 
             if self.timing:
-                timings.append(time.clock())
+                t2 = time.clock()
+                sys.stdout.write("%s took: %f seconds\n"% (module,t2-t1))
 
             if status:
                 if not self.quiet:
                     sys.stderr.write("Error running pipeline (%d)- "
-                                     "hopefully printed above here.\n")
+                                     "hopefully printed above here.\n"%status)
                     sys.stderr.write("Aborting this run and returning "
                                      "error status.\n")
-
-                    if self.timing:
-                        sys.stdout.write("Module timing:\n")
-                        for name, t2, t1 in zip(self.module_names[:],
-                                                timings[1:], timings[:-1]):
-                            sys.stdout.write("%s %f\n" % (name, t2-t1))
+                if self.debug:
+                    sys.stderr.write("Block error log follows\n")
+                    sys.stdout.flush()
+                    data_package.report_failures()
                 return None
 
         if not self.quiet:
             sys.stdout.write("Pipeline ran okay.\n")
-
-        if self.timing:
-            sys.stdout.write("Module timing:\n")
-            for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
-                sys.stdout.write("%s %f\n" % (name, t2-t1))
 
         # return something
         return True
 
 
 class LikelihoodPipeline(Pipeline):
-    def __init__(self, arg=None, id="", debug=False,
-                 quiet=True, timing=False, override=None):
-        super(LikelihoodPipeline, self).__init__(arg=arg, quiet=quiet,
-                                                 debug=debug, timing=timing,
-                                                 )
+    def __init__(self, arg=None, id="",override=None):
+        super(LikelihoodPipeline, self).__init__(arg=arg)
 
         if id:
             self.id_code = "[%s] " % str(id)
