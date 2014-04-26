@@ -166,8 +166,10 @@ cosmosis::DataBlock::get_val(std::string section,
     log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(val));
     return DBS_SECTION_NOT_FOUND;
   }
-  log_access(BLOCK_LOG_READ, section, name, typeid(val));
-  return isec->second.get_val(name, val);
+  DATABLOCK_STATUS status = isec->second.get_val(name, val);
+  if (status==DBS_SUCCESS) log_access(BLOCK_LOG_READ, section, name, typeid(val));
+  else log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(val));
+  return status;
 }
 
 template <class T>
@@ -186,7 +188,10 @@ cosmosis::DataBlock::get_val(std::string section,
       return DBS_SUCCESS;
     }
   log_access(BLOCK_LOG_READ, section, name, typeid(val));
-  return isec->second.get_val(name, def, val);
+  DATABLOCK_STATUS status = isec->second.get_val(name, def, val);
+  if (status==DBS_SUCCESS) log_access(BLOCK_LOG_READ, section, name, typeid(val));
+  else log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(val));
+  return status;
 }
 
 template <class T>
