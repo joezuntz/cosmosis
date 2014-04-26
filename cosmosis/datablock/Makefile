@@ -1,6 +1,7 @@
-include ${COSMOSIS_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-SUBDIRS=
+USER_CFLAGS=$(PEDANTIC_C_FLAGS)
+USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
@@ -24,7 +25,8 @@ all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t e
 lib: libcosmosis.so cosmosis_py/section_names.py
 
 clean:
-	@rm -f *.o *.d *.so *.log
+	rm -f *.o *.d *.so *.log *.mod cosmosis_f90/*.mod cosmosis_f90/*.o
+	rm -rf  libcosmosis_fortran.so.dSYM/*
 
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi

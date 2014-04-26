@@ -3,9 +3,6 @@
 import sys
 import argparse
 
-# TODO: better search path handling or python module configuration
-sys.path.append("runtime")
-sys.path.append("datablock")
 
 from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.pipeline import LikelihoodPipeline
@@ -13,7 +10,6 @@ from cosmosis.runtime import mpi_pool
 from cosmosis.samplers.sampler import sampler_registry, ParallelSampler
 from cosmosis import output as output_module
 #import cosmosis.runtime.output as output_module
-
 
 RUNTIME_INI_SECTION = "runtime"
 
@@ -37,11 +33,11 @@ def main(args, pool=None):
 
     # determine the type of sampling we want
     sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")
-    if sample_method not in sampler_registry:
+    if sample_method not in samplers.sampler_registry:
         raise ValueError("Unknown sampler method %s" % (sample_method,))
 
     #Get that sampler from the system
-    sampler_class = sampler_registry[sample_method]
+    sampler_class = samplers.sampler_registry[sample_method]
 
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.
