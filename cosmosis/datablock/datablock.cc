@@ -114,3 +114,22 @@ void cosmosis::DataBlock::log_access(const std::string& log_type,
   auto entry = log_entry(log_type, section, name, type);
   access_log_.push_back(entry);
 }
+
+void cosmosis::DataBlock::report_failures(std::ostream &output)
+{
+   for (auto L=access_log_.begin(); L!=access_log_.end(); ++L){
+      auto l = *L;
+      auto access_type = std::get<0>(l);
+      auto section = std::get<1>(l);
+      auto name = std::get<2>(l);
+      if(access_type==BLOCK_LOG_READ_FAIL){
+        output << "Failed to read " << name << " from " << section << std::endl;
+      }
+      if(access_type==BLOCK_LOG_WRITE_FAIL){
+        output << "Failed to write " << name << " into " << section << std::endl;
+      }
+      if(access_type==BLOCK_LOG_REPLACE_FAIL){
+        output << "Failed to replace " << name << " into " << section << std::endl;
+      }
+    }
+  }

@@ -39,6 +39,7 @@
 #include <string>
 #include <map>
 #include <cctype>
+#include <ostream>
 
 #include "datablock_status.h"
 #include "section.hh"
@@ -141,6 +142,7 @@ namespace cosmosis
     T const& view(std::string section, std::string name) const;
 
     void print_log();
+    void report_failures(std::ostream &output);
 
   private:
     std::map<std::string, Section> sections_;
