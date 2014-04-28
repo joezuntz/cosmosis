@@ -3,8 +3,12 @@
 # Note: this currently only supports bash
 
 # detect COSMOSIS_SRC_DIR
-cosmosis_dir=$( (cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
-cosmosis_dir=${cosmosis_dir%/config}
+if [ -n "$COSMOSIS_SRC_DIR" ]
+then
+  cosmosis_dir=$( (cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
+  cosmosis_dir=${cosmosis_dir%/config}
+  export COSMOSIS_SRC_DIR="$cosmosis_dir"
+fi
 
 # allow user to override UPS directory
 if [ "$#" != "0" ]; then
@@ -23,8 +27,6 @@ then
     echo "The directory $product_db does not appear to contain the UPS products."
     return 1
 fi
-
-export COSMOSIS_SRC_DIR="$cosmosis_dir"
 
 # initialize UPS
 source $product_db/setups
