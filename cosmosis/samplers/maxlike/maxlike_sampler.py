@@ -29,12 +29,13 @@ class MaxlikeSampler(Sampler):
             self.output.log_debug("%s  like=%le"%('   '.join(str(x) for x in p),like))
             return -like
 
-        start_vector = np.array([param.normalize(param.start)
-                                 for param in self.pipeline.varied_params])
+        #starting position in the normalized space
+        start_vector = self.pipeline.normalize_vector(self.pipeline.start_vector())
+
 
         opt_norm = scipy.optimize.fmin(likefn,
                                        start_vector,
-                                       xtol=self.tolerance,
+                                       ftol=self.tolerance,
                                        disp=False,
                                        maxiter=self.maxiter)
 
