@@ -20,7 +20,9 @@ else
   MEMCHECK_CMD=
 endif
 
-all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t entry_t fortran_t cosmosis_py/section_names.py
+all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t entry_t \
+	c_datablock_int_array_t c_datablock_double_array_t c_datablock_complex_array_t \
+	fortran_t cosmosis_py/section_names.py
 
 lib: libcosmosis.so cosmosis_py/section_names.py
 
