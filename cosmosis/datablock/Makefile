@@ -32,46 +32,51 @@ verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
 
 test:  test_entry test_section test_datablock test_c_datablock \
-	test_c_datablock_int_array test_c_datablock_double_array \
+	test_c_datablock_int_array test_c_datablock_double_array test_c_datablock_complex_array \
 	test_fortran
 
 test_datablock: lib datablock_t
-	@echo -n Running datablock_t
+	@echo -n "Running datablock_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./datablock_t > datablock_t.log
 	@echo  ... passed
 
 test_c_datablock: lib c_datablock_t
-	@echo -n Running c_datablock_t
+	@echo -n "Running c_datablock_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_t > c_datablock_t.log
 	@echo  ... passed
 
 test_c_datablock_int_array: lib c_datablock_int_array_t
-	@echo -n Running c_datablock_int_array_t
+	@echo -n "Running c_datablock_int_array_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_int_array_t > c_datablock_int_array_t.log
 	@echo  ... passed
 
 test_c_datablock_double_array: lib c_datablock_double_array_t
-	@echo -n Running c_datablock_double_array_t
+	@echo -n "Running c_datablock_double_array_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_double_array_t > c_datablock_double_array_t.log
 	@echo  ... passed
 
+test_c_datablock_complex_array: lib c_datablock_complex_array_t
+	@echo -n "Running c_datablock_complex_array_t "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_complex_array_t > c_datablock_complex_array_t.log
+	@echo  ... passed
+
 test_section: lib section_t
-	@echo -n Running section_t
+	@echo -n "Running section_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./section_t >  section_t.log
 	@echo  ... passed
 
 test_entry: lib entry_t
-	@echo -n Running entry_t
+	@echo -n "Running entry_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@echo  ... passed
 
 test_fortran: fortran_t
-	@echo -n Running fortran_t
+	@echo -n "Running fortran_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./fortran_t >  fortran_t.log
 	@echo  ... passed
 
 test_python: 
-	@echo -n Running python tests - needs nose package
+	@echo -n "Running python tests - needs nose package "
 	@nosetests cosmosis_py &> python_t.log
 	@echo ... passed
 
@@ -112,6 +117,9 @@ c_datablock_int_array_t: c_datablock_int_array_test.c c_datablock.h libcosmosis.
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
 c_datablock_double_array_t: c_datablock_double_array_test.c c_datablock.h libcosmosis.so
+	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
+
+c_datablock_complex_array_t: c_datablock_complex_array_test.c c_datablock.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
 entry_t: entry_test.o libcosmosis.so
