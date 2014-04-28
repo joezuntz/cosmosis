@@ -31,7 +31,9 @@ clean:
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
 
-test:  test_entry test_section test_datablock test_c_datablock test_fortran
+test:  test_entry test_section test_datablock test_c_datablock \
+	test_c_datablock_int_array test_c_datablock_double_array \
+	test_fortran
 
 test_datablock: lib datablock_t
 	@echo -n Running datablock_t
@@ -41,6 +43,16 @@ test_datablock: lib datablock_t
 test_c_datablock: lib c_datablock_t
 	@echo -n Running c_datablock_t
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_t > c_datablock_t.log
+	@echo  ... passed
+
+test_c_datablock_int_array: lib c_datablock_int_array_t
+	@echo -n Running c_datablock_int_array_t
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_int_array_t > c_datablock_int_array_t.log
+	@echo  ... passed
+
+test_c_datablock_double_array: lib c_datablock_double_array_t
+	@echo -n Running c_datablock_double_array_t
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_double_array_t > c_datablock_double_array_t.log
 	@echo  ... passed
 
 test_section: lib section_t
@@ -95,6 +107,12 @@ datablock_t: datablock_test.cc datablock.hh libcosmosis.so
 
 c_datablock_t: c_datablock_test.c  test_c_datablock_scalars.h c_datablock.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ c_datablock_test.c -L . -lcosmosis
+
+c_datablock_int_array_t: c_datablock_int_array_test.c c_datablock.h libcosmosis.so
+	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
+
+c_datablock_double_array_t: c_datablock_double_array_test.c c_datablock.h libcosmosis.so
+	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
 entry_t: entry_test.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis

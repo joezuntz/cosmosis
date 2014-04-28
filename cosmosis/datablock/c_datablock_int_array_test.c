@@ -1,70 +1,12 @@
 #include "c_datablock.h"
-
-
 #include <assert.h>
+#include <malloc.h>
 #include <limits.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-void test_sections()
-{
-  c_datablock* s = make_c_datablock();
-
-  /* Null pointers should not cause crashes. */
-  assert(c_datablock_has_section(NULL, NULL) == false);
-  assert(c_datablock_has_section(s, NULL) == false);
-  assert(c_datablock_num_sections(NULL) == -1);
-  assert(c_datablock_has_value(NULL, NULL, NULL) == false);
-  assert(c_datablock_has_value(s, NULL, NULL) == false);
-  assert(c_datablock_has_value(s, "boo", NULL) == false);
-
-  assert(c_datablock_has_section(s, "cow") == false);
-  assert(c_datablock_num_sections(s) == 0);
-
-  assert(c_datablock_get_array_length(NULL, NULL, NULL) == -1);
-  assert(c_datablock_get_array_length(s, NULL, NULL) == -1);
-  assert(c_datablock_get_array_length(s, "no such section", NULL) == -1);
-
-  /* Creating a parameter in a section must create the section. */
-  assert(c_datablock_put_int(s, "s1", "a", 10) == DBS_SUCCESS);
-  assert(c_datablock_has_section(s, "s1") == true);
-  assert(c_datablock_num_sections(s) == 1);
-  assert(c_datablock_has_value(s, "s1", "a") == true);
-  assert(c_datablock_has_value(s, "no such section", "a") == false);
-  assert(c_datablock_has_value(s, "s1", "no such parameter") == false);
-
-  /* Make a few more sections. */
-  assert(c_datablock_put_int(s, "s2", "a", 10) == DBS_SUCCESS);
-  assert(c_datablock_put_int(s, "s3", "a", 10) == DBS_SUCCESS);
-  assert(c_datablock_put_double(s, "s4", "a", 10.5) == DBS_SUCCESS);
-  const int expected_sections = 4;
-  assert(c_datablock_num_sections(s) == expected_sections);
-
-  /* Make sure all the section names are what we expect. We make the
-     calls out-of-order intentionally.
-   */
-  assert(strcmp(c_datablock_get_section_name(s, 3), "s4") == 0);
-  assert(strcmp(c_datablock_get_section_name(s, 0), "s1") == 0);
-  assert(strcmp(c_datablock_get_section_name(s, 2), "s3") == 0);
-  assert(strcmp(c_datablock_get_section_name(s, 1), "s2") == 0);
-  assert(c_datablock_get_section_name(s, -1) == NULL);
-  assert(c_datablock_get_section_name(s, 4) == NULL);
-
-  destroy_c_datablock(s);
-}
-
-/*
-  The header "test_c_datablock_scalars.h" is automatically generated.
- */
-
-#include "test_c_datablock_scalars.h"
 
 #define TEST_ARRAY(length, val, expected) \
   for (int i = 0; i != length; ++i) assert(val[i] == expected[i])
 
-void test_array_int()
+int main()
 {
   c_datablock* s = make_c_datablock();
   assert(s);
@@ -163,95 +105,4 @@ void test_array_int()
   assert(d == 2.5);
 #endif
   destroy_c_datablock(s);
-}
-
-
-  /*
-  double x[] = {1,2,3};
-  c_datablock_put_double_array_1d(s, "pig", x, 3);
-  */
-
-  /*
-  double* y;
-  int sz;
-  c_datablock_get_double_array_1d(s, "pig", &y, &sz);
-  */
-
-  /*
-  double z[4];
-  int szz;
-  c_datablock_get_double_array_1d_preallocated(s, "pig", z, &szz, 4);
-  assert(szz == 3);
-  assert(z[0] == 1);
-  assert(z[1] == 2);
-  */
-
-void test_grid(){
-  c_datablock* s = make_c_datablock();
-  printf("In test_grid\n");
-  DATABLOCK_STATUS status; 
-
-  int nx = 50;
-  int ny = 100;
-  double x[nx];
-  double y[ny];
-  double **z = allocate_2d_double(nx, ny);
-
-  for (int i=0; i<nx; i++){
-    x[i] = 100.0 * i;
-  }
-
-  for (int i=0; i<ny; i++){
-    y[i] = -1.0 * i;
-  }
-
-  for (int i=0; i<nx; i++){
-   for (int j=0; j<ny; j++){
-    z[i][j] = x[i] + y[j];
-   }
-  }
-
-
-  status = c_datablock_put_double_grid(s, "test",
-  "X", nx, x,
-  "Y", ny, y,
-  "Z", z);
-
-  assert(status==0);
-
-  int na, nb;
-  double *a, *b, **c;
-
-  status =  c_datablock_get_double_grid(s, "test",
-  "X", &na, &a,
-  "Y", &nb, &b,
-  "Z", &c);
-
-  for (int i=0; i<nx; i++){
-   for (int j=0; j<ny; j++){
-    assert (c[i][j] == x[i] + y[j]);
-   }
-  }
-
-
-  assert(status==0);
-
-
-
-}
-
-
-int main()
-{
-  test_sections();
-  //test_grid();
-
-  test_scalar_int();
-  test_scalar_double();
-  test_scalar_string();
-  test_scalar_complex();
-  test_scalar_bool();
-
-  test_array_int();
-  return 0;
 }
