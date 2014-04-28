@@ -14,3 +14,4 @@ src/datablock/section_names.h
 cosmosis-standard-library/
 *.mod
 plots/*.png
+demo_output_*
