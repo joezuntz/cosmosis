@@ -239,15 +239,15 @@ void test_grid(){
 
 int main()
 {
-  //test_sections();
+  test_sections();
   //test_grid();
 
-  //test_scalar_int();
-  //test_scalar_double();
+  test_scalar_int();
+  test_scalar_double();
   test_scalar_string();
-  //test_scalar_complex();
-  //test_scalar_bool();
+  test_scalar_complex();
+  test_scalar_bool();
 
-  //test_array_int();
+  test_array_int();
   return 0;
 }
