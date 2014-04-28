@@ -3,7 +3,7 @@
 # Note: this currently only supports bash
 
 # detect COSMOSIS_SRC_DIR
-if [ -n "$COSMOSIS_SRC_DIR" ]
+if [ -z "$COSMOSIS_SRC_DIR" ]
 then
   cosmosis_dir=$( (cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
   cosmosis_dir=${cosmosis_dir%/config}
@@ -19,7 +19,7 @@ if [ "$#" != "0" ]; then
     return 1
   fi
 else
-  product_db=`cat $cosmosis_dir/config/ups`  
+  product_db=`cat $COSMOSIS_SRC_DIR/config/ups`
 fi
 
 if [ ! -f "$product_db/setups" ]
