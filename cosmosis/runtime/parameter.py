@@ -41,7 +41,7 @@ class Parameter(object):
     def in_range(self, p):
         return self.limits[0] <= p <= self.limits[1]
 
-    def width(self, p):
+    def width(self):
         return self.limits[1] - self.limits[0]
 
     def random_point(self):
