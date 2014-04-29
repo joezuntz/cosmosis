@@ -1,6 +1,6 @@
 #include "c_datablock.h"
 #include <assert.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <float.h>
 
 #define TEST_ARRAY(length, val, expected) \
