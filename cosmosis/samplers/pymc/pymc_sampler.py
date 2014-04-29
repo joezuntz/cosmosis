@@ -54,7 +54,7 @@ class PyMCSampler(ParallelSampler):
         else:
             delay = 10000000000
 
-        if covmat is not None:
+        if covmat is not None or self.do_adaptive:
             self.mcmc.use_step_method(self.pymc.AdaptiveMetropolis,
                                       params,
                                       cov=covmat,
@@ -81,9 +81,11 @@ class PyMCSampler(ParallelSampler):
                            for x in self.mcmc.trace(str(param))]
                            for param in self.pipeline.varied_params]).T
 
+        likes = -0.5 * self.mcmc.trace('deviance')[:]
         # TODO: do we output burned samples?
-        for trace in traces:
-            self.output.parameters(trace)
+        for trace, like in zip(traces, likes):
+            extra = {'LIKE':like}
+            self.output.parameters(trace, extra)
 
         self.analytics.add_traces(traces)
 
