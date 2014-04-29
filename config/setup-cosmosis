@@ -3,12 +3,13 @@
 # Note: this currently only supports bash
 
 # detect COSMOSIS_SRC_DIR
-if [ -n "$COSMOSIS_SRC_DIR" ]
+if [ -n "$cosmosis_dir" ]
 then
   cosmosis_dir=$( (cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
   cosmosis_dir=${cosmosis_dir%/config}
-  export COSMOSIS_SRC_DIR="$cosmosis_dir"
 fi
+
+export COSMOSIS_SRC_DIR="$cosmosis_dir"
 
 # allow user to override UPS directory
 if [ "$#" != "0" ]; then
@@ -19,7 +20,7 @@ if [ "$#" != "0" ]; then
     return 1
   fi
 else
-  product_db=`cat $cosmosis_dir/config/ups`  
+  product_db=`cat $COSMOSIS_SRC_DIR/config/ups`  
 fi
 
 if [ ! -f "$product_db/setups" ]
