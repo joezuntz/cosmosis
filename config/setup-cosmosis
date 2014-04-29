@@ -20,7 +20,7 @@ if [ "$#" != "0" ]; then
     return 1
   fi
 else
-  product_db=`cat $COSMOSIS_SRC_DIR/config/ups`  
+  product_db=`cat $COSMOSIS_SRC_DIR/config/ups`
 fi
 
 if [ ! -f "$product_db/setups" ]
