@@ -139,8 +139,21 @@ class PyMCSampler(ParallelSampler):
             covmat[:, i] /= r
 
         # reorder to PyMC variable ordering
-
+        desired_order = [m.__name__ for m in self.mcmc.stochastics]
+        actual_order = [str(m) for m in self.pipeline.varied_params]
+        covmat = self.reorder_matrix(actual_order, desired_order, covmat)
         return covmat
+
+    @staticmethod
+    def reorder_matrix(old_order, new_order, cov):
+            n = len(old_order)
+            cov2 = np.zeros((n,n))
+            for i in xrange(n):
+                    old_i = old_order.index(new_order[i])
+                    for j in xrange(n):
+                            old_j = old_order.index(new_order[j])
+                            cov2[i,j] = cov[old_i, old_j]
+            return cov2
 
     # create PyMC parameter objects
     def define_parameters(self):
