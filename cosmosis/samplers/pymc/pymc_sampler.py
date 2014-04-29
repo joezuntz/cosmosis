@@ -14,6 +14,7 @@ class PyMCSampler(ParallelSampler):
         self.pymc = pymc
 
         self.verbose = logging.getLogger().level > logging.WARNING
+        self.interrupted = False
 
         # load sampling parameters
         self.num_samples = 0
@@ -33,6 +34,7 @@ class PyMCSampler(ParallelSampler):
         @pymc.data
         @pymc.stochastic(verbose=self.verbose)
         def data_likelihood(params=params, value=0.0):
+            params = self.pipeline.denormalize_vector(params)
             like, extra = self.pipeline.likelihood(params)
             return like
 
@@ -75,7 +77,12 @@ class PyMCSampler(ParallelSampler):
 
         # take steps MCMC steps
         self.mcmc.sample(steps, progress_bar=False, tune_throughout=False)
-        self.num_samples += steps
+        if self.mcmc._current_iter != steps:
+            # user must have pressed ctrl-C,
+            # or something else went wrong
+            self.interrupted = True
+
+        self.num_samples += self.mcmc._current_iter
 
         traces = np.array([[param.denormalize(x)
                            for x in self.mcmc.trace(str(param))]
@@ -99,6 +106,9 @@ class PyMCSampler(ParallelSampler):
         self.sample()
 
     def is_converged(self):
+        #user has pressed Ctrl-C
+        if self.interrupted:
+            return True
         if self.num_samples >= self.samples:
             return True
         elif self.num_samples > 0 and self.pool is not None:
