@@ -1,44 +1,23 @@
 # This file must be sourced, so that it can establish the appropriate
-# environment for a development session. Source it in a shell in which
-# your current working directory is the top-level directory for your
-# build.
+# environment for a development session.
+# Note: this currently only supports bash
 
-USAGE="Usage: source setup_for_dev.sh path-to-UPS-product-directory"
-
-if [ "$#" == "0" ]; then
-    echo $USAGE
-    return 1
-fi
-
-product_db=$1
-
-if [ !  -d "$product_db" ]
+# detect COSMOSIS_SRC_DIR
+if [ -z "$COSMOSIS_SRC_DIR" ]
 then
-    echo "The directory $product_db does not exist."
-    return 1
+  cosmosis_dir=$( (cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
+  cosmosis_dir=${cosmosis_dir%/config}
+  export COSMOSIS_SRC_DIR="$cosmosis_dir"
 fi
 
+product_db=`cat $COSMOSIS_SRC_DIR/config/ups`
 if [ ! -f "$product_db/setups" ]
 then
     echo "The directory $product_db does not appear to contain the UPS products."
     return 1
 fi
 
-export COSMOSIS_SRC_DIR="$PWD"
-
-libdir=${COSMOSIS_SRC_DIR}/cosmosis/datablock
-#if [ ! -d ${libdir} ]
-#then
-#    mkdir -p ${libdir}
-#fi
-#
-#if [ ! -d ${libdir} ]
-#then
-#    echo "Failed to create the 'lib' directory under $PWD"
-#    echo "Perhaps the directory is not writable."
-#    return 1
-#fi
-
+# initialize UPS
 source $product_db/setups
 if [ -z "$PRODUCTS" ]
 then
@@ -47,7 +26,7 @@ then
 fi
 
 # Set the library path appropriate for our flavor.
-
+libdir=${COSMOSIS_SRC_DIR}/cosmosis/datablock
 flavor=$(ups flavor -1)
 if [ "$flavor" == "Darwin64bit" ]
 then
@@ -59,8 +38,18 @@ fi
 export PATH=${COSMOSIS_SRC_DIR}/bin:$PATH
 export PYTHONPATH=${COSMOSIS_SRC_DIR}:$PYTHONPATH
 
+# allow user to override our PYTHONUSERBASE
+if [ -z "$PYTHONUSERBASE" ]
+then
+  export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
+fi
+
+# setup UPS packages
 setup -B scipy v0_13_0b -q +e5:+prof
 setup -B gsl v1_16 -q +prof
+setup -B fftw v3_3_3 -q +prof
 setup -B cfitsio v3_35_0 -q +prof
 setup -B pyfits v3_2a -q +e5:+prof
-setup -B wmapdata v5_00
+setup -B pyyaml v3_11 
+
+export PS1="(cosmosis) $PS1"

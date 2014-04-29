@@ -381,13 +381,12 @@ if (name == nullptr) return false;
     return DBS_LOGIC_ERROR;
   }
 
-/*
   DATABLOCK_STATUS
   c_datablock_get_complex_array_1d(c_datablock * s,
-                               const char* section,
-                               const char* name,
-                               double _Complex** val,
-                               int* sz)
+				   const char* section,
+				   const char* name,
+				   double _Complex** val,
+				   int* sz)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
@@ -397,10 +396,13 @@ if (name == nullptr) return false;
 
     auto p = static_cast<DataBlock *>(s);
     try {
-      vector<double _Complex> const& r = p->view<vector<double _Complex>>(section, name);
+      vector<complex_t> const& r = p->view<vector<complex_t>>(section, name);
       *val = static_cast<double _Complex*>(malloc(r.size() * sizeof(double _Complex)));
       if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
-      std::copy(r.cbegin(), r.cend(), *val);
+      for (size_t i = 0, n = r.size(); i != n; ++i)
+	{
+	  (*val)[i] = * reinterpret_cast<double _Complex const*>(&(r[i]));
+	}
       *sz = r.size();
       return DBS_SUCCESS;
     }
@@ -410,8 +412,6 @@ if (name == nullptr) return false;
     catch (...) { return DBS_LOGIC_ERROR; }
     return DBS_LOGIC_ERROR;
   }
-*/
-
 
   DATABLOCK_STATUS
   c_datablock_get_int_array_1d_preallocated(c_datablock * s,
@@ -465,14 +465,13 @@ if (name == nullptr) return false;
   }
 
 
-/*
   DATABLOCK_STATUS
   c_datablock_get_complex_array_1d_preallocated(c_datablock * s,
-                                            const char* section,
-                                            const char* name,
-                                            double _Complex * val,
-                                            int* sz,
-                                            int maxsize)
+						const char* section,
+						const char* name,
+						double _Complex * val,
+						int* sz,
+						int maxsize)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
@@ -481,17 +480,20 @@ if (name == nullptr) return false;
     if (sz == nullptr) return DBS_SIZE_NULL;
 
     auto p = static_cast<DataBlock *>(s);
-    vector<double _Complex> const& r = p->view<vector<double _Complex>>(section, name);
+    vector<complex_t> const& r = p->view<vector<complex_t>>(section, name);
     *sz = r.size();
     if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
-    std::copy(r.cbegin(), r.cend(), val);
+    //std::copy(r.cbegin(), r.cend(), val);
+    for (size_t i = 0, n = r.size(); i != n; ++i)
+      {
+	val[i] = *reinterpret_cast<double _Complex const*>(&(r[i]));
+      }
+
     // If we are asked to clear out the remainder of the input buffer,
     // the following line should be used.
     //    std::fill(val + *sz, val+maxsize, 0);
     return DBS_SUCCESS;
   }
-*/
-
 
   DATABLOCK_STATUS
   c_datablock_put_int(c_datablock* s,
@@ -599,7 +601,6 @@ if (name == nullptr) return false;
     return p->put_val(section, name, vector<double>(val, val+sz));
   }
 
-/*
   DATABLOCK_STATUS
   c_datablock_put_complex_array_1d(c_datablock* s,
                                const char* section,
@@ -614,10 +615,8 @@ if (name == nullptr) return false;
     if (sz < 0) return DBS_SIZE_NEGATIVE;
 
     auto p = static_cast<DataBlock*>(s);
-    return p->put_val(section, name, vector<double _Complex>(val, val+sz));
+    return p->put_val(section, name, vector<complex_t>(val, val+sz));
   }
-*/
-
 
   DATABLOCK_STATUS
   c_datablock_replace_int(c_datablock* s,
@@ -725,13 +724,13 @@ if (name == nullptr) return false;
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, vector<double>(val, val+sz));
   }
-/*
+
   DATABLOCK_STATUS
   c_datablock_replace_complex_array_1d(c_datablock* s,
-                                   const char* section,
-                                   const char* name,
-                                   double _Complex const* val,
-                                   int sz)
+				       const char* section,
+				       const char* name,
+				       double _Complex const* val,
+				       int sz)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
@@ -740,11 +739,8 @@ if (name == nullptr) return false;
     if (sz  < 0) return DBS_SIZE_NEGATIVE;
 
     auto p = static_cast<DataBlock*>(s);
-    return p->replace_val(section, name, vector<double _Complex>(val, val+sz));
+    return p->replace_val(section, name, vector<complex_t>(val, val+sz));
   }
-*/
-
-
 
 DATABLOCK_STATUS  c_datablock_put_double_grid(
   c_datablock* s,
