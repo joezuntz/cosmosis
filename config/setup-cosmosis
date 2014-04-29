@@ -3,26 +3,14 @@
 # Note: this currently only supports bash
 
 # detect COSMOSIS_SRC_DIR
-if [ -n "$cosmosis_dir" ]
+if [ -z "$COSMOSIS_SRC_DIR" ]
 then
   cosmosis_dir=$( (cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
   cosmosis_dir=${cosmosis_dir%/config}
+  export COSMOSIS_SRC_DIR="$cosmosis_dir"
 fi
 
-export COSMOSIS_SRC_DIR="$cosmosis_dir"
-
-# allow user to override UPS directory
-if [ "$#" != "0" ]; then
-  product_db=$1
-  if [ !  -d "$product_db" ]
-  then
-    echo "The directory $product_db does not exist."
-    return 1
-  fi
-else
-  product_db=`cat $COSMOSIS_SRC_DIR/config/ups`
-fi
-
+product_db=`cat $COSMOSIS_SRC_DIR/config/ups`
 if [ ! -f "$product_db/setups" ]
 then
     echo "The directory $product_db does not appear to contain the UPS products."
@@ -51,7 +39,7 @@ export PATH=${COSMOSIS_SRC_DIR}/bin:$PATH
 export PYTHONPATH=${COSMOSIS_SRC_DIR}:$PYTHONPATH
 
 # allow user to override our PYTHONUSERBASE
-if [ -n $PYTHONUSERBASE ]
+if [ -z "$PYTHONUSERBASE" ]
 then
   export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
 fi
