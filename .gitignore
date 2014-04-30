@@ -15,7 +15,6 @@ cosmosis-standard-library/
 *.mod
 plots/*.png
 demo_output_*
-bin/
 config/ups
 lib/
 share/
