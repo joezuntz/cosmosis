@@ -80,7 +80,7 @@ class Module(object):
 
     def cleanup(self):
         if self.cleanup_function:
-            self.cleanup()
+            self.cleanup_function(self.data)
 
     def __str__(self):
         return self.name
