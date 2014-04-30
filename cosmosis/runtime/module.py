@@ -69,6 +69,8 @@ class Module(object):
         self.execute_function = Module.load_function(self.library,
                                                      self.execute_function,
                                                      module_type)
+        if self.execute_function is None:
+            raise ValueError("Could not find a function 'execute' in module %s"%self.name)
 
     def execute(self, data_block):
         if not self.is_python:
