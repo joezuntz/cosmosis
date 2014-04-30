@@ -38,49 +38,49 @@ test:  test_entry test_section test_datablock test_c_datablock \
 	test_fortran
 
 test_datablock: lib datablock_t
-	@echo -n "Running datablock_t "
+	@/bin/echo -n "Running datablock_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./datablock_t > datablock_t.log
-	@echo  ... passed
+	@/bin/echo  ... passed
 
 test_c_datablock: lib c_datablock_t
-	@echo -n "Running c_datablock_t "
+	@/bin/echo -n "Running c_datablock_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_t > c_datablock_t.log
-	@echo  ... passed
+	@/bin/echo  ... passed
 
 test_c_datablock_int_array: lib c_datablock_int_array_t
-	@echo -n "Running c_datablock_int_array_t "
+	@/bin/echo -n "Running c_datablock_int_array_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_int_array_t > c_datablock_int_array_t.log
-	@echo  ... passed
+	@/bin/echo  ... passed
 
 test_c_datablock_double_array: lib c_datablock_double_array_t
-	@echo -n "Running c_datablock_double_array_t "
+	@/bin/echo -n "Running c_datablock_double_array_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_double_array_t > c_datablock_double_array_t.log
-	@echo  ... passed
+	@/bin/echo  ... passed
 
 test_c_datablock_complex_array: lib c_datablock_complex_array_t
-	@echo -n "Running c_datablock_complex_array_t "
+	@/bin/echo -n "Running c_datablock_complex_array_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_complex_array_t > c_datablock_complex_array_t.log
-	@echo  ... passed
+	@/bin/echo  ... passed
 
 test_section: lib section_t
-	@echo -n "Running section_t "
+	@/bin/echo -n "Running section_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./section_t >  section_t.log
-	@echo  ... passed
+	@/bin/echo  ... passed
 
 test_entry: lib entry_t
-	@echo -n "Running entry_t "
+	@/bin/echo -n "Running entry_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./entry_t >  entry_t.log
-	@echo  ... passed
+	@/bin/echo  ... passed
 
 test_fortran: fortran_t
-	@echo -n "Running fortran_t "
+	@/bin/echo -n "Running fortran_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./fortran_t >  fortran_t.log
-	@echo  ... passed
+	@/bin/echo  ... passed
 
 test_python: 
-	@echo -n "Running python tests - needs nose package "
+	@/bin/echo -n "Running python tests - needs nose package "
 	@nosetests cosmosis_py &> python_t.log
-	@echo ... passed
+	@/bin/echo ... passed
 
 section_names.h: section_list.txt generate_sections.py
 	python generate_sections.py section_list.txt c section_names.h
