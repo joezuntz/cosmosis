@@ -34,9 +34,10 @@ class PyMCSampler(ParallelSampler):
         @pymc.data
         @pymc.stochastic(verbose=self.verbose)
         def data_likelihood(params=params, value=0.0):
-            if np.any(params<0) or np.any(params>1):
+            try:
+                params = self.pipeline.denormalize_vector(params)
+            except ValueError:
                 return -np.inf
-            params = self.pipeline.denormalize_vector(params)
             like, extra = self.pipeline.likelihood(params)
             return like
 
