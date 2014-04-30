@@ -25,15 +25,16 @@ typedef enum {
   DBS_WRONG_VALUE_TYPE,
   DBS_MEMORY_ALLOC_FAILURE,
   DBS_SIZE_NULL,
-  DBS_SIZE_NEGATIVE,
+  DBS_SIZE_NONPOSITIVE,
   DBS_SIZE_INSUFFICIENT,
   DBS_LOGIC_ERROR,
+  DBS_NDIM_NONPOSITIVE,
+  DBS_EXTENTS_NULL,
+  DBS_LOGIC_ERROR
   // This one is a little different - it should only be returned internall
   // by the Section object rather than by any user-facing code
   DBS_USED_DEFAULT, 
 } DATABLOCK_STATUS;
-
-
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,6 @@
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 
-USER_CFLAGS=$(PEDANTIC_C_FLAGS)
+USER_CFLAGS=$(PEDANTIC_C_FLAGS) -Werror
 USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
@@ -22,6 +22,7 @@ endif
 
 all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t entry_t \
 	c_datablock_int_array_t c_datablock_double_array_t c_datablock_complex_array_t \
+	c_datablock_multidim_double_array_t \
 	fortran_t cosmosis_py/section_names.py
 
 lib: libcosmosis.so cosmosis_py/section_names.py
@@ -35,6 +36,7 @@ verify_setup:
 
 test:  test_entry test_section test_datablock test_c_datablock \
 	test_c_datablock_int_array test_c_datablock_double_array test_c_datablock_complex_array \
+  test_c_datablock_multidim_double_array \
 	test_fortran
 
 test_datablock: lib datablock_t
@@ -61,6 +63,12 @@ test_c_datablock_complex_array: lib c_datablock_complex_array_t
 	@/bin/echo -n "Running c_datablock_complex_array_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_complex_array_t > c_datablock_complex_array_t.log
 	@/bin/echo  ... passed
+
+test_c_datablock_multidim_double_array: lib c_datablock_multidim_double_array_t
+	@/bin/echo -n "Running c_datablock_multidim_double_array_t "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_multidim_double_array_t > c_datablock_multidim_double_array_t.log
+	@/bin/echo  ... passed
+
 
 test_section: lib section_t
 	@/bin/echo -n "Running section_t "
@@ -122,6 +130,9 @@ c_datablock_double_array_t: c_datablock_double_array_test.c c_datablock.h libcos
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
 c_datablock_complex_array_t: c_datablock_complex_array_test.c c_datablock.h libcosmosis.so
+	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
+
+c_datablock_multidim_double_array_t: c_datablock_multidim_double_array_test.c c_datablock.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
 entry_t: entry_test.o libcosmosis.so

@@ -578,7 +578,7 @@ if (name == nullptr) return false;
     if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == NULL) return DBS_VALUE_NULL;
-    if (sz < 0) return DBS_SIZE_NEGATIVE;
+    if (sz < 1) return DBS_SIZE_NONPOSITIVE;
 
     auto p = static_cast<DataBlock*>(s);
     return p->put_val(section, name, vector<int>(val, val+sz));
@@ -595,7 +595,7 @@ if (name == nullptr) return false;
     if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == NULL) return DBS_VALUE_NULL;
-    if (sz < 0) return DBS_SIZE_NEGATIVE;
+    if (sz < 1) return DBS_SIZE_NONPOSITIVE;
 
     auto p = static_cast<DataBlock*>(s);
     return p->put_val(section, name, vector<double>(val, val+sz));
@@ -612,7 +612,7 @@ if (name == nullptr) return false;
     if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == NULL) return DBS_VALUE_NULL;
-    if (sz < 0) return DBS_SIZE_NEGATIVE;
+    if (sz < 1) return DBS_SIZE_NONPOSITIVE;
 
     auto p = static_cast<DataBlock*>(s);
     return p->put_val(section, name, vector<complex_t>(val, val+sz));
@@ -702,7 +702,7 @@ if (name == nullptr) return false;
     if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
-    if (sz  < 0) return DBS_SIZE_NEGATIVE;
+    if (sz  < 1) return DBS_SIZE_NONPOSITIVE;
 
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, vector<int>(val, val+sz));
@@ -719,7 +719,7 @@ if (name == nullptr) return false;
     if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
-    if (sz  < 0) return DBS_SIZE_NEGATIVE;
+    if (sz  < 1) return DBS_SIZE_NONPOSITIVE;
 
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, vector<double>(val, val+sz));
@@ -736,11 +736,64 @@ if (name == nullptr) return false;
     if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
     if (val == nullptr) return DBS_VALUE_NULL;
-    if (sz  < 0) return DBS_SIZE_NEGATIVE;
+    if (sz  < 1) return DBS_SIZE_NONPOSITIVE;
 
     auto p = static_cast<DataBlock*>(s);
     return p->replace_val(section, name, vector<complex_t>(val, val+sz));
   }
+
+  DATABLOCK_STATUS
+  c_datablock_put_double_array(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               double const* val,
+                               int ndims,
+                               int const* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_double_array_shape(c_datablock* s,
+                                     const char* section,
+                                     const char* name,
+                                     int ndims,
+                                     int* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_double_array(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               double* val,
+                               int ndims,
+                               int const* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    return DBS_SUCCESS;
+  }
+
 
 DATABLOCK_STATUS  c_datablock_put_double_grid(
   c_datablock* s,
