@@ -77,6 +77,13 @@ class OutputBase(object):
 	def column_names(self):
 		return [c[0] for c in self._columns]
 
+	def comment(self, comment):
+		"""
+		Save a comment.  Ordering will be preserved
+		if you save multiple ones.
+		"""
+		self._write_comment(comment)
+
 	def parameters(self, params, extra=None):
 		""" 
 		Tell the outputter to save a vector of parameters.
@@ -144,6 +151,10 @@ class OutputBase(object):
 
 	@abc.abstractmethod
 	def _write_metadata(self, key, value, comment):
+		pass
+
+	@abc.abstractmethod
+	def _write_comment(self, comment):
 		pass
 
 	@abc.abstractmethod

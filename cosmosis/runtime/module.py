@@ -33,6 +33,7 @@ class Module(object):
         filename = file_path
         if not os.path.isabs(filename):
             filename = os.path.join(rootpath, filename)
+        self.filename = filename
 
         self.library, language = Module.load_library(filename)
         self.is_python = (language == MODULE_LANG_PYTHON)

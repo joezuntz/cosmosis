@@ -14,6 +14,8 @@ class MultiTextOutput(OutputBase):
 		self._dirname = dirname
 		self._file = open(os.path.join(self._dirname, str(CHAIN_NAME % nchain) ), 'w')
 		self._metadata = {}
+		self._ncomment = 0
+		
 
 	def _close(self):
 		self._file.close()
@@ -25,11 +27,19 @@ class MultiTextOutput(OutputBase):
 		#now write any metadata.
 		#text mode does not support comments
 		for (key,(value,comment)) in self._metadata.items():
-			if comment:
+			if key.startswith(comment_indicator):
+				self._file.write("## "+value.strip())
+			elif comment:
 				self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
 			else:
 				self._file.write('#{k}={v}\n'.format(k=key,v=value,c=comment))
 		self._metadata={}
+
+	def _write_comment(self, comment):
+		#save comments along with the metadata - nice as 
+		#preserves order
+		self._metadata[comment_indicator + "_%d"%self._ncomment] = (comment,None)
+		self._ncomment += 1
 
 	def _write_metadata(self, key, value, comment=''):
 		#We save the metadata until we get the first 

@@ -43,6 +43,10 @@ class CosmoMCOutput(OutputBase):
 		#What should we do?
 		self._metadata[key]= (value, comment)
 
+	def _write_comment(self, comment):
+		#Do not think cosmomc can handle comments
+		pass
+
 	def _write_parameters(self, params):
 		line = self.delimiter.join(('%.7E'%x) for x in params) + '\n'
 		multiplicity = 1.0

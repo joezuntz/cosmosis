@@ -1,5 +1,5 @@
 sampler_registry = {}
-
+from cosmosis.runtime.attribution import PipelineAttribution
 
 class Sampler(object):
     needs_output = True
@@ -17,9 +17,12 @@ class Sampler(object):
         self.ini = ini
         self.pipeline = pipeline
         self.output = output
+        self.attribution = PipelineAttribution(self.pipeline.modules)
         if self.output:
             for p in pipeline.output_names():
                 self.output.add_column(p, float)
+            self.attribution.write_output(self.output)
+
 
     def config(self):
         ''' Set up sampler (could instead use __init__) '''

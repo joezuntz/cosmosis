@@ -1,6 +1,10 @@
 from .output_base import OutputBase
 from . import utils
 import numpy as np
+from collections import OrderedDict
+
+comment_indicator = "_cosmosis_comment_indicator_"
+
 class TextColumnOutput(OutputBase):
 	_aliases = ["text", "txt"]
 
@@ -8,7 +12,9 @@ class TextColumnOutput(OutputBase):
 		super(TextColumnOutput, self).__init__()
 		self.delimiter=delimiter
 		self._file = open(filename, 'w')
-		self._metadata = {}
+		#also used to store comments:
+		self._metadata = OrderedDict()
+		self._ncomment = 0
 
 	def _close(self):
 		self._file.close()
@@ -20,7 +26,9 @@ class TextColumnOutput(OutputBase):
 		#now write any metadata.
 		#text mode does not support comments
 		for (key,(value,comment)) in self._metadata.items():
-			if comment:
+			if key.startswith(comment_indicator):
+				self._file.write("## %s\n"%value.strip())
+			elif comment:
 				self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
 			else:
 				self._file.write('#{k}={v}\n'.format(k=key,v=value,c=comment))
@@ -34,6 +42,12 @@ class TextColumnOutput(OutputBase):
 		#after sampling has begun (because it goes at the top).
 		#What should we do?
 		self._metadata[key]= (value, comment)
+
+	def _write_comment(self, comment):
+		#save comments along with the metadata - nice as 
+		#preserves order
+		self._metadata[comment_indicator + "_%d"%self._ncomment] = (comment,None)
+		self._ncomment += 1
 
 	def _write_parameters(self, params):
 		line = self.delimiter.join(str(x) for x in params) + '\n'

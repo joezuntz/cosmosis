@@ -22,6 +22,7 @@ class GridSampler(ParallelSampler):
                                        "nsample_dimension", 1)
 
     def execute(self):
+        self.output.comment("Running with %d samples per dimension"%self.nsample)
         samples = list(itertools.product(*[np.linspace(*param.limits,
                                                        num=self.nsample)
                                            for param
