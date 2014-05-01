@@ -14,6 +14,7 @@ using cosmosis::vint_t;
 using cosmosis::vdouble_t;
 using cosmosis::vstring_t;
 using cosmosis::vcomplex_t;
+using cosmosis::ndarray;
 using std::vector;
 using std::string;
 
@@ -22,7 +23,6 @@ void test_copy2()
   using namespace std::rel_ops;
 
   Entry c(std::string("cow"));
-
 }
 
 void test_copy()
@@ -67,6 +67,44 @@ void test_copy()
   assert(f!=c);
   assert(f!=d);
   assert(f!=e);
+
+  int i23[] = {1,2,3,4,5,6};
+  int iextents[] = {2,3};
+  Entry g(ndarray<int>(i23, 2, iextents));
+  Entry g1(g);
+  assert(g==g1);
+  assert(g!=a);
+  assert(g!=b);
+  assert(g!=c);
+  assert(g!=d);
+  assert(g!=e);
+  assert(g!=f);
+
+  double d32[] = {1.1,2.2,3.3,4.4,5.5,6.6};
+  int dextents[] = {3,2};
+  Entry h(ndarray<double>(d32, 2, dextents));
+  Entry h1(h);
+  assert(h==h1);
+  assert(h!=a);
+  assert(h!=b);
+  assert(h!=c);
+  assert(h!=d);
+  assert(h!=e);
+  assert(h!=f);
+  assert(h!=g);
+
+  complex_t c2[] = { {1.0, 1.0}, {-1.0, -2.0} };
+  int cextents[] = {2};
+  Entry i(ndarray<complex_t>(c2, 1, cextents));
+  Entry i1(i);
+  assert(i==i1);
+  assert(i!=a);
+  assert(i!=b);
+  assert(i!=c);
+  assert(i!=d);
+  assert(i!=e);
+  assert(i!=f);
+  assert(i!=g);
 }
 
 void test_mapusage()
@@ -80,6 +118,11 @@ void test_mapusage()
 
   vals.insert(map_t::value_type("pi", Entry(4.0 * std::atan(1.0))));
   assert(vals.size()==2);
+
+  complex_t c2[] = { {1.0, 1.0}, {-1.0, -2.0} };
+  int cextents[] = {2};
+  vals.insert(map_t::value_type("ary", Entry(ndarray<complex_t>(c2, 1, cextents))));
+  assert(vals.size()==3);
 }
 
 void test_bool()
@@ -104,7 +147,6 @@ void test_bool()
   e.set_val("cow");
   assert(e.is<string>());
   assert(e.val<string>() == "cow");
-
 }
 
 void test_int()
@@ -241,6 +283,25 @@ void test_vector(vector<T> const& vals)
   assert(e.val<vector<T>>() != vals);
 }
 
+template <class T>
+void test_ndarray(ndarray<T> const& val)
+{
+  // Create the entry with the specified value.
+  Entry e(val);
+  // Make sure the type and value is what is expected.
+  assert(e.is<ndarray<T>>());
+  assert(e.val<ndarray<T>>() == val);
+
+  // Now make the value be a non-ndarray but memory-managed type, so we
+  // can observe the switching, and test for leaking memory.
+  e.set_val("crunchy frog");
+  assert(e.is<string>());  
+
+  // Now store a different set of values.
+  ndarray<T> twice(val);
+  for (auto& v : twice) v *= 2.0;
+}
+
 int main()
 {
   test_bool();
@@ -252,6 +313,22 @@ int main()
   test_vector(vector<double>({-101.5, 2.0, 3.25, 1.875}));
   test_vector(vector<string>({"cow", "the dog"}));
   test_vector(vector<complex_t>({{-10.25,0.25}, {20.0, -3.0}}));
+
+  int i32[3][2] = { {1,2},{2,3},{4,5} };
+  int iextents[] = {3,2};
+  ndarray<int> iary(&i32[0][0], 2, &iextents[0]);
+  test_ndarray(iary);  
+
+  double d23[2][3] = { {1.0, 2.0, 3.0}, {-1.0, -2.0, -3.0} };
+  int dextents[] = {2,3};
+  ndarray<double> dary(&d23[0][0], 2, &dextents[0]);
+  test_ndarray(dary);  
+
+  complex_t c2[2] = { {1.0, 1.0}, {-1.0, -2.0} };
+  int cextents[] = {1};
+  ndarray<complex_t> cary(&c2[0], 1, &cextents[0]);
+  test_ndarray(cary);  
+
   test_copy();
   test_mapusage();
 

@@ -6,6 +6,8 @@ using std::string;
 using std::vector;
 
 
+// We initialize one of the members of the anonymous union in order to
+// avoid warnings about the use of unitialized memory.
 cosmosis::Entry::Entry(Entry const& e) :
   type_(e.type_),
   i(0)
@@ -19,6 +21,9 @@ cosmosis::Entry::Entry(Entry const& e) :
   else if (type_ == typeid(vdouble_t)) emplace(&vd, e.vd);
   else if (type_ == typeid(vstring_t)) emplace(&vs, e.vs);
   else if (type_ == typeid(vcomplex_t)) emplace(&vz,  e.vz);
+  else if (type_ == typeid(nd_int_t)) emplace(&ndi, e.ndi);
+  else if (type_ == typeid(nd_double_t)) emplace(&ndd, e.ndd);
+  else if (type_ == typeid(nd_complex_t)) emplace(&ndc, e.ndc);
   else throw BadEntry();
 }
 
@@ -40,6 +45,9 @@ cosmosis::Entry::operator==(Entry const& rhs) const
   else if (type_ == typeid(vdouble_t)) return vd == rhs.vd;
   else if (type_ == typeid(vstring_t)) return vs == rhs.vs;
   else if (type_ == typeid(vcomplex_t)) return vz == rhs.vz;
+  else if (type_ == typeid(nd_int_t)) return ndi == rhs.ndi;
+  else if (type_ == typeid(nd_double_t)) return ndd == rhs.ndd;
+  else if (type_ == typeid(nd_complex_t)) return ndc == rhs.ndc;
   else throw BadEntry();
 }
 
@@ -58,6 +66,9 @@ void cosmosis::Entry::_destroy_if_managed() {
   else if (type_ == typeid(vdouble_t)) vd.~vector<double>();
   else if (type_ == typeid(vstring_t)) vs.~vector<string>();
   else if (type_ == typeid(vcomplex_t)) vz.~vector<complex_t>();
+  else if (type_ == typeid(nd_int_t)) ndi.~ndarray<int>();
+  else if (type_ == typeid(nd_double_t)) ndd.~ndarray<double>();
+  else if (type_ == typeid(nd_complex_t)) ndc.~ndarray<complex_t>();
 }
 
 template <class V>
@@ -69,6 +80,8 @@ int clamped_size(V const& v)
     : sz;
 }
 
+// Should size() deal with ndarray values? What would it make sense to
+// return?
 int cosmosis::Entry::size() const
 {
   if      (type_ == typeid(vint_t))     return clamped_size(vi);

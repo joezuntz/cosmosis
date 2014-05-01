@@ -7,11 +7,13 @@
 #include "section.hh"
 #include "entry.hh"
 #include "c_datablock.h"
+#include "ndarray.hh"
 
 using cosmosis::DataBlock;
 using cosmosis::Section;
 using cosmosis::Entry;
 using cosmosis::complex_t;
+using cosmosis::ndarray;
 using std::string;
 using std::vector;
 
@@ -757,7 +759,9 @@ if (name == nullptr) return false;
     if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
     if (extents == nullptr) return DBS_EXTENTS_NULL;
 
-    return DBS_SUCCESS;
+    auto p = static_cast<DataBlock*>(s);
+    ndarray<double> tmp(val, ndims, extents);
+    return p->put_val(section, name, tmp);
   }
 
   DATABLOCK_STATUS

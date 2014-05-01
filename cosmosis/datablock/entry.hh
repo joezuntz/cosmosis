@@ -7,6 +7,7 @@
 #include <typeinfo>
 #include <vector>
 
+#include "ndarray.hh"
 #include "exceptions.hh"
 
 // Entry is a discriminated union, capable of holding any one of the
@@ -53,6 +54,9 @@ namespace cosmosis
   typedef std::vector<double> vdouble_t;
   typedef std::vector<std::string> vstring_t;
   typedef std::vector<complex_t> vcomplex_t;
+  typedef cosmosis::ndarray<int> nd_int_t;
+  typedef cosmosis::ndarray<double> nd_double_t;
+  typedef cosmosis::ndarray<complex_t> nd_complex_t;
 
   class Entry
   {
@@ -71,6 +75,9 @@ namespace cosmosis
     explicit Entry(vdouble_t const& a);
     explicit Entry(vstring_t const& a);
     explicit Entry(vcomplex_t const& a);
+    explicit Entry(nd_int_t const& a);
+    explicit Entry(nd_double_t const& a);
+    explicit Entry(nd_complex_t const& a);
 
     Entry(Entry const& other);
     // The next might not be needed; havng the copy and not operator=
@@ -110,23 +117,33 @@ namespace cosmosis
     void set_val(vdouble_t const& v);
     void set_val(vstring_t const& v);
     void set_val(vcomplex_t const& v);
+    void set_val(nd_int_t const& v);
+    void set_val(nd_double_t const& v);
+    void set_val(nd_complex_t const& v);
 
   private:
     // The type of the value currenty active.
     std::type_index type_;
 
-    // the anonymous union contains the value.
+    // The anonymous union contains the value. We have a named union
+    // member for each type we can hold.
     union
     {
+      // scalars
       bool b;
       int i;
       double d;
       std::string s;
       complex_t z;
+      // 1-d arrays
       vint_t vi;
       vdouble_t vd;
       vstring_t vs;
       vcomplex_t vz;
+      // multi-dimensional arrays
+      nd_int_t   ndi;
+      nd_double_t ndd;
+      nd_complex_t ndc;
     }; // union
 
     // Call the destructor of the current value, if it is a managed type.
@@ -158,17 +175,17 @@ cosmosis::Entry::Entry() :
 
 inline
 cosmosis::Entry::Entry(int v) :
-  type_(typeid(int)), i(v)
+  type_(typeid(v)), i(v)
 {}
 
 inline
 cosmosis::Entry::Entry(bool v) :
-  type_(typeid(bool)), b(v)
+  type_(typeid(v)), b(v)
 {}
 
 inline
 cosmosis::Entry::Entry(double v) :
-  type_(typeid(double)), d(v)
+  type_(typeid(v)), d(v)
 {}
 
 inline
@@ -178,32 +195,47 @@ cosmosis::Entry::Entry(const char * v) :
 
 inline
 cosmosis::Entry::Entry(std::string v) :
-  type_(typeid(std::string)), s(v)
+  type_(typeid(v)), s(v)
 {}
 
 inline
 cosmosis::Entry::Entry(complex_t v) :
-  type_(typeid(complex_t)), z(v)
+  type_(typeid(v)), z(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vint_t const& v) :
-  type_(typeid(vint_t)), vi(v)
+  type_(typeid(v)), vi(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vdouble_t const& v) :
-  type_(typeid(vdouble_t)), vd(v)
+  type_(typeid(v)), vd(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vstring_t const& v) :
-  type_(typeid(vstring_t)), vs(v)
+  type_(typeid(v)), vs(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vcomplex_t const& v) :
-  type_(typeid(vcomplex_t)), vz(v)
+  type_(typeid(v)), vz(v)
+{}
+
+inline
+cosmosis::Entry::Entry(nd_int_t const& v) :
+  type_(typeid(v)), ndi(v)
+{}
+
+inline
+cosmosis::Entry::Entry(nd_double_t const& v) :
+  type_(typeid(v)), ndd(v)
+{}
+
+inline
+cosmosis::Entry::Entry(nd_complex_t const& v) :
+  type_(typeid(v)), ndc(v)
 {}
 
 template <class T>
@@ -248,6 +280,9 @@ namespace cosmosis
   template <> inline vdouble_t Entry::val<vdouble_t>() const { return _val(&vd); }
   template <> inline vstring_t Entry::val<vstring_t>() const { return _val(&vs); }
   template <> inline vcomplex_t Entry::val<vcomplex_t>() const { return _val(&vz); }
+  template <> inline nd_int_t Entry::val<nd_int_t>() const { return _val(&ndi); }
+  template <> inline nd_double_t Entry::val<nd_double_t>() const { return _val(&ndd); }
+  template <> inline nd_complex_t Entry::val<nd_complex_t>() const { return _val(&ndc); }
 
   template <> inline bool const& Entry::view<bool>() const { return _val(&b); }
   template <> inline int const& Entry::view<int>() const { return _val(&i); }

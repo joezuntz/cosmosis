@@ -35,9 +35,15 @@ verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
 
 test:  test_entry test_section test_datablock test_c_datablock \
+	test_ndarray \
 	test_c_datablock_int_array test_c_datablock_double_array test_c_datablock_complex_array \
-  test_c_datablock_multidim_double_array \
-	test_fortran
+  test_fortran \
+#	test_c_datablock_multidim_double_array
+
+test_ndarray: ndarray_t
+	@/bin/echo -n "Running ndarray_t "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./ndarray_t > ndarray_t.log
+	@/bin/echo  ... passed
 
 test_datablock: lib datablock_t
 	@/bin/echo -n "Running datablock_t "
@@ -69,13 +75,13 @@ test_c_datablock_multidim_double_array: lib c_datablock_multidim_double_array_t
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_multidim_double_array_t > c_datablock_multidim_double_array_t.log
 	@/bin/echo  ... passed
 
-
 test_section: lib section_t
 	@/bin/echo -n "Running section_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./section_t >  section_t.log
 	@/bin/echo  ... passed
 
-test_entry: lib entry_t
+# entry_t doesn't depend on libcosmosis
+test_entry: entry_t
 	@/bin/echo -n "Running entry_t "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./entry_t >  entry_t.log
 	@/bin/echo  ... passed
@@ -141,13 +147,18 @@ entry_t: entry_test.o libcosmosis.so
 section_t: section_test.o libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
 
+# Note: ndarray_t does not make use of libcosmosis!
+ndarray_t: ndarray_test.o
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
 datablock.o: section_names.h datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h datablock_logging.h
-c_datablock.o: section_names.h c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h
+c_datablock.o: section_names.h c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h ndarray.hh
 datablock_logging.o: datablock_logging.cc datablock_logging.h
 entry.o: entry.cc entry.hh datablock_status.h
-entry_t.o: entry_t.cc entry.hh
+entry_test.o: entry_test.cc entry.hh
 section.o: section.cc section.hh entry.hh datablock_status.h
-section_t.o: section_t.cc section.hh
+section_test.o: section_test.cc section.hh
+ndarray_test.o: ndarray_test.cc ndarray.hh
 
 
 
