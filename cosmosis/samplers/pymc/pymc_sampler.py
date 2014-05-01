@@ -120,7 +120,11 @@ class PyMCSampler(ParallelSampler):
             return False
 
     def load_covariance_matrix(self):
-        covmat_filename = self.ini.get(PYMC_INI_SECTION, "covmat", "")
+        covmat_filename = self.ini.get(PYMC_INI_SECTION, "covmat", "").strip()
+        if covmat_filename=="":
+            return None
+        if not os.path.exists(covmat_filename):
+            raise ValueError("Covariance matrix %s not found"% covmat_filename)
         covmat = np.loadtxt(covmat_filename)
 
         if covmat.ndim == 0:
