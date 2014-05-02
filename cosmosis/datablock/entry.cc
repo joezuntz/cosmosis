@@ -1,10 +1,10 @@
 #include "entry.hh"
+#include "clamped.hh"
 #include <limits>
-#include "stdio.h"
+#include <cstdio>
 
 using std::string;
 using std::vector;
-
 
 // We initialize one of the members of the anonymous union in order to
 // avoid warnings about the use of unitialized memory.
@@ -74,10 +74,7 @@ void cosmosis::Entry::_destroy_if_managed() {
 template <class V>
 int clamped_size(V const& v)
 {
-  auto sz = v.size();
-  return sz > std::numeric_limits<int>::max()
-    ? -2
-    : sz;
+  return cosmosis::clamp(v.size());
 }
 
 // Should size() deal with ndarray values? What would it make sense to
