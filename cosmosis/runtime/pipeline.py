@@ -106,6 +106,7 @@ class Pipeline(object):
             if self.debug:
                 sys.stdout.write("Running %.20s ...\n" % module)
                 sys.stdout.flush()
+                data_package.log_access("MODULE-START", module.name, "")
             if self.timing:
                 t1 = time.clock()
 
@@ -119,19 +120,24 @@ class Pipeline(object):
                 sys.stdout.write("%s took: %f seconds\n"% (module,t2-t1))
 
             if status:
+                if self.debug:
+                    data_package.print_log()
+                    sys.stdout.flush()
+                    sys.stderr.write("Because you set debug=True I printed a log of "
+                                     "all access to data printed above.\n"
+                                     "Look for the word 'FAIL'\n\n")
                 if not self.quiet:
                     sys.stderr.write("Error running pipeline (%d)- "
                                      "hopefully printed above here.\n"%status)
                     sys.stderr.write("Aborting this run and returning "
                                      "error status.\n")
-                if self.debug:
-                    sys.stderr.write("Block error log follows\n")
-                    sys.stdout.flush()
-                    data_package.report_failures()
+                    if not self.debug:
+                        sys.stderr.write("Setting debug=T in [pipeline] might help.\n")
                 return None
 
         if not self.quiet:
             sys.stdout.write("Pipeline ran okay.\n")
+
 
         # return something
         return True
