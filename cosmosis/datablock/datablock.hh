@@ -143,12 +143,12 @@ namespace cosmosis
 
     void print_log();
     void report_failures(std::ostream &output);
+    void log_access(const std::string &log_type, const std::string &section, const std::string &name, const std::type_info &type);
 
   private:
     std::map<std::string, Section> sections_;
     std::vector<log_entry> access_log_;
 
-    void log_access(const std::string &log_type, const std::string &section, const std::string &name, const std::type_info &type);
   };
 }
 
@@ -187,9 +187,13 @@ cosmosis::DataBlock::get_val(std::string section,
       log_access(BLOCK_LOG_READ_DEFAULT, section, name, typeid(val));
       return DBS_SUCCESS;
     }
-  log_access(BLOCK_LOG_READ, section, name, typeid(val));
+
   DATABLOCK_STATUS status = isec->second.get_val(name, def, val);
   if (status==DBS_SUCCESS) log_access(BLOCK_LOG_READ, section, name, typeid(val));
+  else if (status==DBS_USED_DEFAULT){
+    log_access(BLOCK_LOG_READ_DEFAULT, section, name, typeid(val));
+    status = DBS_SUCCESS;
+  }
   else log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(val));
   return status;
 }
@@ -221,7 +225,10 @@ cosmosis::DataBlock::replace_val(std::string section,
 {
   downcase(section); downcase(name);
   auto isec = sections_.find(section);
-  if (isec == sections_.end()) return DBS_SECTION_NOT_FOUND;
+  if (isec == sections_.end()) {
+    log_access(BLOCK_LOG_REPLACE_FAIL, section, name, typeid(val));
+    return DBS_SECTION_NOT_FOUND;
+  }
   DATABLOCK_STATUS status = isec->second.replace_val(name, val);
   if (status==DBS_SUCCESS){
     log_access(BLOCK_LOG_REPLACE, section, name, typeid(val));

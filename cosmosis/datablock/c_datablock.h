@@ -90,6 +90,18 @@ extern "C" {
    */
   DATABLOCK_STATUS destroy_c_datablock(c_datablock* s);
 
+  DATABLOCK_STATUS
+  c_datablock_report_failures(c_datablock* s);
+
+  DATABLOCK_STATUS
+  c_datablock_print_log(c_datablock* s);
+
+DATABLOCK_STATUS
+c_datablock_log_access(c_datablock* s, 
+                       const char * log_type,
+                       const char* section,
+                       const char* name);
+
 
   DATABLOCK_STATUS c_datablock_get_type(c_datablock const* s, const char* section, const char* name, datablock_type_t * t);
 

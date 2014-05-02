@@ -877,10 +877,42 @@ c_datablock_report_failures(c_datablock* s)
 {
   if (s == nullptr) return DBS_DATABLOCK_NULL;
   auto p = static_cast<DataBlock*>(s);
-  std::cerr << "Error log:" << std::endl;
+  std::cerr << "--- Error log --- " << std::endl;
   p->report_failures(std::cerr);
+  std::cerr << "--- End log --- " << std::endl;
   return DBS_SUCCESS;
 }
+
+
+
+DATABLOCK_STATUS
+c_datablock_print_log(c_datablock* s)
+{
+  if (s == nullptr) return DBS_DATABLOCK_NULL;
+  auto p = static_cast<DataBlock*>(s);
+  std::cout << "--- Access log --- " << std::endl;
+  p->print_log();
+  std::cout << "--- End log --- " << std::endl;
+  return DBS_SUCCESS;
+}
+
+
+DATABLOCK_STATUS
+c_datablock_log_access(c_datablock* s, 
+                       const char * log_type,
+                       const char* section,
+                       const char* name)
+{
+
+  if (s == nullptr) return DBS_DATABLOCK_NULL;
+  std::string t = std::string(""); // Dummy type since not posible in C
+  auto p = static_cast<DataBlock*>(s);
+  p->log_access(log_type, section, name, typeid(t));
+  return DBS_SUCCESS;
+}
+
+
+
 
 
 } // extern "C"

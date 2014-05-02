@@ -10,6 +10,8 @@ extern const char * BLOCK_LOG_REPLACE;
 extern const char * BLOCK_LOG_REPLACE_FAIL;
 extern const char * BLOCK_LOG_CLEAR;
 extern const char * BLOCK_LOG_DELETE;
+extern const char * BLOCK_LOG_START_MODULE;
+
 #ifdef __cplusplus
 }
 #endif

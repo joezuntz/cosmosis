@@ -82,7 +82,10 @@ void cosmosis::DataBlock::print_log()
     auto access_type = std::get<0>(l);
     auto section = std::get<1>(l);
     auto name = std::get<2>(l);
-    std::cout << access_type << "    " << section << "    " << name << std::endl;
+    bool new_module = access_type == std::string(BLOCK_LOG_START_MODULE);
+    if (new_module) std::cout << std::endl << std::endl;
+      std::cout << access_type << "    " << section << "    " << name << std::endl;
+    if (new_module) std::cout << std::endl;
   }
 
 }

@@ -385,3 +385,13 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
+	def print_log(self):
+		status = lib.c_datablock_print_log(self._ptr)
+		if status!=0:
+			raise BlockError.exception_for_status(status, "", "")
+
+	def log_access(self, log_type, section, name):
+		status = lib.c_datablock_log_access(self._ptr, log_type, section, name)
+		if status!=0:
+			raise BlockError.exception_for_status(status, "", "")
+
