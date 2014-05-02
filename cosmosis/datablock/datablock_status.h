@@ -27,7 +27,10 @@ typedef enum {
   DBS_SIZE_NULL,
   DBS_SIZE_NEGATIVE,
   DBS_SIZE_INSUFFICIENT,
-  DBS_LOGIC_ERROR
+  DBS_LOGIC_ERROR,
+  // This one is a little different - it should only be returned internall
+  // by the Section object rather than by any user-facing code
+  DBS_USED_DEFAULT, 
 } DATABLOCK_STATUS;
 
 

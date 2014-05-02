@@ -23,10 +23,10 @@ class TestSampler(Sampler):
         try:
             prior = self.pipeline.prior(p)
             like, extra, data = self.pipeline.likelihood(p, return_data=True)
-
-            print "Prior      = ", prior
-            print "Likelihood = ", like
-            print "Posterior  = ", like+prior
+            if data:
+                print "Prior      = ", prior
+                print "Likelihood = ", like
+                print "Posterior  = ", like+prior
         except Exception as e:
             if self.fatal_errors:
                 raise

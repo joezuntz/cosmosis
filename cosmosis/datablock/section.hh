@@ -131,7 +131,7 @@ cosmosis::Section::get_val(std::string const& name, T const& def, T& v) const
   if (i == vals_.end())
     {
       v = def;
-      return DBS_SUCCESS;
+      return DBS_USED_DEFAULT;
     }
   if (not i->second.is<T>()) return DBS_WRONG_VALUE_TYPE;
   v = i->second.val<T>();

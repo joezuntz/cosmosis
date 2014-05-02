@@ -143,3 +143,19 @@ load_library_function(
 	[c_block],
 	ct.c_int
 	)
+
+
+load_library_function(
+	locals(),
+	"c_datablock_print_log",
+	[c_block],
+	ct.c_int
+	)
+
+
+load_library_function(
+	locals(),
+	"c_datablock_log_access",
+	[c_block, c_str, c_str, c_str],
+	ct.c_int
+	)
