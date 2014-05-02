@@ -2,15 +2,14 @@
 #define COSMOSIS_NDARRAY_HH
 
 #include <numeric>
+#include <functional>
 #include <vector>
 
 inline
 std::size_t num_elements(std::vector<std::size_t> const& extents)
 {
-  return std::accumulate(extents.begin(),
-                         extents.end(),
-                         1,
-                         [](std::size_t x, std::size_t y) { return x*y; });
+  return std::accumulate(extents.begin(), extents.end(), 1,
+                         std::multiplies<std::size_t>());
 }
 
 namespace cosmosis
