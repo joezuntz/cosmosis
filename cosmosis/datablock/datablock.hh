@@ -159,11 +159,6 @@ namespace cosmosis
   private:
     std::map<std::string, Section> sections_;
     std::vector<log_entry> access_log_;
-
-    void log_access(const std::string &log_type, 
-                    const std::string &section,
-                    const std::string &name, 
-                    const std::type_info &type);
   };
 }
 

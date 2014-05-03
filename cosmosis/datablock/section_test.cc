@@ -17,7 +17,7 @@ void test_type(T && x, T && y)
   Section s;
   T result;
 
-  assert(s.get_val("no such parameter", x, result) == DBS_SUCCESS);
+  assert(s.get_val("no such parameter", x, result) == DBS_USED_DEFAULT);
   assert(result == x);
 
   assert(s.put_val("a", x) == DBS_SUCCESS);

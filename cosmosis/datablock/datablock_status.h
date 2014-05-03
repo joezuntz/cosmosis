@@ -27,13 +27,12 @@ typedef enum {
   DBS_SIZE_NULL,
   DBS_SIZE_NONPOSITIVE,
   DBS_SIZE_INSUFFICIENT,
-  DBS_LOGIC_ERROR,
   DBS_NDIM_NONPOSITIVE,
   DBS_NDIM_OVERFLOW,
   DBS_NDIM_MISMATCH,
   DBS_EXTENTS_NULL,
   DBS_EXTENTS_MISMATCH,
-  DBS_LOGIC_ERROR
+  DBS_LOGIC_ERROR,
   // This one is a little different - it should only be returned internall
   // by the Section object rather than by any user-facing code
   DBS_USED_DEFAULT, 
