@@ -23,13 +23,17 @@ endif
 all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t entry_t \
 	c_datablock_int_array_t c_datablock_double_array_t c_datablock_complex_array_t \
 	c_datablock_multidim_double_array_t \
+	ndarray_t \
 	fortran_t cosmosis_py/section_names.py
 
 lib: libcosmosis.so cosmosis_py/section_names.py
 
 clean:
 	rm -f *.o *.d *.so *.log *.mod cosmosis_f90/*.mod cosmosis_f90/*.o
-	rm -rf  libcosmosis_fortran.so.dSYM/*
+	rm -f c_datablock_complex_array_t c_datablock_double_array_t c_datablock_int_array_t
+	rm -f c_datablock_multidim_double_array_t c_datablock_t
+	rm -f datablock_t entry_t fortran_t ndarray_t section_t
+	rm -rf  *.dSYM/
 
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
