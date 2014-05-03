@@ -9,8 +9,10 @@
 using cosmosis::DataBlock;
 using cosmosis::Section;
 using cosmosis::complex_t;
+using cosmosis::ndarray;
 using std::string;
 using std::vector;
+using std::size_t;
 
 template <class T, class W>
 void test(T const& x, T const& y, W const& wrong)
@@ -147,7 +149,16 @@ void test_types()
   assert(t==DBT_COMPLEX1D);
   assert (b.get_type("bools","a",t)==DBS_SUCCESS);
   assert(t==DBT_BOOL);
+}
 
+template <class T>
+void test_multidim(T seed, vector<size_t> const& extents)
+{
+  DataBlock b;
+  size_t num_elements = std::accumulate(begin(extents), end(extents), 1, 
+                                        std::multiplies<size_t>());
+  ndarray<T> val(std::vector<T>(num_elements, seed), extents);
+  b.put_val("multi", "a", val);
 }
 
 int main()
@@ -165,4 +176,6 @@ int main()
   test_sections();
   test_types();
   test_delete();
+
+  test_multidim(1.5, vector<size_t>{3,4,5});
 }

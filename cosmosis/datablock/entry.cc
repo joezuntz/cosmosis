@@ -1,5 +1,5 @@
 #include "entry.hh"
-#include "clamped.hh"
+#include "clamp.hh"
 #include <limits>
 #include <cstdio>
 
@@ -23,7 +23,7 @@ cosmosis::Entry::Entry(Entry const& e) :
   else if (type_ == typeid(vcomplex_t)) emplace(&vz,  e.vz);
   else if (type_ == typeid(nd_int_t)) emplace(&ndi, e.ndi);
   else if (type_ == typeid(nd_double_t)) emplace(&ndd, e.ndd);
-  else if (type_ == typeid(nd_complex_t)) emplace(&ndc, e.ndc);
+  else if (type_ == typeid(nd_complex_t)) emplace(&ndz, e.ndz);
   else throw BadEntry();
 }
 
@@ -47,7 +47,7 @@ cosmosis::Entry::operator==(Entry const& rhs) const
   else if (type_ == typeid(vcomplex_t)) return vz == rhs.vz;
   else if (type_ == typeid(nd_int_t)) return ndi == rhs.ndi;
   else if (type_ == typeid(nd_double_t)) return ndd == rhs.ndd;
-  else if (type_ == typeid(nd_complex_t)) return ndc == rhs.ndc;
+  else if (type_ == typeid(nd_complex_t)) return ndz == rhs.ndz;
   else throw BadEntry();
 }
 
@@ -68,7 +68,7 @@ void cosmosis::Entry::_destroy_if_managed() {
   else if (type_ == typeid(vcomplex_t)) vz.~vector<complex_t>();
   else if (type_ == typeid(nd_int_t)) ndi.~ndarray<int>();
   else if (type_ == typeid(nd_double_t)) ndd.~ndarray<double>();
-  else if (type_ == typeid(nd_complex_t)) ndc.~ndarray<complex_t>();
+  else if (type_ == typeid(nd_complex_t)) ndz.~ndarray<complex_t>();
 }
 
 template <class V>

@@ -4,9 +4,6 @@
 #include <float.h>
 #include <stdio.h>
 
-#define TEST_ARRAY(length, val, expected) \
-  for (int i = 0; i != length; ++i) assert(val[i] == expected[i])
-
 int main()
 {
   /* Array of two elements, each is an array of 3 doubles. */
@@ -38,8 +35,9 @@ int main()
   const int expected_ndims = 2;
   int expected_extents[] = {2,3};
   assert(c_datablock_put_double_array(s, "a", "e23", (double*)e_2_3, expected_ndims, expected_extents) == DBS_SUCCESS);
-  //assert(c_datablock_put_double_array(s, "a", "e23", &(e_2_3[0][0]), expected_ndims, expected_extents) == DBS_SUCCESS);
+  assert(c_datablock_put_double_array(s, "a", "e23a", &(e_2_3[0][0]), expected_ndims, expected_extents) == DBS_SUCCESS);
   assert(c_datablock_has_value(s, "a", "e23") == true);
+  assert(c_datablock_has_value(s, "a", "e23a"));
 
   /* Get what we just inserted */
   const int ndims = 2;

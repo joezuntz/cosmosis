@@ -33,7 +33,7 @@ namespace cosmosis
     template <class T> bool has_value(std::string const& name) const;
 
     //Return the number of items stored in this section
-    int number_values() const;
+    std::size_t number_values() const;
 
     // Return -1 if this section has no parameter with the given name,
     // or if the parameter is not an array type. Return -2 if the array
@@ -63,6 +63,14 @@ namespace cosmosis
     // Return true if we have a value of any type with the given name.
     bool has_val(std::string const& name) const;
 
+    // Return DBS_SUCCESS if the value with the given name is of the
+    // given type, and is an array, and an error if there is no such
+    // name, or if the named value is not an array of the given type. If
+    // returning DBS_SUCESS, set 'extents' to carry the extent of each
+    // dimension of the array.
+    template <class T>
+    DATABLOCK_STATUS get_array_shape(std::string const& name,
+                                     std::vector<std::size_t>& extents) const;
 
     //Return the name of the key at position i
     std::string const& value_name(std::size_t i) const;
@@ -135,6 +143,20 @@ cosmosis::Section::get_val(std::string const& name, T const& def, T& v) const
     }
   if (not i->second.is<T>()) return DBS_WRONG_VALUE_TYPE;
   v = i->second.val<T>();
+  return DBS_SUCCESS;
+}
+
+template <class T>
+DATABLOCK_STATUS
+cosmosis::Section::get_array_shape(std::string const& name,
+                                   std::vector<std::size_t>& extents) const
+{
+  auto i = vals_.find(name);
+  if (i == vals_.end()) return DBS_NAME_NOT_FOUND;
+  typedef ndarray<T> array_t;
+  if (not i->second.is<array_t>()) return DBS_WRONG_VALUE_TYPE;
+  auto const& r = view<array_t>(name);
+  extents = r.extents();
   return DBS_SUCCESS;
 }
 

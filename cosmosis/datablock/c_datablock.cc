@@ -8,12 +8,14 @@
 #include "entry.hh"
 #include "c_datablock.h"
 #include "ndarray.hh"
+#include "clamp.hh"
 
 using cosmosis::DataBlock;
 using cosmosis::Section;
 using cosmosis::Entry;
 using cosmosis::complex_t;
 using cosmosis::ndarray;
+using cosmosis::clamp;
 using std::string;
 using std::vector;
 
@@ -59,7 +61,7 @@ extern "C"
     if (s == nullptr) return -1;
     if (section == nullptr) return -1;
     DataBlock const* p = static_cast<DataBlock const*>(s);
-    return p->num_values(section);
+    return clamp(p->num_values(section));
   }
 
   _Bool c_datablock_has_value(c_datablock const* s,
@@ -345,13 +347,12 @@ if (name == nullptr) return false;
       if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
       std::copy(r.cbegin(), r.cend(), *val);
       *sz = r.size();
-      return DBS_SUCCESS;
     }
     catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
     catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
     catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
     catch (...) { return DBS_LOGIC_ERROR; }
-    return DBS_LOGIC_ERROR;
+    return DBS_SUCCESS;
   }
 
   DATABLOCK_STATUS
@@ -374,13 +375,12 @@ if (name == nullptr) return false;
       if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
       std::copy(r.cbegin(), r.cend(), *val);
       *sz = r.size();
-      return DBS_SUCCESS;
     }
     catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
     catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
     catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
     catch (...) { return DBS_LOGIC_ERROR; }
-    return DBS_LOGIC_ERROR;
+    return DBS_SUCCESS;
   }
 
   DATABLOCK_STATUS
@@ -402,17 +402,16 @@ if (name == nullptr) return false;
       *val = static_cast<double _Complex*>(malloc(r.size() * sizeof(double _Complex)));
       if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
       for (size_t i = 0, n = r.size(); i != n; ++i)
-	{
-	  (*val)[i] = * reinterpret_cast<double _Complex const*>(&(r[i]));
-	}
+        {
+          (*val)[i] = * reinterpret_cast<double _Complex const*>(&(r[i]));
+        }
       *sz = r.size();
-      return DBS_SUCCESS;
     }
     catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
     catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
     catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
     catch (...) { return DBS_LOGIC_ERROR; }
-    return DBS_LOGIC_ERROR;
+    return DBS_SUCCESS;
   }
 
   DATABLOCK_STATUS
@@ -777,6 +776,13 @@ if (name == nullptr) return false;
     if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
     if (extents == nullptr) return DBS_EXTENTS_NULL;
 
+    auto p = static_cast<DataBlock*>(s);
+    vector<size_t> local_extents;
+    auto status = p->get_array_shape<double>(section, name, local_extents);
+    if (status != DBS_SUCCESS) return status;
+    if (clamp(local_extents.size()) != ndims) return DBS_NDIM_MISMATCH;
+    //for (size_t i = 0; i != ndims; ++i) extents[i] = local_extents[i];
+    for (auto ext : local_extents) *extents++ = ext;
     return DBS_SUCCESS;
   }
 
@@ -795,6 +801,19 @@ if (name == nullptr) return false;
     if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
     if (extents == nullptr) return DBS_EXTENTS_NULL;
 
+    auto p = static_cast<DataBlock *>(s);
+    try {
+      ndarray<double> const& r = p->view<ndarray<double>>(section, name);
+      if (clamp(r.ndims()) != ndims) return DBS_NDIM_MISMATCH;
+      for (size_t i = 0, sz = ndims; i != sz; ++i)
+        if (clamp(r.extents()[i]) != extents[i])
+          return DBS_EXTENTS_MISMATCH;
+      std::copy(r.begin(), r.end(), val);
+     }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
     return DBS_SUCCESS;
   }
 

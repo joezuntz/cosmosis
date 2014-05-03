@@ -297,7 +297,8 @@ void test_ndarray(ndarray<T> const& val)
   e.set_val("crunchy frog");
   assert(e.is<string>());  
 
-  // Now store a different set of values.
+  // Now store a different set of values. This makes sure the range-for
+  // syntax works.
   ndarray<T> twice(val);
   for (auto& v : twice) v *= 2.0;
 }

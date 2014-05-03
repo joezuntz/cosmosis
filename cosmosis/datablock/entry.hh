@@ -143,7 +143,7 @@ namespace cosmosis
       // multi-dimensional arrays
       nd_int_t   ndi;
       nd_double_t ndd;
-      nd_complex_t ndc;
+      nd_complex_t ndz;
     }; // union
 
     // Call the destructor of the current value, if it is a managed type.
@@ -235,7 +235,7 @@ cosmosis::Entry::Entry(nd_double_t const& v) :
 
 inline
 cosmosis::Entry::Entry(nd_complex_t const& v) :
-  type_(typeid(v)), ndc(v)
+  type_(typeid(v)), ndz(v)
 {}
 
 template <class T>
@@ -282,7 +282,7 @@ namespace cosmosis
   template <> inline vcomplex_t Entry::val<vcomplex_t>() const { return _val(&vz); }
   template <> inline nd_int_t Entry::val<nd_int_t>() const { return _val(&ndi); }
   template <> inline nd_double_t Entry::val<nd_double_t>() const { return _val(&ndd); }
-  template <> inline nd_complex_t Entry::val<nd_complex_t>() const { return _val(&ndc); }
+  template <> inline nd_complex_t Entry::val<nd_complex_t>() const { return _val(&ndz); }
 
   template <> inline bool const& Entry::view<bool>() const { return _val(&b); }
   template <> inline int const& Entry::view<int>() const { return _val(&i); }
@@ -293,6 +293,9 @@ namespace cosmosis
   template <> inline vdouble_t const& Entry::view<vdouble_t>() const { return _val(&vd); }
   template <> inline vstring_t const& Entry::view<vstring_t>() const { return _val(&vs); }
   template <> inline vcomplex_t const& Entry::view<vcomplex_t>() const { return _val(&vz); }
+  template <> inline nd_int_t const& Entry::view<nd_int_t>() const { return _val(&ndi); }
+  template <> inline nd_double_t const& Entry::view<nd_double_t>() const { return _val(&ndd); }
+  template <> inline nd_complex_t const& Entry::view<nd_complex_t>() const { return _val(&ndz); }
 }
 
 #endif

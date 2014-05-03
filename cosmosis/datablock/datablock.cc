@@ -1,4 +1,5 @@
 #include "datablock.hh"
+#include "clamp.hh"
 #include <iostream>
 
 using namespace std;
@@ -37,13 +38,13 @@ bool cosmosis::DataBlock::has_section(string name) const
   return sections_.find(name) != sections_.end();
 }
 
-int cosmosis::DataBlock::num_values(string const& section) const
+int cosmosis::DataBlock::num_values(string section) const
 {
+  downcase(section);
   auto isec = sections_.find(section);
   if (isec == sections_.end()) return -1;
-  return isec->second.number_values();
+  return clamp(isec->second.number_values());
 }
-
 
 std::size_t cosmosis::DataBlock::num_sections() const
 {

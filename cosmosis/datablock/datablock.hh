@@ -71,12 +71,22 @@ namespace cosmosis
     int get_size(std::string section,
                  std::string name) const;
 
-  // Get the type, if any, of the named object.
-  // The types are enumerated in 
-  // Returns DBS_SUCCESS if found.
-  DATABLOCK_STATUS get_type(std::string section,
-                            std::string name,
-                            datablock_type_t &t) const;
+    // Return the extents of the array of the given name in the given
+    // section. If the found item is actually an array carrying the
+    // right fundamental data type, return DBS_SUCCESS and fill in
+    // extents. If no object is found, or if the object is not an array,
+    // return an error status, and do no modify extents.
+    template <class T>
+    DATABLOCK_STATUS get_array_shape(std::string section,
+                                     std::string name,
+                                     std::vector<std::size_t>& extents);
+
+    // Get the type, if any, of the named object. The types are
+    // identified by the enumeration type datablock_type_t. Returns
+    // DBS_SUCCESS if found.
+    DATABLOCK_STATUS get_type(std::string section,
+                              std::string name,
+                              datablock_type_t &t) const;
 
 
     // get functions return the status, and set the value of their
@@ -117,8 +127,9 @@ namespace cosmosis
     // Return the number of sections in this DataBlock.
     std::size_t num_sections() const;
 
-    // Get the number of values in a named section
-    int num_values(std::string const& section) const;
+    // Get the number of values in a named section.
+    // Returns -1 if there is no section with the given name.
+    int num_values(std::string section) const;
 
     // Return the name of the i'th section. Throws BadDataBlockAccess if
     // the index is out-of-range.
@@ -149,10 +160,33 @@ namespace cosmosis
     std::map<std::string, Section> sections_;
     std::vector<log_entry> access_log_;
 
+    void log_access(const std::string &log_type, 
+                    const std::string &section,
+                    const std::string &name, 
+                    const std::type_info &type);
   };
 }
 
 // Implementation details below.
+
+template <class T>
+DATABLOCK_STATUS
+cosmosis::DataBlock::get_array_shape(std::string section,
+                                     std::string name,
+                                     std::vector<std::size_t>& extents)
+{
+  downcase(section); downcase(name);
+  auto isec = sections_.find(section);
+  if (isec == sections_.end())
+    {
+      log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(T));
+      return DBS_SECTION_NOT_FOUND;
+    }
+  DATABLOCK_STATUS status = isec->second.get_array_shape<T>(name, extents);
+  if (status==DBS_SUCCESS) log_access(BLOCK_LOG_READ, section, name, typeid(T));
+  else log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(T));
+  return status;
+}
 
 template <class T>
 DATABLOCK_STATUS

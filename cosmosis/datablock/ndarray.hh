@@ -26,17 +26,25 @@ namespace cosmosis
     // ndims elements will be read.
     ndarray(T const* data, int const& ndims, int const* extents);
 
+    // Create an ndarray carrying the given data, with the given
+    // extents. This construction is intended primarily for testing.
+    // The arguments are passed by value to take advantage of move
+    // construction, when possible.
+    ndarray(std::vector<T> vals, std::vector<std::size_t> extents);
+
     std::size_t ndims() const;
 
     bool operator==(ndarray<T> const& other) const;
 
-    const_iterator cbegin() { return data_.cbegin(); }
-    iterator begin() { return data_.begin(); }
-    const_iterator begin() const { return data_.cbegin(); }
+    const_iterator cbegin();
+    iterator begin();
+    const_iterator begin() const;
 
-    const_iterator cend() { return data_.cend(); }
-    iterator end() { return data_.end(); }
-    const_iterator end() const { return data_.cend(); }
+    const_iterator cend();
+    iterator end();
+    const_iterator end() const;
+
+    std::vector<std::size_t> const& extents() const;
 
   private:
     std::vector<std::size_t> extents_;
@@ -51,6 +59,11 @@ cosmosis::ndarray<T>::ndarray(T const* data, int const& ndims, int const* extent
 {
 }
 
+template <class T>
+cosmosis::ndarray<T>::ndarray(std::vector<T> vals, std::vector<std::size_t> extents) :
+  extents_(std::move(extents)),
+  data_(std::move(vals))
+{ }
 
 template <class T>
 std::size_t
@@ -64,6 +77,55 @@ bool
 cosmosis::ndarray<T>::operator==(ndarray<T> const& other) const
 {
   return (extents_ == other.extents_ && data_ == other.data_);
+}
+
+template <class T>
+typename cosmosis::ndarray<T>::const_iterator
+cosmosis::ndarray<T>::cbegin()
+{
+  return data_.cbegin();
+}
+
+template <class T>
+typename cosmosis::ndarray<T>::iterator
+cosmosis::ndarray<T>::begin()
+{
+  return data_.begin();
+}
+
+template <class T>
+typename cosmosis::ndarray<T>::const_iterator
+cosmosis::ndarray<T>::begin() const
+{
+  return data_.begin();
+}
+
+template <class T>
+typename cosmosis::ndarray<T>::const_iterator
+cosmosis::ndarray<T>::cend()
+{
+  return data_.cend();
+}
+
+template <class T>
+typename cosmosis::ndarray<T>::iterator
+cosmosis::ndarray<T>::end()
+{
+  return data_.end();
+}
+
+template <class T>
+typename cosmosis::ndarray<T>::const_iterator
+cosmosis::ndarray<T>::end() const
+{
+  return data_.end();
+}
+
+template <class T>
+std::vector<std::size_t> const&
+cosmosis::ndarray<T>::extents() const
+{
+  return extents_;
 }
 
 #endif
