@@ -744,6 +744,80 @@ if (name == nullptr) return false;
   }
 
   DATABLOCK_STATUS
+  c_datablock_put_int_array(c_datablock* s,
+                            const char* section,
+                            const char* name,
+                            int const* val,
+                            int ndims,
+                            int const* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    ndarray<int> tmp(val, ndims, extents);
+    return p->put_val(section, name, tmp);
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_int_array_shape(c_datablock* s,
+                                  const char* section,
+                                  const char* name,
+                                  int ndims,
+                                  int* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    vector<size_t> local_extents;
+    auto status = p->get_array_shape<int>(section, name, local_extents);
+    if (status != DBS_SUCCESS) return status;
+    if (clamp(local_extents.size()) != ndims) return DBS_NDIM_MISMATCH;
+    //for (size_t i = 0; i != ndims; ++i) extents[i] = local_extents[i];
+    for (auto ext : local_extents) *extents++ = ext;
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_int_array(c_datablock* s,
+                            const char* section,
+                            const char* name,
+                            int* val,
+                            int ndims,
+                            int const* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    auto p = static_cast<DataBlock *>(s);
+    try {
+      ndarray<int> const& r = p->view<ndarray<int>>(section, name);
+      if (clamp(r.ndims()) != ndims) return DBS_NDIM_MISMATCH;
+      for (size_t i = 0, sz = ndims; i != sz; ++i)
+        if (clamp(r.extents()[i]) != extents[i])
+          return DBS_EXTENTS_MISMATCH;
+      std::copy(r.begin(), r.end(), val);
+    }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
   c_datablock_put_double_array(c_datablock* s,
                                const char* section,
                                const char* name,
@@ -816,7 +890,6 @@ if (name == nullptr) return false;
     catch (...) { return DBS_LOGIC_ERROR; }
     return DBS_SUCCESS;
   }
-
 
 DATABLOCK_STATUS  c_datablock_put_double_grid(
   c_datablock* s,

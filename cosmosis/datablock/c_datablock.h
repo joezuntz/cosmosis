@@ -318,6 +318,29 @@ c_datablock_log_access(c_datablock* s,
 				       int sz);
 
   DATABLOCK_STATUS
+  c_datablock_put_int_array(c_datablock* s,
+                            const char* section,
+                            const char* name,
+                            int const* val,
+                            int ndims,
+                            int const* extents);
+
+  DATABLOCK_STATUS
+  c_datablock_get_int_array_shape(c_datablock* s,
+                                  const char* section,
+                                  const char* name,
+                                  int ndims,
+                                  int* extents);
+
+  DATABLOCK_STATUS
+  c_datablock_get_int_array(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               int* val,
+                               int ndims,
+                               int const* extents);                               
+
+  DATABLOCK_STATUS
   c_datablock_put_double_array(c_datablock* s,
                                const char* section,
                                const char* name,
