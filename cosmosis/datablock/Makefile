@@ -23,6 +23,8 @@ endif
 all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t entry_t \
 	c_datablock_int_array_t c_datablock_double_array_t c_datablock_complex_array_t \
 	c_datablock_multidim_double_array_t \
+	c_datablock_multidim_int_array_t \
+	c_datablock_multidim_complex_array_t \
 	ndarray_t \
 	fortran_t cosmosis_py/section_names.py
 

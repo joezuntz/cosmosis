@@ -2,6 +2,8 @@
 #include <complex.h>
 #include <string.h>
 #include <iostream>
+#include <functional>
+#include <numeric>
 
 #include "datablock.hh"
 #include "section.hh"
@@ -883,6 +885,90 @@ if (name == nullptr) return false;
         if (clamp(r.extents()[i]) != extents[i])
           return DBS_EXTENTS_MISMATCH;
       std::copy(r.begin(), r.end(), val);
+     }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_put_complex_array(c_datablock* s,
+                                const char* section,
+                                const char* name,
+                                double _Complex const* val,
+                                int ndims,
+                                int const* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    // Complex values require translation, so this is handled
+    // differently from int and double...
+    size_t num_elements =
+      std::accumulate(extents, extents+ndims, 1, std::multiplies<int>());
+
+    vector<complex_t> z(val, val + num_elements);
+    vector<size_t> local_extents(extents, extents+ndims);
+    ndarray<complex_t> tmp(z, local_extents);
+    return p->put_val(section, name, tmp);
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_complex_array_shape(c_datablock* s,
+                                      const char* section,
+                                      const char* name,
+                                      int ndims,
+                                      int* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    vector<size_t> local_extents;
+    auto status = p->get_array_shape<complex_t>(section, name, local_extents);
+    if (status != DBS_SUCCESS) return status;
+    if (clamp(local_extents.size()) != ndims) return DBS_NDIM_MISMATCH;
+    //for (size_t i = 0; i != ndims; ++i) extents[i] = local_extents[i];
+    for (auto ext : local_extents) *extents++ = ext;
+    return DBS_SUCCESS;
+  }
+
+  DATABLOCK_STATUS
+  c_datablock_get_complex_array(c_datablock* s,
+                                const char* section,
+                                const char* name,
+                                double _Complex* val,
+                                int ndims,
+                                int const* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    auto p = static_cast<DataBlock *>(s);
+    try {
+      ndarray<complex_t> const& r = p->view<ndarray<complex_t>>(section, name);
+      if (clamp(r.ndims()) != ndims) return DBS_NDIM_MISMATCH;
+      for (size_t i = 0, sz = ndims; i != sz; ++i)
+        if (clamp(r.extents()[i]) != extents[i])
+          return DBS_EXTENTS_MISMATCH;
+      // We rely on the layout of std::complex<double> and double
+      // _Complex matching. Note that &*r.begin() returns the address of
+      // the first location of the stored complex numbers.
+      memcpy(val, &*r.begin(), r.size()*sizeof(complex_t));
      }
     catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
     catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }

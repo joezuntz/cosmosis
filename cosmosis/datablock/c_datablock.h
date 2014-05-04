@@ -334,11 +334,11 @@ c_datablock_log_access(c_datablock* s,
 
   DATABLOCK_STATUS
   c_datablock_get_int_array(c_datablock* s,
-                               const char* section,
-                               const char* name,
-                               int* val,
-                               int ndims,
-                               int const* extents);                               
+                            const char* section,
+                            const char* name,
+                            int* val,
+                            int ndims,
+                            int const* extents);
 
   DATABLOCK_STATUS
   c_datablock_put_double_array(c_datablock* s,
@@ -361,7 +361,30 @@ c_datablock_log_access(c_datablock* s,
                                const char* name,
                                double* val,
                                int ndims,
-                               int const* extents);                               
+                               int const* extents);
+
+  DATABLOCK_STATUS
+  c_datablock_put_complex_array(c_datablock* s,
+                                const char* section,
+                                const char* name,
+                                double _Complex const* val,
+                                int ndims,
+                                int const* extents);
+  
+  DATABLOCK_STATUS
+  c_datablock_get_complex_array_shape(c_datablock* s,
+                                      const char* section,
+                                      const char* name,
+                                      int ndims,
+                                      int* extents);
+
+  DATABLOCK_STATUS
+  c_datablock_get_complex_array(c_datablock* s,
+                                const char* section,
+                                const char* name,
+                                double _Complex* val,
+                                int ndims,
+                                int const* extents);
 
 double ** allocate_2d_double(int nx, int ny);
 void deallocate_2d_double(double *** z, int nx);
