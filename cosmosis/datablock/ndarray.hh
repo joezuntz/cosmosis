@@ -46,6 +46,9 @@ namespace cosmosis
 
     std::vector<std::size_t> const& extents() const;
 
+    // size() returns the number of elements in the array.
+    std::size_t size() const;
+
   private:
     std::vector<std::size_t> extents_;
     std::vector<T> data_;
@@ -126,6 +129,13 @@ std::vector<std::size_t> const&
 cosmosis::ndarray<T>::extents() const
 {
   return extents_;
+}
+
+template <class T>
+std::size_t
+cosmosis::ndarray<T>::size() const
+{
+  return data_.size();
 }
 
 #endif

@@ -26,6 +26,11 @@ int main()
   double* b = &x[0][0];
   assert(vals == vector<double>(b, b+6));
 
+  // Make sure size is reported correctly. Size is the number of array
+  // elements stored.
+  assert(xx.size() == 3*2);
+  assert(yy.size() == 3*2);
+
   // The code below is one example of what we would like the C++
   // interface of the ndarray to support. This is not yet working, and
   // the real solution may end up looking different from this.
