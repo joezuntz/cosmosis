@@ -41,8 +41,8 @@ verify_setup:
 test:  test_entry test_section test_datablock test_c_datablock \
 	test_ndarray \
 	test_c_datablock_int_array test_c_datablock_double_array test_c_datablock_complex_array \
+  test_c_datablock_multidim_double_array \
   test_fortran \
-#	test_c_datablock_multidim_double_array
 
 test_ndarray: ndarray_t
 	@/bin/echo -n "Running ndarray_t "
