@@ -31,7 +31,10 @@ lib: libcosmosis.so cosmosis_py/section_names.py
 clean:
 	rm -f *.o *.d *.so *.log *.mod cosmosis_f90/*.mod cosmosis_f90/*.o
 	rm -f c_datablock_complex_array_t c_datablock_double_array_t c_datablock_int_array_t
-	rm -f c_datablock_multidim_double_array_t c_datablock_t
+	rm -f c_datablock_t
+	rm -f c_datablock_multidim_double_array_t
+	rm -f c_datablock_multidim_int_array_t
+	rm -f c_datablock_multidim_complex_array_t
 	rm -f datablock_t entry_t fortran_t ndarray_t section_t
 	rm -rf  *.dSYM/
 
@@ -42,57 +45,69 @@ test:  test_entry test_section test_datablock test_c_datablock \
 	test_ndarray \
 	test_c_datablock_int_array test_c_datablock_double_array test_c_datablock_complex_array \
   test_c_datablock_multidim_double_array \
+  test_c_datablock_multidim_int_array \
+  test_c_datablock_multidim_complex_array \
   test_fortran \
 
 test_ndarray: ndarray_t
-	@/bin/echo -n "Running ndarray_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./ndarray_t > ndarray_t.log
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
-test_datablock: lib datablock_t
-	@/bin/echo -n "Running datablock_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./datablock_t > datablock_t.log
+test_datablock: datablock_t lib
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
-test_c_datablock: lib c_datablock_t
-	@/bin/echo -n "Running c_datablock_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_t > c_datablock_t.log
+test_c_datablock: c_datablock_t lib
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
-test_c_datablock_int_array: lib c_datablock_int_array_t
-	@/bin/echo -n "Running c_datablock_int_array_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_int_array_t > c_datablock_int_array_t.log
+test_c_datablock_int_array: c_datablock_int_array_t lib
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
-test_c_datablock_double_array: lib c_datablock_double_array_t
-	@/bin/echo -n "Running c_datablock_double_array_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_double_array_t > c_datablock_double_array_t.log
+test_c_datablock_double_array:  c_datablock_double_array_t lib
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
-test_c_datablock_complex_array: lib c_datablock_complex_array_t
-	@/bin/echo -n "Running c_datablock_complex_array_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_complex_array_t > c_datablock_complex_array_t.log
+test_c_datablock_complex_array: c_datablock_complex_array_t lib
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
-test_c_datablock_multidim_double_array: lib c_datablock_multidim_double_array_t
-	@/bin/echo -n "Running c_datablock_multidim_double_array_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./c_datablock_multidim_double_array_t > c_datablock_multidim_double_array_t.log
+test_c_datablock_multidim_double_array: c_datablock_multidim_double_array_t lib
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
-test_section: lib section_t
-	@/bin/echo -n "Running section_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./section_t >  section_t.log
+test_c_datablock_multidim_int_array: c_datablock_multidim_int_array_t lib
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
+	@/bin/echo  ... passed
+
+test_c_datablock_multidim_complex_array: c_datablock_multidim_complex_array_t lib
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
+	@/bin/echo  ... passed
+
+test_section: section_t lib
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
 # entry_t doesn't depend on libcosmosis
 test_entry: entry_t
-	@/bin/echo -n "Running entry_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./entry_t >  entry_t.log
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
-test_fortran: fortran_t
-	@/bin/echo -n "Running fortran_t "
-	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./fortran_t >  fortran_t.log
+test_fortran: fortran_t libcosmosis_fortran.so
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
 test_python: 
@@ -143,6 +158,12 @@ c_datablock_complex_array_t: c_datablock_complex_array_test.c c_datablock.h libc
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
 c_datablock_multidim_double_array_t: c_datablock_multidim_double_array_test.c c_datablock.h libcosmosis.so
+	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
+
+c_datablock_multidim_int_array_t: c_datablock_multidim_int_array_test.c c_datablock.h libcosmosis.so
+	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
+
+c_datablock_multidim_complex_array_t: c_datablock_multidim_complex_array_test.c c_datablock.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
 entry_t: entry_test.o libcosmosis.so
