@@ -80,8 +80,9 @@ class Pipeline(object):
             for (section, name), value in self.options:
                 if section in relevant_sections:
                     # add back a default section?
-                    config_block.put(section, name,
-                                     self.options.gettyped(section, name))
+                    val = self.options.gettyped(section, name)
+                    if val is not None:
+                        config_block.put(section, name, val)
 
             module.setup(config_block)
 

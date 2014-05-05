@@ -199,7 +199,10 @@ class Inifile(IncludingConfigParser):
         import re
 
         value = IncludingConfigParser.get(self, section, name)
-
+        value = value.strip()
+        # There isn't really a sensible thing to return for this,
+        # so we just need to set it to None.
+        if not value: return None
         # try quoted string
         m = re.match(r"^(['\"])(.*?)\1$", value)
         if m is not None:
