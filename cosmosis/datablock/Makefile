@@ -26,6 +26,7 @@ all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t e
 	c_datablock_multidim_int_array_t \
 	c_datablock_multidim_complex_array_t \
 	ndarray_t \
+	fake_array_t \
 	fortran_t cosmosis_py/section_names.py
 
 lib: libcosmosis.so cosmosis_py/section_names.py
@@ -50,6 +51,12 @@ test:  test_entry test_section test_datablock test_c_datablock \
   test_c_datablock_multidim_int_array \
   test_c_datablock_multidim_complex_array \
   test_fortran \
+	test_fake_array
+
+test_fake_array: fake_array_t
+	@/bin/echo -n "Running $< "
+	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
+	@/bin/echo  ... passed
 
 test_ndarray: ndarray_t
 	@/bin/echo -n "Running $< "
@@ -178,6 +185,10 @@ section_t: section_test.o libcosmosis.so
 ndarray_t: ndarray_test.o
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
+# Note: fake_array_t does not make use of libcosmosis!
+fake_array_t: fake_array_test.o
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
 datablock.o: section_names.h datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h datablock_logging.h
 c_datablock.o: section_names.h c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h ndarray.hh
 datablock_logging.o: datablock_logging.cc datablock_logging.h
@@ -186,6 +197,5 @@ entry_test.o: entry_test.cc entry.hh
 section.o: section.cc section.hh entry.hh datablock_status.h
 section_test.o: section_test.cc section.hh
 ndarray_test.o: ndarray_test.cc ndarray.hh
-
-
+fake_array_test.o: fake_array_test.cc fakearray.hh mdarraygen.hh
 
