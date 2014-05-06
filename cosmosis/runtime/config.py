@@ -63,7 +63,7 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
                     include_statement, filename = line.split()
                     filename = filename.strip('"')
                     filename = filename.strip("'")
-                    sys.stdout.write("Reading included ini file: " %
+                    sys.stdout.write("Reading included ini file: %s\n" %
                                      (filename,))
                     if not os.path.exists(filename):
                         # TODO: remove direct sys.stderr writes
