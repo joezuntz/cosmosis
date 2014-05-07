@@ -20,19 +20,28 @@ class EmceeSampler(ParallelSampler):
             self.nwalkers = self.ini.getint(EMCEE_INI_SECTION, "walkers", 2)
             self.samples = self.ini.getint(EMCEE_INI_SECTION, "samples", 1000)
             self.nsteps = self.ini.getint(EMCEE_INI_SECTION, "nsteps", 100)
-            ndim = len(self.pipeline.varied_params)
-
+            start_file = self.ini.get(EMCEE_INI_SECTION, "start-points", "")
+            self.ndim = len(self.pipeline.varied_params)
             #Starting positions and values for the chain
             self.num_samples = 0
-            self.p0 = [self.pipeline.randomized_start()
-                       for i in xrange(self.nwalkers)]
+            if start_file:
+                self.p0 = self.load_start(start_file)
+            else:
+                self.p0 = [self.pipeline.randomized_start()
+                           for i in xrange(self.nwalkers)]
             self.prob0 = None
             self.blob0 = None
 
             #Finally we can create the sampler
-            self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, ndim,
+            self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, self.ndim,
                                                        log_probability_function,
                                                        pool=self.pool)
+
+    def load_start(self, filename):
+        data = np.genfromtxt(filename)
+        p0 = data[-1-self.nwalkers:-1].copy()
+        if len(p0) != self.nwalkers:
+            raise RuntimeError("There are not enough lines in the starting point file %s"%filename)
 
     def output_samples(self, pos, extra_info):
         for p,e in zip(pos,extra_info):
