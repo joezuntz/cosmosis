@@ -113,22 +113,22 @@ void test_scalar_bool()
   assert(c_datablock_replace_int(s, section_name, "a value", 1) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_bool(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == true);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_double(s, section_name, "a value", 2.5) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_bool(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == true);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_string(s, section_name, "a value", "wombat") == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_bool(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == true);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_complex(s, section_name, "a value", 3.5-2.5*_Complex_I) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_bool(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == true);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
 
   destroy_c_datablock(s);
@@ -248,22 +248,22 @@ void test_scalar_int()
   assert(c_datablock_replace_bool(s, section_name, "a value", false) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_int(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 5);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_double(s, section_name, "a value", 2.5) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_int(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 5);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_string(s, section_name, "a value", "wombat") == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_int(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 5);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_complex(s, section_name, "a value", 3.5-2.5*_Complex_I) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_int(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 5);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
 
   destroy_c_datablock(s);
@@ -383,22 +383,22 @@ void test_scalar_double()
   assert(c_datablock_replace_bool(s, section_name, "a value", false) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_double(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 5.5);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_int(s, section_name, "a value", 1) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_double(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 5.5);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_string(s, section_name, "a value", "wombat") == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_double(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 5.5);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_complex(s, section_name, "a value", 3.5-2.5*_Complex_I) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_double(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 5.5);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
 
   destroy_c_datablock(s);
@@ -518,22 +518,22 @@ void test_scalar_complex()
   assert(c_datablock_replace_bool(s, section_name, "a value", false) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_complex(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 1.25-2.5*_Complex_I);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_int(s, section_name, "a value", 1) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_complex(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 1.25-2.5*_Complex_I);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_double(s, section_name, "a value", 2.5) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_complex(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 1.25-2.5*_Complex_I);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
   assert(c_datablock_replace_string(s, section_name, "a value", "wombat") == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_complex(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(a_value == 1.25-2.5*_Complex_I);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  // no cleanup needed ;
   
 
   destroy_c_datablock(s);
@@ -665,25 +665,25 @@ void test_scalar_string()
   assert(c_datablock_get_string(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(strlen(a_value) == strlen("cow"));
   assert(strcmp(a_value, "cow") == 0);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  free(a_value);
   
   assert(c_datablock_replace_int(s, section_name, "a value", 1) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_string(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(strlen(a_value) == strlen("cow"));
   assert(strcmp(a_value, "cow") == 0);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  free(a_value);
   
   assert(c_datablock_replace_double(s, section_name, "a value", 2.5) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_string(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(strlen(a_value) == strlen("cow"));
   assert(strcmp(a_value, "cow") == 0);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  free(a_value);
   
   assert(c_datablock_replace_complex(s, section_name, "a value", 3.5-2.5*_Complex_I) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_string(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   assert(strlen(a_value) == strlen("cow"));
   assert(strcmp(a_value, "cow") == 0);
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  free(a_value);
   
 
   destroy_c_datablock(s);

@@ -95,7 +95,7 @@ void test_scalar_<%= @current_type %>()
   assert(c_datablock_replace_<%= otype %>(s, section_name, "a value", <%= oval %>) == DBS_WRONG_VALUE_TYPE);
   assert(<%= @get_fun %>(s, section_name, "a value", &a_value) == DBS_SUCCESS);
   <%= send(@assert_sym, 'a_value', @values[0]) %>;
-  /* No cleanup because nothing should have been allocated, even for strings. */
+  <%= send(@cleanup_sym, 'a_value') %>;
   <% end %>
 
   destroy_c_datablock(s);
