@@ -1,5 +1,6 @@
 from .. import ParallelSampler
 import numpy as np
+import os
 from cosmosis.runtime.analytics import Analytics
 import logging
 
@@ -26,7 +27,7 @@ class PyMCSampler(ParallelSampler):
             raise RuntimeError("Error: burn_fraction outside "
                                "allowed range: %f" % (fburn,))
 
-        self.nburn = int(fburn*self.samples)
+        self.nburn = int(fburn * self.samples)
         self.Rconverge = self.ini.getfloat(PYMC_INI_SECTION, "Rconverge", 1.02)
 
         params = self.define_parameters()
@@ -94,12 +95,12 @@ class PyMCSampler(ParallelSampler):
         likes = -0.5 * self.mcmc.trace('deviance')[:]
         # TODO: do we output burned samples?
         for trace, like in zip(traces, likes):
-            extra = {'LIKE':like}
+            extra = {'LIKE': like}
             self.output.parameters(trace, extra)
 
         self.analytics.add_traces(traces)
 
-        self.output.log_noisy("Done %d iterations"%self.num_samples)
+        self.output.log_noisy("Done %d iterations" % self.num_samples)
 
     def worker(self):
         while not self.is_converged():
@@ -109,7 +110,7 @@ class PyMCSampler(ParallelSampler):
         self.sample()
 
     def is_converged(self):
-        #user has pressed Ctrl-C
+        # user has pressed Ctrl-C
         if self.interrupted:
             return True
         if self.num_samples >= self.samples:
@@ -121,16 +122,17 @@ class PyMCSampler(ParallelSampler):
 
     def load_covariance_matrix(self):
         covmat_filename = self.ini.get(PYMC_INI_SECTION, "covmat", "").strip()
-        if covmat_filename=="":
+        if covmat_filename == "":
             return None
         if not os.path.exists(covmat_filename):
-            raise ValueError("Covariance matrix %s not found"% covmat_filename)
+            raise ValueError(
+                "Covariance matrix %s not found" % covmat_filename)
         covmat = np.loadtxt(covmat_filename)
 
         if covmat.ndim == 0:
             covmat = covmat.reshape((1, 1))
         elif covmat.ndim == 1:
-            covmat = np.diag(covmat**2)
+            covmat = np.diag(covmat ** 2)
 
         nparams = len(self.pipeline.varied_params)
         if covmat.shape != (nparams, nparams):
@@ -154,12 +156,12 @@ class PyMCSampler(ParallelSampler):
     @staticmethod
     def reorder_matrix(old_order, new_order, cov):
             n = len(old_order)
-            cov2 = np.zeros((n,n))
+            cov2 = np.zeros((n, n))
             for i in xrange(n):
                     old_i = old_order.index(new_order[i])
                     for j in xrange(n):
                             old_j = old_order.index(new_order[j])
-                            cov2[i,j] = cov[old_i, old_j]
+                            cov2[i, j] = cov[old_i, old_j]
             return cov2
 
     # create PyMC parameter objects
@@ -178,8 +180,8 @@ class PyMCSampler(ParallelSampler):
                                                 value=start_value))
             elif isinstance(prior, GaussianPrior):
                 width = param.width()
-                mu = (prior.mu-param.limits[0])/width
-                tau = width**2/prior.sigma2
+                mu = (prior.mu - param.limits[0]) / width
+                tau = width ** 2 / prior.sigma2
 
                 priors.append(self.pymc.Normal(str(param),
                                                mu=mu,
