@@ -104,7 +104,7 @@ int main()
   assert(length == -1);
   /* no need to free val, because nothing was allocated. */
 
-#if 0
+
   /* Attempted replacement using a name associated with a different
      type should not succeed, and the stored value should not be
      changed. */
@@ -113,6 +113,6 @@ int main()
   double _Complex d;
   assert(c_datablock_get_complex(s, "x", "a double _Complex", &d) == DBS_SUCCESS);
   assert(d == 2.5);
-#endif
+
   destroy_c_datablock(s);
 }
