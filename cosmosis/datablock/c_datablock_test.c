@@ -232,10 +232,14 @@ void test_grid(){
     assert (c[i][j] == x[i] + y[j]);
    }
   }
-
+  free(a);
+  free(b);
+  free(c);
+  deallocate_2d_double(&z, nx);
+  deallocate_2d_double(&c, na);
 
   assert(status==0);
-
+  destroy_c_datablock(s);
 
 
 }
@@ -244,7 +248,7 @@ void test_grid(){
 int main()
 {
   test_sections();
-  //test_grid();
+  test_grid();
 
   test_scalar_int();
   test_scalar_double();

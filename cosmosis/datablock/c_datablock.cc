@@ -1003,6 +1003,7 @@ DATABLOCK_STATUS  c_datablock_put_double_grid(
       }
     }
     status = c_datablock_put_double_array_1d(s, section, name_z, z_flat, n_z);
+    free(z_flat);
     if (status) {return status;}
 
     // We could rely on n_x and n_y to record in the block what ordering the array has.
@@ -1098,6 +1099,7 @@ DATABLOCK_STATUS  c_datablock_get_double_grid(
         return status;
       }
     }
+  free(sentinel_value);
   free(z_flat);
 
   *n_x = nx;
