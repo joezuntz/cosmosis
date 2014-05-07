@@ -226,6 +226,7 @@ void test_grid(){
   "X", &na, &a,
   "Y", &nb, &b,
   "Z", &c);
+  assert(status==0);
 
   for (int i=0; i<nx; i++){
    for (int j=0; j<ny; j++){
@@ -234,7 +235,6 @@ void test_grid(){
   }
   free(a);
   free(b);
-  free(c);
   deallocate_2d_double(&z, nx);
   deallocate_2d_double(&c, na);
 
