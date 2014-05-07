@@ -627,6 +627,7 @@ module cosmosis_modules
         if (status .ne. 0) then
             if (allocated(x)) deallocate(x)
             if (allocated(y)) deallocate(y)
+            if (allocated(z)) deallocate(z)
             if (allocated(z_flat)) deallocate(z_flat)
             return
         endif
