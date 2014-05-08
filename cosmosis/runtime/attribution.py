@@ -51,7 +51,7 @@ class PipelineAttribution(object):
 				out_name = name
 				comment = ("name from ini file")
 			if info.version:
-				out_name += ' ' + info.version
+				out_name += ' ' + str(info.version)
 			output.metadata("module_%d"%i, out_name, comment)
 			for c in info.cite:
 				output.comment("CITE "+c)
