@@ -38,9 +38,6 @@ void test_scalar_<%= @current_type %>()
 
  /* Put with no previous value should save the right value. */
   assert(<%= @put_fun %>(s, section_name, "param_1", expected) == DBS_SUCCESS);
-  datablock_type_t tt;
-  assert(c_datablock_get_type(s, section_name, "param_1", &tt) == DBS_SUCCESS);
-  assert(tt == <%= @type_enumerator %>);
   assert(<%= @get_fun %>(s, section_name, "param_1", &val) == DBS_SUCCESS);
   <%= send(@assert_sym, 'val', 'expected') %>;
   <%= send(@cleanup_sym, 'val') %>;

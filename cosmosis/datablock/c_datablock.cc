@@ -20,9 +20,6 @@ using cosmosis::ndarray;
 using cosmosis::clamp;
 using std::string;
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
 
 extern "C"
 {
@@ -50,6 +47,7 @@ extern "C"
     if (section == nullptr) return DBS_SECTION_NULL;
     auto p = static_cast<DataBlock *>(s);
     return p->delete_section(section);
+
   }
 
   int c_datablock_num_sections(c_datablock const* s)
@@ -74,9 +72,9 @@ extern "C"
   {
     if (s == nullptr) return false;
     if (section == nullptr) return false;
-    if (s == nullptr) return false;
+        if (s == nullptr) return false;
     if (section == nullptr) return false;
-    if (name == nullptr) return false;
+if (name == nullptr) return false;
     DataBlock const* p = static_cast<DataBlock const*>(s);
     return p->has_val(section, name);
   }
@@ -100,29 +98,19 @@ extern "C"
   }
 
   const char* c_datablock_get_value_name(c_datablock const* s, 
-					 const char* section, int j)
+    const char* section, int j)
   {
-    if (s == nullptr) return nullptr;
-    if (section == nullptr) return nullptr;
     if (j < 0) return nullptr;
     DataBlock const* p = static_cast<DataBlock const*>(s);
-    const char* res = nullptr;
-    try { res = p->value_name(section, j).c_str(); }
-    catch (...) { }
-    return res;
+    return p->value_name(section, j).c_str();
   }
 
-  const char*
-  c_datablock_get_value_name_by_section_index(c_datablock const* s, 
-					      int i, int j)
+  const char* c_datablock_get_value_name_by_section_index(c_datablock const* s, 
+    int i, int j)
   {
-    if (s == nullptr) return nullptr;
     if (i<0 || j<0) return nullptr;
     DataBlock const* p = static_cast<DataBlock const*>(s);
-    const char* res = nullptr;
-    try { res = p->value_name(i, j).c_str(); }
-    catch (...) { }
-    return res;
+    return p->value_name(i, j).c_str();
   }
 
   DATABLOCK_STATUS destroy_c_datablock(c_datablock* s)
@@ -141,14 +129,13 @@ extern "C"
   DATABLOCK_STATUS c_datablock_get_type(c_datablock const * s,
                                         const char* section,
                                         const char* name,
-                                        datablock_type_t * val)
+                                        datablock_type_t * t)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
     if (section == nullptr) return DBS_SECTION_NULL;
     if (name == nullptr) return DBS_NAME_NULL;
-    if (val == nullptr) return DBS_VALUE_NULL;
     DataBlock const* p = static_cast<DataBlock const*>(s);
-    return p->get_type(section, name, *val);
+    return p->get_type(section, name, *t);
   }
 
   DATABLOCK_STATUS
@@ -688,7 +675,7 @@ extern "C"
     if (name == nullptr) return DBS_NAME_NULL;
 
     auto p = static_cast<DataBlock*>(s);
-    complex_t z { val };
+    std::complex<double> z { val };
     return p->replace_val(section, name, z);
   }
 
@@ -1127,9 +1114,9 @@ c_datablock_report_failures(c_datablock* s)
 {
   if (s == nullptr) return DBS_DATABLOCK_NULL;
   auto p = static_cast<DataBlock*>(s);
-  cerr << "--- Error log --- " << endl;
-  p->report_failures(cerr);
-  cerr << "--- End log --- " << endl;
+  std::cerr << "--- Error log --- " << std::endl;
+  p->report_failures(std::cerr);
+  std::cerr << "--- End log --- " << std::endl;
   return DBS_SUCCESS;
 }
 
@@ -1140,9 +1127,9 @@ c_datablock_print_log(c_datablock* s)
 {
   if (s == nullptr) return DBS_DATABLOCK_NULL;
   auto p = static_cast<DataBlock*>(s);
-  cout << "--- Access log --- " << endl;
+  std::cout << "--- Access log --- " << std::endl;
   p->print_log();
-  cout << "--- End log --- " << endl;
+  std::cout << "--- End log --- " << std::endl;
   return DBS_SUCCESS;
 }
 
@@ -1155,7 +1142,7 @@ c_datablock_log_access(c_datablock* s,
 {
 
   if (s == nullptr) return DBS_DATABLOCK_NULL;
-  string t = string(""); // Dummy type since not posible in C
+  std::string t = std::string(""); // Dummy type since not posible in C
   auto p = static_cast<DataBlock*>(s);
   p->log_access(log_type, section, name, typeid(t));
   return DBS_SUCCESS;

@@ -38,9 +38,6 @@ void test_scalar_bool()
 
  /* Put with no previous value should save the right value. */
   assert(c_datablock_put_bool(s, section_name, "param_1", expected) == DBS_SUCCESS);
-  datablock_type_t tt;
-  assert(c_datablock_get_type(s, section_name, "param_1", &tt) == DBS_SUCCESS);
-  assert(tt == DBT_BOOL);
   assert(c_datablock_get_bool(s, section_name, "param_1", &val) == DBS_SUCCESS);
   assert(val == expected);
   // no cleanup needed ;
@@ -176,9 +173,6 @@ void test_scalar_int()
 
  /* Put with no previous value should save the right value. */
   assert(c_datablock_put_int(s, section_name, "param_1", expected) == DBS_SUCCESS);
-  datablock_type_t tt;
-  assert(c_datablock_get_type(s, section_name, "param_1", &tt) == DBS_SUCCESS);
-  assert(tt == DBT_INT);
   assert(c_datablock_get_int(s, section_name, "param_1", &val) == DBS_SUCCESS);
   assert(val == expected);
   // no cleanup needed ;
@@ -314,9 +308,6 @@ void test_scalar_double()
 
  /* Put with no previous value should save the right value. */
   assert(c_datablock_put_double(s, section_name, "param_1", expected) == DBS_SUCCESS);
-  datablock_type_t tt;
-  assert(c_datablock_get_type(s, section_name, "param_1", &tt) == DBS_SUCCESS);
-  assert(tt == DBT_DOUBLE);
   assert(c_datablock_get_double(s, section_name, "param_1", &val) == DBS_SUCCESS);
   assert(val == expected);
   // no cleanup needed ;
@@ -452,9 +443,6 @@ void test_scalar_complex()
 
  /* Put with no previous value should save the right value. */
   assert(c_datablock_put_complex(s, section_name, "param_1", expected) == DBS_SUCCESS);
-  datablock_type_t tt;
-  assert(c_datablock_get_type(s, section_name, "param_1", &tt) == DBS_SUCCESS);
-  assert(tt == DBT_COMPLEX);
   assert(c_datablock_get_complex(s, section_name, "param_1", &val) == DBS_SUCCESS);
   assert(val == expected);
   // no cleanup needed ;
@@ -591,9 +579,6 @@ void test_scalar_string()
 
  /* Put with no previous value should save the right value. */
   assert(c_datablock_put_string(s, section_name, "param_1", expected) == DBS_SUCCESS);
-  datablock_type_t tt;
-  assert(c_datablock_get_type(s, section_name, "param_1", &tt) == DBS_SUCCESS);
-  assert(tt == DBT_STRING);
   assert(c_datablock_get_string(s, section_name, "param_1", &val) == DBS_SUCCESS);
   assert(strlen(val) == strlen(expected));
   assert(strcmp(val, expected) == 0);
