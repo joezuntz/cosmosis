@@ -2,7 +2,14 @@
 
 require 'erb'
 
-
+ENUMERATORS = {
+  "bool" => "DBT_BOOL",
+  "int" => "DBT_INT",
+  "double" => "DBT_DOUBLE",
+  "complex" => "DBT_COMPLEX",
+  "string" => "DBT_STRING"
+}
+  
 class TestContext
   def initialize(typ, def_val, values, uninitialized_val)
     scalar_types = [ ["bool", 'false'],
@@ -21,6 +28,7 @@ class TestContext
     @other_types = scalar_types.select { |t,v| t != typ }
     @assert_sym = typ == "string" ? :assert_equal_string : :assert_equal_simple
     @cleanup_sym = typ == "string" ? :cleanup_string : :cleanup_simple
+    @type_enumerator = ENUMERATORS[typ]
   end
 
   def cleanup_simple(*)

@@ -88,7 +88,6 @@ namespace cosmosis
                               std::string name,
                               datablock_type_t &t) const;
 
-
     // get functions return the status, and set the value of their
     // output argument only upon success.
     template <class T>

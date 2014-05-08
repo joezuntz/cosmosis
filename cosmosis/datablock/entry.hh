@@ -36,7 +36,7 @@
 // It does not seem to make sense to have a default parameter type, so
 // Entry has no default constructor.
 //
-//  The 'is_<type>' functions are present mostly so that the C interface
+//  The 'is<type>' functions are present mostly so that the C interface
 //  can be written in a way that can be certain to never allow an
 //  exception to be thrown, without needing pervasive try/catch blocks.
 //
