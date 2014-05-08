@@ -64,6 +64,15 @@ load_library_function(
 	c_block
 )
 
+load_library_function(
+       locals(), 
+       "destroy_c_datablock",
+       [c_block],
+       c_int
+)
+
+
+
 
 load_library_function(
 	locals(), 
