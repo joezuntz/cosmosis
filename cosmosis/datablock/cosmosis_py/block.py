@@ -23,6 +23,14 @@ class DataBlock(object):
 		self._ptr = ptr
 	#TODO: add destructor.  destroy block if owned
 
+	def __del__(self):
+		try:
+			if self.owns:
+				lib.destroy_c_datablock(self._ptr)
+		except:
+			pass
+				
+
 	@staticmethod
 	def python_to_c_complex(value):
 		if isinstance(value, lib.c_complex):

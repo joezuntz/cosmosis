@@ -1,4 +1,5 @@
 from .. import ParallelSampler
+import numpy as np
 
 EMCEE_INI_SECTION = "emcee"
 
@@ -38,10 +39,14 @@ class EmceeSampler(ParallelSampler):
                                                        pool=self.pool)
 
     def load_start(self, filename):
-        data = np.genfromtxt(filename)
-        p0 = data[-1-self.nwalkers:-1].copy()
+        data = np.genfromtxt(filename, invalid_raise=False)
+        p0 = data[-1-self.nwalkers:-1, :self.ndim].copy()
+        #make into list instead
+        p0 = [x for x in p0]
+        print "Loaded starting position from ", filename
         if len(p0) != self.nwalkers:
             raise RuntimeError("There are not enough lines in the starting point file %s"%filename)
+        return p0
 
     def output_samples(self, pos, extra_info):
         for p,e in zip(pos,extra_info):
