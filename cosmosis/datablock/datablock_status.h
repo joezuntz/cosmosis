@@ -10,10 +10,13 @@ extern "C" {
   datablock interface functions that return status codes. In all cases
   the user can rely upon 0 indicating success, and nonzero indicating
   some type of failure. The exact numeric values of codes indicating
-  failure should not be relied upon.
- */
+  failure should not be relied upon; use the enumerators instead of
+  integral values.
+*/
 
-typedef enum {
+typedef enum
+{
+  /* DBS_SUCCESS is returned to indicate success for most functions. */
   DBS_SUCCESS = 0,
   DBS_DATABLOCK_NULL,
   DBS_SECTION_NULL,
@@ -33,9 +36,10 @@ typedef enum {
   DBS_EXTENTS_NULL,
   DBS_EXTENTS_MISMATCH,
   DBS_LOGIC_ERROR,
-  // This one is a little different - it should only be returned internall
-  // by the Section object rather than by any user-facing code
-  DBS_USED_DEFAULT, 
+  /*
+    DBS_USED_DEFAULT should never be returned by a user-facing function.
+  */
+  DBS_USED_DEFAULT,
 } DATABLOCK_STATUS;
 
 #ifdef __cplusplus

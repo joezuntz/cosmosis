@@ -23,11 +23,22 @@ void test_sections()
   assert(c_datablock_get_array_length(NULL, NULL, NULL) == -1);
   assert(c_datablock_get_array_length(s, NULL, NULL) == -1);
   assert(c_datablock_get_array_length(s, "no such section", NULL) == -1);
+  assert(c_datablock_get_value_name(NULL, "no such section", 0) == NULL);
+  assert(c_datablock_get_value_name(s, NULL, 0) == NULL);
+  assert(c_datablock_get_value_name(s, "no such section", 0) == NULL);
+  assert(c_datablock_get_value_name_by_section_index(NULL, 0, 0) == NULL);
+  assert(c_datablock_get_value_name_by_section_index(s, 0, 0) == NULL);
+  assert(c_datablock_get_type(NULL, NULL, NULL, NULL) == DBS_DATABLOCK_NULL);
+  assert(c_datablock_get_type(s, NULL, NULL, NULL) == DBS_SECTION_NULL);
+  assert(c_datablock_get_type(s, "", NULL, NULL) == DBS_NAME_NULL);
+  assert(c_datablock_get_type(s, "", "", NULL) == DBS_VALUE_NULL);
   /* Creating a parameter in a section must create the section. */
   assert(c_datablock_put_int(s, "s1", "a", 10) == DBS_SUCCESS);
   assert(c_datablock_has_section(s, "s1") == true);
   assert(c_datablock_num_sections(s) == 1);
   assert(c_datablock_has_value(s, "s1", "a") == true);
+  assert(strcmp(c_datablock_get_value_name(s, "s1", 0), "a") == 0);
+  assert(strcmp(c_datablock_get_value_name_by_section_index(s, 0, 0), "a") == 0);
   assert(c_datablock_has_value(s, "no such section", "a") == false);
   assert(c_datablock_has_value(s, "s1", "no such parameter") == false);
   /* Make a few more sections. */
@@ -61,6 +72,11 @@ void test_array_int()
 {
   c_datablock* s = make_c_datablock();
   assert(s);
+
+  /* Test array length for non-array. */
+  assert(c_datablock_put_int(s, "z", "i", 5) == DBS_SUCCESS);
+  assert(c_datablock_get_array_length(s, "z", "i") == -1);
+
   int expected[] = {1, 2, 3};
   int sz = sizeof(expected) / sizeof(int);
   /* Put with no previous value should save the right value. */
@@ -72,6 +88,7 @@ void test_array_int()
   TEST_ARRAY(length, val, expected);
   free(val);
   assert(c_datablock_get_array_length(s, "x", "cow") == sz);
+
   /* Get with preallocated buffer should return the right value. */
   const int big = 100;
   int buffer[big];
