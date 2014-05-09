@@ -6,11 +6,12 @@ extern "C" {
 #endif
 
 /*
-    datablock_type_t enumerates the varioust things that
-    can be stored in the data data block
+    datablock_type_t enumerates the various types of things that can
+    be stored in the c_datablock.
  */
 
-typedef enum {
+typedef enum
+{
   DBT_INT,
   DBT_DOUBLE,
   DBT_COMPLEX,
@@ -29,8 +30,6 @@ typedef enum {
   DBT_COMPLEXND,
   DBT_UNKNOWN,
 } datablock_type_t;
-
-
 
 #ifdef __cplusplus
 }
