@@ -1,0 +1,14 @@
+#This file should have the same ordering as the parameter values file.
+#It can either be like this, just a vector of standard deviations,
+#or a full covariance matrix
+0.01
+0.01
+0.01
+0.01
+0.01
+0.01
+0.01
+0.01
+0.01
+0.01
+
