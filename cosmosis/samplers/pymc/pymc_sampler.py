@@ -23,11 +23,11 @@ class PyMCSampler(ParallelSampler):
         self.nsteps = self.ini.getint(PYMC_INI_SECTION, "nsteps", 100)
         self.samples = self.ini.getint(PYMC_INI_SECTION, "samples", 1000)
         fburn = self.ini.getfloat(PYMC_INI_SECTION, "burn_fraction", 0.0)
-        if not 0.0 <= fburn < 1.0:
-            raise RuntimeError("Error: burn_fraction outside "
-                               "allowed range: %f" % (fburn,))
+        if 0.0 <= fburn < 1.0:
+            self.nburn = int(fburn * self.samples)
+        else:
+            self.nburn = int(fburn)
 
-        self.nburn = int(fburn * self.samples)
         self.Rconverge = self.ini.getfloat(PYMC_INI_SECTION, "Rconverge", 1.02)
 
         params = self.define_parameters()
