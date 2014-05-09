@@ -5,14 +5,11 @@ import os
 import shutil
 from mpi4py import MPI
 import pymc
+
 try:
-	import astropy.table
+	import analytics
 except:
-	astropy = None
-try:
-	import cvg_diagnostics
-except:
-	cvg_diagnostics = None
+	analytics = None
 
 def populate_table(out, nparam, ns):
 	out.metadata('NP',nparam)
