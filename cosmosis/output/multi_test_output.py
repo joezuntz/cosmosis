@@ -57,10 +57,10 @@ def test_text():
 		for i in np.arange(len(chains)):
 			traces[i] = MultiTextOutput.load_txt_tables(chains[i])[0] # e.g. collect all traces for first parameter
 
-		if cvg_diagnostics:
-			B,W,R = cvg_diagnostics.Diagnostics.gelman_rubin(traces)
+		if analytics:
+			B,W,R = analytics.Diagnostics.gelman_rubin(traces)
 			print("Gelman Rubin R = %f \n"% R)
-			z = cvg_diagnostics.Diagnostics.finished_chain_diag(traces[0])
+			z = analytics.Diagnostics.finished_chain_diag(traces[0])
 			print "z_scores",z
 
 	
