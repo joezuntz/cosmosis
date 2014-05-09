@@ -38,6 +38,7 @@ class Sampler(object):
 
 
 class ParallelSampler(Sampler):
+	parallel_output = True
     def __init__(self, ini, pipeline, output, pool=None):
         Sampler.__init__(self, ini, pipeline, output)
         self.pool = pool

@@ -8,6 +8,8 @@ def log_probability_function(p):
 
 
 class EmceeSampler(ParallelSampler):
+    parallel_output = False
+
     def config(self):
         global emcee_pipeline
         emcee_pipeline = self.pipeline
