@@ -8,18 +8,17 @@ PARAM_NAME = '.paramnames'
 
 
 class CosmoMCOutput(OutputBase):
-	def __init__(self, dirname,filename,mpi=False,nchain=0, delimiter='\t'):
+	def __init__(self, dirname, filename, rank=0, nchain=1, delimiter='\t'):
 		super(CosmoMCOutput, self).__init__()
 		self.delimiter=delimiter
-		self._mpi = mpi
 		self._dirname = dirname
 		self._filename = filename
-		self.rank=nchain
-		if self._mpi:
+		self.rank = rank
+        if nchain > 1:
 			self._file = open(os.path.join(self._dirname,''.join([self._filename, str(CHAIN_NAME % (self.rank+1))]) ), 'w')
 		else:
 			self._file = open(os.path.join(self._dirname,''.join([self._filename, '.txt']) ), 'w')
-		if self.rank ==0: 
+		if self.rank == 0: 
 			self._paramfile = open(os.path.join(self._dirname,''.join([self._filename, str(PARAM_NAME)]) ), 'w')
 		self._metadata = {}
 
@@ -28,7 +27,7 @@ class CosmoMCOutput(OutputBase):
 
 	def _begun_sampling(self, params):
 		#write the name line
-		if self.rank ==0:
+		if self.rank == 0:
 			for c in self.columns[2:]:
 				self._paramfile.write('\t '.join([c[0],'\n']) )
 			self._paramfile.close()
@@ -41,7 +40,7 @@ class CosmoMCOutput(OutputBase):
 		#In the text mode we cannot write more metadata
 		#after sampling has begun (because it goes at the top).
 		#What should we do?
-		self._metadata[key]= (value, comment)
+		self._metadata[key] = (value, comment)
 
 	def _write_comment(self, comment):
 		#Do not think cosmomc can handle comments
@@ -64,12 +63,12 @@ class CosmoMCOutput(OutputBase):
 	def from_options(cls, options):
 		#look something up required parameters in the ini file.
 		#how this looks will depend on the ini 
-		dirname = options.get('dirname','.')
+		dirname = options.get('dirname', '.')
 		filename = options['filename']
-		delimiter = options.get('delimiter','\t')
-		mpi = options.get('mpi',False)
-		nchain = options.get('nchain',1)
-		return cls(dirname,filename,mpi,nchain, delimiter=delimiter)
+		delimiter = options.get('delimiter', '\t')
+		rank = options.get('rank', 1)
+		nchain = options.get('parallel', 1)
+		return cls(dirname, filename, rank, nchain, delimiter=delimiter)
 
 	@staticmethod
 	def parse_value(x):

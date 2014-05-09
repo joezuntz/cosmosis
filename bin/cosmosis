@@ -46,14 +46,16 @@ def main(args, pool=None):
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.
 	if sampler_class.needs_output and \
-       (pool is None or (pool.is_master() or sample_class.parallel_output)):
+       (pool is None or pool.is_master() or sample_class.parallel_output):
         #create the output files and methods
         output_options = dict(ini.items('output'))
-        # NOTE will need to change this if other non-MPI things are used
+
         #Additionally we tell the output here if
         #we are parallel or not
         if pool is not None:
-            output_options['mpi'] = True
+			output_options['rank'] = pool.rank
+            output_options['parallel'] = pool.size
+
         #Generate the output from a factory
         output = output_module.output_from_options(output_options)
     else:
