@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 #coding: utf-8
+
+"""
+Some Things we want to do in post-processing:
+
+OUTPUTS
+ X constraint plots 
+ X constraint stats
+ X best-fit stats
+ - convergence tests
+ - cosmology data for one cosmology 
+ - latex parameter table
+ - auto-determine burn-in?
+ 
+RUNNING
+ - run on either chain or ini file
+ 
+"""
+
 import argparse
 
 def plotting(args):
