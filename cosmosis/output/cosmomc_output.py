@@ -24,6 +24,8 @@ class CosmoMCOutput(OutputBase):
 
 	def _close(self):
 		self._file.close()
+		if self._paramfile:
+			self._paramfile.close()
 
 	def _begun_sampling(self, params):
 		#write the name line
