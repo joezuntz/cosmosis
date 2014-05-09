@@ -1,5 +1,5 @@
 ifeq (,$(COSMOSIS_SRC_DIR))
-$(error "You must source config/setup_for_dev.sh <path-to-ups-product-directory> before building.")
+$(error "You must source config/setup-cosmosis before building.")
 endif
 
 CXX=g++
