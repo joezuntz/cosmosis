@@ -20,7 +20,7 @@ program test_cosmosis
 
         if (.not. predicate) then
             write(*,*) "Test Failure: ", trim(message) 
-            stop
+            stop 1
         endif
     end subroutine
 

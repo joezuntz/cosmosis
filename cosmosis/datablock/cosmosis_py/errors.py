@@ -14,9 +14,13 @@ enum_names = [
 "DBS_WRONG_VALUE_TYPE",
 "DBS_MEMORY_ALLOC_FAILURE",
 "DBS_SIZE_NULL",
-"DBS_SIZE_NEGATIVE",
+"DBS_SIZE_NONPOSITIVE",
 "DBS_SIZE_INSUFFICIENT",
-"DBS_LOGIC_ERROR",
+"DBS_NDIM_OVERFLOW",
+"DBS_NDIM_MISMATCH",
+"DBS_EXTENTS_NULL",
+"DBS_EXTENTS_MISMATCH",
+"DBS_LOGIC_ERROR"
 ]
 
 
@@ -49,8 +53,12 @@ ERROR_MESSAGES.update({
 	DBS_WRONG_VALUE_TYPE: "{status}: Tried to overwrite {name} in section {section} with a value of the wrong type",
 	DBS_MEMORY_ALLOC_FAILURE: "{status}: Failed to allocate memory for {name} in section {section}.",
 	DBS_SIZE_NULL: "{status}: Null parameter for returned size passed into function (section was {section}, name was {name})",
-	DBS_SIZE_NEGATIVE: "{status}: Negative maximum size passed into function (section was {section}, name was {name}",
-	DBS_SIZE_INSUFFICIENT: "{status}: Size of passed in array not large enough for what is needed (section was {section}, name was {name}",
+	DBS_SIZE_NONPOSITIVE: "{status}: Non-positive maximum size passed into function (section was {section}, name was {name})",
+	DBS_SIZE_INSUFFICIENT: "{status}: Size of passed in array not large enough for what is needed (section was {section}, name was {name})",
+        DBS_NDIM_OVERFLOW: "{status}: Number of dimensions in array is larger than can be represented in an 'int' (section was {section}, name was {name})",
+        DBS_NDIM_MISMATCH: "{status}: Number of dimensions supplied for array does not match the array dimensions (section was {section}, name was {name})",
+        DBS_EXTENTS_NULL: "{status} Null value passed for array extents (section was {section}, name was {name})",
+        DBS_EXTENTS_MISMATCH: "{status} Supplied array extents do not match the extents of the stored array (section was {section}, name was {name})",
 	DBS_LOGIC_ERROR: "{status}: Internal cosmosis logical error.  Please contact cosmosis team (section was {section}, name was {name})",
 })
 

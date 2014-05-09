@@ -154,25 +154,25 @@ libcosmosis.so: datablock.o entry.o section.o c_datablock.o datablock_logging.o
 datablock_t: datablock_test.cc datablock.hh libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ datablock_test.cc -L . -lcosmosis
 
-c_datablock_t: c_datablock_test.c  test_c_datablock_scalars.h c_datablock.h libcosmosis.so
+c_datablock_t: c_datablock_test.c  test_c_datablock_scalars.h c_datablock.h datablock_types.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ c_datablock_test.c -L . -lcosmosis
 
-c_datablock_int_array_t: c_datablock_int_array_test.c c_datablock.h libcosmosis.so
+c_datablock_int_array_t: c_datablock_int_array_test.c c_datablock.h datablock_types.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
-c_datablock_double_array_t: c_datablock_double_array_test.c c_datablock.h libcosmosis.so
+c_datablock_double_array_t: c_datablock_double_array_test.c c_datablock.h datablock_types.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
-c_datablock_complex_array_t: c_datablock_complex_array_test.c c_datablock.h libcosmosis.so
+c_datablock_complex_array_t: c_datablock_complex_array_test.c c_datablock.h datablock_types.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
-c_datablock_multidim_double_array_t: c_datablock_multidim_double_array_test.c c_datablock.h libcosmosis.so
+c_datablock_multidim_double_array_t: c_datablock_multidim_double_array_test.c c_datablock.h datablock_types.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
-c_datablock_multidim_int_array_t: c_datablock_multidim_int_array_test.c c_datablock.h libcosmosis.so
+c_datablock_multidim_int_array_t: c_datablock_multidim_int_array_test.c c_datablock.h datablock_types.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
-c_datablock_multidim_complex_array_t: c_datablock_multidim_complex_array_test.c c_datablock.h libcosmosis.so
+c_datablock_multidim_complex_array_t: c_datablock_multidim_complex_array_test.c c_datablock.h datablock_types.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
 entry_t: entry_test.o libcosmosis.so
@@ -189,13 +189,13 @@ ndarray_t: ndarray_test.o
 fake_array_t: fake_array_test.o
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-datablock.o: section_names.h datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h datablock_logging.h
-c_datablock.o: section_names.h c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h ndarray.hh
+datablock.o: section_names.h datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h datablock_logging.h datablock_types.h
+c_datablock.o: section_names.h c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h ndarray.hh datablock_types.h
 datablock_logging.o: datablock_logging.cc datablock_logging.h
 entry.o: entry.cc entry.hh datablock_status.h
 entry_test.o: entry_test.cc entry.hh
-section.o: section.cc section.hh entry.hh datablock_status.h
-section_test.o: section_test.cc section.hh
+section.o: section.cc section.hh entry.hh datablock_status.h datablock_types.h
+section_test.o: section_test.cc section.hh datablock_types.h
 ndarray_test.o: ndarray_test.cc ndarray.hh
 fake_array_test.o: fake_array_test.cc fakearray.hh mdarraygen.hh
 
