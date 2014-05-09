@@ -9,6 +9,10 @@ class Parameter(object):
             self.limits = (start, start)
         else:
             self.limits = limits
+            if (limits[1]<limits[0]):
+                raise ValueError("Your ini file specified that "
+                    "parameter %s in section %s had upper limit "
+                    "< lower limit"% (name, section))
 
         self.section = section
         self.name = name
