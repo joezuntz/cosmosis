@@ -46,7 +46,7 @@ def main(args, pool=None):
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.
     if sampler_class.needs_output and \
-       (pool is None or pool.is_master() or sample_class.parallel_output):
+       (pool is None or pool.is_master() or sampler_class.parallel_output):
         #create the output files and methods
         output_options = dict(ini.items('output'))
 
