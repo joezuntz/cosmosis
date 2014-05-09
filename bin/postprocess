@@ -320,10 +320,7 @@ class CosmologyPlotter(Plotter):
 		pylab.close()
 
 def main(args):
-	if args.eps:
-		filetype='eps'
-	else:
-		filetype='png'
+	filetype=args.format
 	plotter = CosmologyPlotter.from_chain_files(
 		args.filenames,
 		burn=args.burn,
@@ -359,8 +356,8 @@ parser.add_argument('-1', '--one-d', dest='one_d', action='store_true',
 	help='Make only 1D plots, not contours')
 parser.add_argument('-w', '--w0-wa', dest='w0_wa', action='store_true',
 	help='Make the special W0-Wa plot')
-parser.add_argument('-e', '--eps', dest='eps', action='store_true',
-	help='Save files as encapsulated postscript (eps)')
+parser.add_argument('-f', '--format', dest='format', default='png', type=str,
+	help='Output image filename suffix; determines type. e.g. png, pdf, eps')
 parser.add_argument('-L', '--no-fill', dest='nofill', action='store_true',
 	help='Produce line contour plots instead of filled')
 parser.add_argument('-o', '--root-dir', default='.', 
