@@ -22,7 +22,7 @@ class EmceeSampler(ParallelSampler):
             self.nwalkers = self.ini.getint(EMCEE_INI_SECTION, "walkers", 2)
             self.samples = self.ini.getint(EMCEE_INI_SECTION, "samples", 1000)
             self.nsteps = self.ini.getint(EMCEE_INI_SECTION, "nsteps", 100)
-            start_file = self.ini.get(EMCEE_INI_SECTION, "start-points")
+            start_file = self.ini.get(EMCEE_INI_SECTION, "start-points", "")
             self.ndim = len(self.pipeline.varied_params)
 
             #Starting positions and values for the chain
