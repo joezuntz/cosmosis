@@ -29,7 +29,7 @@ class Parameter(object):
                 return False
             return (self.section == section and
                     self.name == name)
-        elif instanceof(other, Parameter):
+        elif isinstance(other, Parameter):
             return (self.section == other.section and
                     self.name == other.name)
 

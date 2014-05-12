@@ -39,17 +39,24 @@ def main(args, pool=None):
     #Get that sampler from the system
     sampler_class = sampler_registry[sample_method]
 
+    if pool:
+        if not issubclass(sampler_class,ParallelSampler):
+            raise ValueError("Sampler does not support parallel execution!")
+
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.
-    if sampler_class.needs_output:
+    if sampler_class.needs_output and \
+       (pool is None or pool.is_master() or sampler_class.parallel_output):
         #create the output files and methods
         output_options = dict(ini.items('output'))
-        # NOTE will need to change this if other non-MPI things are used
+
         #Additionally we tell the output here if
         #we are parallel or not
         if pool is not None:
-            output_options['mpi'] = True
-        #Generat the output from a factory
+            output_options['rank'] = pool.rank
+            output_options['parallel'] = pool.size
+
+        #Generate the output from a factory
         output = output_module.output_from_options(output_options)
     else:
         #some samplers, like the test one, do not need an output
@@ -62,8 +69,6 @@ def main(args, pool=None):
     #It needs an extra pool argument if it is a ParallelSampler.
     #All the parallel samplers can also act serially too.
     if pool:
-        if not issubclass(sampler_class,ParallelSampler):
-            raise ValueError("Sampler does not support parallel execution!")
         sampler = sampler_class(ini, pipeline, output, pool)
     else:
         sampler = sampler_class(ini, pipeline, output)

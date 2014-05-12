@@ -4,15 +4,6 @@ import numpy as np
 import os
 import shutil
 from mpi4py import MPI
-import pymc
-try:
-	import astropy.table
-except:
-	astropy = None
-try:
-	import cvg_diagnostics
-except:
-	cvg_diagnostics = None
 
 def populate_table(out, nparam, ns):
 	out.add_column('weight', float, 'The parameter called %s'%'weight')
@@ -48,9 +39,6 @@ def test_text():
 	nparam = 10
 	ns = 10 
 	populate_table(out, nparam, ns)
-
-#may need to also savestate if PyMC adaptive method used
-
 
 if __name__=="__main__":
 	test_text()

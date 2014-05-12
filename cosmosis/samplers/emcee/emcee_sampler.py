@@ -4,34 +4,38 @@ import numpy as np
 EMCEE_INI_SECTION = "emcee"
 
 def log_probability_function(p):
-    return pipeline.posterior(p)
+    return emcee_pipeline.posterior(p)
 
 
 class EmceeSampler(ParallelSampler):
+    parallel_output = False
 
     def config(self):
-        global pipeline
-        pipeline = self.pipeline
+        global emcee_pipeline
+        emcee_pipeline = self.pipeline
 
         if self.is_master():
             import emcee
             self.emcee = emcee
 
-            # Parameters of the 
+            # Parameters of the emcee sampler
             self.nwalkers = self.ini.getint(EMCEE_INI_SECTION, "walkers", 2)
             self.samples = self.ini.getint(EMCEE_INI_SECTION, "samples", 1000)
             self.nsteps = self.ini.getint(EMCEE_INI_SECTION, "nsteps", 100)
             start_file = self.ini.get(EMCEE_INI_SECTION, "start-points", "")
             self.ndim = len(self.pipeline.varied_params)
+
             #Starting positions and values for the chain
             self.num_samples = 0
+            self.prob0 = None
+            self.blob0 = None
+
             if start_file:
                 self.p0 = self.load_start(start_file)
+                self.output.log_info("Loaded starting position from ", start_file)
             else:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in xrange(self.nwalkers)]
-            self.prob0 = None
-            self.blob0 = None
 
             #Finally we can create the sampler
             self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, self.ndim,
@@ -40,13 +44,10 @@ class EmceeSampler(ParallelSampler):
 
     def load_start(self, filename):
         data = np.genfromtxt(filename, invalid_raise=False)
-        p0 = data[-1-self.nwalkers:-1, :self.ndim].copy()
-        #make into list instead
-        p0 = [x for x in p0]
-        print "Loaded starting position from ", filename
-        if len(p0) != self.nwalkers:
-            raise RuntimeError("There are not enough lines in the starting point file %s"%filename)
-        return p0
+        if data.shape != (self.nwalkers, self.ndim):
+            raise RuntimeError("There are not enough lines or columns "
+                               "in the starting point file %s" % filename)
+        return list(data)
 
     def output_samples(self, pos, extra_info):
         for p,e in zip(pos,extra_info):
@@ -58,7 +59,7 @@ class EmceeSampler(ParallelSampler):
         for (pos, prob, rstate, extra_info) in self.ensemble.sample(
                 self.p0, lnprob0=self.prob0, blobs0=self.blob0,
                 iterations=self.nsteps, storechain=False):
-            outputs.append((pos.copy(), prob.copy(),extra_info[:]))
+            outputs.append((pos.copy(), prob.copy(), extra_info[:]))
     
         for (pos, prob, extra_info) in outputs:
             self.output_samples(pos, extra_info)

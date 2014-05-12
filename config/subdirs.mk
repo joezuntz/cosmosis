@@ -1,7 +1,7 @@
 define process_subdirs
 	@for d in $(SUBDIRS); \
 	do \
-	  (cd $$d && make $@); \
+	  (cd $$d && $(MAKE) $@); \
 	done
 endef
 
