@@ -1,4 +1,3 @@
-
 import numpy as np
 import sys
 import os
@@ -16,29 +15,30 @@ class Analytics(object):
         self.best_index = None
         self.best_params = None
 
-    def add_traces(self, traces):
+    def add_traces(self, traces, like=None):
         if traces.shape[1] != len(self.params):
-            raise RuntimeError("The number of traces added to Diagnostics "
+            raise RuntimeError("The number of traces added to Analytics"
                                "does not match the number of varied "
                                "parameters!")
-        like_col = self.params.index("LIKE")
+
+        if like is not None:
+            maxlike_index = np.argmax(like)
+            if like[maxlike_index] > self.best_like:
+                self.best_like = like[maxlike_index]
+                self.best_index = maxlike_index + self.total_steps
+                self.best_params = traces[maxlike_index]
+
         num = float(self.total_steps)
-        for i,x in enumerate(traces):
+        for x in traces:
             num += 1.0
             delta = x - self.means
             self.means += delta/num
             self.m2 += delta*(x - self.means)
-            if like_col>-1:
-                like = x[like_col]
-                if like>self.best_like:
-                    self.best_like = like
-                    self.best_index = self.total_steps + i
-                    self.best_params = x
 
         self.total_steps += traces.shape[0]
 
     @classmethod
-    def from_chain_files(cls, filenames, burn, thin):
+    def from_chain_files(cls, filenames, burn=0, thin=1):
         if isinstance(filenames, str):
             filenames = [filenames]
 
@@ -46,17 +46,36 @@ class Analytics(object):
         #TODO: rejig to use "load" methods on output objects
         params = open(filenames[0]).readline().strip('#').split()
 
+        num_cols = len(params)
+        if "LIKE" in params:
+            like_col = params.index("LIKE")
+            param_cols = range(num_cols)
+            del param_cols[like_col]
+            del params[like_col]
+        else:
+            like_col = None
+
         analytics = cls(params)
         for filename in filenames:
-            chain = np.genfromtxt(filename).T
-            if burn<1:
-                nburn = len(chain[0]) * burn
+            chain = np.genfromtxt(filename)
+            if chain.shape[1] != num_cols:
+                raise RuntimeError("Incorrect number of columns in output "
+                                   "file %s (%d, expected %d)." %
+                                   (filename, chain.shape[1], num_cols))
+
+            if burn < 1:
+                nburn = len(chain) * burn
             else:
                 nburn = burn
-            chain = chain[:,nburn:]
-            if thin:
-                chain = chain[:,::thin]
-            analytics.add_traces(chain.T)
+            chain = chain[nburn::thin,:]
+
+            if like_col:
+                like = chain[:,like_col]
+                chain = chain[:,param_cols]
+            else:
+                like = None
+
+            analytics.add_traces(chain, like)
         return analytics
 
     def trace_means(self):
@@ -76,7 +95,7 @@ class Analytics(object):
 
     def gelman_rubin(self):
         # takes current traces and returns
-        if self.pool is None:
+        if self.pool is None or not self.pool.size > 1:
             raise RuntimeError("Gelman-Rubin statistic is only "
                                "valid for multiple chains.")
 

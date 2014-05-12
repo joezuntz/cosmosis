@@ -1,6 +1,7 @@
 from .. import ParallelSampler
 import numpy as np
 import os
+import itertools
 from cosmosis.runtime.analytics import Analytics
 import logging
 
@@ -28,6 +29,7 @@ class PyMCSampler(ParallelSampler):
         else:
             self.nburn = int(fburn)
 
+        if 
         self.Rconverge = self.ini.getfloat(PYMC_INI_SECTION, "Rconverge", 1.02)
 
         params = self.define_parameters()
@@ -91,14 +93,13 @@ class PyMCSampler(ParallelSampler):
         traces = np.array([[param.denormalize(x)
                            for x in self.mcmc.trace(str(param))]
                            for param in self.pipeline.varied_params]).T
-
         likes = -0.5 * self.mcmc.trace('deviance')[:]
-        # TODO: do we output burned samples?
-        for trace, like in zip(traces, likes):
+
+        for trace, like in itertools.izip(traces, likes):
             extra = {'LIKE': like}
             self.output.parameters(trace, extra)
 
-        self.analytics.add_traces(traces)
+        self.analytics.add_traces(traces, likes)
 
         self.output.log_noisy("Done %d iterations" % self.num_samples)
 
