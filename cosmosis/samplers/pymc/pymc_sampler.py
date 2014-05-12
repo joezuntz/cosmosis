@@ -29,8 +29,10 @@ class PyMCSampler(ParallelSampler):
         else:
             self.nburn = int(fburn)
 
-        if 
-        self.Rconverge = self.ini.getfloat(PYMC_INI_SECTION, "Rconverge", 1.02)
+        if self.ini.has_option(PYMC_INI_SECTION, "Rconverge"):
+            self.Rconverge = self.ini.getfloat(PYMC_INI_SECTION, "Rconverge")
+        else:
+            self.Rconverge = None
 
         params = self.define_parameters()
 
@@ -116,7 +118,8 @@ class PyMCSampler(ParallelSampler):
             return True
         if self.num_samples >= self.samples:
             return True
-        elif self.num_samples > 0 and self.pool is not None:
+        elif self.num_samples > 0 and self.pool is not None and \
+             self.Rconverge is not None:
             return np.all(self.analytics.gelman_rubin() <= self.Rconverge)
         else:
             return False
