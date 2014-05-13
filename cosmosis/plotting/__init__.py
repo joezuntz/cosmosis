@@ -137,7 +137,7 @@ class Plotter(object):
 			pass
 		elif burn<1:
 			for i,chain in enumerate(chains):	
-				print "Burning fraction %f of chain %d, which is %d samples" %(burn,i,int(burn*len(data[0])))
+				print "Burning fraction %f of chain %d, which is %d samples" %(burn,i,int(burn*len(chain[:,0])))
 			chains = [chain[int(burn*len(chain[:,0])):, :] for chain in chains]
 		else:
 			burn = int(burn)
