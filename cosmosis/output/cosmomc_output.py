@@ -56,6 +56,9 @@ class CosmoMCOutput(TextColumnOutput):
     def load_from_options(cls, options):
         filename = options['filename']
 
+        if filename.endswith(cls.FILE_EXTENSION):
+            filename = filename[:-len(cls.FILE_EXTENSION)]
+
         # read column names from parameterfile
         column_names = [line.split()[0] for line in open(filename+PARAM_NAME)]
         column_names.append("LIKE")
