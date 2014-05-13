@@ -1,123 +1,136 @@
 from .output_base import OutputBase
 from . import utils
 import numpy as np
+import os
+from glob import glob
 from collections import OrderedDict
 
 comment_indicator = "_cosmosis_comment_indicator_"
 
+
 class TextColumnOutput(OutputBase):
-	_aliases = ["text", "txt"]
+    FILE_EXTENSION = ".txt"
+    _aliases = ["text", "txt"]
 
-	def __init__(self, filename, delimiter='\t'):
-		super(TextColumnOutput, self).__init__()
-		self.delimiter=delimiter
-		self._file = open(filename, 'w')
-		#also used to store comments:
-		self._metadata = OrderedDict()
-		self._ncomment = 0
+    def __init__(self, filename, rank=0, nchain=1, delimiter='\t'):
+        super(TextColumnOutput, self).__init__()
+        self.delimiter = delimiter
 
-	def _close(self):
-		self._file.close()
+        if nchain > 1:
+            self._filename = "%s_%d%s" % (filename, rank+1, 
+                                          self.FILE_EXTENSION)
+        else:
+            self._filename = filename + self.FILE_EXTENSION
 
-	def _begun_sampling(self, params):
-		#write the name line
-		name_line = '#'+self.delimiter.join(c[0] for c in self.columns) + '\n'
-		self._file.write(name_line)
-		#now write any metadata.
-		#text mode does not support comments
-		for (key,(value,comment)) in self._metadata.items():
-			if key.startswith(comment_indicator):
-				self._file.write("## %s\n"%value.strip())
-			elif comment:
-				self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
-			else:
-				self._file.write('#{k}={v}\n'.format(k=key,v=value,c=comment))
-		self._metadata={}
+        self._file = open(self._filename, "w")
 
-	def _write_metadata(self, key, value, comment=''):
-		#We save the metadata until we get the first 
-		#parameters since up till then the columns can
-		#be changed
-		#In the text mode we cannot write more metadata
-		#after sampling has begun (because it goes at the top).
-		#What should we do?
-		self._metadata[key]= (value, comment)
+        #also used to store comments:
+        self._metadata = OrderedDict()
 
-	def _write_comment(self, comment):
-		#save comments along with the metadata - nice as 
-		#preserves order
-		self._metadata[comment_indicator + "_%d"%self._ncomment] = (comment,None)
-		self._ncomment += 1
+    def _close(self):
+        self._file.close()
 
-	def _write_parameters(self, params):
-		line = self.delimiter.join(str(x) for x in params) + '\n'
-		self._file.write(line)
+    def _begun_sampling(self, params):
+        #write the name line
+        name_line = '#'+self.delimiter.join(c[0] for c in self.columns) + '\n'
+        self._file.write(name_line)
+        #now write any metadata.
+        #text mode does not support comments
+        for (key,(value,comment)) in self._metadata.items():
+            if key.startswith(comment_indicator):
+                self._file.write("## %s\n"%value.strip())
+            elif comment:
+                self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
+            else:
+                self._file.write('#{k}={v}\n'.format(k=key,v=value,c=comment))
+        self._metadata={}
 
-	def _write_final(self, key, value, comment=''):
-		#I suppose we can put this at the end - why not?
-		c=''
-		if comment:
-			c='  #'+comment
-		self._file.write('#{k}={v}{c}\n'.format(k=key,v=value,c=c))
+    def _write_metadata(self, key, value, comment=''):
+        #We save the metadata until we get the first 
+        #parameters since up till then the columns can
+        #be changed
+        #In the text mode we cannot write more metadata
+        #after sampling has begun (because it goes at the top).
+        #What should we do?
+        self._metadata[key]= (value, comment)
 
-	@classmethod
-	def from_options(cls, options):
-		#look something up required parameters in the ini file.
-		#how this looks will depend on the ini
-		filename = options['filename']
-		delimiter = options.get('delimiter','\t')
-		return cls(filename, delimiter=delimiter)
+    def _write_comment(self, comment):
+        #save comments along with the metadata - nice as 
+        #preserves order
+        self._metadata[comment_indicator +
+                       "_%d" % (len(self._metadata))] = (comment,None)
 
-	@staticmethod
-	def parse_value(x):
-		x = utils.try_numeric(x)
-		if x=='True':
-			x=True
-		if x=='False':
-			x=False
-		return x
+    def _write_parameters(self, params):
+        line = self.delimiter.join(str(x) for x in params) + '\n'
+        self._file.write(line)
 
+    def _write_final(self, key, value, comment=''):
+        #I suppose we can put this at the end - why not?
+        c=''
+        if comment:
+            c='  #'+comment
+        self._file.write('#{k}={v}{c}\n'.format(k=key,v=value,c=c))
 
-	@classmethod
-	def load(cls, *args):
-		filename = args[0]
-		#Read the metadata
-		started_data = False
-		metadata = {}
-		final_metadata = {}
-		data = []
-		for i,line in enumerate(open(filename)):
-			line=line.strip()
-			if not line: continue
-			if line.startswith('#'):
-				line=line.lstrip('#')
-				if i==0:
-					column_names = line.split()
-				else:
-					#parse form '#key=value #comment'
-					if line.count('#')==0:
-						key_val = line.strip()
-						comment = ''
-					else:
-						key_val, comment = line.split('#', 1)
-					key,val = key_val.split('=',1)
-					val = cls.parse_value(val)
-					if started_data:
-						final_metadata[key] = val
-					else:
-						metadata[key] = val
-			else:
-				started_data = True
-				words = line.split()
-				vals = [float(word) for word in words]
-				data.append(vals)
-		data = np.array(data).T
-		cols = [col for col in data]
-		for i in xrange(len(cols)):
-			if (cols[i]==cols[i].astype(int)).all():
-				cols[i] = cols[i].astype(int)
-		return column_names, cols, metadata, final_metadata
+    @classmethod
+    def from_options(cls, options):
+        #look something up required parameters in the ini file.
+        #how this looks will depend on the ini 
+        filename = options['filename']
+        delimiter = options.get('delimiter', '\t')
+        rank = options.get('rank', 0)
+        nchain = options.get('parallel', 1)
+        return cls(filename, rank, nchain, delimiter=delimiter)
 
+    @classmethod
+    def load_from_options(cls, options):
+        filename = options['filename']
+        delimiter = options.get('delimiter', '\t')
 
+        # first look for serial file
+        if os.path.exists(filename+cls.FILE_EXTENSION):
+            datafiles = [filename+cls.FILE_EXTENSION]
+        else:
+            datafiles = glob(filename+"_[0-9]*"+cls.FILE_EXTENSION)
+            if not datafiles:
+                raise RuntimeError("No datafiles found!")
 
+        #Read the metadata
+        started_data = False
+        metadata = []
+        final_metadata = []
+        data = []
 
+        for datafile in datafiles:
+            chain = []
+            chain_metadata = {}
+            chain_final_metadata = {}
+            for i,line in enumerate(open(datafile)):
+                line = line.strip()
+                if not line: continue
+                if line.startswith('#'):
+                    line=line.lstrip('#')
+                    if i == 0:
+                        column_names = line.split()
+                    else:
+                        #parse form '#key=value #comment'
+                        if line.count('#') == 0:
+                            key_val = line.strip()
+                            comment = ''
+                        else:
+                            key_val, comment = line.split('#', 1)
+                        key,val = key_val.split('=',1)
+                        val = utils.parse_value(val)
+                        if started_data:
+                            chain_final_metadata[key] = val
+                        else:
+                            chain_metadata[key] = val
+                else:
+                    started_data = True
+                    words = line.split(delimiter)
+                    vals = [float(word) for word in words]
+                    chain.append(vals)
+            
+            data.append(np.array(chain))
+            metadata.append(chain_metadata)
+            final_metadata.append(final_metadata)
+        return column_names, data, metadata, final_metadata

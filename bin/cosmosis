@@ -9,7 +9,6 @@ from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
 from cosmosis.samplers.sampler import sampler_registry, ParallelSampler
 from cosmosis import output as output_module
-#import cosmosis.runtime.output as output_module
 
 RUNTIME_INI_SECTION = "runtime"
 
@@ -88,10 +87,12 @@ def main(args, pool=None):
     else:
         sampler.worker()
 
+    if output:
+        output.close()
+
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
     parser.add_argument("inifile", help="Input ini file of parameters")
-#    parser.add_argument("outfile", help="Output results to file")
     parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
 #    parser.add_argument("--parallel",action='store_true',help="Run in multiprocess parallel mode.")
 #    parser.add_argument("--debug", action='store_true', default=False, help="Print additional debugging information")
