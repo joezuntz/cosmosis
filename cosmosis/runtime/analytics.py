@@ -66,7 +66,7 @@ class Analytics(object):
             chain = chain[nburn::thin,:]
 
             if like_col:
-                like = chain[like_col,:]
+                like = chain[:,like_col]
                 chain = chain[:,param_cols]
             else:
                 like = None
