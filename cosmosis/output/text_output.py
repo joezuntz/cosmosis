@@ -16,6 +16,10 @@ class TextColumnOutput(OutputBase):
         super(TextColumnOutput, self).__init__()
         self.delimiter = delimiter
 
+        #If filename already ends in .txt then remove it for a moment
+        if filename.endswith(self.FILE_EXTENSION):
+            filename = filename[:-len(self.FILE_EXTENSION)]
+
         if nchain > 1:
             self._filename = "%s_%d%s" % (filename, rank+1, 
                                           self.FILE_EXTENSION)
@@ -86,6 +90,8 @@ class TextColumnOutput(OutputBase):
         filename = options['filename']
         delimiter = options.get('delimiter', '\t')
 
+        if filename.endswith(cls.FILE_EXTENSION):
+            filename = filename[:-len(cls.FILE_EXTENSION)]
         # first look for serial file
         if os.path.exists(filename+cls.FILE_EXTENSION):
             datafiles = [filename+cls.FILE_EXTENSION]
@@ -99,18 +105,27 @@ class TextColumnOutput(OutputBase):
         metadata = []
         final_metadata = []
         data = []
+        comments = []
 
         for datafile in datafiles:
+            print 'LOADING CHAIN FROM FILE: ', datafile
             chain = []
             chain_metadata = {}
             chain_final_metadata = {}
+            chain_comments = []
             for i,line in enumerate(open(datafile)):
                 line = line.strip()
                 if not line: continue
                 if line.startswith('#'):
-                    line=line.lstrip('#')
+                    #remove the first #
+                    #if there is another then this is a comment,
+                    #not metadata
+                    line=line[1:]
                     if i == 0:
                         column_names = line.split()
+                    elif line.startswith('#'):
+                        comment = line[1:]
+                        chain_comments.append(comment)
                     else:
                         #parse form '#key=value #comment'
                         if line.count('#') == 0:
@@ -133,4 +148,5 @@ class TextColumnOutput(OutputBase):
             data.append(np.array(chain))
             metadata.append(chain_metadata)
             final_metadata.append(final_metadata)
-        return column_names, data, metadata, final_metadata
+            chain_comments.append(comments)
+        return column_names, data, metadata, comments, final_metadata

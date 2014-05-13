@@ -41,7 +41,7 @@ class Analytics(object):
 
     @classmethod
     def from_outputs(cls, options, burn=0, thin=1):
-        column_names, data, metadata, final_metadata = output_module.input_from_options(options)
+        column_names, data, metadata, comments, final_metadata = output_module.input_from_options(options)
 
         num_cols = len(column_names)
         if "LIKE" in column_names:

@@ -19,8 +19,9 @@ import cmd
 import collections
 try:
 	from cosmosis.datablock import names as section_names
+	from cosmosis import output as output_module
 except ImportError:
-	print "Running without cosmosis: no pretty section names"
+	print "Running without cosmosis: no pretty section names or running on ini files"
 	section_names = None
 
 class KDE(scipy.stats.kde.gaussian_kde):
@@ -128,6 +129,26 @@ class Plotter(object):
 					display_name=r"{\cal L}"
 			self._display_names[col_name]=display_name
 
+	@classmethod
+	def from_outputs(cls, options, burn, thin, **kw):
+		column_names, chains, metadata, comments, final_metadata = output_module.input_from_options(options)
+
+		if burn==0:
+			pass
+		elif burn<1:
+			for i,chain in enumerate(chains):	
+				print "Burning fraction %f of chain %d, which is %d samples" %(burn,i,int(burn*len(chain[:,0])))
+			chains = [chain[int(burn*len(chain[:,0])):, :] for chain in chains]
+		else:
+			burn = int(burn)
+			chains = [chain[burn:,:] for chain in chains]
+
+	#In this case all the chains are assumed to be from a single
+	#run.  So we should concatenate them all for a single 
+		chains = np.vstack(chains).T
+		chains = dict(zip(column_names,chains))
+		chain_data = {"Chains":chains}
+		return cls(chain_data, **kw)
 
 
 	@classmethod

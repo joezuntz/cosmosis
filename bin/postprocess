@@ -23,19 +23,19 @@ import argparse
 
 from cosmosis.runtime.config import Inifile
 
-def plotting(args):
+def plotting(args, options):
     from cosmosis.plotting import CosmologyPlotter
     filetype=args.format
-    plotter = CosmologyPlotter.from_chain_files(
-        args.filenames,
-        burn=args.burn,
-        thin=args.thin,
+
+    plotter = CosmologyPlotter.from_outputs(
+        options, args.burn, args.thin,
         latex_file=args.latex,
         filetype=filetype,
         fill=not args.nofill,
         root_dir=args.root_dir,
         prefix=args.prefix,
         )
+
     plotter.plot_1d_params(args.params)
     if not args.one_d:
         plotter.plot_2d_params(args.params)
@@ -57,7 +57,7 @@ def statistics(args,options):
     if analytics.best_index==None:
         print "Could not see LIKE column to get best likelihood"
     else:
-        print "Best likelihood:"
+        print "Best posterior:"
         print "    Like = %e" % (analytics.best_like,)
         print "    Index = %d" % (analytics.best_index,)
         for p, v in zip(analytics.params, analytics.best_params):
