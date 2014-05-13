@@ -10,12 +10,13 @@ PARAM_NAME = '.paramnames'
 class CosmoMCOutput(TextColumnOutput):
     def __init__(self, filename, rank=0, nchain=1, delimiter=''):
         super(CosmoMCOutput, self).__init__(filename, rank, nchain, '')
-        if filename.endswith(self.FILE_EXTENSION):
-            filename = filename[:-len(self.FILE_EXTENSION)]
+        filename = filename.rstrip(self.FILE_EXTENSION)
+
         if rank == 0: 
             self._paramfile = open(filename+PARAM_NAME, 'w')
         else:
             self._paramfile = None
+
         self._last_params = None
         self._multiplicity = 0
 
@@ -57,9 +58,7 @@ class CosmoMCOutput(TextColumnOutput):
     @classmethod
     def load_from_options(cls, options):
         filename = options['filename']
-
-        if filename.endswith(cls.FILE_EXTENSION):
-            filename = filename[:-len(cls.FILE_EXTENSION)]
+        filename = filename.rstrip(cls.FILE_EXTENSION)
 
         # read column names from parameterfile
         column_names = [line.split()[0] for line in open(filename+PARAM_NAME)]

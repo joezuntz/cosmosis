@@ -17,8 +17,7 @@ class TextColumnOutput(OutputBase):
         self.delimiter = delimiter
 
         #If filename already ends in .txt then remove it for a moment
-        if filename.endswith(self.FILE_EXTENSION):
-            filename = filename[:-len(self.FILE_EXTENSION)]
+        filename = filename.rstrip(self.FILE_EXTENSION)
 
         if nchain > 1:
             self._filename = "%s_%d%s" % (filename, rank+1, 
@@ -90,8 +89,8 @@ class TextColumnOutput(OutputBase):
         filename = options['filename']
         delimiter = options.get('delimiter', '\t')
 
-        if filename.endswith(cls.FILE_EXTENSION):
-            filename = filename[:-len(cls.FILE_EXTENSION)]
+        filename = filename.rstrip(cls.FILE_EXTENSION)
+
         # first look for serial file
         if os.path.exists(filename+cls.FILE_EXTENSION):
             datafiles = [filename+cls.FILE_EXTENSION]
