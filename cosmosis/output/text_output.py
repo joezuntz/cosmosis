@@ -105,18 +105,26 @@ class TextColumnOutput(OutputBase):
         metadata = []
         final_metadata = []
         data = []
+        comments = []
 
         for datafile in datafiles:
             chain = []
             chain_metadata = {}
             chain_final_metadata = {}
+            chain_comments = []
             for i,line in enumerate(open(datafile)):
                 line = line.strip()
                 if not line: continue
                 if line.startswith('#'):
-                    line=line.lstrip('#')
+                    #remove the first #
+                    #if there is another then this is a comment,
+                    #not metadata
+                    line=line[1:]
                     if i == 0:
                         column_names = line.split()
+                    elif line.startswith('#'):
+                        comment = line[1:]
+                        chain_comments.append(comment)
                     else:
                         #parse form '#key=value #comment'
                         if line.count('#') == 0:
@@ -139,4 +147,5 @@ class TextColumnOutput(OutputBase):
             data.append(np.array(chain))
             metadata.append(chain_metadata)
             final_metadata.append(final_metadata)
-        return column_names, data, metadata, final_metadata
+            chain_comments.append(comments)
+        return column_names, data, metadata, comments, final_metadata
