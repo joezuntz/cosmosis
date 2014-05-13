@@ -66,10 +66,13 @@ class Plot(object):
 		#All the data will be in subclasses of this
 		self.dirname = dirname
 
+	def file_path(self, section, name):
+		return "{0}/{1}/{2}.txt".format(self.dirname, section, name)
+
 	def load_file(self, section, name):
 		"Load a data file from the directory of saved theory data"
 		#Find the filename and load it
-		filename = "{0}/{1}/{2}.txt".format(self.dirname, section, name)
+		filename = self.file_path(section, name)
 		return np.loadtxt(filename)
 
 	#Handy little method for trying to numeric-ify a value
@@ -219,12 +222,48 @@ class MatterPowerPlot(Plot):
 		pylab.grid()
 		pylab.legend()
 
+class ShearShearPlot(Plot):
+	"Shear-shear power spectrum"
+	filename = "shear_shear_power"
+	def plot(self):
+		super(ShearShearPlot, self).plot()
+		nbin = 0
+		for i in xrange(1,100):
+			filename = self.file_path("shear_cl", "bin_{0}_{0}".format(i))
+			if os.path.exists(filename):
+				nbin += 1
+			else:
+				break
+		if nbin==0:
+			raise IOError("No shear-shear")
+
+		ell = self.load_file("shear_cl", "ell")
+		sz = 1.0/(nbin+2)
+		for i in xrange(1, nbin+1):
+			for j in xrange(1, i+1):
+				rect = (i*sz,j*sz,sz,sz)
+				self.figure.add_axes(rect)
+				#pylab.ploy()
+				#pylab.subplot(nbin, nbin, (nbin*nbin)-nbin*(j-1)+i)
+				cl = self.load_file("shear_cl", "bin_{0}_{1}".format(i,j))
+				pylab.loglog(ell, ell*(ell+1.) * cl/2/np.pi)
+				pylab.ylim(1e-7,1e-3)
+				if i==1 and j==1:
+					pylab.xlabel("$\ell$")
+					pylab.ylabel("$\ell (\ell+1) C_\ell / 2 \pi$")
+				else:
+					pylab.gca().xaxis.set_ticklabels([])
+					pylab.gca().yaxis.set_ticklabels([])
+				pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
+				pylab.grid()
+
+
 
 def main(args):
 	for cls in plot_list:
 		try:
 			cls.make(args.dirname, args.output_dir, args.prefix, args.type)
-		except IOError:
+		except IOError as err:
 			print "Could not make plot ", cls.filename
 
 
