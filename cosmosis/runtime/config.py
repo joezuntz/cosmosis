@@ -128,6 +128,11 @@ class Inifile(IncludingConfigParser):
         IncludingConfigParser.__init__(self,
                                        defaults=defaults,
                                        dict_type=collections.OrderedDict)
+        # default read behavior is to ignore unreadable files which
+        # is probably not what we want here
+        if not os.path.exists(filename):
+            raise IOError("Unable to open configuration file %s." % (filename, ))
+ 
         self.read(filename)
 
         # override parameters
