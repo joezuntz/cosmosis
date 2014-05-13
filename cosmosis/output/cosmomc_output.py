@@ -60,7 +60,7 @@ class CosmoMCOutput(TextColumnOutput):
             filename = filename[:-len(cls.FILE_EXTENSION)]
 
         # read column names from parameterfile
-        column_names = [line.split()[0] for line in open(filename+PARAM_NAME)]
+        column_names = [line.split()[0] for line in open(filename+cls.FILE_EXTENSION+PARAM_NAME)]
         column_names.append("LIKE")
 
         # first look for serial file
@@ -73,6 +73,7 @@ class CosmoMCOutput(TextColumnOutput):
 
         # cosmomc has no metadata support
         metadata = final_metadata = [{}]*len(datafiles)
+        comments = []
 
         data = []
         for datafile in datafiles:
@@ -85,4 +86,4 @@ class CosmoMCOutput(TextColumnOutput):
                 chain = np.array(chain)
             print datafile, chain.shape
             data.append(chain)
-        return column_names, data, metadata, final_metadata
+        return column_names, data, metadata, comments, final_metadata
