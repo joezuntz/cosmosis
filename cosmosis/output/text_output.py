@@ -108,6 +108,7 @@ class TextColumnOutput(OutputBase):
         comments = []
 
         for datafile in datafiles:
+            print 'LOADING CHAIN FROM FILE: ', datafile
             chain = []
             chain_metadata = {}
             chain_final_metadata = {}
