@@ -84,7 +84,7 @@ class Pipeline(object):
                     if val is not None:
                         config_block.put(section, name, val)
 
-            module.setup(config_block)
+            module.setup(config_block, quiet=self.quiet)
 
             if self.timing:
                 timings.append(time.clock())
