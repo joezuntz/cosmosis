@@ -77,6 +77,7 @@ class CosmoMCOutput(TextColumnOutput):
 
         data = []
         for datafile in datafiles:
+            print 'LOADING CHAIN FROM FILE: ', datafile
             chain = []
             with open(datafile) as f:
                 for line in f:
