@@ -10,6 +10,8 @@ PARAM_NAME = '.paramnames'
 class CosmoMCOutput(TextColumnOutput):
     def __init__(self, filename, rank=0, nchain=1, delimiter=''):
         super(CosmoMCOutput, self).__init__(filename, rank, nchain, '')
+        if filename.endswith(self.FILE_EXTENSION):
+            filename = filename[:-len(self.FILE_EXTENSION)]
         if rank == 0: 
             self._paramfile = open(filename+PARAM_NAME, 'w')
         else:
@@ -60,7 +62,7 @@ class CosmoMCOutput(TextColumnOutput):
             filename = filename[:-len(cls.FILE_EXTENSION)]
 
         # read column names from parameterfile
-        column_names = [line.split()[0] for line in open(filename+cls.FILE_EXTENSION+PARAM_NAME)]
+        column_names = [line.split()[0] for line in open(filename+PARAM_NAME)]
         column_names.append("LIKE")
 
         # first look for serial file
