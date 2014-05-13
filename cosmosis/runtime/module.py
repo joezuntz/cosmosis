@@ -52,12 +52,14 @@ class Module(object):
         for (section, name) in config.keys(self.name):
             config[option_section, name] = config[section, name]
 
-    def setup(self, config):
+    def setup(self, config, quiet=True):
         self.copy_section_to_module_options(config)
         if not self.is_python:
             config = config._ptr
 
         if self.setup_function:
+            if not quiet:
+                print '-- Setting up module %s --' % (self.name)
             self.data = self.setup_function(config)
         else:
             self.data = None
