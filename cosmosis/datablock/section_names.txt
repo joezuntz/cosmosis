@@ -40,3 +40,6 @@ bias_field
 #background quantities
 distances
 de_equation_of_state
+
+# section for test likelihoods
+test_parameters

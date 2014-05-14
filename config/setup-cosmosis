@@ -52,6 +52,17 @@ setup -B cfitsio v3_35_0 -q +prof
 setup -B pyfits v3_2a -q +e5:+prof
 setup -B pyyaml v3_11 
 
+if [ -d "$SETUPS_DIR/planckdata/v1_1" ]
+then
+	setup -B planckdata v1_1
+fi
+
+if [ -d "$SETUPS_DIR/wmapdata/v5_00" ]
+then
+	setup -B wmapdata v5_00
+fi
+
+
 if [ "$flavor" == "Darwin64bit" ]
 then
     setup -B mpich v3_1 -q +e5:+prof
