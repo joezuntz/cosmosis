@@ -42,7 +42,7 @@ clean:
 	rm -f c_datablock_multidim_int_array_t
 	rm -f c_datablock_multidim_complex_array_t
 	rm -f datablock_t entry_t fortran_t ndarray_t section_t
-	rm -f section_names.h cosmosis_py/section_names.py cosmosis_f90/section_names.F90
+	rm -f section_names.h cosmosis_py/section_names.py cosmosis_f90/cosmosis_section_names.F90
 	rm -rf  *.dSYM/
 
 verify_setup:
