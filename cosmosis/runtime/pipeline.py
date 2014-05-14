@@ -280,7 +280,7 @@ class LikelihoodPipeline(Pipeline):
             else:
                 return -np.inf, utils.everythingIsNan
 
-        if not self.quiet:
+        if not self.quiet and self.likelihood_names:
             sys.stdout.write("Likelihood %e\n" % (like,))
 
         extra_saves = {}

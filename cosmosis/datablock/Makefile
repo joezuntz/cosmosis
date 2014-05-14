@@ -27,7 +27,10 @@ all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t e
 	c_datablock_multidim_complex_array_t \
 	ndarray_t \
 	fake_array_t \
-	fortran_t cosmosis_py/section_names.py
+	fortran_t \
+	cosmosis_py/section_names.py \
+	cosmosis_f90/cosmosis_section_names.F90 \
+	section_names.h
 
 lib: libcosmosis.so cosmosis_py/section_names.py
 
@@ -39,6 +42,7 @@ clean:
 	rm -f c_datablock_multidim_int_array_t
 	rm -f c_datablock_multidim_complex_array_t
 	rm -f datablock_t entry_t fortran_t ndarray_t section_t
+	rm -f section_names.h cosmosis_py/section_names.py cosmosis_f90/cosmosis_section_names.F90
 	rm -rf  *.dSYM/
 
 verify_setup:
@@ -47,10 +51,10 @@ verify_setup:
 test:  test_entry test_section test_datablock test_c_datablock \
 	test_ndarray \
 	test_c_datablock_int_array test_c_datablock_double_array test_c_datablock_complex_array \
-  test_c_datablock_multidim_double_array \
-  test_c_datablock_multidim_int_array \
-  test_c_datablock_multidim_complex_array \
-  test_fortran \
+	test_c_datablock_multidim_double_array \
+	test_c_datablock_multidim_int_array \
+	test_c_datablock_multidim_complex_array \
+	test_fortran \
 	test_fake_array
 
 test_fake_array: fake_array_t
@@ -124,14 +128,14 @@ test_python:
 	@nosetests cosmosis_py &> python_t.log
 	@/bin/echo ... passed
 
-section_names.h: section_list.txt generate_sections.py
-	python generate_sections.py section_list.txt c section_names.h
+section_names.h: section_names.txt generate_sections.py
+	python generate_sections.py section_names.txt c section_names.h
 
-cosmosis_f90/cosmosis_section_names.F90: section_list.txt generate_sections.py
-	python generate_sections.py section_list.txt fortran cosmosis_f90/cosmosis_section_names.F90
+cosmosis_f90/cosmosis_section_names.F90: section_names.txt generate_sections.py
+	python generate_sections.py section_names.txt fortran cosmosis_f90/cosmosis_section_names.F90
 
-cosmosis_py/section_names.py: section_list.txt generate_sections.py 
-	python generate_sections.py section_list.txt python cosmosis_py/section_names.py
+cosmosis_py/section_names.py: section_names.txt generate_sections.py 
+	python generate_sections.py section_names.txt python cosmosis_py/section_names.py
 
 .PHONY: test_datablock test_c_datablock test_section test_entry test_fortran test clean test_python 
 
