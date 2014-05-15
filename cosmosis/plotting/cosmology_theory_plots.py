@@ -222,11 +222,11 @@ class MatterPowerPlot(Plot):
 		pylab.grid()
 		pylab.legend()
 
-class ShearShearPlot(Plot):
+class ShearSpectrumPlot(Plot):
 	"Shear-shear power spectrum"
-	filename = "shear_shear_power"
+	filename = "shear_power"
 	def plot(self):
-		super(ShearShearPlot, self).plot()
+		super(ShearSpectrumPlot, self).plot()
 		nbin = 0
 		for i in xrange(1,100):
 			filename = self.file_path("shear_cl", "bin_{0}_{0}".format(i))
@@ -257,6 +257,41 @@ class ShearShearPlot(Plot):
 				pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
 				pylab.grid()
 
+class ShearCorrelationPlot(Plot):
+	"Shear-shear power spectrum"
+	filename = "shear_correlation"
+	def plot(self):
+		super(ShearCorrelationPlot, self).plot()
+		nbin = 0
+		for i in xrange(1,100):
+			filename = self.file_path("shear_xi", "xiplus_{0}_{0}".format(i))
+			if os.path.exists(filename):
+				nbin += 1
+			else:
+				break
+		if nbin==0:
+			raise IOError("No shear-shear correlations")
+
+		theta = self.load_file("shear_xi", "theta")
+		sz = 1.0/(nbin+2)
+		for i in xrange(1, nbin+1):
+			for j in xrange(1, i+1):
+				rect = (i*sz,j*sz,sz,sz)
+				self.figure.add_axes(rect)
+				#pylab.ploy()
+				#pylab.subplot(nbin, nbin, (nbin*nbin)-nbin*(j-1)+i)
+				xi = self.load_file("shear_xi", "xiplus_{0}_{1}".format(i,j))
+				pylab.loglog(theta, xi)
+				pylab.ylim(2e-7,1e-3)
+				if i==1 and j==1:
+					pylab.xlabel(r"$\theta$")
+					pylab.ylabel(r"$\xi_+(\theta)$")
+				else:
+					pylab.gca().xaxis.set_ticklabels([])
+					pylab.gca().yaxis.set_ticklabels([])
+				pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
+				pylab.grid()
+
 
 
 def main(args):
@@ -264,7 +299,7 @@ def main(args):
 		try:
 			cls.make(args.dirname, args.output_dir, args.prefix, args.type)
 		except IOError as err:
-			print "Could not make plot ", cls.filename
+			print err
 
 
 if __name__ == '__main__':
