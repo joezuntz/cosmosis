@@ -67,7 +67,7 @@ then
 fi
 
 
-if [ "$flavor" == "Darwin64bit" ]
+if [ -d "$SETUPS_DIR/mpich/v3_1" ]
 then
     setup -B mpich v3_1 -q +e5:+prof
 fi
