@@ -33,6 +33,7 @@ sigma_r_nl
 planck
 intrinsic_alignment_field
 shear_calibration
+supernova_params
 
 # galaxy bias
 bias_field

@@ -36,13 +36,17 @@ else
 fi
 
 export PATH=${COSMOSIS_SRC_DIR}/bin:$PATH
-export PYTHONPATH=${COSMOSIS_SRC_DIR}:$PYTHONPATH
+export PYTHONPATH=${COSMOSIS_SRC_DIR}
 
+# don't allow this as it probably causes problems
+# during installation. Maybe support it later as
+# an advanced feature
+#
 # allow user to override our PYTHONUSERBASE
-if [ -z "$PYTHONUSERBASE" ]
-then
-  export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
-fi
+#if [ -z "$PYTHONUSERBASE" ]
+#then
+export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
+#fi
 
 # setup UPS packages
 setup -B scipy v0_13_0b -q +e5:+prof
