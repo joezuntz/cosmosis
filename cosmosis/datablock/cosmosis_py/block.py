@@ -296,16 +296,12 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 
 	def has_section(self, section):
-		status = lib.c_datablock_has_section(self._ptr, section)
-		return bool(status)
-
-	def has_section(self, section):
 		has = lib.c_datablock_has_section(self._ptr, section)
-		return has
+		return bool(has)
 
 	def has_value(self, section, name):
 		has = lib.c_datablock_has_value(self._ptr, section, name)
-		return has
+		return bool(has)
 
 	def __getitem__(self, section_name):
 		try:
