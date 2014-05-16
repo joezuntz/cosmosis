@@ -66,6 +66,10 @@ then
 	setup -B wmapdata v5_00
 fi
 
+if [ -d "$SETUPS_DIR/minuit2/v5_28_0" ]
+then
+	setup -B minuit2 v5_28_0
+fi
 
 if [ "$flavor" == "Darwin64bit" ]
 then
