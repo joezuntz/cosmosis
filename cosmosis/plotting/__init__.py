@@ -1,6 +1,6 @@
 import matplotlib
 matplotlib.use('Agg')
-matplotlib.rcParams['text.usetex']=True
+#matplotlib.rcParams['text.usetex']=True
 matplotlib.rcParams['font.family']='serif'
 matplotlib.rcParams['font.size']=18
 matplotlib.rcParams['legend.fontsize']=15
