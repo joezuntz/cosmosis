@@ -427,7 +427,27 @@ module cosmosis_modules
 
     end function datablock_get_int_array_1d
 
-    function datablock_put_double_array_1d(block, section, name, value) result(status)
+    function datablock_put_double_array_2d(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        real(c_double), dimension(:, :) :: value
+        integer(c_int) :: extents(2)
+
+        !Opposite ordering in fortran vs C
+        extents(2)=size(value, 1)
+        extents(1)=size(value, 2)
+
+        write(*,*) extents
+ 
+        status = c_datablock_put_double_array_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, 2, extents)
+ 
+    end function datablock_put_double_array_2d
+
+
+     function datablock_put_double_array_1d(block, section, name, value) result(status)
         integer(cosmosis_status) :: status
         integer(cosmosis_block) :: block
         character(len=*) :: section

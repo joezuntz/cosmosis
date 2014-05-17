@@ -146,6 +146,21 @@ module cosmosis_wrappers
             real(kind=c_double), dimension(sz) :: value
         end function c_datablock_put_double_array_1d_wrapper
 
+        function c_datablock_put_double_array_wrapper(s, section, name, value, ndims, extents) &
+        bind(C, name="c_datablock_put_double_array")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_put_double_array_wrapper
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            real(kind=c_double), dimension(*) :: value
+            integer(kind=c_int), value :: ndims
+            integer(kind=c_int), dimension(ndims) :: extents
+
+        end function c_datablock_put_double_array_wrapper
+
         function c_datablock_put_complex_array_1d_wrapper(s, section, name, value, sz) &
         bind(C, name="c_datablock_put_complex_array_1d")
             use iso_c_binding
