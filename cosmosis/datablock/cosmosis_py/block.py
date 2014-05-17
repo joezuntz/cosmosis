@@ -140,6 +140,42 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
+	def _get_array_2d(self, section, name, dtype):
+
+		if dtype is complex or dtype is str:
+			raise ValueError("Sorry - cosmosis support for 2D complex and string values is incomplete")
+		ctype, shape_function, get_function = {
+			int: (ct.c_int, lib.c_datablock_get_int_array_shape, lib.c_datablock_get_int_array),
+			float: (ct.c_double, lib.c_datablock_get_double_array_shape, lib.c_datablock_get_double_array),
+			#complex: (lib.c_complex, lib.c_datablock_get_complex_array_shape, lib.c_datablock_get_complex_array),
+			#str: (lib.c_str, lib.c_datablock_get_string_array_shape, lib.c_datablock_get_string_array),
+		}[dtype]
+
+		extent = (ct.c_int * 2)()
+		status = shape_function(self._ptr, section, name, 2, extent)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+		nx = extent[0]
+		ny = extent[1]
+		r = np.zeros((nx, ny), dtype=dtype)
+		arr = r.ctypes.data_as(ct.POINTER(ctype))
+		status = get_function(self._ptr, section, name, arr, 2, extent)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+		return r
+
+	def get_double_array_2d(self, section, name):
+		return self._get_array_2d(section, name, float)
+
+	def get_int_array_2d(self, section, name):
+		return self._get_array_2d(section, name, int)
+
+	#def get_complex_array_2d(self, section, name):
+	#	return self._get_array_2d(section, name, complex)
+
+	#def get_string_array_2d(self, section, name):
+	#	return self._get_array_2d(section, name, str)
+
 	def put_int(self, section, name, value):
 		status = lib.c_datablock_put_int(self._ptr,section,name,int(value))
 		if status!=0:
@@ -201,7 +237,7 @@ class DataBlock(object):
 			# types.COMPLEX1D:   (self.get_complex_array_1d, self.put_complex_array_1d, self.replace_complex_array_1d),
 			# types.STRING1D:    (self.get_string_array_1d,  self.put_string_array_1d,  self.replace_string_array_1d)
 			# types.DBT_INT2D:   (self.get_int_array_2d,     self.put_int_array_2d,     self.replace_int_array_2d)
-			# types.DBT_DOUBLE2D:(self.get_double_array_2d,  self.put_double_array_2d,  self.replace_double_array_2d)
+			# types.DBT_DOUBLEND:(self.get_double_array_2d,  self.put_double_array_2d, self, None)
 			# types.COMPLEX2D:   (self.get_complex_array_2d, self.put_complex_array_2d, self.replace_complex_array_2d)
 			# types.STRING2D:    (self.get_string_array_2d,  self.put_string_array_2d,  self.replace_string_array_2d)
 				 }.get(code)
@@ -384,6 +420,7 @@ class DataBlock(object):
 				for s in scalar_outputs:
 					f.write("%s = %r\n"%s)
 				f.close()
+
 	def report_failures(self):
 		status = lib.c_datablock_report_failures(self._ptr)
 		if status!=0:
