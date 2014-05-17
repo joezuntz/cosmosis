@@ -49,7 +49,7 @@ cosmosis::Section::get_type(std::string const&name, datablock_type_t &t) const
   else if (ival->second.is<vcomplex_t>())   t = DBT_COMPLEX1D;
   else if (ival->second.is<vstring_t>())    t = DBT_STRING1D;
   else if (ival->second.is<nd_int_t>())     t = DBT_INTND;
-  else if (ival->second.is<nd_double_t>())  t = DBT_INTND;
+  else if (ival->second.is<nd_double_t>())  t = DBT_DOUBLEND;
   else if (ival->second.is<nd_complex_t>()) t = DBT_COMPLEXND;
   else return DBS_LOGIC_ERROR;
   return DBS_SUCCESS;
