@@ -1222,6 +1222,63 @@ c_datablock_log_access(c_datablock* s,
 }
 
 
+DATABLOCK_STATUS
+c_datablock_get_metadata(c_datablock* s, 
+                       const char* section,
+                       const char* name,
+                       const char* key,
+                       char** val
+                       )
+{
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (key == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock *>(s);
+    string tmp;
+    auto rc = p->get_metadata(section, name, key, tmp);
+    if (rc != DBS_SUCCESS) return rc;
+    *val = strdup(tmp.c_str());
+    if (*val == nullptr) return DBS_MEMORY_ALLOC_FAILURE;
+    return DBS_SUCCESS;
+}
+
+DATABLOCK_STATUS
+c_datablock_put_metadata(c_datablock* s,
+     const char* section,
+     const char* name,
+     const char* key,
+     const char* val)
+{
+  if (s == nullptr) return DBS_DATABLOCK_NULL;
+  if (section == nullptr) return DBS_SECTION_NULL;
+  if (name == nullptr) return DBS_NAME_NULL;
+  if (key == nullptr) return DBS_NAME_NULL;
+  if (val == NULL) return DBS_VALUE_NULL;
+
+  auto p = static_cast<DataBlock*>(s);
+  return p->put_metadata(section, name, key, val);
+}
+
+
+DATABLOCK_STATUS
+c_datablock_replace_metadata(c_datablock* s,
+     const char* section,
+     const char* name,
+     const char* key,
+     const char* val)
+{
+  if (s == nullptr) return DBS_DATABLOCK_NULL;
+  if (section == nullptr) return DBS_SECTION_NULL;
+  if (name == nullptr) return DBS_NAME_NULL;
+  if (key == nullptr) return DBS_NAME_NULL;
+  if (val == NULL) return DBS_VALUE_NULL;
+
+  auto p = static_cast<DataBlock*>(s);
+  return p->replace_metadata(section, name, key, val);
+}
 
 
 
