@@ -81,6 +81,66 @@ extern "C"
     return p->has_val(section, name);
   }
 
+    // This function is as-yet untested.
+  // All I can say is that it compiles.
+
+  DATABLOCK_STATUS
+  c_datablock_get_array_ndim(c_datablock * s, const char* section, const char * name, int * ndim)
+  {
+    *ndim = 0;
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+
+    auto p = static_cast<DataBlock *>(s);
+    vector<size_t> extents;
+    // get type
+    datablock_type_t dtype;
+    auto status = c_datablock_get_type(s, section, name, &dtype);
+
+  // DBT_INTND,
+  // DBT_DOUBLEND,
+  // DBT_COMPLEXND,
+
+    switch (dtype){
+      case DBT_INT1D:
+      case DBT_DOUBLE1D:
+      case DBT_COMPLEX1D:
+      case DBT_STRING1D:
+        *ndim=1;
+        return DBS_SUCCESS;
+        break;
+      case DBT_INT2D:
+      case DBT_DOUBLE2D:
+      case DBT_COMPLEX2D:
+      case DBT_STRING2D:
+        *ndim=2;
+        return DBS_SUCCESS;
+        break;
+      case DBT_INTND:
+        status = p->get_array_shape<int>(section, name, extents);
+        break;
+      case DBT_DOUBLEND:
+        status = p->get_array_shape<double>(section, name, extents);
+        break;
+      case DBT_COMPLEXND:
+        status = p->get_array_shape<complex_t>(section, name, extents);
+        break;
+      default:
+        status = DBS_WRONG_VALUE_TYPE;
+    }
+
+    if (status!=DBS_SUCCESS){
+      *ndim = 0;
+      return status;
+    }
+
+    *ndim = clamp(extents.size());
+    return DBS_SUCCESS;
+  }
+
+
+
   int c_datablock_get_array_length(c_datablock const* s,
                                    const char* section,
                                    const char* name)

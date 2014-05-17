@@ -113,6 +113,18 @@ extern "C" {
   c_datablock_num_values(c_datablock const* s, const char* section);
 
   /*
+    Find the dimensionality of an array with the given section and
+    name.  If the object searched for is a scalar then ndim will be zero
+    and an error status (DBS_WRONG_VALUE_TYPE) will be returned.
+  */
+
+
+  // This function is as-yet untested.
+  // All I can say is that it compiles.
+  // DATABLOCK_STATUS
+  // c_datablock_get_ndim(c_datablock const* s, const char* section, const char * name, int * ndim);
+
+  /*
     Return the name of the i'th section of the datablock. Note that if a
     new section is added, the ordinal position of some or all of the
     named sections may change; this is because the sections are stored
@@ -121,6 +133,8 @@ extern "C" {
     memory buffer containing the string. A NULL pointer is returned if i
     is negative or out-of-range. Numbering of sections starts with 0.
   */
+
+
   const char*
   c_datablock_get_section_name(c_datablock const* s, int i);
 
