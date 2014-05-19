@@ -674,6 +674,64 @@ module cosmosis_modules
 
 
 
+    function datablock_put_metadata(block, section, name, key, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        character(len=*) :: key
+        character(len=*) :: value
+
+        status = c_datablock_put_metadata(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, &
+            trim(key)//C_NULL_CHAR, trim(value)//C_NULL_CHAR)
+
+    end function datablock_put_metadata
+
+    function datablock_replace_metadata(block, section, name, key, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        character(len=*) :: key
+        character(len=*) :: value
+
+        status = c_datablock_replace_metadata(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, &
+            trim(key)//C_NULL_CHAR, trim(value)//C_NULL_CHAR)
+
+    end function datablock_replace_metadata
+
+
+   function datablock_get_metadata(block, section, name, key, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        character(len=*) :: key
+        character(len=*) :: value
+        type(c_ptr) :: c_string  !This is actually a pointer-to-a-pointer, I think.
+
+        !Call the C function, which returns a c_ptr.
+        status = c_datablock_get_metadata(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, &
+            trim(key)//C_NULL_CHAR, c_string)
+
+        ! Convert the c_ptr into a fortran string.
+        ! This will (silently) truncate the string if
+        ! the value put in is not long enough,
+        ! but this is apparently standard in Fortran.
+        if (status==0) then
+            value = c_string_to_fortran(c_string, len(value))
+            !Need to free the C string!  Becuase it was allocated with strdup
+            call wrap_free(c_string)
+        else 
+            value=""
+        endif
+
+    end function datablock_get_metadata
+
+
 
     !Create a datablock.
     !Unless you are writing a sampler you should not
