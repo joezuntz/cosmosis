@@ -46,6 +46,7 @@
 #include "datablock_logging.h"
 
 #define OPTION_SECTION "module_options"
+#define COSMOSIS_METADATA_PREFIX "cosmosis_metadata:"
 
 namespace cosmosis
 {

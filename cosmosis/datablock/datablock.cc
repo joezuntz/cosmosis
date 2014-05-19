@@ -151,7 +151,7 @@ cosmosis::DataBlock::put_metadata(std::string section,
     // The thing which we are putting the metadata for must exist
     if (!has_val(section, name)) return DBS_NAME_NOT_FOUND; 
 
-    std::string metadata_key = std::string("cosmosis_metadata:") + name + ":" + key + ":";
+    std::string metadata_key = std::string(COSMOSIS_METADATA_PREFIX) + name + ":" + key + ":";
     return put_val(section, metadata_key, value);
 
 }
@@ -168,7 +168,7 @@ cosmosis::DataBlock::replace_metadata(std::string section,
     // The thing which we are putting the metadata for must exist
     if (!has_val(section, name)) return DBS_NAME_NOT_FOUND; 
 
-    std::string metadata_key = std::string("cosmosis_metadata:") + name + ":" + key + ":";
+    std::string metadata_key = std::string(COSMOSIS_METADATA_PREFIX) + name + ":" + key + ":";
     return replace_val(section, metadata_key, value);
 
 }
@@ -185,7 +185,7 @@ cosmosis::DataBlock::get_metadata(std::string section,
     // The thing which we are putting the metadata for must exist
     if (!has_val(section, name)) return DBS_NAME_NOT_FOUND; 
 
-    std::string metadata_key = std::string("cosmosis_metadata:") + name + ":" + key + ":";
+    std::string metadata_key = std::string(COSMOSIS_METADATA_PREFIX) + name + ":" + key + ":";
     return get_val(section, metadata_key, value);
 
 }
