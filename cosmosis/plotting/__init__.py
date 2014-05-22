@@ -84,7 +84,7 @@ def section_code(code):
 
 class Plotter(object):
 	colors=['blue','red','green','cyan','gray']
-	def __init__(self, chain_data,latex_file=None, filetype="png", root_dir='.',prefix='',**options):
+	def __init__(self, chain_data,latex_file=None, filetype="png", root_dir='.',prefix='',blind=False,**options):
 		self._chain_data = chain_data
 		all_names = set()
 		for chain_datum in self._chain_data.values():
@@ -97,12 +97,27 @@ class Plotter(object):
 		self.options=options
 		self.root_dir = root_dir
 		self.prefix = prefix
+		self.blind = blind
 		if self.prefix and not self.prefix.endswith('_'):
 			self.prefix = self.prefix + "_"
 
 	def command(self, command, *args, **kwargs):
 		cmd = command.format(*args, **kwargs) + '\n'
 		self._output_file.write(cmd)
+
+	def blind_axes(self):
+		pylab.tick_params(
+		    axis='both',          # changes apply to the x-axis
+		    which='both',      # both major and minor ticks are affected
+		    bottom='off',      # ticks along the bottom edge are off
+		    top='off',         # ticks along the top edge are off
+		    left='off',      # ticks along the bottom edge are off
+		    right='off',         # ticks along the top edge are off
+		    labelbottom='off', # labels along the bottom edge are off
+		    labeltop='off', # labels along the bottom edge are off
+		    labelleft='off', # labels along the bottom edge are off
+		    labelright='off') # labels along the bottom edge are off
+
 
 	def load_latex(self, latex_file):
 		self._display_names = {}
@@ -191,6 +206,7 @@ class Plotter(object):
 			#need to save plot_data called "like" here
 			pylab.plot(x_axis, like, '-', color=self.colors[i], **self.plot_keywords_1d())
 		pylab.xlabel("$"+self._display_names[name]+"$")
+		if self.blind: self.blind_axes()
 	
 	@staticmethod
 	def _find_contours_corrected(like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
@@ -259,7 +275,8 @@ class Plotter(object):
 			else:
 				pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors=color)
 		pylab.xlabel("$"+self._display_names[name1]+"$")
- 		pylab.ylabel("$"+self._display_names[name2]+"$")
+ 		pylab.ylabel("$"+self._display_names[name2]+"$") 		
+ 		if self.blind: self.blind_axes()
  		# self.command('pylab.xlabel("${0}$")',self._display_names[name2])
 
 

@@ -32,6 +32,7 @@ def plotting(args):
 		fill=not args.nofill,
 		root_dir=args.root_dir,
 		prefix=args.prefix,
+		blind=args.blind,
 		)
 	plotter.plot_1d_params(args.params)
 	if not args.one_d:
@@ -93,6 +94,8 @@ parser.add_argument('-f', '--format', dest='format', default='png', type=str,
 	help='Output image filename suffix; determines type. e.g. png, pdf, eps')
 parser.add_argument('-L', '--no-fill', dest='nofill', action='store_true',
 	help='Produce line contour plots instead of filled')
+parser.add_argument('-B', '--blind', action='store_true',
+	help='Remove the numbering and ticks from the axes to blind the plot')
 
 
 if __name__=="__main__":
