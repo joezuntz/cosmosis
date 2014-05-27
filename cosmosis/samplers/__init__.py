@@ -6,3 +6,4 @@ from pymc import pymc_sampler
 from emcee import emcee_sampler
 from maxlike import maxlike_sampler
 from gridmax import gridmax_sampler
+from importance import importance_sampler
