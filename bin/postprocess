@@ -14,7 +14,7 @@ OUTPUTS
  - auto-determine burn-in?
  
 RUNNING
- - run on either chain or ini file
+ X run on either chain or ini file
  
 """
 
@@ -71,7 +71,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=description, add_help=True)
 
     #Chain data arguments
-    parser.add_argument("inifile", help="Input ini file of parameters")
+    parser.add_argument("infile", help="Input ini file used to run chain, or raw "
+        "chain file.  Files ending .ini assumed former; ending .txt assumed latter.  "
+        "Or can force with other params")
+
+    parser.add_argument("-i","--ini", action='store_true',
+        help='Assume that the chain file is an ini file regardless of ending')
+    parser.add_argument("-x","--text", action='store_true',
+        help='Assume that the chain file is a text MCMC chain file regardless of ending')
+
 
     parser.add_argument("-t","--thin", type=int, default=1,
         help='Thinning to apply to chains (after burn)')
@@ -102,8 +110,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args(sys.argv[1:])
 
-    ini = Inifile(args.inifile)
-    output_options = dict(ini.items('output'))
+    if args.ini or (args.infile.endswith(".ini") and not args.text):        
+        ini = Inifile(args.infile)
+        output_options = dict(ini.items('output'))
+    elif args.text or args.infile.endswith(".txt"):
+        # defaults - assume MCMC
+        output_options = {"format":"text", "filename":args.infile}
 
     if not args.stats:
         plotting(args,output_options)
