@@ -19,6 +19,7 @@ RUNNING
 """
 
 import argparse
+import sys
 
 def plotting(args):
 	from cosmosis.plotting import CosmologyPlotter
@@ -60,6 +61,10 @@ def statistics(args):
 		for p, v in zip(analytics.params, analytics.best_params):
 			print '    %s = %g' % (p, v)
 	print
+	import numpy as np
+	print "Covariance matrix:"
+	print '#' + ' '.join(analytics.params)
+	np.savetxt(sys.stdout, analytics.cov)
 
 description = "Plot marginalized constraints from a des-pipe MCMC output chain."
 parser = argparse.ArgumentParser(description=description, add_help=True)
