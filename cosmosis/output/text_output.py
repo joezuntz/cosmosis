@@ -90,11 +90,15 @@ class TextColumnOutput(OutputBase):
         filename = options['filename']
         delimiter = options.get('delimiter', '\t')
 
+        cut = False
         if filename.endswith(cls.FILE_EXTENSION):
             filename = filename[:-len(cls.FILE_EXTENSION)]
+            cut = True
         # first look for serial file
         if os.path.exists(filename+cls.FILE_EXTENSION):
             datafiles = [filename+cls.FILE_EXTENSION]
+        elif os.path.exists(filename) and not cut:
+            datafiles = [filename]
         else:
             datafiles = glob(filename+"_[0-9]*"+cls.FILE_EXTENSION)
             if not datafiles:

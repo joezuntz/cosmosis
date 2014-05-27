@@ -116,6 +116,16 @@ if __name__ == "__main__":
     elif args.text or args.infile.endswith(".txt"):
         # defaults - assume MCMC
         output_options = {"format":"text", "filename":args.infile}
+    else:
+        sys.stderr.write("""I don't know how to postprocess file called %s.  
+I know about files ending .ini or .txt.
+
+To manually tell me that the file is a 
+cosmosis ini file use postprocess with the -i flag; to tell me that it is
+an MCMC chain file use the -t flag.
+
+"""%args.infile)
+        sys.exit(1)
 
     if not args.stats:
         plotting(args,output_options)
