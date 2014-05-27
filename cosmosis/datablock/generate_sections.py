@@ -1,7 +1,7 @@
 import sys
 
 fortran_template = """
-! This module is auto-generated from the file section_list.txt.
+! This module is auto-generated from the file cosmosis/datablock/section_names.txt.
 ! Edit that and then re-make to add your own pre-defined section names.
 
 module cosmosis_section_names
@@ -15,7 +15,7 @@ end module
 """
 
 c_template = """
-// This header file is auto-generated from the file section_list.txt.
+// This header file is auto-generated from the file cosmosis/datablock/section_names.txt.
 // Edit that and then re-make to add your own pre-defined section names.
 
 {0}
@@ -23,7 +23,7 @@ c_template = """
 """
 
 python_template = """
-# This module is auto-generated from the file section_list.txt.
+# This module is auto-generated from the file cosmosis/datablock/section_names.txt.
 # Edit that and then re-make to add your own pre-defined section names.
 
 {0}
