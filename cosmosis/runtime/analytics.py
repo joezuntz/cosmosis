@@ -9,8 +9,10 @@ class Analytics(object):
         self.pool = pool
 
         self.total_steps = 0
-        self.means = np.zeros(len(params))
-        self.m2 = np.zeros(len(params))
+        nparam = len(params)
+        self.means = np.zeros(nparam)
+        self.m2 = np.zeros(nparam)
+        self.cov_times_n = np.zeros((nparam,nparam))
         self.best_like = -np.inf
         self.best_index = None
         self.best_params = None
@@ -32,8 +34,10 @@ class Analytics(object):
         for x in traces:
             num += 1.0
             delta = x - self.means
+            old_means = self.means.copy()
             self.means += delta/num
             self.m2 += delta*(x - self.means)
+            self.cov_times_n += np.outer(x-self.means, x-old_means)
 
         self.total_steps += traces.shape[0]
 
@@ -76,6 +80,7 @@ class Analytics(object):
                 like = None
 
             analytics.add_traces(chain, like)
+        analytics.cov = analytics.cov_times_n / analytics.total_steps
         return analytics
 
     def trace_means(self):
