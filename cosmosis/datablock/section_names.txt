@@ -42,5 +42,9 @@ bias_field
 distances
 de_equation_of_state
 
+#linear growth parameters
+growth_parameters
+
 # section for test likelihoods
 test_parameters
+
