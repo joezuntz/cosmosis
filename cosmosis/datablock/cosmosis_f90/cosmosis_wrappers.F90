@@ -437,6 +437,47 @@ module cosmosis_wrappers
         end function c_datablock_get_complex_array_1d_preallocated_wrapper
 
 
+        function c_datablock_get_metadata(s, section, name, key, value) &
+        bind(C, name="c_datablock_get_metadata")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_get_metadata
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            character(kind=c_char), dimension(*) :: key
+            type(c_ptr) :: value
+        end function c_datablock_get_metadata
+
+        function c_datablock_put_metadata(s, section, name, key, value) &
+        bind(C, name="c_datablock_put_metadata")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_put_metadata
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            character(kind=c_char), dimension(*) :: key
+            character(kind=c_char), dimension(*) :: value
+        end function c_datablock_put_metadata
+
+        function c_datablock_replace_metadata(s, section, name, key, value) &
+        bind(C, name="c_datablock_replace_metadata")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            integer (cosmosis_status) :: c_datablock_replace_metadata
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section
+            character(kind=c_char), dimension(*) :: name
+            character(kind=c_char), dimension(*) :: key
+            character(kind=c_char), dimension(*) :: value
+        end function c_datablock_replace_metadata
+
+
+
     function wrap_strlen(str) bind(C, name='strlen')
         use iso_c_binding
         implicit none

@@ -171,3 +171,26 @@ load_library_function(
 	[c_block, c_str, c_str, c_str],
 	ct.c_int
 	)
+
+
+
+load_library_function(
+	locals(),
+	"c_datablock_put_metadata",
+	[c_block, c_str, c_str, c_str, c_str],
+	ct.c_int
+	)
+
+load_library_function(
+	locals(),
+	"c_datablock_replace_metadata",
+	[c_block, c_str, c_str, c_str, c_str],
+	ct.c_int
+	)
+
+load_library_function(
+	locals(),
+	"c_datablock_get_metadata",
+	[c_block, c_str, c_str, c_str, ct.POINTER(c_str)],
+	ct.c_int
+	)

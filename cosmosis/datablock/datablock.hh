@@ -46,6 +46,7 @@
 #include "datablock_logging.h"
 
 #define OPTION_SECTION "module_options"
+#define COSMOSIS_METADATA_PREFIX "cosmosis_metadata:"
 
 namespace cosmosis
 {
@@ -141,6 +142,26 @@ namespace cosmosis
 
     // Remove all the sections.
     void clear();
+
+
+
+    DATABLOCK_STATUS
+    put_metadata(std::string section,
+                                 std::string name,
+                                 std::string key,
+                                 std::string value);
+
+    DATABLOCK_STATUS
+    get_metadata(std::string section,
+                                 std::string name,
+                                 std::string key,
+                                 std::string &value);
+
+    DATABLOCK_STATUS
+    replace_metadata(std::string section,
+                                 std::string name,
+                                 std::string key,
+                                 std::string value);
 
     // The view functions provide readonly access to the data in
     // DataBlock without copying the data. The reference returned by a

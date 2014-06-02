@@ -5,9 +5,10 @@ from . import types
 from .errors import BlockError
 import numpy as np
 import os
+import collections
 
 option_section = "module_options"
-
+metadata_prefix = "cosmosis_metadata:"
 
 class DataBlock(object):
 	GET=0
@@ -391,6 +392,16 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, "")
 
+	@staticmethod
+	def _parse_metadata_key(key):
+		key = key[len(metadata_prefix):].strip(":")
+		s = key.index(":")
+		if s==-1:
+			raise ValueError("Could not understand metadata")
+		name = key[:s]
+		meta = key[s+1:]
+		return name, meta
+
 	def save_to_directory(self, dirname, clobber=False):
 		try:
 			os.mkdir(dirname)
@@ -407,18 +418,34 @@ class DataBlock(object):
 				if not clobber:
 					raise
 			scalar_outputs = []
+			meta = collections.defaultdict(dict)
+			vector_outputs = []
 			for k in keys:
 				sec, name = k
 				if sec!=section: continue
+				if name.startswith(metadata_prefix):
+					target, metakey = self._parse_metadata_key(name)
+					meta[target][metakey] = self[section,name]
+					continue
 				value = self[section,name]
 				if np.isscalar(value):
 					scalar_outputs.append((name,value))
 				else:
-					np.savetxt(os.path.join(dirname,section,name+'.txt'), value)
+					vector_outputs.append((name,value))
+			for name, value in vector_outputs:
+				vector_outfile = os.path.join(dirname,section,name+'.txt')
+				header = "%s\n"%name
+				if name in meta:
+					for key,val in meta[name].items():
+						header+='%s = %s\n' % (key,val)
+				np.savetxt(vector_outfile, value, header=header.rstrip("\n"))
 			if scalar_outputs:
 				f=open(os.path.join(dirname,section,"values.txt"), 'w')
 				for s in scalar_outputs:
 					f.write("%s = %r\n"%s)
+					if s[0] in meta:
+						for key,val in meta[s[0]].items():
+							f.write("#%s %s = %s\n"%(s[0],key,val))
 				f.close()
 
 	def report_failures(self):
@@ -436,3 +463,19 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
+	def get_metadata(self, section, name, key):
+		r = lib.c_str()
+		status = lib.c_datablock_get_metadata(self._ptr,section,name,key, r)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+		return str(r.value)
+
+	def put_metadata(self, section, name, key, value):
+		status = lib.c_datablock_put_metadata(self._ptr,section,name,key, value)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+
+	def replace_metadata(self, section, name, key, value):
+		status = lib.c_datablock_replace_metadata(self._ptr,section,name,key, value)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
