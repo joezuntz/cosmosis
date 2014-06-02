@@ -20,6 +20,10 @@ import collections
 from .kde import KDE
 from .utils import NoSuchParameter, section_code
 import scipy.optimize
+try:
+	from cosmosis import output as output_module
+except ImportError:
+	print "Running without cosmosis: no pretty section names or running on ini files"
 
 class Plotter(object):
 	colors=['blue','red','green','cyan','gray']

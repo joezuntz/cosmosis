@@ -75,6 +75,7 @@ class Analytics(object):
             else:
                 like = None
             analytics.add_traces(chain, like)
+        analytics.cov = analytics.cov_times_n / analytics.total_steps            
         return analytics 
 
     @classmethod
