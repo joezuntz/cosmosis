@@ -20,7 +20,7 @@ PIPELINE_INI_SECTION = "pipeline"
 
 
 class Pipeline(object):
-    def __init__(self, arg=None):
+    def __init__(self, arg=None, load=True):
         """ Initialize with a single filename or a list of them,
             a ConfigParser, or nothing for an empty pipeline"""
         if arg is None:
@@ -37,7 +37,7 @@ class Pipeline(object):
 
         # initialize modules
         self.modules = []
-        if PIPELINE_INI_SECTION in self.options.sections():
+        if load and PIPELINE_INI_SECTION in self.options.sections():
             rootpath = self.options.get(PIPELINE_INI_SECTION,
                                         "root",
                                         os.curdir)
@@ -145,8 +145,8 @@ class Pipeline(object):
 
 
 class LikelihoodPipeline(Pipeline):
-    def __init__(self, arg=None, id="",override=None):
-        super(LikelihoodPipeline, self).__init__(arg=arg)
+    def __init__(self, arg=None, id="",override=None, load=True):
+        super(LikelihoodPipeline, self).__init__(arg=arg, load=load)
 
         if id:
             self.id_code = "[%s] " % str(id)
