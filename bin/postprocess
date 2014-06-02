@@ -28,7 +28,7 @@ def plotting(args, options):
     filetype=args.format
 
     plotter = ChainPlotter.from_outputs(
-        options, args.burn, args.thin,
+        options, burn=args.burn, thin=args.thin,
         latex_file=args.latex,
         filetype=filetype,
         fill=not args.nofill,
