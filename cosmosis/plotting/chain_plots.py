@@ -18,7 +18,7 @@ import cmd
 import collections
 from .kde import KDE
 from .utils import NoSuchParameter, section_code
-
+import scipy.optimize
 
 class Plotter(object):
 	colors=['blue','red','green','cyan','gray']
