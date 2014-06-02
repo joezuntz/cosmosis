@@ -73,7 +73,10 @@ class Plot(object):
 		"Load a data file from the directory of saved theory data"
 		#Find the filename and load it
 		filename = self.file_path(section, name)
-		return np.loadtxt(filename)
+		try:
+			return np.loadtxt(filename)
+		except Exception as e:
+			raise IOError("No data for plot: %s"% self.__class__.__name__[:-4])
 
 	#Handy little method for trying to numeric-ify a value
 	@staticmethod
@@ -235,7 +238,7 @@ class ShearSpectrumPlot(Plot):
 			else:
 				break
 		if nbin==0:
-			raise IOError("No shear-shear")
+			IOError("No data for plot: %s"% self.__class__.__name__[:-4])
 
 		ell = self.load_file("shear_cl", "ell")
 		sz = 1.0/(nbin+2)
@@ -270,7 +273,7 @@ class ShearCorrelationPlot(Plot):
 			else:
 				break
 		if nbin==0:
-			raise IOError("No shear-shear correlations")
+			IOError("No data for plot: %s"% self.__class__.__name__[:-4])
 
 		theta = self.load_file("shear_xi", "theta")
 		sz = 1.0/(nbin+2)
@@ -292,6 +295,20 @@ class ShearCorrelationPlot(Plot):
 				pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
 				pylab.grid()
 
+class GrowthPlot(Plot):
+	filename='growth'
+	def plot(self):
+		super(GrowthPlot,self).plot()
+		section = "growth_parameters"
+		z = self.load_file(section, "z")
+		d_z = self.load_file(section, "d_z")
+		f_z = self.load_file(section, "f_z")
+		pylab.plot(z, d_z, label='d(z)')
+		pylab.plot(z, f_z, label='f(z)')
+		pylab.grid()
+		pylab.xlabel("Redshift z")
+		pylab.ylabel("Growth Functions")
+		pylab.legend(loc='center right')
 
 
 def main(args):
