@@ -57,6 +57,7 @@ def main(args, pool=None):
 
         #Generate the output from a factory
         output = output_module.output_from_options(output_options)
+        output.metadata("sampler", sample_method)
     else:
         #some samplers, like the test one, do not need an output
         #file of the usual type.  In fact giving them one would be
