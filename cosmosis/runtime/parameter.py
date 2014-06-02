@@ -36,6 +36,9 @@ class Parameter(object):
     def __str__(self):
         return self.section + "--" + self.name
 
+    def __repr__(self):
+        return self.__str__()
+
     def is_fixed(self):
         return self.limits[0] == self.limits[1]
 
