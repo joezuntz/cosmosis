@@ -15,6 +15,11 @@ class MaxlikeSampler(Sampler):
         self.output_ini = self.ini.get(MAXLIKE_INI_SECTION,
                                        "output_ini", "")
 
+        self.output_cov = self.ini.get(MAXLIKE_INI_SECTION,
+                                       "output_covmat", "")
+        self.method = self.ini.get(MAXLIKE_INI_SECTION,
+                                       "method", "Nelder-Mead")
+
         self.converged = False
 
     def execute(self):
@@ -22,7 +27,7 @@ class MaxlikeSampler(Sampler):
 
         def likefn(p_in):
             #Check the normalization
-            if np.any(p_in<0) or np.any(p_in>1):
+            if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
                 return np.inf
             p = self.pipeline.denormalize_vector(p_in)
             like, extra = self.pipeline.likelihood(p)
@@ -31,14 +36,14 @@ class MaxlikeSampler(Sampler):
 
         #starting position in the normalized space
         start_vector = self.pipeline.normalize_vector(self.pipeline.start_vector())
+        bounds = [(0.0, 1.0) for p in self.pipeline.varied_params]
 
 
-        opt_norm = scipy.optimize.fmin(likefn,
-                                       start_vector,
-                                       ftol=self.tolerance,
-                                       disp=False,
-                                       maxiter=self.maxiter)
+        result = scipy.optimize.minimize(likefn, start_vector, method=self.method, 
+          jac=False, tol=self.tolerance,  #bounds=bounds, 
+          options={'maxiter':self.maxiter, 'disp':True})
 
+        opt_norm = result.x
         opt = self.pipeline.denormalize_vector(opt_norm)
         
         like, extra = self.pipeline.likelihood(opt)
@@ -50,10 +55,23 @@ class MaxlikeSampler(Sampler):
         #Next save them to the proper table file
         self.output.parameters(opt, extra)
 
-        #And finally, if requested, create a new ini file for the
+        #If requested, create a new ini file for the
         #best fit.
         if self.output_ini:
           self.pipeline.create_ini(opt, self.output_ini)
+
+        #Also if requested, approximate the covariance matrix with the 
+        #inverse of the Hessian matrix.
+        #For a gaussian likelihood this is exact.
+        if self.output_cov:
+            if hasattr(result, 'hess_inv'):
+                covmat = self.pipeline.denormalize_matrix(result.hess_inv)
+                np.savetxt(self.output_cov, covmat)
+            elif hasattr(result, 'hess'):
+                covmat = self.pipeline.denormalize_matrix(np.linalg.inv(result.hess_inv))
+                np.savetxt(self.output_cov, covmat)
+            else:
+                self.output.log_error("Sorry - the optimization method you chose does not return a covariance (or Hessian) matrix")
 
         self.converged = True
 
