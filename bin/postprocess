@@ -24,10 +24,10 @@ import sys
 from cosmosis.runtime.config import Inifile
 
 def plotting(args, options):
-    from cosmosis.plotting.chain_plots import CosmologyPlotter
+    from cosmosis.plotting.chain_plots import ChainPlotter
     filetype=args.format
 
-    plotter = CosmologyPlotter.from_outputs(
+    plotter = ChainPlotter.from_outputs(
         options, args.burn, args.thin,
         latex_file=args.latex,
         filetype=filetype,
