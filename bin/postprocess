@@ -24,7 +24,7 @@ import sys
 from cosmosis.runtime.config import Inifile
 
 def plotting(args, options):
-    from cosmosis.plotting import CosmologyPlotter
+    from cosmosis.plotting.chain_plots import CosmologyPlotter
     filetype=args.format
 
     plotter = CosmologyPlotter.from_outputs(
