@@ -1,3 +1,5 @@
+from cosmosis import output as output_module
+
 import numpy as np
 import sys
 import os
@@ -19,7 +21,7 @@ class Analytics(object):
 
     def add_traces(self, traces, like=None):
         if traces.shape[1] != len(self.params):
-            raise RuntimeError("The number of traces added to Analytics"
+            raise RuntimeError("The number of traces added to Analytics "
                                "does not match the number of varied "
                                "parameters!")
 
@@ -28,7 +30,7 @@ class Analytics(object):
             if like[maxlike_index] > self.best_like:
                 self.best_like = like[maxlike_index]
                 self.best_index = maxlike_index + self.total_steps
-                self.best_params = traces[maxlike_index]
+                self.best_params = traces[maxlike_index,:]
 
         num = float(self.total_steps)
         for x in traces:
@@ -40,6 +42,40 @@ class Analytics(object):
             self.cov_times_n += np.outer(x-self.means, x-old_means)
 
         self.total_steps += traces.shape[0]
+
+    @classmethod
+    def from_outputs(cls, options, burn=0, thin=1):
+        column_names, data, metadata, comments, final_metadata = output_module.input_from_options(options)
+
+        num_cols = len(column_names)
+        if "LIKE" in column_names:
+            like_col = column_names.index("LIKE")
+            param_cols = range(num_cols)
+            del param_cols[like_col]
+            del column_names[like_col]
+        else:
+            like_col = None
+
+        analytics = cls(column_names)
+        for chain in data:
+            if chain.shape[1] != num_cols:
+                raise RuntimeError("Incorrect number of columns in output "
+                                   "(%d, expected %d)." %
+                                   (chain.shape[1], num_cols))
+
+            if burn < 1:
+                nburn = chain.shape[0] * burn
+            else:
+                nburn = burn
+            chain = chain[nburn::thin,:]
+
+            if like_col:
+                like = chain[:,like_col]
+                chain = chain[:,param_cols]
+            else:
+                like = None
+            analytics.add_traces(chain, like)
+        return analytics 
 
     @classmethod
     def from_chain_files(cls, filenames, burn=0, thin=1):

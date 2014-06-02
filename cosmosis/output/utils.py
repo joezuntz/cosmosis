@@ -26,3 +26,11 @@ def try_numeric(x):
 	except:
 		pass
 	return x
+
+def parse_value(x):
+    x = try_numeric(x)
+    if x=='True':
+        x=True
+    if x=='False':
+        x=False
+    return x
