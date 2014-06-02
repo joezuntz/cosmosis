@@ -12,6 +12,7 @@ def task(p):
 
 
 class GridSampler(ParallelSampler):
+    parallel_output = False
 
     def config(self):
         global grid_pipeline
