@@ -206,6 +206,33 @@ class LikelihoodPipeline(Pipeline):
         return np.array([param.normalize(x) for param, x
                          in zip(self.varied_params, p)])
 
+    def normalize_matrix(self, c):
+        c = c.copy()
+        n = c.shape[0]
+        assert n==c.shape[1], "Cannot normalize a non-square matrix"
+        for i in xrange(n):
+            pi = self.varied_params[i]
+            ri = pi.limits[1] - pi.limits[0]
+            for j in xrange(n):
+                pj = self.varied_params[j]
+                rj = pj.limits[1] - pj.limits[0]
+                c[i,j] /= (ri*rj)
+        return c
+
+    def denormalize_matrix(self, c):
+        c = c.copy()
+        n = c.shape[0]
+        assert n==c.shape[1], "Cannot normalize a non-square matrix"
+        for i in xrange(n):
+            pi = self.varied_params[i]
+            ri = pi.limits[1] - pi.limits[0]
+            for j in xrange(n):
+                pj = self.varied_params[j]
+                rj = pj.limits[1] - pj.limits[0]
+                c[i,j] *= (ri*rj)
+        return c
+
+
     def start_vector(self):
         return np.array([param.start for
                          param in self.varied_params])
