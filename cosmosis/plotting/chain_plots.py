@@ -121,9 +121,10 @@ class ChainPlotter(Plotter):
 		return height1, height2, total_mass
 
 
-	def _plot_2d(self, name1, name2, xmin_input=None, xmax_input=None, ymin_input=None, ymax_input=None, n=100, factor=2.0, fill=True):
+	def _plot_2d(self, name1, name2, xmin_input=None, xmax_input=None, ymin_input=None, ymax_input=None, n=100, factor=2.0):
 		cols1 = self.cols_for_name(name1)
 		cols2 = self.cols_for_name(name2)
+		fill = self.options.get('fill',True)
 		for i,(filename,x) in enumerate(cols1.items()):
 			if filename not in cols2: continue
 			y = cols2[filename]
@@ -165,36 +166,6 @@ class ChainPlotter(Plotter):
  		# self.command('pylab.xlabel("${0}$")',self._display_names[name2])
 
 
- 	def plot_1d_params(self, names):
- 		if not names:
- 			names = self.all_names
- 		for name in names:
- 			print "Plotting 1D curve for ", name
- 			try:
-	 			self._plot_1d(name)
- 				pylab.savefig("%s/%s%s.%s"%(self.root_dir, self.prefix, name, self.filetype))
- 			except Exception as error:
- 				print "Unable to plot curve - may be only one value?"
- 				print error
- 			finally:
-	 			pylab.close()
-
- 	def plot_2d_params(self, names):
- 		if not names:
- 			names = self.all_names
- 		for name1 in names:
- 			for name2 in names:
- 				if name1!=name2 and name1<name2:
-		 			print "Plotting 2D curve for ", name1, "versus", name2
-		 			if name1=='LIKE' or name2=='LIKE': continue
-		 			try:
-	 					self._plot_2d(name1,name2, fill=self.options.get('fill',True))
-			 			pylab.savefig("%s/%s%s_%s.%s"%(self.root_dir, self.prefix, name1,name2,self.filetype))
-		 			except Exception as error:
-		 				print "Unable to plot contours - may be only one value?"
-		 				print error
-		 			finally:
-			 			pylab.close()
 
 
 	def plot_keywords_1d(self):

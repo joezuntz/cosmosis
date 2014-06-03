@@ -20,14 +20,36 @@ RUNNING
 
 import argparse
 import sys
-
+import ConfigParser
 from cosmosis.runtime.config import Inifile
 
-def plotting(args, options):
+def plotting(args, ini):
     from cosmosis.plotting.chain_plots import ChainPlotter
+    from cosmosis.plotting.grid_plots import GridPlotter
     filetype=args.format
 
-    plotter = ChainPlotter.from_outputs(
+    if ini is None:
+        options = {"format":"text", "filename":args.infile}
+        sampler = "emcee" #assume MCMC format
+    else:
+        sampler = ini.get("runtime", "sampler", "test")
+        try:
+            options = dict(ini.items('output'))
+        except ConfigParser.NoSectionError:
+            raise ValueError("There was no section on [output] in the ini file.  "
+                "This may mean that we do not know how to postprocess from sampler %s"%sampler)
+
+    plotterClass = {
+        "emcee": ChainPlotter, 
+        "pymc": ChainPlotter,
+        "grid": GridPlotter,
+    }.get(sampler, None)
+
+    if plotterClass is None:
+        raise ValueError("I do not know how to plot samples from the sampler %s"%sampler)
+
+
+    plotter = plotterClass.from_outputs(
         options, burn=args.burn, thin=args.thin,
         latex_file=args.latex,
         filetype=filetype,
@@ -43,7 +65,12 @@ def plotting(args, options):
         plotter.w0_wa_plot()
     return plotter
 
-def statistics(args,options):
+def statistics(args,ini):
+    if ini is None:
+        options = {"format":"text", "filename":args.infile}
+    else:
+        options = dict(ini.items('output'))
+
     from cosmosis.runtime.analytics import Analytics
     analytics = Analytics.from_outputs(options, burn=args.burn, thin=args.thin)
     Mu =  analytics.trace_means()
@@ -119,10 +146,9 @@ if __name__ == "__main__":
 
     if args.ini or (args.infile.endswith(".ini") and not args.text):        
         ini = Inifile(args.infile)
-        output_options = dict(ini.items('output'))
     elif args.text or args.infile.endswith(".txt"):
         # defaults - assume MCMC
-        output_options = {"format":"text", "filename":args.infile}
+        ini = None
     else:
         sys.stderr.write("""I don't know how to postprocess file called %s.  
 I know about files ending .ini or .txt.
@@ -135,5 +161,5 @@ an MCMC chain file use the -t flag.
         sys.exit(1)
 
     if not args.stats:
-        plotting(args,output_options)
-    statistics(args,output_options)
+        plotting(args,ini)
+    statistics(args,ini)
