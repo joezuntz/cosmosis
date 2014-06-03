@@ -168,8 +168,9 @@ class GridPlotter(Plotter):
 		pylab.ylabel("$"+self._display_names[name2]+"$")
 
 		#Choose a color mapping
-		norm = matplotlib.colors.Normalize(like.min(), like.max())
-		colormap = pylab.cm.jet
+		norm = matplotlib.colors.Normalize(np.exp(like.min()), np.exp(like.max()))
+		colormap = pylab.cm.Reds
+
 
 		edges1 = set()
 		edges2 = set()
@@ -183,9 +184,9 @@ class GridPlotter(Plotter):
 
 
 		#Loop through our grid
-		for (px, py, L) in zip(cols1, cols2, like):
+		for (px, py, L) in zip(cols1, cols2,like):
 			#get the color for the point
-			c = colormap(norm(L))
+			c = colormap(norm(np.exp(L)))
 			#create and apply the square colour patch
 			r = pylab.Rectangle((px-dx/2.,py-dy/2.), dx, dy, color=c)
 			ax.add_artist(r)
