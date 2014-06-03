@@ -209,5 +209,5 @@ class GridPlotter(Plotter):
 		#create and add a colorbar
 		sm = pylab.cm.ScalarMappable(cmap=colormap, norm=norm)
 		sm._A = [] #hack from StackOverflow to make this work
-		pylab.colorbar(sm)
+		pylab.colorbar(sm, label='Likelihood')
 
