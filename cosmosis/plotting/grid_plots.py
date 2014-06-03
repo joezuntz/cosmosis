@@ -163,7 +163,7 @@ class GridPlotter(Plotter):
 		ax = pylab.gca()
 		pylab.xlim(cols1.min()-dx/2., cols1.max()+dx/2.)
 		pylab.ylim(cols2.min()-dy/2., cols2.max()+dy/2.)
-		pylab.grid()
+		# pylab.grid()
 		pylab.xlabel("$"+self._display_names[name1]+"$")
 		pylab.ylabel("$"+self._display_names[name2]+"$")
 
