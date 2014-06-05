@@ -70,6 +70,7 @@ std::string const& cosmosis::DataBlock::value_name(int i, int j) const
 
 std::string const& cosmosis::DataBlock::value_name(std::string section, int j) const
 {
+  downcase(section);
   auto isec = sections_.find(section);
   if (isec == sections_.end()) throw BadDataBlockAccess();
   return isec->second.value_name(j);
