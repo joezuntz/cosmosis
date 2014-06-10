@@ -208,7 +208,6 @@ class MatterPowerPlot(Plot):
 		kh = self.load_file(section, "k_h")
 		z = self.load_file(section, "z")
 		p = self.load_file(section, "p_k")
-		values = self.load_values(section)
 		nk = len(kh)
 		nz = len(z)
 		#soon this will be saved as a 2D array!
@@ -220,6 +219,8 @@ class MatterPowerPlot(Plot):
 		self.plot_section("matter_power_lin", "Linear")
 		if os.path.exists("{0}/matter_power_nl".format(self.dirname)):
 			self.plot_section("matter_power_nl", "Non-Linear")
+		if os.path.exists("{0}/intrinsic_alignment_ii".format(self.dirname)):
+			self.plot_section("intrinsic_alignment_ii", "Intrinsic-intrinsic")
 		pylab.xlabel("k / (Mpc/h)")
 		pylab.ylabel("P(k) / (h^1 Mpc)^3")
 		pylab.grid()
