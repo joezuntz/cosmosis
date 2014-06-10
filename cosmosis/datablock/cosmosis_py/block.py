@@ -284,9 +284,11 @@ class DataBlock(object):
 			return method(section,name)
 		raise ValueError("Cosmosis internal error; unknown type of data")
 
-	def put(self, section, name, value):
+	def put(self, section, name, value, **meta):
 		method = self._method_for_value(value,self.PUT)
 		method(section, name, value)
+		for (key, val) in meta.items():
+			self.put_metadata(section, name, str(key), str(val))
 
 	def replace(self, section, name, value):
 		method = self._method_for_value(value,self.REPLACE)
