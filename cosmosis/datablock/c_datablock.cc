@@ -1091,6 +1091,50 @@ DATABLOCK_STATUS  c_datablock_put_double_grid(
     return status;
 }
 
+
+DATABLOCK_STATUS  c_datablock_replace_double_grid(
+  c_datablock* s,
+  const char * section, 
+  const char * name_x, int n_x, double * x,  
+  const char * name_y, int n_y, double * y, 
+  const char * name_z, double ** z)
+{
+    DATABLOCK_STATUS status=DBS_SUCCESS;
+
+    // const int ndim = 2;
+    // int dims[ndim] = {n_x, n_y};
+
+    status = c_datablock_replace_double_array_1d(s, section, name_x, x, n_x);
+    if (status) {return status;}
+    status = c_datablock_replace_double_array_1d(s, section, name_y, y, n_y);
+    if (status) {return status;}
+    // status |= c_datablock_put_double_array(s, section, name_z, z, ndim, dims);
+    int n_z = n_x * n_y;
+    double * z_flat = (double*)malloc(sizeof(double)*n_z);
+    int p=0;
+    for (int i=0; i<n_x; i++){
+      for (int j=0; j<n_y; j++){
+        z_flat[p++] = z[i][j];
+      }
+    }
+    status = c_datablock_replace_double_array_1d(s, section, name_z, z_flat, n_z);
+    free(z_flat);
+    if (status) {return status;}
+
+    // We could rely on n_x and n_y to record in the block what ordering the array has.
+    // But that would break down if n_x == n_y
+    char sentinel_key[512];
+    char sentinel_value[512];
+
+    snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
+    snprintf(sentinel_value, 512, "%s_cosmosis_order_%s",name_x, name_y);
+
+    status = c_datablock_replace_string(s, section, sentinel_key, sentinel_value);
+    return status;
+}
+
+
+
 double ** allocate_2d_double(int nx, int ny){
   double ** z = (double**)malloc(nx*sizeof(double*));
   for (int i=0; i<nx; i++){

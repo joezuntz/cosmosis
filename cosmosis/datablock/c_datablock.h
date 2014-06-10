@@ -587,10 +587,17 @@ extern "C" {
 
   DATABLOCK_STATUS
   c_datablock_put_double_grid(c_datablock* s,
-			      const char* section,
-			      const char* name_x, int n_x, double* x,
-			      const char* name_y, int n_y, double* y,
-			      const char* name_z, double** z);
+            const char* section,
+            const char* name_x, int n_x, double* x,
+            const char* name_y, int n_y, double* y,
+            const char* name_z, double** z);
+
+  DATABLOCK_STATUS
+  c_datablock_replace_double_grid(c_datablock* s,
+            const char* section,
+            const char* name_x, int n_x, double* x,
+            const char* name_y, int n_y, double* y,
+            const char* name_z, double** z);
 
   DATABLOCK_STATUS
   c_datablock_get_double_grid(c_datablock* s,
