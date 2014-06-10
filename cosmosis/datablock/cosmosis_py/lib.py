@@ -194,3 +194,27 @@ load_library_function(
 	[c_block, c_str, c_str, c_str, ct.POINTER(c_str)],
 	ct.c_int
 	)
+
+load_library_function(
+	locals(),
+	"c_datablock_put_double_grid",
+	[c_block, c_str, 
+	    c_str, ct.c_int, ct.POINTER(ct.c_double),
+	    c_str, ct.c_int, ct.POINTER(ct.c_double),
+	    c_str, ct.POINTER(ct.POINTER(ct.c_double)),
+	],
+	ct.c_int
+	)
+ 
+
+load_library_function(
+	locals(),
+	"c_datablock_replace_double_grid",
+	[c_block, c_str, 
+	    c_str, ct.c_int, ct.POINTER(ct.c_double),
+	    c_str, ct.c_int, ct.POINTER(ct.c_double),
+	    c_str, ct.POINTER(ct.POINTER(ct.c_double)),
+	],
+	ct.c_int
+	)
+ 
