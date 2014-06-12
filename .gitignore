@@ -19,3 +19,6 @@ config/ups
 lib/
 share/
 ups/
+.RData
+.Rapp.history
+.Rhistory
