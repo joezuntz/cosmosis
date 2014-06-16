@@ -161,7 +161,7 @@ class Inifile(IncludingConfigParser):
     def getint(self, section, name, default=None):
         try:
             return IncludingConfigParser.getint(self, section, name)
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError, CosmosisConfigurationError) as e:
             if default is None:
                 raise CosmosisConfigurationError("CosmoSIS looked for an integer option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
             elif not isinstance(default, int):
@@ -172,7 +172,7 @@ class Inifile(IncludingConfigParser):
     def getfloat(self, section, name, default=None):
         try:
             return IncludingConfigParser.getfloat(self, section, name)
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError, CosmosisConfigurationError) as e:
             if default is None:
                 raise CosmosisConfigurationError("CosmoSIS looked for a float option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
             elif not isinstance(default, float):
@@ -194,7 +194,7 @@ class Inifile(IncludingConfigParser):
                 raise ValueError("Unable to parse parameter "
                                  "%s--%s = %s into boolean form"
                                  % (section, name, value))
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError, CosmosisConfigurationError) as e:
             if default is None:
                 raise CosmosisConfigurationError("CosmoSIS looked for a boolean (T/F) option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
             elif not isinstance(default, bool):
