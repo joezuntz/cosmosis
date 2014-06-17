@@ -9,6 +9,10 @@ names(data) <- c("r", "loglike")
 data$like <- exp(data$loglike)
 data$like <- data$like/max(data$like)
 
+# Make the output directory if needed.
+if (! file.exists("plots"))
+   dir.create("plots")
+
 #make plot
 png("plots/demo3.png")
 xyplot(like~r, data, xlab="Tensor ratio r", ylab="Likelihood", grid=TRUE, type="l")
