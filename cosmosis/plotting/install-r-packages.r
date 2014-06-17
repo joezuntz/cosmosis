@@ -3,7 +3,7 @@
 install.if.needed <- function(pkgname)
 {
   cat("Trying to load package", pkgname, "\n")
-  rc <- require(pkgname, character.only=TRUE)
+  rc <- require(pkgname, character.only=TRUE, quietly=TRUE)
   if ( !rc )
     invisible(install.packages( pkgname
                               , repos="http://cran.us.r-project.org"))
