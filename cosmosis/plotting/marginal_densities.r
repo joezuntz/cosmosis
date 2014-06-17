@@ -171,6 +171,11 @@ option_list <-
                    , default=FALSE
                    , help="Color regions in 2-d density plots"
                    )
+      , make_option( c("-b", "--burn")
+                   , default = 0
+                   , type="integer"
+                   , help="Number of burn-in samples to ignore"
+                   )
       )
 
 parser <- OptionParser(option_list=option_list, usage="%prog [options] infile")
@@ -206,6 +211,6 @@ if (opt$device %in% c("png", "pdf") == FALSE)
 if (opt$verbose) 
    cat("Processing file", input.file, "\n")
 
-dframe = make.data.frame(input.file, burn=10000)
+dframe = make.data.frame(input.file, opt$burn)
 make.1d.density.plots(dframe, opt$prefix, opt$output, opt$device, opt$verbose)
 make.2d.density.plots(dframe, opt$prefix, opt$output, opt$device, opt$verbose, opt$fill)
