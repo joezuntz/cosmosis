@@ -42,7 +42,10 @@ class TestSampler(Sampler):
 
         try:
             if self.save_dir:
-                data.save_to_directory(self.save_dir, clobber=True)
+                if data is not None:
+                    data.save_to_directory(self.save_dir, clobber=True)
+                else:
+                    print "(There was an error so no output to save)"
         except Exception as e:
             if self.fatal_errors:
                 raise
