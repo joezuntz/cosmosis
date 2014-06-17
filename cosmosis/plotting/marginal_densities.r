@@ -81,9 +81,10 @@ vmat2df <- function(u)
 
 # Make a 2-d density plot of  xcol vs. ycol, using data from df.
 make.2d.density.plot <- function( df, xcol, ycol, prefix, output, device
-                                , use.color)
+                                , use.color
+																, nbins)
 {
-  kde <- kde2d(df[,xcol], df[,ycol], n=101)
+  kde <- kde2d(df[,xcol], df[,ycol], n=nbins	)
 
   # kde$x and kde$y carry the bin co-ordinates.
   # kde$z carries the estimated density at (x,y). We convert kde$z into
@@ -124,7 +125,7 @@ make.2d.density.plot <- function( df, xcol, ycol, prefix, output, device
 # Transform the matrix to a dataframe.
 # Make the contour plot.
 
-make.2d.density.plots <- function(df, prefix, output, device, verbose, use.color)
+make.2d.density.plots <- function(df, prefix, output, device, verbose, use.color, nbins)
 {
   # Go through all pairs of interesting variables (all but 'LIKE' and 'l',
   # the last two columns).
@@ -136,7 +137,7 @@ make.2d.density.plots <- function(df, prefix, output, device, verbose, use.color
     xcol <- pair[[1]]
     ycol <- pair[[2]]
     if (verbose) cat("Making 2-d density plot of", xcol, "vs.", ycol, "\n")
-    make.2d.density.plot(df, xcol, ycol, prefix, output, device, use.color)      
+    make.2d.density.plot(df, xcol, ycol, prefix, output, device, use.color, nbins)
   }
 
 }
@@ -174,7 +175,12 @@ option_list <-
       , make_option( c("-b", "--burn")
                    , default = 0
                    , type="integer"
-                   , help="Number of burn-in samples to ignore"
+                   , help="Number of burn-in samples to ignore [%default]"
+                   )
+      , make_option( c("-n", "--nbins")
+                   , default = 101
+                   , type = "integer"
+                   , help="Number of bins in KDE for each of x and y [%default]"
                    )
       )
 
@@ -213,4 +219,4 @@ if (opt$verbose)
 
 dframe = make.data.frame(input.file, opt$burn)
 make.1d.density.plots(dframe, opt$prefix, opt$output, opt$device, opt$verbose)
-make.2d.density.plots(dframe, opt$prefix, opt$output, opt$device, opt$verbose, opt$fill)
+make.2d.density.plots(dframe, opt$prefix, opt$output, opt$device, opt$verbose, opt$fill, opt$nbins)
