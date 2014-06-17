@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript --vanilla
+#!/usr/bin/env Rscript
 
 ###
 ### Read a directory tree created by a run of cosmosis, and produce a

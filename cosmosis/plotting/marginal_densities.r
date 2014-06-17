@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript --vanilla
+#!/usr/bin/env Rscript
 
 ### Read a CosmoSIS standard output file, and generate a series of 1-
 ### and 2-dimensional posterior probability density plots.

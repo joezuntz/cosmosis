@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 export R_LIBS=$HOME/Rxx
 if [ ! -d "${R_LIBS}" ]
