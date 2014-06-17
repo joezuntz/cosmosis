@@ -2,7 +2,7 @@
 
 if [ -z "${R_LIBS}" ]
 then
-  export R_LIBS=$HOME/
+  export R_LIBS=$HOME/R
 else
   echo "You already have R_LIBS = ${R_LIBS}, will install packages there"
 fi
