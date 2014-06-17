@@ -25,7 +25,7 @@ fi
 echo "Starting to install R packages"
 Rscript cosmosis/plotting/install-r-packages.r
 echo "Done installing R packages"
-echo "You may see warnings saying 'There is not package called ...' for any of 'optparse', 'latticeExtra', and 'reshape2'"
+echo "You may see warnings saying 'There is no package called ...' for any of 'optparse', 'latticeExtra', and 'reshape2'"
 echo "These packages have now been installed, and those warnings (but no others) can be ignored"
 echo "You may want to modify your login scripts to define R_LIBS"
 echo "This definition is already done for you in this shell"
