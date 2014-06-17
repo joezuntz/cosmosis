@@ -4,4 +4,4 @@ needed.packages <- c( "optparse"
                     , "latticeExtra"
                     , "reshape2"
                     )
-install.packages(needed.packages)
+install.packages(needed.packages, repos="http://cran.us.r-project.org")
