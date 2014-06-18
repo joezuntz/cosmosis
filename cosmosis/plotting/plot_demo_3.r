@@ -7,7 +7,8 @@ names(data) <- c("r", "loglike")
 
 #convert to like from log-like and normalize
 data$like <- exp(data$loglike)
-data$like <- data$like/max(data$like)
+norm <- data$like/max(data$like)
+data$like <- data$like/norm
 
 # Make the output directory if needed.
 if (! file.exists("plots"))
