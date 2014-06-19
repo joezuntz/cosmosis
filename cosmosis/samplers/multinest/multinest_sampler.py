@@ -7,7 +7,7 @@ import numpy as np
 import sys
 
 dirname = os.path.split(__file__)[0]
-libname = os.path.join(dirname, "MultiNest_v3.7", "libnest3.so")
+libname = os.path.join(dirname, "MultiNest_src", "libnest3.so")
 libnest3 = None
 
 loglike_type = ct.CFUNCTYPE(ct.c_double, 
@@ -62,6 +62,7 @@ multinest_args = [
 
 MULTINEST_SECTION='multinest'
 pipeline = None
+sampler = None
 
 def likelihood(cube_p, ndim, nparam, context_p):
 	nextra = nparam-ndim
@@ -82,7 +83,7 @@ def likelihood(cube_p, ndim, nparam, context_p):
 	return like
 
 def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
-	pipeline.output_params(nsample, post, logz, ins_logz, log_z_err)
+	sampler.output_params(nsample, post, logz, ins_logz, log_z_err)
 
 
 class MultinestSampler(Sampler):
@@ -95,7 +96,11 @@ class MultinestSampler(Sampler):
 			self._run.argtypes = multinest_args
 		self.converged=False
 		global pipeline
+		global sampler
 		pipeline=self.pipeline
+		sampler=self  #this is bad and temporary!
+		self.ndim = len(self.pipeline.varied_params)
+		self.npar = self.ndim + len(self.pipeline.extra_saves)
 
 		self.output.add_column("importance", float)
 
@@ -126,11 +131,9 @@ class MultinestSampler(Sampler):
  	
 
 	def execute(self):
-		ndim = len(self.pipeline.varied_params)
-		npar = ndim + len(self.pipeline.extra_saves)
 
-		cluster_dimensions = ndim if self.cluster_dimensions==-1 else self.cluster_dimensions
-		periodic_boundaries = (ct.c_int*ndim)()
+		cluster_dimensions = self.ndim if self.cluster_dimensions==-1 else self.cluster_dimensions
+		periodic_boundaries = (ct.c_int*self.ndim)()
 		context=None
 		wrapped_likelihood = loglike_type(likelihood)
 		wrapped_output_logger = dumper_type(dumper)
@@ -139,7 +142,7 @@ class MultinestSampler(Sampler):
 		self.log_z_err = 0.0
 
 		self._run(self.importance, self.mode_separation, self.const_efficiency, self.live_points, self.tolerance, self.efficiency,
-			ndim, npar, cluster_dimensions, self.max_modes, self.update_interval,
+			self.ndim, self.npar, cluster_dimensions, self.max_modes, self.update_interval,
 			self.mode_ztolerance, self.multinest_outfile_root, self.random_seed, periodic_boundaries, self.feedback,
 			self.resume, self.multinest_outfile_root!="", init_mpi, self.log_zero, self.max_iterations, wrapped_likelihood, 
 			wrapped_output_logger, context)
@@ -152,14 +155,13 @@ class MultinestSampler(Sampler):
 	def output_params(self, n, posterior, log_z, ins_log_z, log_z_err):
 		self.log_z = ins_log_z if self.importance else log_z
 		self.log_z_err = log_z_err
-		data = np.array([posterior[i] for i in xrange(n*self.npar+2)]).reshape((self.npar+2, n))
-		print data.shape
+		data = np.array([posterior[i] for i in xrange(n*(self.npar+2))]).reshape((self.npar+2, n))
 		for row in data.T:
 			params = row[:self.ndim]
-			extra = row[self.ndim:self.npar]
+			extra_vals = row[self.ndim:self.npar]
 			like = row[self.npar]
 			importance = row[self.npar+1]
-			extra_dict = {'%s--%s'%p:v for (p,v) in zip(extra_vals, self.pipeline.extra_saves)}
+			extra_dict = {'%s--%s'%p:v for (p,v) in zip(self.pipeline.extra_saves,extra_vals)}
 			extra_dict["LIKE"] = like
 			extra_dict["importance"] = importance
 			self.output.parameters(params, extra_dict)
