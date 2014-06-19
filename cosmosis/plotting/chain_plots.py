@@ -106,8 +106,8 @@ class ChainPlotter(Plotter):
 			return count.sum() - target
 		target1 = N*(1-contour1)
 		target2 = N*(1-contour2)
-		level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,), xtol=1./N)
-		level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,), xtol=1./N)
+		level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,), xtol=0.01/N)
+		level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,), xtol=0.01/N)
 		return level1, level2, like.sum()
 
 
