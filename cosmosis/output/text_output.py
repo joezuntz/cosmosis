@@ -88,7 +88,7 @@ class TextColumnOutput(OutputBase):
     @classmethod
     def load_from_options(cls, options):
         filename = options['filename']
-        delimiter = options.get('delimiter', '\t')
+        delimiter = options.get('delimiter', None)
 
         cut = False
         if filename.endswith(cls.FILE_EXTENSION):
