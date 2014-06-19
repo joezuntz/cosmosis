@@ -5,9 +5,10 @@ from . import types
 from .errors import BlockError
 import numpy as np
 import os
+import collections
 
 option_section = "module_options"
-
+metadata_prefix = "cosmosis_metadata:"
 
 class DataBlock(object):
 	GET=0
@@ -283,9 +284,11 @@ class DataBlock(object):
 			return method(section,name)
 		raise ValueError("Cosmosis internal error; unknown type of data")
 
-	def put(self, section, name, value):
+	def put(self, section, name, value, **meta):
 		method = self._method_for_value(value,self.PUT)
 		method(section, name, value)
+		for (key, val) in meta.items():
+			self.put_metadata(section, name, str(key), str(val))
 
 	def replace(self, section, name, value):
 		method = self._method_for_value(value,self.REPLACE)
@@ -391,6 +394,16 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, "")
 
+	@staticmethod
+	def _parse_metadata_key(key):
+		key = key[len(metadata_prefix):].strip(":")
+		s = key.index(":")
+		if s==-1:
+			raise ValueError("Could not understand metadata")
+		name = key[:s]
+		meta = key[s+1:]
+		return name, meta
+
 	def save_to_directory(self, dirname, clobber=False):
 		try:
 			os.mkdir(dirname)
@@ -407,18 +420,34 @@ class DataBlock(object):
 				if not clobber:
 					raise
 			scalar_outputs = []
+			meta = collections.defaultdict(dict)
+			vector_outputs = []
 			for k in keys:
 				sec, name = k
 				if sec!=section: continue
+				if name.startswith(metadata_prefix):
+					target, metakey = self._parse_metadata_key(name)
+					meta[target][metakey] = self[section,name]
+					continue
 				value = self[section,name]
 				if np.isscalar(value):
 					scalar_outputs.append((name,value))
 				else:
-					np.savetxt(os.path.join(dirname,section,name+'.txt'), value)
+					vector_outputs.append((name,value))
+			for name, value in vector_outputs:
+				vector_outfile = os.path.join(dirname,section,name+'.txt')
+				header = "%s\n"%name
+				if name in meta:
+					for key,val in meta[name].items():
+						header+='%s = %s\n' % (key,val)
+				np.savetxt(vector_outfile, value, header=header.rstrip("\n"))
 			if scalar_outputs:
 				f=open(os.path.join(dirname,section,"values.txt"), 'w')
 				for s in scalar_outputs:
 					f.write("%s = %r\n"%s)
+					if s[0] in meta:
+						for key,val in meta[s[0]].items():
+							f.write("#%s %s = %s\n"%(s[0],key,val))
 				f.close()
 
 	def report_failures(self):
@@ -436,3 +465,58 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
+	def get_metadata(self, section, name, key):
+		r = lib.c_str()
+		status = lib.c_datablock_get_metadata(self._ptr,section,name,key, r)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+		return str(r.value)
+
+	def put_metadata(self, section, name, key, value):
+		status = lib.c_datablock_put_metadata(self._ptr,section,name,key, value)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+
+	def replace_metadata(self, section, name, key, value):
+		status = lib.c_datablock_replace_metadata(self._ptr,section,name,key, value)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+
+	def put_grid(self, section, name_x, x, name_y, y, name_z, z):
+		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, False)
+
+	def replace_grid(self, section, name_x, x, name_y, y, name_z, z):
+		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, True)
+
+	def _grid_put_replace(self, section, name_x, x, name_y, y, name_z, z, replace):
+		
+		x = np.array(x, dtype=np.double)
+		y = np.array(y, dtype=np.double)
+		z = np.array(z, dtype=np.double)
+
+		assert x.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+		assert y.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+
+		nx = len(x)
+		ny = len(y)
+
+		assert z.ndim==2, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+		assert z.shape==(nx,ny), "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+
+
+		z = z.copy().astype(np.double)
+
+		z_ptr = (ct.POINTER(ct.c_double) * nx)()
+		temp_x, x_ptr, nx1 = self.python_to_1d_c_array(x, np.double)
+		temp_y, y_ptr, ny1 = self.python_to_1d_c_array(y, np.double)
+		#Now return pointer to start of the data
+		for i in xrange(nx):
+			row_ptr = np.ctypeslib.as_ctypes(z[i])
+			z_ptr[i] = row_ptr
+
+		if replace:
+			status = lib.c_datablock_replace_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
+		else:
+			status = lib.c_datablock_put_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, ','.join([name_x, name_y, name_z]))

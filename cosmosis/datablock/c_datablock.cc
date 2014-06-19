@@ -1091,6 +1091,50 @@ DATABLOCK_STATUS  c_datablock_put_double_grid(
     return status;
 }
 
+
+DATABLOCK_STATUS  c_datablock_replace_double_grid(
+  c_datablock* s,
+  const char * section, 
+  const char * name_x, int n_x, double * x,  
+  const char * name_y, int n_y, double * y, 
+  const char * name_z, double ** z)
+{
+    DATABLOCK_STATUS status=DBS_SUCCESS;
+
+    // const int ndim = 2;
+    // int dims[ndim] = {n_x, n_y};
+
+    status = c_datablock_replace_double_array_1d(s, section, name_x, x, n_x);
+    if (status) {return status;}
+    status = c_datablock_replace_double_array_1d(s, section, name_y, y, n_y);
+    if (status) {return status;}
+    // status |= c_datablock_put_double_array(s, section, name_z, z, ndim, dims);
+    int n_z = n_x * n_y;
+    double * z_flat = (double*)malloc(sizeof(double)*n_z);
+    int p=0;
+    for (int i=0; i<n_x; i++){
+      for (int j=0; j<n_y; j++){
+        z_flat[p++] = z[i][j];
+      }
+    }
+    status = c_datablock_replace_double_array_1d(s, section, name_z, z_flat, n_z);
+    free(z_flat);
+    if (status) {return status;}
+
+    // We could rely on n_x and n_y to record in the block what ordering the array has.
+    // But that would break down if n_x == n_y
+    char sentinel_key[512];
+    char sentinel_value[512];
+
+    snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
+    snprintf(sentinel_value, 512, "%s_cosmosis_order_%s",name_x, name_y);
+
+    status = c_datablock_replace_string(s, section, sentinel_key, sentinel_value);
+    return status;
+}
+
+
+
 double ** allocate_2d_double(int nx, int ny){
   double ** z = (double**)malloc(nx*sizeof(double*));
   for (int i=0; i<nx; i++){
@@ -1222,6 +1266,63 @@ c_datablock_log_access(c_datablock* s,
 }
 
 
+DATABLOCK_STATUS
+c_datablock_get_metadata(c_datablock* s, 
+                       const char* section,
+                       const char* name,
+                       const char* key,
+                       char** val
+                       )
+{
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (key == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+
+    auto p = static_cast<DataBlock *>(s);
+    string tmp;
+    auto rc = p->get_metadata(section, name, key, tmp);
+    if (rc != DBS_SUCCESS) return rc;
+    *val = strdup(tmp.c_str());
+    if (*val == nullptr) return DBS_MEMORY_ALLOC_FAILURE;
+    return DBS_SUCCESS;
+}
+
+DATABLOCK_STATUS
+c_datablock_put_metadata(c_datablock* s,
+     const char* section,
+     const char* name,
+     const char* key,
+     const char* val)
+{
+  if (s == nullptr) return DBS_DATABLOCK_NULL;
+  if (section == nullptr) return DBS_SECTION_NULL;
+  if (name == nullptr) return DBS_NAME_NULL;
+  if (key == nullptr) return DBS_NAME_NULL;
+  if (val == NULL) return DBS_VALUE_NULL;
+
+  auto p = static_cast<DataBlock*>(s);
+  return p->put_metadata(section, name, key, val);
+}
+
+
+DATABLOCK_STATUS
+c_datablock_replace_metadata(c_datablock* s,
+     const char* section,
+     const char* name,
+     const char* key,
+     const char* val)
+{
+  if (s == nullptr) return DBS_DATABLOCK_NULL;
+  if (section == nullptr) return DBS_SECTION_NULL;
+  if (name == nullptr) return DBS_NAME_NULL;
+  if (key == nullptr) return DBS_NAME_NULL;
+  if (val == NULL) return DBS_VALUE_NULL;
+
+  auto p = static_cast<DataBlock*>(s);
+  return p->replace_metadata(section, name, key, val);
+}
 
 
 

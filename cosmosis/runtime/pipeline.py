@@ -20,7 +20,7 @@ PIPELINE_INI_SECTION = "pipeline"
 
 
 class Pipeline(object):
-    def __init__(self, arg=None):
+    def __init__(self, arg=None, load=True):
         """ Initialize with a single filename or a list of them,
             a ConfigParser, or nothing for an empty pipeline"""
         if arg is None:
@@ -37,7 +37,7 @@ class Pipeline(object):
 
         # initialize modules
         self.modules = []
-        if PIPELINE_INI_SECTION in self.options.sections():
+        if load and PIPELINE_INI_SECTION in self.options.sections():
             rootpath = self.options.get(PIPELINE_INI_SECTION,
                                         "root",
                                         os.curdir)
@@ -145,8 +145,8 @@ class Pipeline(object):
 
 
 class LikelihoodPipeline(Pipeline):
-    def __init__(self, arg=None, id="",override=None):
-        super(LikelihoodPipeline, self).__init__(arg=arg)
+    def __init__(self, arg=None, id="",override=None, load=True):
+        super(LikelihoodPipeline, self).__init__(arg=arg, load=load)
 
         if id:
             self.id_code = "[%s] " % str(id)
@@ -205,6 +205,33 @@ class LikelihoodPipeline(Pipeline):
     def normalize_vector(self, p):
         return np.array([param.normalize(x) for param, x
                          in zip(self.varied_params, p)])
+
+    def normalize_matrix(self, c):
+        c = c.copy()
+        n = c.shape[0]
+        assert n==c.shape[1], "Cannot normalize a non-square matrix"
+        for i in xrange(n):
+            pi = self.varied_params[i]
+            ri = pi.limits[1] - pi.limits[0]
+            for j in xrange(n):
+                pj = self.varied_params[j]
+                rj = pj.limits[1] - pj.limits[0]
+                c[i,j] /= (ri*rj)
+        return c
+
+    def denormalize_matrix(self, c):
+        c = c.copy()
+        n = c.shape[0]
+        assert n==c.shape[1], "Cannot normalize a non-square matrix"
+        for i in xrange(n):
+            pi = self.varied_params[i]
+            ri = pi.limits[1] - pi.limits[0]
+            for j in xrange(n):
+                pj = self.varied_params[j]
+                rj = pj.limits[1] - pj.limits[0]
+                c[i,j] *= (ri*rj)
+        return c
+
 
     def start_vector(self):
         return np.array([param.start for

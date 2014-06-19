@@ -70,6 +70,7 @@ std::string const& cosmosis::DataBlock::value_name(int i, int j) const
 
 std::string const& cosmosis::DataBlock::value_name(std::string section, int j) const
 {
+  downcase(section);
   auto isec = sections_.find(section);
   if (isec == sections_.end()) throw BadDataBlockAccess();
   return isec->second.value_name(j);
@@ -137,3 +138,55 @@ void cosmosis::DataBlock::report_failures(std::ostream &output)
       }
     }
   }
+
+
+DATABLOCK_STATUS
+cosmosis::DataBlock::put_metadata(std::string section,
+                             std::string name,
+                             std::string key,
+                             std::string value)
+{
+    downcase(section); 
+    downcase(name);
+
+    // The thing which we are putting the metadata for must exist
+    if (!has_val(section, name)) return DBS_NAME_NOT_FOUND; 
+
+    std::string metadata_key = std::string(COSMOSIS_METADATA_PREFIX) + name + ":" + key + ":";
+    return put_val(section, metadata_key, value);
+
+}
+
+DATABLOCK_STATUS
+cosmosis::DataBlock::replace_metadata(std::string section,
+                             std::string name,
+                             std::string key,
+                             std::string value)
+{
+    downcase(section); 
+    downcase(name);
+
+    // The thing which we are putting the metadata for must exist
+    if (!has_val(section, name)) return DBS_NAME_NOT_FOUND; 
+
+    std::string metadata_key = std::string(COSMOSIS_METADATA_PREFIX) + name + ":" + key + ":";
+    return replace_val(section, metadata_key, value);
+
+}
+
+DATABLOCK_STATUS
+cosmosis::DataBlock::get_metadata(std::string section,
+                             std::string name,
+                             std::string key,
+                             std::string &value)
+{
+    downcase(section); 
+    downcase(name);
+
+    // The thing which we are putting the metadata for must exist
+    if (!has_val(section, name)) return DBS_NAME_NOT_FOUND; 
+
+    std::string metadata_key = std::string(COSMOSIS_METADATA_PREFIX) + name + ":" + key + ":";
+    return get_val(section, metadata_key, value);
+
+}

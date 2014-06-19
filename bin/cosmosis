@@ -9,7 +9,7 @@ from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
 from cosmosis.samplers.sampler import sampler_registry, ParallelSampler
 from cosmosis import output as output_module
-#import cosmosis.runtime.output as output_module
+import ConfigParser
 
 RUNTIME_INI_SECTION = "runtime"
 
@@ -48,8 +48,11 @@ def main(args, pool=None):
     if sampler_class.needs_output and \
        (pool is None or pool.is_master() or sampler_class.parallel_output):
         #create the output files and methods
-        output_options = dict(ini.items('output'))
-
+        try:
+            output_options = dict(ini.items('output'))
+        except ConfigParser.NoSectionError:
+            sys.stderr.write("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
+            sys.exit(1)
         #Additionally we tell the output here if
         #we are parallel or not
         if pool is not None:
@@ -58,6 +61,7 @@ def main(args, pool=None):
 
         #Generate the output from a factory
         output = output_module.output_from_options(output_options)
+        output.metadata("sampler", sample_method)
     else:
         #some samplers, like the test one, do not need an output
         #file of the usual type.  In fact giving them one would be
@@ -88,14 +92,16 @@ def main(args, pool=None):
     else:
         sampler.worker()
 
+    if output:
+        output.close()
+
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
     parser.add_argument("inifile", help="Input ini file of parameters")
-#    parser.add_argument("outfile", help="Output results to file")
     parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
 #    parser.add_argument("--parallel",action='store_true',help="Run in multiprocess parallel mode.")
 #    parser.add_argument("--debug", action='store_true', default=False, help="Print additional debugging information")
-    parser.add_argument("-t", "--timing", action='store_true', default=False, help='Time each module in the pipeline')
+#    parser.add_argument("-t", "--timing", action='store_true', default=False, help='Time each module in the pipeline')
     parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Over-ride parameters in inifile, with format section.name=value")
     parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Over-ride variables in values file, with format section.name=value")
     args = parser.parse_args(sys.argv[1:])

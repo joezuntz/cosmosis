@@ -14,92 +14,150 @@ OUTPUTS
  - auto-determine burn-in?
  
 RUNNING
- - run on either chain or ini file
+ X run on either chain or ini file
  
 """
 
 import argparse
+import sys
+import ConfigParser
+from cosmosis.runtime.config import Inifile
 
-def plotting(args):
-	from cosmosis.plotting import CosmologyPlotter
-	filetype=args.format
-	plotter = CosmologyPlotter.from_chain_files(
-		args.filenames,
-		burn=args.burn,
-		thin=args.thin,
-		latex_file=args.latex,
-		filetype=filetype,
-		fill=not args.nofill,
-		root_dir=args.root_dir,
-		prefix=args.prefix,
-		blind=args.blind,
-		)
-	plotter.plot_1d_params(args.params)
-	if not args.one_d:
-		plotter.plot_2d_params(args.params)
-	if args.w0_wa:
-		plotter.w0_wa_plot()
-	return plotter
+def get_sampler(args, ini):
+    if ini is None:
+        options = {"format":"text", "filename":args.infile}
+        sampler = "emcee" #assume MCMC format
+    else:
+        sampler = ini.get("runtime", "sampler", "test")
+        try:
+            options = dict(ini.items('output'))
+        except ConfigParser.NoSectionError:
+            options = None
+    return sampler, options
 
-def statistics(args):
-	from cosmosis.runtime.analytics import Analytics
-	analytics = Analytics.from_chain_files(args.filenames, burn=args.burn, thin=args.thin)
-	Mu =  analytics.trace_means()
-	Sigma = analytics.trace_variances()**0.5
-	print
-	print "Marginalized:"
-	for p, mu, sigma in zip(analytics.params, Mu, Sigma):
-		if p=="LIKE":continue
-		print '    %s = %g ± %g' % (p, mu, sigma)
-	print
-	if analytics.best_index==None:
-		print "Could not see LIKE column to get best likelihood"
-	else:
-		print "Best likelihood:"
-		print "    Index = %d" % (analytics.best_index)
-		for p, v in zip(analytics.params, analytics.best_params):
-			print '    %s = %g' % (p, v)
-	print
+def plotting(args, ini):
+    from cosmosis.plotting.chain_plots import ChainPlotter
+    from cosmosis.plotting.grid_plots import GridPlotter
+    filetype=args.format
+    sampler, options = get_sampler(args, ini)
 
-description = "Plot marginalized constraints from a des-pipe MCMC output chain."
-parser = argparse.ArgumentParser(description=description, add_help=True)
-
-#What-to-do arguments
-parser.add_argument('--stats', action='store_true',
-	help='No plotting, only stats')
-
-#Chain data arguments
-parser.add_argument('filenames', metavar='filenames', type=str, nargs='+',
-	help='Chain filenames')
-parser.add_argument("-t","--thin", type=int, default=1, 
-	help='Thinning to apply to chains (after burn)')
-parser.add_argument("-b","--burn", type=float, default=0,
-	help='Fraction or number of samples to cut at the start of the chain (before thinning)')
-parser.add_argument("-l","--latex", type=str, default="",
-	help='Ini file containing latex names for parameters')
-parser.add_argument('-o', '--root-dir', default='.', 
-	help='The root directory in which to put plots')
-parser.add_argument('-p', '--prefix', default='', 
-	help='A prefix to give to all the generated filenames')
+    if options is None:
+        raise ValueError("There was no section on [output] in the ini file.  "
+            "This may mean that we do not know how to postprocess from sampler %s"%sampler)
 
 
-# Plotting arguments
-parser.add_argument('-P', '--param', dest='params', action='append',
-	help='List params to make plots of (e.g. COSMOPAR--H0).  Default is to do all.')
-parser.add_argument('-1', '--one-d', dest='one_d', action='store_true',
-	help='Make only 1D plots, not contours')
-parser.add_argument('-w', '--w0-wa', dest='w0_wa', action='store_true',
-	help='Make the special W0-Wa plot')
-parser.add_argument('-f', '--format', dest='format', default='png', type=str,
-	help='Output image filename suffix; determines type. e.g. png, pdf, eps')
-parser.add_argument('-L', '--no-fill', dest='nofill', action='store_true',
-	help='Produce line contour plots instead of filled')
-parser.add_argument('-B', '--blind', action='store_true',
-	help='Remove the numbering and ticks from the axes to blind the plot')
+    plotterClass = {
+        "emcee": ChainPlotter, 
+        "pymc": ChainPlotter,
+        "grid": GridPlotter,
+    }.get(sampler, None)
+
+    if plotterClass is None:
+        raise ValueError("I do not know how to plot samples from the sampler %s"%sampler)
 
 
-if __name__=="__main__":
-	args = parser.parse_args()
-	if not args.stats:
-		plotting(args)
-	statistics(args)
+    plotter = plotterClass.from_outputs(
+        options, burn=args.burn, thin=args.thin,
+        latex_file=args.latex,
+        filetype=filetype,
+        fill=not args.nofill,
+        root_dir=args.root_dir,
+        prefix=args.prefix,
+        )
+
+    plotter.plot_1d_params(args.params)
+    if not args.one_d:
+        plotter.plot_2d_params(args.params)
+    if args.w0_wa:
+        plotter.w0_wa_plot()
+    return plotter
+
+def statistics(args,ini):    
+    if args.blind:
+        #We might want to change this later and save things to file instead
+        print "Since you asked for a blind analysis I won't print out any stats"
+        return
+    from cosmosis.runtime.analytics import Analytics, GridAnalytics
+    sampler, options = get_sampler(args, ini)
+
+    analytics_class = {
+        "emcee": Analytics, 
+        "pymc": Analytics,
+        "grid": GridAnalytics,    
+    }.get(sampler, None)
+
+    if sampler is None:
+        print
+        print "I don't print statistics for the %s sampler yet" % sampler
+        return
+
+    analytics = analytics_class.from_ini(ini, burn=args.burn, thin=args.thin)
+    analytics.output_results()
+
+
+if __name__ == "__main__":
+
+    description = "Plot marginalized constraints from a des-pipe MCMC output chain."
+    parser = argparse.ArgumentParser(description=description, add_help=True)
+
+    #Chain data arguments
+    parser.add_argument("infile", help="Input ini file used to run chain, or raw "
+        "chain file.  Files ending .ini assumed former; ending .txt assumed latter.  "
+        "Or can force with other params")
+
+    parser.add_argument("-i","--ini", action='store_true',
+        help='Assume that the chain file is an ini file regardless of ending')
+    parser.add_argument("-x","--text", action='store_true',
+        help='Assume that the chain file is a text MCMC chain file regardless of ending')
+
+
+    parser.add_argument("-t","--thin", type=int, default=1,
+        help='Thinning to apply to chains (after burn)')
+    parser.add_argument("-b","--burn", type=float, default=0,
+        help='Fraction or number of samples to cut at the start of the chain (before thinning)')
+    parser.add_argument("-l","--latex", type=str, default="",
+        help='Ini file containing latex names for parameters')
+    parser.add_argument('-o', '--root-dir', default='.',
+        help='The root directory in which to put plots')
+    parser.add_argument('-p', '--prefix', default='',
+        help='A prefix to give to all the generated filenames')
+
+    #What-to-do arguments
+    parser.add_argument('--stats', action='store_true',
+        help='No plotting, only stats')
+
+    # Plotting arguments
+    parser.add_argument('-P', '--param', dest='params', action='append',
+        help='List params to make plots of (e.g. COSMOPAR--H0).  Default is to do all.')
+    parser.add_argument('-1', '--one-d', dest='one_d', action='store_true',
+        help='Make only 1D plots, not contours')
+    parser.add_argument('-w', '--w0-wa', dest='w0_wa', action='store_true',
+        help='Make the special W0-Wa plot')
+    parser.add_argument('-f', '--format', dest='format', default='png', type=str,
+        help='Output image filename suffix; determines type. e.g. png, pdf, eps')
+    parser.add_argument('-L', '--no-fill', dest='nofill', action='store_true',
+        help='Produce line contour plots instead of filled')
+    parser.add_argument('-B', '--blind', action='store_true',
+        help='Remove the numbering and ticks from the axes to blind the plot, and do not print out statistics')
+
+    args = parser.parse_args(sys.argv[1:])
+
+    if args.ini or (args.infile.endswith(".ini") and not args.text):        
+        ini = Inifile(args.infile)
+    elif args.text or args.infile.endswith(".txt"):
+        # defaults - assume MCMC
+        ini = None
+    else:
+        sys.stderr.write("""I don't know how to postprocess file called %s.  
+I know about files ending .ini or .txt.
+
+To manually tell me that the file is a 
+cosmosis ini file use postprocess with the -i flag; to tell me that it is
+an MCMC chain file use the -t flag.
+
+"""%args.infile)
+        sys.exit(1)
+
+    if not args.stats:
+        plotting(args,ini)
+    statistics(args,ini)

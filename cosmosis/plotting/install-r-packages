@@ -1,0 +1,32 @@
+#!/bin/bash
+
+if [ -z "${R_LIBS}" ]
+then
+  export R_LIBS=$HOME/R
+else
+  echo "You already have R_LIBS = ${R_LIBS}, will install packages there"
+fi
+
+if [ ! -d "${R_LIBS}" ]
+then
+  echo Creating directory ${R_LIBS} as your personal R library
+  mkdir -p $R_LIBS
+fi
+
+# See if we have R installed
+
+echo Testing to see if R is installed
+if ! which R
+then
+  echo "You must install R (or load an R environment module) before running this script"
+  return 1
+fi
+
+echo "Starting to install R packages"
+Rscript cosmosis/plotting/install-r-packages.r
+echo "Done installing R packages"
+echo "You may see warnings saying 'There is no package called ...' for any of 'optparse', 'latticeExtra', and 'reshape2'"
+echo "These packages have now been installed, and those warnings (but no others) can be ignored"
+echo "You may want to modify your login scripts to define R_LIBS"
+echo "This definition is already done for you in this shell"
+echo "The value is: R_LIBS=${R_LIBS}"

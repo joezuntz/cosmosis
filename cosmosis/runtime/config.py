@@ -4,6 +4,8 @@ import collections
 import warnings
 import ConfigParser
 
+class CosmosisConfigurationError(ConfigParser.Error):
+    pass
 
 class IncludingConfigParser(ConfigParser.ConfigParser):
     """ Extension of ConfigParser to \%include other files.
@@ -128,6 +130,11 @@ class Inifile(IncludingConfigParser):
         IncludingConfigParser.__init__(self,
                                        defaults=defaults,
                                        dict_type=collections.OrderedDict)
+        # default read behavior is to ignore unreadable files which
+        # is probably not what we want here
+        if not os.path.exists(filename):
+            raise IOError("Unable to open configuration file %s." % (filename, ))
+ 
         self.read(filename)
 
         # override parameters
@@ -146,7 +153,7 @@ class Inifile(IncludingConfigParser):
             return IncludingConfigParser.get(self, section, name)
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
             if default is None:
-                raise e
+                raise CosmosisConfigurationError("CosmoSIS looked for an option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
             else:
                 return default
 
@@ -154,9 +161,9 @@ class Inifile(IncludingConfigParser):
     def getint(self, section, name, default=None):
         try:
             return IncludingConfigParser.getint(self, section, name)
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError, CosmosisConfigurationError) as e:
             if default is None:
-                raise e
+                raise CosmosisConfigurationError("CosmoSIS looked for an integer option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
             elif not isinstance(default, int):
                 raise TypeError("Default not integer")
             else:
@@ -165,9 +172,9 @@ class Inifile(IncludingConfigParser):
     def getfloat(self, section, name, default=None):
         try:
             return IncludingConfigParser.getfloat(self, section, name)
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError, CosmosisConfigurationError) as e:
             if default is None:
-                raise e
+                raise CosmosisConfigurationError("CosmoSIS looked for a float option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
             elif not isinstance(default, float):
                 raise TypeError("Default not float")
             else:
@@ -176,13 +183,6 @@ class Inifile(IncludingConfigParser):
     def getboolean(self, section, name, default=False):
         try:
             return IncludingConfigParser.getboolean(self, section, name)
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError) as e:
-            if default is None:
-                raise e
-            elif not isinstance(default, bool):
-                raise TypeError("Default not boolean")
-            else:
-                return default
         except ValueError:
             # additional options t/y/n/f
             value = self.get(section, name).lower()
@@ -194,6 +194,13 @@ class Inifile(IncludingConfigParser):
                 raise ValueError("Unable to parse parameter "
                                  "%s--%s = %s into boolean form"
                                  % (section, name, value))
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError, CosmosisConfigurationError) as e:
+            if default is None:
+                raise CosmosisConfigurationError("CosmoSIS looked for a boolean (T/F) option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
+            elif not isinstance(default, bool):
+                raise TypeError("Default not boolean")
+            else:
+                return default
 
     def gettyped(self, section, name):
         import re

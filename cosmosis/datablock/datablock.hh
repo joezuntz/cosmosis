@@ -46,6 +46,7 @@
 #include "datablock_logging.h"
 
 #define OPTION_SECTION "module_options"
+#define COSMOSIS_METADATA_PREFIX "cosmosis_metadata:"
 
 namespace cosmosis
 {
@@ -142,6 +143,26 @@ namespace cosmosis
     // Remove all the sections.
     void clear();
 
+
+
+    DATABLOCK_STATUS
+    put_metadata(std::string section,
+                                 std::string name,
+                                 std::string key,
+                                 std::string value);
+
+    DATABLOCK_STATUS
+    get_metadata(std::string section,
+                                 std::string name,
+                                 std::string key,
+                                 std::string &value);
+
+    DATABLOCK_STATUS
+    replace_metadata(std::string section,
+                                 std::string name,
+                                 std::string key,
+                                 std::string value);
+
     // The view functions provide readonly access to the data in
     // DataBlock without copying the data. The reference returned by a
     // call to view is invalidated if any replace function is called for
@@ -149,7 +170,7 @@ namespace cosmosis
     // section can't be found, BadSection access if the name can't be
     // found, or BadEntry if the contained value is of the wrong type.
     template <class T>
-    T const& view(std::string section, std::string name) const;
+    T const& view(std::string section, std::string name);
 
     void print_log();
     void report_failures(std::ostream& output);
@@ -266,11 +287,11 @@ cosmosis::DataBlock::replace_val(std::string section,
 
 template <class T>
 T const&
-cosmosis::DataBlock::view(std::string section, std::string name) const
+cosmosis::DataBlock::view(std::string section, std::string name)
 {
   downcase(section); downcase(name);
   auto isec = sections_.find(section);
-  if (isec == sections_.end()) { throw BadDataBlockAccess(); }
+  if (isec == sections_.end()) {log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(void*)); throw BadDataBlockAccess(); }
   return isec->second.view<T>(name);
 }
 
