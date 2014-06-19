@@ -98,7 +98,7 @@ class OutputBase(object):
             nstandard = len(params)
             for i in xrange(nstandard,len(self._columns)):
                 name = self._columns[i][0]
-                if name is 'LIKE':
+                if name.lower() in ['like', "weight", "importance"]:
                     params.append(extra[name])
                 else:
                     (section, name) = name.split('--')

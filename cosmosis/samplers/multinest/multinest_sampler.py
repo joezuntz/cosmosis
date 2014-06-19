@@ -82,7 +82,7 @@ def likelihood(cube_p, ndim, nparam, context_p):
 	return like
 
 def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
-	print nsample, nlive, nparam, live, paramConstr[0], paramConstr[1], paramConstr[2], paramConstr[3], paramConstr[4]
+	pipeline.output_params(nsample, post, logz, ins_logz, log_z_err)
 
 
 class MultinestSampler(Sampler):
@@ -96,6 +96,8 @@ class MultinestSampler(Sampler):
 		self.converged=False
 		global pipeline
 		pipeline=self.pipeline
+
+		self.output.add_column("importance", float)
 
 		#Required options
 		self.max_iterations = self.ini.getint(MULTINEST_SECTION, "max_iterations")
@@ -133,6 +135,8 @@ class MultinestSampler(Sampler):
 		wrapped_likelihood = loglike_type(likelihood)
 		wrapped_output_logger = dumper_type(dumper)
 		init_mpi=False
+		self.log_z = 0.0
+		self.log_z_err = 0.0
 
 		self._run(self.importance, self.mode_separation, self.const_efficiency, self.live_points, self.tolerance, self.efficiency,
 			ndim, npar, cluster_dimensions, self.max_modes, self.update_interval,
@@ -140,7 +144,25 @@ class MultinestSampler(Sampler):
 			self.resume, self.multinest_outfile_root!="", init_mpi, self.log_zero, self.max_iterations, wrapped_likelihood, 
 			wrapped_output_logger, context)
 
+		self.output.final("log_z", self.log_z)
+		self.output.final("log_z_error", self.log_z_err)
 		self.converged = True
+
+
+	def output_params(self, n, posterior, log_z, ins_log_z, log_z_err):
+		self.log_z = ins_log_z if self.importance else log_z
+		self.log_z_err = log_z_err
+		data = np.array([posterior[i] for i in xrange(n*self.npar+2)]).reshape((self.npar+2, n))
+		print data.shape
+		for row in data.T:
+			params = row[:self.ndim]
+			extra = row[self.ndim:self.npar]
+			like = row[self.npar]
+			importance = row[self.npar+1]
+			extra_dict = {'%s--%s'%p:v for (p,v) in zip(extra_vals, self.pipeline.extra_saves)}
+			extra_dict["LIKE"] = like
+			extra_dict["importance"] = importance
+			self.output.parameters(params, extra_dict)
 
 	def is_converged(self):
 		return self.converged
