@@ -168,7 +168,7 @@ I know about files ending .ini or .txt.
 
 To manually tell me that the file is a 
 cosmosis ini file use postprocess with the -i flag; to tell me that it is
-an MCMC chain file use the -t flag.
+an MCMC chain file use the -x flag.
 
 """%args.infile)
         sys.exit(1)
