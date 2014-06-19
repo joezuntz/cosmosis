@@ -77,37 +77,22 @@ def statistics(args,ini):
         #We might want to change this later and save things to file instead
         print "Since you asked for a blind analysis I won't print out any stats"
         return
-    from cosmosis.runtime.analytics import Analytics
+    from cosmosis.runtime.analytics import Analytics, GridAnalytics
     sampler, options = get_sampler(args, ini)
 
-    if not sampler in ["emcee", "pymc"]:
+    analytics_class = {
+        "emcee": Analytics, 
+        "pymc": Analytics,
+        "grid": GridAnalytics,    
+    }.get(sampler, None)
+
+    if sampler is None:
         print
         print "I don't print statistics for the %s sampler yet" % sampler
         return
 
-    analytics = Analytics.from_outputs(options, burn=args.burn, thin=args.thin)
-    Mu =  analytics.trace_means()
-    Sigma = analytics.trace_variances()**0.5
-
-    #Lots of printout
-    print
-    print "Marginalized:"
-    for p, mu, sigma in zip(analytics.params, Mu, Sigma):
-        if p=="LIKE":continue
-        print '    %s = %g ± %g' % (p, mu, sigma)
-    print
-    if analytics.best_index==None:
-        print "Could not see LIKE column to get best likelihood"
-    else:
-        print "Best likelihood:"
-        print "    Index = %d" % (analytics.best_index)
-        for p, v in zip(analytics.params, analytics.best_params):
-            print '    %s = %g' % (p, v)
-    print
-    import numpy as np
-    print "Covariance matrix:"
-    print '#' + ' '.join(analytics.params)
-    np.savetxt(sys.stdout, analytics.cov)
+    analytics = analytics_class.from_ini(ini, burn=args.burn, thin=args.thin)
+    analytics.output_results()
 
 
 if __name__ == "__main__":

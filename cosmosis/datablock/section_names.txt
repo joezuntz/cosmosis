@@ -48,3 +48,6 @@ growth_parameters
 # section for test likelihoods
 test_parameters
 
+#Halo things
+mass_function
+

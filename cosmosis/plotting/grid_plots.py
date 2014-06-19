@@ -61,7 +61,7 @@ class GridPlotter(Plotter):
 		n1 = len(vals1)
 
 		#check for derived parameters - this is a weak check
-		if len(vals1)==len(cols1):
+		if len(vals1)==len(cols1) and not len(self.all_names)==2:
 			print "Not grid-plotting %s as it seems to be a derived parameter" % name1
 			raise ValueError(name1)
 		like_sum = np.zeros(n1)
