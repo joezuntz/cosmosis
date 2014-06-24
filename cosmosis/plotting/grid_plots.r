@@ -205,4 +205,5 @@ if (opt$verbose)
 
 dframe = make.data.frame(input.file)
 make.1d.density.plots(dframe, opt$prefix, opt$output, opt$device, opt$verbose)
-make.2d.density.plots(dframe, opt$prefix, opt$output, opt$device, opt$verbose, opt$fill)
+if (length(dframe) > 3)
+  make.2d.density.plots(dframe, opt$prefix, opt$output, opt$device, opt$verbose, opt$fill)
