@@ -175,7 +175,7 @@ class ChainPlotter(Plotter):
 		print "Doing W0 - WA plot"
 		w_name  = 'cosmological_parameters--w'
 		wa_name = 'cosmological_parameters--wa'
-		self._plot_2d(w_name, wa_name, fill=self.options.get('fill',True), factor=1.5)
+		self._plot_2d(w_name, wa_name, factor=1.5)
 		w_min,w_max = self.parameter_range(w_name)
 		wa_min,wa_max = self.parameter_range(wa_name)
 		w_axis = np.linspace(w_min,w_max,2)
