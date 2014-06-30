@@ -427,6 +427,70 @@ module cosmosis_modules
 
     end function datablock_get_int_array_1d
 
+    function datablock_put_int_array_2d(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        integer(c_int), dimension(:, :) :: value
+        integer(c_int) :: extents(2)
+
+        !Opposite ordering in fortran vs C
+        extents(2)=size(value, 1)
+        extents(1)=size(value, 2)
+ 
+        status = c_datablock_put_int_array_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, 2, extents)
+ 
+    end function datablock_put_int_array_2d
+
+    function datablock_get_double_array_2d(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        real(c_double), allocatable, dimension(:, :) :: value
+        integer(c_int) :: extents(2)
+        integer(c_int) ndims
+
+        ndims = 2
+        status = c_datablock_get_double_array_shape(block, trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, ndims, extents)
+        if (status .ne. 0) return
+        
+        !Order reversed versus fortran
+        allocate(value(extents(2), extents(1)))
+
+        status = c_datablock_get_double_array_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, 2, extents)
+
+         if (status .ne. 0) deallocate(value)
+
+    end function datablock_get_double_array_2d
+
+    function datablock_get_int_array_2d(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        integer(c_int), allocatable, dimension(:, :) :: value
+        integer(c_int) :: extents(2)
+        integer(c_int) ndims
+
+        ndims = 2
+        status = c_datablock_get_int_array_shape(block, trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, ndims, extents)
+        if (status .ne. 0) return
+        
+        !Order reversed versus fortran
+        allocate(value(extents(2), extents(1)))
+
+        status = c_datablock_get_int_array_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, 2, extents)
+
+         if (status .ne. 0) deallocate(value)
+
+    end function datablock_get_int_array_2d
+
+
     function datablock_put_double_array_2d(block, section, name, value) result(status)
         integer(cosmosis_status) :: status
         integer(cosmosis_block) :: block
@@ -438,8 +502,6 @@ module cosmosis_modules
         !Opposite ordering in fortran vs C
         extents(2)=size(value, 1)
         extents(1)=size(value, 2)
-
-        write(*,*) extents
  
         status = c_datablock_put_double_array_wrapper(block, &
             trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, 2, extents)

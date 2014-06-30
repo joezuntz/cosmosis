@@ -9,7 +9,7 @@ program test_cosmosis
     call test_defaults()
     call test_array()
     call test_double_array()
-
+    call test_2d()
 
 
     contains 
@@ -191,6 +191,42 @@ program test_cosmosis
         call cosmosis_assert(status==0, "Destroy failed")
     end subroutine test_array
 
+
+    subroutine test_2d()
+        integer(cosmosis_block) :: block
+        integer(cosmosis_status) :: status, status2
+        real(8), dimension(10, 10) :: arr
+        real(8), dimension(:,:), allocatable :: recovered
+
+        integer, dimension(10, 10) :: iarr
+        integer, dimension(:,:), allocatable :: irecovered
+        integer i, j
+
+        do i=1,10
+            do j=1,10
+                arr(i,j) = i+10*j
+                iarr(i,j) = j+10*i + 3
+            enddo
+        enddo
+
+        block = make_datablock()
+
+        status = datablock_put_double_array_2d(block, "xxx", "yyy", arr)
+        call cosmosis_assert(status==0, "put double 2d failed")
+
+        status = datablock_get_double_array_2d(block, "xxx", "yyy", recovered)
+        call cosmosis_assert(status==0, "get double 2d failed")
+        call cosmosis_assert(all(arr==recovered), "2d double compare failed")
+
+        status = datablock_put_int_array_2d(block, "xxx", "iyyy", iarr)
+        call cosmosis_assert(status==0, "put double 2d failed")
+
+        status = datablock_get_int_array_2d(block, "xxx", "iyyy", irecovered)
+        call cosmosis_assert(status==0, "get int 2d failed")
+        call cosmosis_assert(all(iarr==irecovered), "2d int compare failed")
+
+
+    end subroutine test_2d
 
     subroutine test_double_array()
         integer(cosmosis_block) :: block
