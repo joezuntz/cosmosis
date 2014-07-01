@@ -141,10 +141,16 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def _get_array_2d(self, section, name, dtype):
+	def _get_array_nd(self, section, name, dtype):
 
 		if dtype is complex or dtype is str:
 			raise ValueError("Sorry - cosmosis support for 2D complex and string values is incomplete")
+
+		ndim = lib.c_int()
+		status = lib.c_datablock_get_array_ndim(self._ptr, section, name, ct.byref(ndim))
+		if status:
+			raise BlockError.exception_for_status(status, section, name)
+
 		ctype, shape_function, get_function = {
 			int: (ct.c_int, lib.c_datablock_get_int_array_shape, lib.c_datablock_get_int_array),
 			float: (ct.c_double, lib.c_datablock_get_double_array_shape, lib.c_datablock_get_double_array),
@@ -152,24 +158,50 @@ class DataBlock(object):
 			#str: (lib.c_str, lib.c_datablock_get_string_array_shape, lib.c_datablock_get_string_array),
 		}[dtype]
 
-		extent = (ct.c_int * 2)()
-		status = shape_function(self._ptr, section, name, 2, extent)
+		#Get the array extent
+		extent = (ct.c_int * ndim.value)()
+		status = shape_function(self._ptr, section, name, ndim, extent)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
-		nx = extent[0]
-		ny = extent[1]
-		r = np.zeros((nx, ny), dtype=dtype)
+
+		#Make the space for it
+		N = tuple([extent[i] for i in xrange(ndim.value)])
+		r = np.zeros(N, dtype=ctype)
 		arr = r.ctypes.data_as(ct.POINTER(ctype))
-		status = get_function(self._ptr, section, name, arr, 2, extent)
+
+		#Fill in with the data
+		status = get_function(self._ptr, section, name, arr, ndim, extent)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def get_double_array_2d(self, section, name):
-		return self._get_array_2d(section, name, float)
+	def put_double_array_nd(self, section, name, value):
+		shape = value.shape
+		ndim = len(shape)
+		extent = (ct.c_int * ndim)()
+		for i in xrange(ndim): extent[i] = shape[i]
+		value = value.flatten()
+		p, arr, arr_size = self.python_to_1d_c_array(value, np.double)
+		status = lib.c_datablock_put_double_array(self._ptr, section, name, arr, ndim, extent)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
 
-	def get_int_array_2d(self, section, name):
-		return self._get_array_2d(section, name, int)
+	def put_int_array_nd(self, section, name, value):
+		shape = value.shape
+		ndim = len(shape)
+		extent = (ct.c_int * ndim)()
+		for i in xrange(ndim): extent[i] = shape[i]
+		value = value.flatten()
+		p, arr, arr_size = self.python_to_1d_c_array(value, np.intc)
+		status = lib.c_datablock_put_int_array(self._ptr, section, name, arr, ndim, extent)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+
+	def get_double_array_nd(self, section, name):
+		return self._get_array_nd(section, name, float)
+
+	def get_int_array_nd(self, section, name):
+		return self._get_array_nd(section, name, int)
 
 	#def get_complex_array_2d(self, section, name):
 	#	return self._get_array_2d(section, name, complex)
@@ -238,7 +270,8 @@ class DataBlock(object):
 			# types.COMPLEX1D:   (self.get_complex_array_1d, self.put_complex_array_1d, self.replace_complex_array_1d),
 			# types.STRING1D:    (self.get_string_array_1d,  self.put_string_array_1d,  self.replace_string_array_1d)
 			# types.DBT_INT2D:   (self.get_int_array_2d,     self.put_int_array_2d,     self.replace_int_array_2d)
-			# types.DBT_DOUBLEND:(self.get_double_array_2d,  self.put_double_array_2d, self, None)
+			types.DBT_DOUBLEND:(self.get_double_array_nd,  self.put_double_array_nd, None),
+			types.DBT_INTND:(self.get_int_array_nd,  self.put_int_array_nd, None),
 			# types.COMPLEX2D:   (self.get_complex_array_2d, self.put_complex_array_2d, self.replace_complex_array_2d)
 			# types.STRING2D:    (self.get_string_array_2d,  self.put_string_array_2d,  self.replace_string_array_2d)
 				 }.get(code)
