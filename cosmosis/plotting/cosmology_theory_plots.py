@@ -262,7 +262,6 @@ class ShearSpectrumPlot(Plot):
 				cl = self.load_file(section, "bin_{0}_{1}".format(i,j))
 				if all(cl<0):
 					cl *= -1
-				print section, i, j, cl.max()
 				pylab.loglog(ell, ell*(ell+1.) * cl/2/np.pi)
 				pylab.ylim(1e-7,1e-3)
 				if i==1 and j==1:
