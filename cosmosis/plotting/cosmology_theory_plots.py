@@ -204,10 +204,11 @@ class GrandPlot(Plot):
 class MatterPowerPlot(Plot):
 	"Matter power spectrum, maybe including non-linear plot too if available"
 	filename = "matter_power"
-	def plot_section(self, section, label):
+	def plot_section(self, section, label, p_name='p_k'):
 		kh = self.load_file(section, "k_h")
 		z = self.load_file(section, "z")
-		p = self.load_file(section, "p_k")
+		p = self.load_file(section, p_name)
+		if (p<0).all(): p*=-1
 		nk = len(kh)
 		nz = len(z)
 		#soon this will be saved as a 2D array!
@@ -219,8 +220,10 @@ class MatterPowerPlot(Plot):
 		self.plot_section("matter_power_lin", "Linear")
 		if os.path.exists("{0}/matter_power_nl".format(self.dirname)):
 			self.plot_section("matter_power_nl", "Non-Linear")
-		if os.path.exists("{0}/intrinsic_alignment_ii".format(self.dirname)):
-			self.plot_section("intrinsic_alignment_ii", "Intrinsic-intrinsic")
+		if os.path.exists("{0}/intrinsic_alignment_parameters".format(self.dirname)):
+			self.plot_section("intrinsic_alignment_parameters", "Intrinsic-intrinsic", p_name='p_ii')
+		if os.path.exists("{0}/intrinsic_alignment_parameters".format(self.dirname)):
+			self.plot_section("intrinsic_alignment_parameters", "Shear-intrinsic", p_name='p_gi')
 		pylab.xlabel("k / (Mpc/h)")
 		pylab.ylabel("P(k) / (h^1 Mpc)^3")
 		pylab.grid()
@@ -231,9 +234,16 @@ class ShearSpectrumPlot(Plot):
 	filename = "shear_power"
 	def plot(self):
 		super(ShearSpectrumPlot, self).plot()
+		self.plot_section("shear_cl")
+		if os.path.exists("{0}/ia_ii_cl".format(self.dirname)):
+			self.plot_section("ia_ii_cl")
+		if os.path.exists("{0}/ia_gi_cl".format(self.dirname)):
+			self.plot_section("ia_gi_cl")
+
+	def plot_section(self, section):
 		nbin = 0
 		for i in xrange(1,100):
-			filename = self.file_path("shear_cl", "bin_{0}_{0}".format(i))
+			filename = self.file_path(section, "bin_{0}_{0}".format(i))
 			if os.path.exists(filename):
 				nbin += 1
 			else:
@@ -241,7 +251,7 @@ class ShearSpectrumPlot(Plot):
 		if nbin==0:
 			IOError("No data for plot: %s"% self.__class__.__name__[:-4])
 
-		ell = self.load_file("shear_cl", "ell")
+		ell = self.load_file(section, "ell")
 		sz = 1.0/(nbin+2)
 		for i in xrange(1, nbin+1):
 			for j in xrange(1, i+1):
@@ -249,7 +259,10 @@ class ShearSpectrumPlot(Plot):
 				self.figure.add_axes(rect)
 				#pylab.ploy()
 				#pylab.subplot(nbin, nbin, (nbin*nbin)-nbin*(j-1)+i)
-				cl = self.load_file("shear_cl", "bin_{0}_{1}".format(i,j))
+				cl = self.load_file(section, "bin_{0}_{1}".format(i,j))
+				if all(cl<0):
+					cl *= -1
+				print section, i, j, cl.max()
 				pylab.loglog(ell, ell*(ell+1.) * cl/2/np.pi)
 				pylab.ylim(1e-7,1e-3)
 				if i==1 and j==1:
@@ -258,8 +271,9 @@ class ShearSpectrumPlot(Plot):
 				else:
 					pylab.gca().xaxis.set_ticklabels([])
 					pylab.gca().yaxis.set_ticklabels([])
-				pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
-				pylab.grid()
+				if section=="shear_cl":
+					pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
+					pylab.grid()
 
 class ShearCorrelationPlot(Plot):
 	"Shear-shear power spectrum"
