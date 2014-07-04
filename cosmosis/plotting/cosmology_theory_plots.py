@@ -235,10 +235,12 @@ class ShearSpectrumPlot(Plot):
 	def plot(self):
 		super(ShearSpectrumPlot, self).plot()
 		self.plot_section("shear_cl")
-		if os.path.exists("{0}/ia_ii_cl".format(self.dirname)):
-			self.plot_section("ia_ii_cl")
-		if os.path.exists("{0}/ia_gi_cl".format(self.dirname)):
-			self.plot_section("ia_gi_cl")
+		if os.path.exists("{0}/shear_cl_gg".format(self.dirname)):
+			self.plot_section("shear_cl_gg")
+		if os.path.exists("{0}/shear_cl_gi".format(self.dirname)):
+			self.plot_section("shear_cl_gi")
+		if os.path.exists("{0}/shear_cl_ii".format(self.dirname)):
+			self.plot_section("shear_cl_ii")
 
 	def plot_section(self, section):
 		nbin = 0
@@ -260,10 +262,10 @@ class ShearSpectrumPlot(Plot):
 				#pylab.ploy()
 				#pylab.subplot(nbin, nbin, (nbin*nbin)-nbin*(j-1)+i)
 				cl = self.load_file(section, "bin_{0}_{1}".format(i,j))
-				if all(cl<0):
+				if all(cl<=0):
 					cl *= -1
 				pylab.loglog(ell, ell*(ell+1.) * cl/2/np.pi)
-				pylab.ylim(1e-7,1e-3)
+				pylab.ylim(1e-8,1e-3)
 				if i==1 and j==1:
 					pylab.xlabel("$\ell$")
 					pylab.ylabel("$\ell (\ell+1) C_\ell / 2 \pi$")
