@@ -436,7 +436,14 @@ class DataBlock(object):
 		"Internal use only!"
 		status = lib.c_datablock_delete_section(self._ptr, section)
 		if status!=0:
-			raise BlockError.exception_for_status(status, section, "")
+			raise BlockError.exception_for_status(status, section, "<tried to delete>")
+
+	def _copy_section(self, source, dest):
+		"Internal use only!"
+		status = lib.c_datablock_copy_section(self._ptr, source, dest)
+		if status!=0:
+			raise BlockError.exception_for_status(status, dest, "<tried to copy>")
+
 
 	@staticmethod
 	def _parse_metadata_key(key):

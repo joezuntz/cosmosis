@@ -214,6 +214,22 @@ void test_grid()
   destroy_c_datablock(s);
 }
 
+void test_c_copy(){
+  printf("In c_copy\n");
+  c_datablock* s = make_c_datablock();
+
+  assert(c_datablock_put_int(s, "A", "x", 3)==DBS_SUCCESS);
+  assert(c_datablock_num_sections(s)==1);
+  assert(c_datablock_put_int(s, "B", "y", 3)==DBS_SUCCESS);
+  assert(c_datablock_copy_section(s, "A", "B")==DBS_NAME_ALREADY_EXISTS);
+  assert(c_datablock_copy_section(s, "A", "C")==DBS_SUCCESS);
+  int x=-1;
+  assert(c_datablock_get_int(s, "C", "x", &x)==DBS_SUCCESS);
+  assert(x==3);
+  destroy_c_datablock(s);
+
+}
+
 void test_ndim(){
   printf("In test_ndim\n");
 
@@ -288,5 +304,6 @@ int main()
   test_scalar_bool();
   test_array_int();
   test_ndim();
+  test_c_copy();
   return 0;
 }

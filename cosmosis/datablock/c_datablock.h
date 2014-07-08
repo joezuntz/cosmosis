@@ -60,6 +60,22 @@ extern "C" {
   int
   c_datablock_num_sections(c_datablock const* s);
 
+
+  /*
+    Delete the named section.
+  */
+  int c_datablock_delete_section(c_datablock * s, const char * section);
+
+
+  /*
+    Copy the section.
+    Fails and returns DBS_NAME_ALREADY_EXISTS if the destination already exists.
+  */
+  int c_datablock_copy_section(c_datablock * s, const char * source, const char * dest);
+
+
+
+
   /*
     Return DBS_SUCCESS if the datablock has a value in the given section
     with the given name, and an error status otherwise. The associated

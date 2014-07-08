@@ -41,9 +41,6 @@ extern "C"
     return p->has_section(name);
   }
 
-  // This is not for public use!  
-  // If you want to delete a section you are 
-  // probably doing something wrong.
   int c_datablock_delete_section(c_datablock * s, const char * section)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
@@ -51,6 +48,16 @@ extern "C"
     auto p = static_cast<DataBlock *>(s);
     return p->delete_section(section);
   }
+
+  int c_datablock_copy_section(c_datablock * s, const char * source, const char * dest)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (source == nullptr) return DBS_SECTION_NULL;
+    if (dest == nullptr) return DBS_SECTION_NULL;
+    auto p = static_cast<DataBlock *>(s);
+    return p->copy_section(source, dest);
+  }
+
 
   int c_datablock_num_sections(c_datablock const* s)
   {

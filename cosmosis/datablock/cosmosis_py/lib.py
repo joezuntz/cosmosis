@@ -148,6 +148,13 @@ load_library_function(
 	ct.c_int
 	)
 
+load_library_function(
+	locals(),
+	"c_datablock_copy_section",
+	[c_block, c_str, c_str],
+	ct.c_int
+	)
+
 
 load_library_function(
 	locals(),

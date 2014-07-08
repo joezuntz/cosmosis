@@ -92,6 +92,18 @@ void cosmosis::DataBlock::print_log()
 
 }
 
+DATABLOCK_STATUS 
+cosmosis::DataBlock::copy_section(std::string source, std::string dest)
+{
+  downcase(source); downcase(dest);
+  if (!has_section(source)) return DBS_SECTION_NOT_FOUND;
+  if (has_section(dest)) return DBS_NAME_ALREADY_EXISTS;  //slight abuse
+  auto& source_section = sections_[source];
+  auto& dest_section = source_section;
+  sections_[dest] = dest_section;
+  return DBS_SUCCESS;
+}
+
 
 void cosmosis::DataBlock::clear()
 {
