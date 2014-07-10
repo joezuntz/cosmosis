@@ -220,6 +220,8 @@ class MatterPowerPlot(Plot):
 		self.plot_section("matter_power_lin", "Linear")
 		if os.path.exists("{0}/matter_power_nl".format(self.dirname)):
 			self.plot_section("matter_power_nl", "Non-Linear")
+		if os.path.exists("{0}/matter_power_gal".format(self.dirname)):
+			self.plot_section("matter_power_gal", "Galaxy")
 		if os.path.exists("{0}/intrinsic_alignment_parameters".format(self.dirname)):
 			self.plot_section("intrinsic_alignment_parameters", "Intrinsic-intrinsic", p_name='p_ii')
 		if os.path.exists("{0}/intrinsic_alignment_parameters".format(self.dirname)):
