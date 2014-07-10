@@ -46,6 +46,10 @@ extern "C" {
   DATABLOCK_STATUS
   destroy_c_datablock(c_datablock* s);
 
+
+  c_datablock * 
+  clone_c_datablock(c_datablock* s);
+
   /*
     Return true (1) if the datablock has a section with the given name, and
     false (0) otherwise. If either 's' or 'name' is null, return false.

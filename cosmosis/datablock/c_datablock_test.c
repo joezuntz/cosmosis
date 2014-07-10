@@ -214,6 +214,34 @@ void test_grid()
   destroy_c_datablock(s);
 }
 
+void test_clone(){
+  printf("In clone\n");
+  c_datablock* s = make_c_datablock();
+
+  assert(c_datablock_put_int(s, "A", "x", 3)==DBS_SUCCESS);
+
+  int arr[] = {1, 2, 3};
+  int sz = sizeof(arr) / sizeof(int);
+  /* Put with no previous value should save the right value. */
+  assert(c_datablock_put_int_array_1d(s, "x", "cow", arr, sz) == DBS_SUCCESS);
+
+  c_datablock * r = clone_c_datablock(s);
+  destroy_c_datablock(s);
+  s=NULL;
+
+  int a=0;
+  assert(c_datablock_get_int(r, "A", "x", &a)==DBS_SUCCESS);
+  assert(a==3);
+
+  int* val = NULL;
+  int length;
+  assert(c_datablock_get_int_array_1d(r, "x", "cow", &val, &length) == DBS_SUCCESS);
+  assert(val[0]==arr[0] && val[1]==arr[1] && val[2]==arr[2]);
+
+  destroy_c_datablock(r);
+
+}
+
 void test_c_copy(){
   printf("In c_copy\n");
   c_datablock* s = make_c_datablock();
@@ -305,5 +333,6 @@ int main()
   test_array_int();
   test_ndim();
   test_c_copy();
+  test_clone();
   return 0;
 }

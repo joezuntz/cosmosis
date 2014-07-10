@@ -34,6 +34,13 @@ extern "C"
     return new cosmosis::DataBlock();
   }
 
+  c_datablock * 
+  clone_c_datablock(c_datablock* s){
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    return new cosmosis::DataBlock(*p);
+  }
+
+
   _Bool c_datablock_has_section(c_datablock const* s, const char* name)
   {
     if (s == nullptr || name == nullptr) return false;

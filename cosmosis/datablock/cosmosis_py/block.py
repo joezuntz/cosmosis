@@ -31,6 +31,10 @@ class DataBlock(object):
 		except:
 			pass
 				
+	def clone(self):
+		ptr = lib.clone_c_datablock(self._ptr)
+		return DataBlock(ptr,own=True)
+
 
 	@staticmethod
 	def python_to_c_complex(value):

@@ -74,6 +74,12 @@ load_library_function(
        c_int
 )
 
+load_library_function(
+	locals(), 
+	"clone_c_datablock",
+	[c_block],
+	c_block
+)
 
 
 
