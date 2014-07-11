@@ -186,9 +186,9 @@ class Inifile(IncludingConfigParser):
         except ValueError:
             # additional options t/y/n/f
             value = self.get(section, name).lower()
-            if value.startswith('y') or value.startswith('t'):
+            if value in ['y', 'yes', 't','true']:
                 return True
-            elif value.startswith('n') or value.startswith('f'):
+            elif value in ['n', 'no', 'f','false']:
                 return False
             else:
                 raise ValueError("Unable to parse parameter "
@@ -248,6 +248,7 @@ class Inifile(IncludingConfigParser):
             pass
 
         # try to match boolean (no array support)
+
         try:
             return self.getboolean(section, name)
         except ValueError:
