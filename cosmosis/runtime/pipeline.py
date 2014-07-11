@@ -96,7 +96,6 @@ class Pipeline(object):
                 if section in relevant_sections:
                     # add back a default section?
                     val = self.options.gettyped(section, name)
-                    print "HERE", section, name, val, type(val)
                     if val is not None:
                         config_block.put(section, name, val)
 
