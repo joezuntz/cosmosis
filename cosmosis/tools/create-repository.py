@@ -43,6 +43,11 @@ clean:
 
 final_help = """
 
+
+------------------------------------
+WHAT TO DO NEXT
+------------------------------------
+
 We have now set up a new set of directories and 
 a git repository managing them.
 
@@ -63,11 +68,13 @@ CosmoSIS usually uses BitBucket:
     "/path/to/my/repo" is "%s"
 
 
-Two final notes:
- - when you run git commands for this new repo, make sure 
+Three final notes:
+ - When you run git commands for this new repo, make sure 
    you are in the new directory
  - I have modified modules/Makefile; please do not commit
    changes to this file to the cosmosis core.
+ - If you add more modules to this repository then 
+   add any Fortran/C/C++ ones to the SUBDIRS list in %s
 
 """
 
@@ -105,17 +112,15 @@ def create_repository(library_name, *module_names):
 
 	os.chdir(project_dir)
 	print "Setting up repository:"
-	print '------------------------------------'
 	os.system("git init")
 	os.system("git add -A")
 	os.system("git commit -m 'Initial commit of %s'"%library_name)
-	print '------------------------------------'
 
 	#Update that parent makefile with the new text
 	old_makefile_new_text=old_makefile_text.replace("SUBDIRS =", "SUBDIRS = "+library_name)
 	open(old_makefile,"w").write(old_makefile_new_text+"\n")
 	print "Modifying: ", old_makefile
-	print final_help % project_dir
+	print final_help % (project_dir, new_makefile)
 
 import argparse
 parser = argparse.ArgumentParser(description="Set up a new repository for cosmosis modules.")
