@@ -78,6 +78,14 @@ Three final notes:
 
 """
 
+def system(cmd):
+	status = os.system(cmd)
+	if status:
+		sys.stderr.write("There was an error running this command:\n")
+		sys.stderr.write(cmd+"\n")
+		sys.stderr.write("This script has failed - sorry.\n")
+		sys.stderr.write("There may be more information above.\n")
+		sys.exit(1)
 
 def create_repository(library_name, *module_names):
 	project_dir=os.path.join(cosmosis_dir, "modules", library_name)
@@ -112,9 +120,9 @@ def create_repository(library_name, *module_names):
 
 	os.chdir(project_dir)
 	print "Setting up repository:"
-	os.system("git init")
-	os.system("git add -A")
-	os.system("git commit -m 'Initial commit of %s'"%library_name)
+	system("git init")
+	system("git add -A")
+	system("git commit -m 'Initial commit of %s'"%library_name)
 
 	#Update that parent makefile with the new text
 	old_makefile_new_text=old_makefile_text.replace("SUBDIRS =", "SUBDIRS = "+library_name)
