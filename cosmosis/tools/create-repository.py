@@ -123,7 +123,7 @@ def create_repository(library_name, *module_names):
 	print final_help % (project_dir, new_makefile)
 
 import argparse
-parser = argparse.ArgumentParser(description="Set up a new repository for cosmosis modules.")
+parser = argparse.ArgumentParser(description="Set up a new repository for cosmosis modules.  You need to choose a name for the overall collection, and can optionally create modules within that collection (you can always create more of these later).")
 parser.add_argument("repository_name", help="Name of repository to create")
 parser.add_argument("module_names", nargs="*", help="Names of any initial modules to create in the repository (any number okay)")
 
