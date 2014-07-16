@@ -54,7 +54,7 @@ class Plot(object):
 			#But otherwise we record it in our list
 			plot_list.append(cls)
 
-	def __init__(self, dirname, outdir, prefix, suffix):
+	def __init__(self, dirname, outdir, prefix, suffix, quiet=False):
 		#Set up the plotting figure
 		self.figure = pylab.figure()
 		#Can do prefixes if we want to all the filenames
@@ -65,6 +65,7 @@ class Plot(object):
 		self.filename = "{0}/{1}{2}.{3}".format(outdir, prefix, self.filename, suffix)
 		#All the data will be in subclasses of this
 		self.dirname = dirname
+		self.quiet=quiet
 
 	def file_path(self, section, name):
 		return "{0}/{1}/{2}.txt".format(self.dirname, section, name)
@@ -76,7 +77,7 @@ class Plot(object):
 		try:
 			return np.loadtxt(filename)
 		except Exception as e:
-			raise IOError("No data for plot: %s"% self.__class__.__name__[:-4])
+			raise IOError("Not making plot: %s (no data in this run)"% self.__class__.__name__[:-4])
 
 	#Handy little method for trying to numeric-ify a value
 	@staticmethod
@@ -113,13 +114,13 @@ class Plot(object):
 	#Need not be over-ridden
 	def save(self):
 		pylab.figure(self.figure.number)
-		print "Saving ", self.filename
+		if not self.quiet: print "Saving ", self.filename
 		pylab.savefig(self.filename)
 
 	#Need not be overridden. Called by the main function
 	@classmethod
-	def make(cls, dirname, outdir, prefix, suffix):
-		p = cls(dirname, outdir, prefix, suffix)
+	def make(cls, dirname, outdir, prefix, suffix, quiet=False):
+		p = cls(dirname, outdir, prefix, suffix, quiet=quiet)
 		p.plot()
 		p.save()
 
