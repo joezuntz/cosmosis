@@ -102,7 +102,7 @@ class TextColumnOutput(OutputBase):
         else:
             datafiles = glob(filename+"_[0-9]*"+cls.FILE_EXTENSION)
             if not datafiles:
-                raise RuntimeError("No datafiles found!")
+                raise RuntimeError("No datafiles found starting with %s!"%filename)
 
         #Read the metadata
         started_data = False
