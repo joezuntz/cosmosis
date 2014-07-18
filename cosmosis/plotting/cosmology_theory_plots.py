@@ -54,9 +54,12 @@ class Plot(object):
 			#But otherwise we record it in our list
 			plot_list.append(cls)
 
-	def __init__(self, dirname, outdir, prefix, suffix, quiet=False):
+	def __init__(self, dirname, outdir, prefix, suffix, quiet=False, figure=None):
 		#Set up the plotting figure
-		self.figure = pylab.figure()
+		if figure is None:
+			self.figure = pylab.figure()
+		else:
+			self.figure = figure
 		#Can do prefixes if we want to all the filenames
 		if prefix:
 			prefix += "_"
@@ -119,10 +122,11 @@ class Plot(object):
 
 	#Need not be overridden. Called by the main function
 	@classmethod
-	def make(cls, dirname, outdir, prefix, suffix, quiet=False):
-		p = cls(dirname, outdir, prefix, suffix, quiet=quiet)
+	def make(cls, dirname, outdir, prefix, suffix):
+		p = cls(dirname, outdir, prefix, suffix)
 		p.plot()
 		p.save()
+		return p.filename
 
 class DistancePlot(Plot):
 	"Subclasses of this do distance plots as a function of z"

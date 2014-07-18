@@ -33,6 +33,10 @@ class PostProcessor(object):
             self.data = self.data[0].T
             self.colnames = [c.lower() for c in self.colnames]
 
+            burn = options.get("burn")
+            if burn:
+                self.data=self.data[:,burn:]
+
     def get_col(self, index_or_name):
         if isinstance(index_or_name, int):
             index = index_or_name
@@ -51,4 +55,9 @@ class PostProcessor(object):
             files += e.run()
         for f in files:
             print "File: ", f
+    def finalize(self):
+        self.plotter.finalize()
+        self.stats.finalize()
+        for e in self.elements:
+            e.finalize()
 

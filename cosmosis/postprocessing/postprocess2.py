@@ -7,6 +7,14 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Post-process cosmosis output")
 parser.add_argument("inifile")
+mcmc=parser.add_argument_group(title="MCMC", description="Options for MCMC-type samplers")
+mcmc.add_argument("--burn", type=float, help="Fraction or number of samples to burn at the start")
+mcmc.add_argument("--thin", type=int, help="Keep every n'th sampler in MCMC")
+
+test=parser.add_argument_group(title="Test", description="Options for the test sampler")
+test.add_argument("-f", "--file-type", default="png", help="Filename suffix for plots")
+test.add_argument("-o","--outdir", default=".", help="Output directory for plots")
+test.add_argument("-p","--prefix", default="", help="Prefix for plots")
 
 def main(args):
 	#Read the command line arguments and load the
@@ -21,8 +29,12 @@ def main(args):
 	processor_class = postprocessor_for_sampler(sampler)
 
 	#Create and run the postprocessor
-	processor = processor_class(ini)
+	processor = processor_class(ini, **vars(args))
 	processor.run()
+	#At some point we might run the processor on multiple chains
+	#in that case we would call run more than once
+	#and then finalize at the end
+	processor.finalize()
 
 if __name__=="__main__":
 	main(sys.argv[1:])
