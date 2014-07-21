@@ -7,6 +7,7 @@ import argparse
 from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
+from cosmosis.runtime.utils import ParseExtraParameters
 from cosmosis.samplers.sampler import sampler_registry, ParallelSampler
 from cosmosis import output as output_module
 import ConfigParser
@@ -55,7 +56,7 @@ def main(args, pool=None):
             sys.exit(1)
         #Additionally we tell the output here if
         #we are parallel or not
-        if pool is not None:
+        if (pool is not None) and sampler_class.parallel_output:
             output_options['rank'] = pool.rank
             output_options['parallel'] = pool.size
 

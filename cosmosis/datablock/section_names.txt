@@ -21,6 +21,9 @@ matter_power_nl
 matter_power_lin
 shear_xi
 shear_cl
+shear_cl_gg
+shear_cl_gi
+shear_cl_ii
 galaxy_cl
 cmb_cl
 lss_autocorrelation
@@ -32,6 +35,7 @@ sigma_r_nl
 #nuisance parameters
 planck
 intrinsic_alignment_field
+
 shear_calibration
 supernova_params
 

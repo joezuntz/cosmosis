@@ -98,3 +98,7 @@ void cosmosis::Entry::set_val(vector<int> const& v) { _vset(v, vi); }
 void cosmosis::Entry::set_val(vector<double> const& v) { _vset(v, vd); }
 void cosmosis::Entry::set_val(vector<string> const& v) { _vset(v, vs); }
 void cosmosis::Entry::set_val(vector<complex_t> const& v) { _vset(v, vz); }
+
+void cosmosis::Entry::set_val(nd_int_t const& v) { _vset(v, ndi); }
+void cosmosis::Entry::set_val(nd_double_t const& v) { _vset(v, ndd); }
+void cosmosis::Entry::set_val(nd_complex_t const& v) { _vset(v, ndz); }

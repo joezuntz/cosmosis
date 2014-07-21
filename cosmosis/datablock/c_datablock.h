@@ -46,6 +46,10 @@ extern "C" {
   DATABLOCK_STATUS
   destroy_c_datablock(c_datablock* s);
 
+
+  c_datablock * 
+  clone_c_datablock(c_datablock* s);
+
   /*
     Return true (1) if the datablock has a section with the given name, and
     false (0) otherwise. If either 's' or 'name' is null, return false.
@@ -59,6 +63,22 @@ extern "C" {
   */
   int
   c_datablock_num_sections(c_datablock const* s);
+
+
+  /*
+    Delete the named section.
+  */
+  int c_datablock_delete_section(c_datablock * s, const char * section);
+
+
+  /*
+    Copy the section.
+    Fails and returns DBS_NAME_ALREADY_EXISTS if the destination already exists.
+  */
+  int c_datablock_copy_section(c_datablock * s, const char * source, const char * dest);
+
+
+
 
   /*
     Return DBS_SUCCESS if the datablock has a value in the given section
@@ -435,6 +455,15 @@ extern "C" {
 				       double _Complex const* val,
 				       int sz);
 
+
+
+  DATABLOCK_STATUS
+  c_datablock_get_array_ndim(c_datablock * s, 
+          const char* section, 
+          const char * name, 
+          int * ndim);
+
+
   /*
     The c_datablock_get_TYPE_array_shape functions return DBS_SUCCESS
     if the given section has a value of the given type, and if that
@@ -450,6 +479,7 @@ extern "C" {
     A usage example is given below, in the comments on
     c_datablock_get_TYPE_array.
   */
+
   DATABLOCK_STATUS
   c_datablock_get_int_array_shape(c_datablock* s,
 				  const char* section,
@@ -527,6 +557,7 @@ extern "C" {
 				double _Complex* val,
 				int ndims,
 				int const* extents);
+
 
   /*
     The c_datablock_put_TYPE_array functions

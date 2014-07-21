@@ -166,7 +166,6 @@ void test_array_int()
 void test_grid()
 {
   c_datablock* s = make_c_datablock();
-  printf("In test_grid\n");
   DATABLOCK_STATUS status;
   int nx = 50;
   int ny = 100;
@@ -215,6 +214,112 @@ void test_grid()
   destroy_c_datablock(s);
 }
 
+void test_clone(){
+  printf("In clone\n");
+  c_datablock* s = make_c_datablock();
+
+  assert(c_datablock_put_int(s, "A", "x", 3)==DBS_SUCCESS);
+
+  int arr[] = {1, 2, 3};
+  int sz = sizeof(arr) / sizeof(int);
+  /* Put with no previous value should save the right value. */
+  assert(c_datablock_put_int_array_1d(s, "x", "cow", arr, sz) == DBS_SUCCESS);
+
+  c_datablock * r = clone_c_datablock(s);
+  destroy_c_datablock(s);
+  s=NULL;
+
+  int a=0;
+  assert(c_datablock_get_int(r, "A", "x", &a)==DBS_SUCCESS);
+  assert(a==3);
+
+  int* val = NULL;
+  int length;
+  assert(c_datablock_get_int_array_1d(r, "x", "cow", &val, &length) == DBS_SUCCESS);
+  assert(val[0]==arr[0] && val[1]==arr[1] && val[2]==arr[2]);
+
+  destroy_c_datablock(r);
+
+}
+
+void test_c_copy(){
+  printf("In c_copy\n");
+  c_datablock* s = make_c_datablock();
+
+  assert(c_datablock_put_int(s, "A", "x", 3)==DBS_SUCCESS);
+  assert(c_datablock_num_sections(s)==1);
+  assert(c_datablock_put_int(s, "B", "y", 3)==DBS_SUCCESS);
+  assert(c_datablock_copy_section(s, "A", "B")==DBS_NAME_ALREADY_EXISTS);
+  assert(c_datablock_copy_section(s, "A", "C")==DBS_SUCCESS);
+  int x=-1;
+  assert(c_datablock_get_int(s, "C", "x", &x)==DBS_SUCCESS);
+  assert(x==3);
+  destroy_c_datablock(s);
+
+}
+
+void test_ndim(){
+  printf("In test_ndim\n");
+
+{  c_datablock* s = make_c_datablock();
+  DATABLOCK_STATUS status = 0;
+  int x[4*4*4], y[5*5], z[17];
+  int xsize[3], ysize[2], zsize[1];
+  xsize[0] = 4; xsize[1] = 4; xsize[2] = 4;
+  ysize[0] = 5; ysize[1] = 5;
+  zsize[0] = 17;
+
+  for (int i=0; i<4*4*4; i++) x[i] = 0;
+  for (int i=0; i<5*5; i++) y[i] = 0;
+  for (int i=0; i<17; i++) z[i] = 0;
+  status = c_datablock_put_int_array(s, "sec", "x", x, 3, xsize);
+  status = c_datablock_put_int_array(s, "sec", "y", y, 2, ysize);
+  status = c_datablock_put_int_array(s, "sec", "z", z, 1, zsize);
+  assert(status == 0);
+
+  int ndim = 0;
+  status |= c_datablock_get_array_ndim(s, "sec", "x", &ndim);
+  assert(ndim == 3);
+  status |= c_datablock_get_array_ndim(s, "sec", "y", &ndim);
+  assert(ndim == 2);
+  status |= c_datablock_get_array_ndim(s, "sec", "z", &ndim);
+  assert(ndim == 1);
+  assert(status == 0);
+
+  destroy_c_datablock(s);
+}
+{
+  c_datablock* s = make_c_datablock();
+  DATABLOCK_STATUS status = 0;
+  double x[4*4*4], y[5*5], z[17];
+  int xsize[3], ysize[2], zsize[1];
+  xsize[0] = 4; xsize[1] = 4; xsize[2] = 4;
+  ysize[0] = 5; ysize[1] = 5;
+  zsize[0] = 17;
+
+  for (int i=0; i<4*4*4; i++) x[i] = 0;
+  for (int i=0; i<5*5; i++) y[i] = 0;
+  for (int i=0; i<17; i++) z[i] = 0;
+  status = c_datablock_put_double_array(s, "sec", "x", x, 3, xsize);
+  status = c_datablock_put_double_array(s, "sec", "y", y, 2, ysize);
+  status = c_datablock_put_double_array(s, "sec", "z", z, 1, zsize);
+  assert(status == 0);
+
+  int ndim = 0;
+  status |= c_datablock_get_array_ndim(s, "sec", "x", &ndim);
+  assert(ndim == 3);
+  status |= c_datablock_get_array_ndim(s, "sec", "y", &ndim);
+  assert(ndim == 2);
+  status |= c_datablock_get_array_ndim(s, "sec", "z", &ndim);
+  assert(ndim == 1);
+  assert(status == 0);
+
+  destroy_c_datablock(s);
+
+}
+
+}
+
 
 int main()
 {
@@ -226,5 +331,8 @@ int main()
   test_scalar_complex();
   test_scalar_bool();
   test_array_int();
+  test_ndim();
+  test_c_copy();
+  test_clone();
   return 0;
 }

@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+import os
+import sys
+import shutil
+
+try:
+	cosmosis_dir=os.environ['COSMOSIS_SRC_DIR']
+except KeyError:
+	sys.stderr.write("""
+Please set up your cosmosis environment with source config/setup-cosmosis
+or source setup-my-cosmosis before running this script
+ """)
+	sys.exit(1)
+
+module_makefile_text = """
+# If you already have your own Makefile you can 
+# replace all of this, but you need to keep this line
+# at the top:
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+
+
+#For python, leave this as is.  For C/C++/Fortran, 
+#comment the first line and uncomment the second:
+all: 
+#all %s.so
+
+# ... and then provide the command to compile it, perhaps
+# like this for a simple example in C:
+#%s.so: my_files.c
+#	$(CC) -shared -o %s.so my_files.c
+
+
+#Replace this to put in some kind of test command for
+#your module, if you have one.
+test:
+	@echo "Alas, %s/%s module has no tests"
+
+#Add anything else to clean here
+clean:
+	rm -f *.o *.mod
+
+"""
+
+final_help = """
+
+
+------------------------------------
+WHAT TO DO NEXT
+------------------------------------
+
+We have now set up a new set of directories and 
+a git repository managing them.
+
+This repository is *only* stored on your hard drive
+right now - if you want to share it with other people 
+or keep it backed up remotely then you need to create
+a matching repository on a website, usually either
+GitHub or BitBucket.
+
+CosmoSIS usually uses BitBucket:
+1.  Go to https://bitbucket.org/repo/create
+	You may need to create an account and/or log in.
+2.  Give your repository a name
+3.  Choose private or public
+4.  leave the other options alone
+5.  On the next page, select "I have an existing project"
+    and follow the instructions that appear, where the 
+    "/path/to/my/repo" is "%s"
+
+
+Three final notes:
+ - When you run git commands for this new repo, make sure 
+   you are in the new directory
+ - I have modified modules/Makefile; please do not commit
+   changes to this file to the cosmosis core.
+ - If you add more modules to this repository then 
+   add any Fortran/C/C++ ones to the SUBDIRS list in %s
+
+"""
+
+def system(cmd):
+	status = os.system(cmd)
+	if status:
+		sys.stderr.write("There was an error running this command:\n")
+		sys.stderr.write(cmd+"\n")
+		sys.stderr.write("This script has failed - sorry.\n")
+		sys.stderr.write("There may be more information above.\n")
+		sys.exit(1)
+
+def create_repository(library_name, *module_names):
+	project_dir=os.path.join(cosmosis_dir, "modules", library_name)
+
+	#Create the project directory
+	if os.path.exists(project_dir):
+		sys.stderr.write("A directory (or file) already exists for the project dir you specified:\n%s\n\n"%project_dir)
+		sys.exit(1)
+	os.mkdir(project_dir)
+
+	#Use modules/Makefile as a template
+	old_makefile=os.path.join(cosmosis_dir, "modules", "Makefile")
+	old_makefile_text=open(old_makefile).read()
+
+	#Create the project Makefile
+	if module_names:
+		module_text = " ".join(module_names)
+	else:
+		module_text=""
+	new_makefile=os.path.join(project_dir, "Makefile")
+	new_makefile_text=old_makefile_text.replace("SUBDIRS =", "SUBDIRS = {0} \n#".format(module_text))
+	open(new_makefile,"w").write(new_makefile_text)
+
+	#Create directories for each module in the project and 
+	#Give them Makefiles
+	for module_name in module_names:
+		module_dir = os.path.join(project_dir, module_name)
+		os.mkdir(module_dir)
+		module_makefile=os.path.join(module_dir, "Makefile")
+		open(module_makefile,"w").write(module_makefile_text%(module_name,module_name,module_name,library_name,module_name))
+
+
+	os.chdir(project_dir)
+	print "Setting up repository:"
+	system("git init")
+	system("git add -A")
+	system("git commit -m 'Initial commit of %s'"%library_name)
+
+	#Update that parent makefile with the new text
+	old_makefile_new_text=old_makefile_text.replace("SUBDIRS =", "SUBDIRS = "+library_name)
+	open(old_makefile,"w").write(old_makefile_new_text+"\n")
+	print "Modifying: ", old_makefile
+	print final_help % (project_dir, new_makefile)
+
+import argparse
+parser = argparse.ArgumentParser(description="Set up a new repository for cosmosis modules.  You need to choose a name for the overall collection, and can optionally create modules within that collection (you can always create more of these later).")
+parser.add_argument("repository_name", help="Name of repository to create")
+parser.add_argument("module_names", nargs="*", help="Names of any initial modules to create in the repository (any number okay)")
+
+if __name__ == '__main__':
+	args=parser.parse_args()
+	create_repository(args.repository_name, *args.module_names)

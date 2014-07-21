@@ -34,6 +34,8 @@ class Pipeline(object):
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
         self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
+        shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", "")
+        if shortcut=="": shortcut=None
 
         # initialize modules
         self.modules = []
@@ -62,6 +64,19 @@ class Pipeline(object):
                                                   exec_function,
                                                   cleanup_function,
                                                   rootpath))
+            self.shortcut_module=0
+            self.shortcut_data=None
+            if shortcut is not None:
+                try:
+                    index = module_list.index(shortcut)
+                except ValueError:
+                    raise ValueError("You tried to set a shortcut in "
+                        "the pipeline but I do not know module %s"%shortcut)
+                if index == 0:
+                    print "You set a shortcut in the pipeline but it was the first module."
+                    print "It will make no difference."
+                self.shortcut_module = index
+
 
     def setup(self):
         if self.timing:
@@ -103,7 +118,12 @@ class Pipeline(object):
             module.cleanup()
 
     def run(self, data_package):
-        for module in self.modules:
+        modules = self.modules
+        first = (self.shortcut_data is None)
+        if self.shortcut_module and not first:
+            modules = modules[self.shortcut_module:]
+
+        for module_number, module in enumerate(modules):
             if self.debug:
                 sys.stdout.write("Running %.20s ...\n" % module)
                 sys.stdout.flush()
@@ -112,6 +132,7 @@ class Pipeline(object):
                 t1 = time.clock()
 
             status = module.execute(data_package)
+
             if self.debug:
                 sys.stdout.write("Done %.20s status = %d \n" % (module,status))
                 sys.stdout.flush()
@@ -135,6 +156,11 @@ class Pipeline(object):
                     if not self.debug:
                         sys.stderr.write("Setting debug=T in [pipeline] might help.\n")
                 return None
+
+            if self.shortcut_module and first and module_number==self.shortcut_module-1:
+                print "Saving shortcut data"
+                self.shortcut_data = data_package.clone()
+
 
         if not self.quiet:
             sys.stdout.write("Pipeline ran okay.\n")
@@ -242,15 +268,18 @@ class LikelihoodPipeline(Pipeline):
             if self.is_out_of_range(p):
                 return None
 
-        data = block.DataBlock()
+        if self.shortcut_module and self.shortcut_data is not None:
+            data = self.shortcut_data.clone()
+        else:
+            data = block.DataBlock()
 
         # add varied parameters
         for param, x in zip(self.varied_params, p):
-            data.put_double(param.section, param.name, x)
+            data[param.section, param.name] = x
 
         # add fixed parameters
         for param in self.fixed_params:
-            data.put_double(param.section, param.name, param.start)
+            data[param.section, param.name] = param.start
 
         if self.run(data):
             return data
