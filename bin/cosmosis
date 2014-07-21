@@ -7,6 +7,7 @@ import argparse
 from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
+from cosmosis.runtime.utils import ParseExtraParameters
 from cosmosis.samplers.sampler import sampler_registry, ParallelSampler
 from cosmosis import output as output_module
 import ConfigParser

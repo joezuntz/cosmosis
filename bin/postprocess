@@ -22,6 +22,7 @@ import argparse
 import sys
 import ConfigParser
 from cosmosis.runtime.config import Inifile
+from cosmosis.runtime.utils import ParseExtraParameters
 
 def get_sampler(args, ini):
     if ini is None:
@@ -121,6 +122,7 @@ if __name__ == "__main__":
         help='The root directory in which to put plots')
     parser.add_argument('-p', '--prefix', default='',
         help='A prefix to give to all the generated filenames')
+    parser.add_argument("-e", "--extra", nargs="*", action=ParseExtraParameters, help="Over-ride parameters in inifile, with format section.name=value")
 
     #What-to-do arguments
     parser.add_argument('--stats', action='store_true',
@@ -143,7 +145,7 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
 
     if args.ini or (args.infile.endswith(".ini") and not args.text):        
-        ini = Inifile(args.infile)
+        ini = Inifile(args.infile, override=args.extra)
     elif args.text or args.infile.endswith(".txt"):
         # defaults - assume MCMC
         ini = None
