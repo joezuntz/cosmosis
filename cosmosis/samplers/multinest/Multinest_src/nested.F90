@@ -91,6 +91,7 @@ contains
 	mpi_nthreads=1
 	my_rank=0
 #endif
+	write(*,*) "Running process: ", my_rank, mpi_nthreads
 	bogus = .false.
 	nest_nsc=50
       	nlive=nest_nlive

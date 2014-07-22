@@ -137,7 +137,7 @@ class MultinestSampler(Sampler):
 		context=None
 		wrapped_likelihood = loglike_type(likelihood)
 		wrapped_output_logger = dumper_type(dumper)
-		init_mpi=False
+		init_mpi=True
 		self.log_z = 0.0
 		self.log_z_err = 0.0
 

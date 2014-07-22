@@ -1,14 +1,14 @@
-# FC = mpif90
-# CC = mpicc
-# CXX = mpicxx
-# FFLAGS += -O3 -DMPI -fPIC -ffree-line-length-none
-# CFLAGS += -O3 -DMPI -fPIC
+FC = mpif90
+CC = mpicc
+CXX = mpicxx
+FFLAGS += -O3 -DMPI -fPIC -ffree-line-length-none
+CFLAGS += -O3 -DMPI -fPIC
 
-FC = gfortran
-CC = gcc
-CXX = g++
-FFLAGS += -O3 -fPIC -ffree-line-length-none
-CFLAGS += -O3 -fPIC
+#FC = gfortran
+#CC = gcc
+#CXX = g++
+#FFLAGS += -O3 -fPIC -ffree-line-length-none
+#CFLAGS += -O3 -fPIC
 
 LAPACKLIB = -llapack
 
