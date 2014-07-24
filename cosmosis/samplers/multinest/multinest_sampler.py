@@ -7,7 +7,7 @@ import numpy as np
 import sys
 
 dirname = os.path.split(__file__)[0]
-libname = os.path.join(dirname, "MultiNest_src", "libnest3.so")
+libname = os.path.join(dirname, "multinest_src", "libnest3.so")
 libnest3 = None
 
 loglike_type = ct.CFUNCTYPE(ct.c_double, 
@@ -137,7 +137,8 @@ class MultinestSampler(Sampler):
 		context=None
 		wrapped_likelihood = loglike_type(likelihood)
 		wrapped_output_logger = dumper_type(dumper)
-		init_mpi=True
+		import mpi4py.MPI
+		init_mpi=False
 		self.log_z = 0.0
 		self.log_z_err = 0.0
 
