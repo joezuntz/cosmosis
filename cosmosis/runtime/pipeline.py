@@ -31,6 +31,9 @@ class Pipeline(object):
         else:
             self.options = config.Inifile(arg)
 
+        #This will be set later
+        self.root_directory = None
+
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
         self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
@@ -48,7 +51,9 @@ class Pipeline(object):
 
             for module_name in module_list:
                 # identify module file
-                filename = self.options.get(module_name, "file")
+
+                filename = self.find_module_file(
+                    self.options.get(module_name, "file"))
 
                 # identify relevant functions
                 setup_function = self.options.get(module_name,
@@ -77,6 +82,22 @@ class Pipeline(object):
                     print "It will make no difference."
                 self.shortcut_module = index
 
+    def base_directory(self):
+        if self.root_directory is None:
+            try:
+                self.root_directory = os.environ["COSMOSIS_SRC_DIR"]
+                print "Root directory is ", self.root_directory
+            except KeyError:
+                self.root_directory = os.getcwd()
+                print "WARNING: Could not find environment variable"
+                print "COSMOSIS_SRC_DIR. Module paths assumed to be relative"
+                print "to current directory, ", self.root_directory
+        return self.root_directory
+
+    def find_module_file(self, path):
+        """Find a module file, which is assumed to be 
+        either absolute or relative to COSMOSIS_SRC_DIR"""
+        return os.path.join(self.base_directory(), path)
 
     def setup(self):
         if self.timing:
