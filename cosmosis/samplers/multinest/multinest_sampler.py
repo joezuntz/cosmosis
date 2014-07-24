@@ -75,11 +75,12 @@ def likelihood(cube_p, ndim, nparam, context_p):
 	except KeyboardInterrupt:
 		raise sys.exit(1)
 	
+
 	for i in xrange(ndim):
 		cube_p[i] = vector[i]
 	
 	for i in xrange(nextra):
-		cube_p[ndim+i] = extra[extra_names[i]]
+		cube_p[ndim+i] = extra[pipeline.extra_saves[i]]
 	return like
 
 def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
