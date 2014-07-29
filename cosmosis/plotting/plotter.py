@@ -7,7 +7,7 @@ from .utils import NoSuchParameter, section_code
 
 class Plotter(object):
     colors=['blue','red','green','cyan','gray']
-    def __init__(self, chain_data,latex_file=None, filetype="png", root_dir='.',prefix='',blind=False,**options):
+    def __init__(self, chain_data,latex_file=None, filetype="png", root_dir='.',prefix='',blind=False, fatal=False, **options):
         self._chain_data = chain_data
         all_names = set()
         for chain_datum in self._chain_data.values():
@@ -21,6 +21,7 @@ class Plotter(object):
         self.root_dir = root_dir
         self.prefix = prefix
         self.blind = blind
+        self.fatal=fatal
         if self.prefix and not self.prefix.endswith('_'):
             self.prefix = self.prefix + "_"
 
@@ -98,8 +99,11 @@ class Plotter(object):
                 self._plot_1d(name)
                 pylab.savefig("%s/%s%s.%s"%(self.root_dir, self.prefix, name, self.filetype))
             except Exception as error:
-                print "Unable to plot curve - may be only one value?"
-                print error
+                if self.fatal:
+                    raise
+                else:
+                    print "Unable to plot curve - may be only one value?"
+                    print error
             finally:
                 pylab.close()
 
