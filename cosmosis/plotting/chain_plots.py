@@ -161,7 +161,15 @@ class ChainPlotter(Plotter):
 			else:
 				pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors=color)
 		pylab.xlabel("$"+self._display_names[name1]+"$")
- 		pylab.ylabel("$"+self._display_names[name2]+"$") 		
+ 		pylab.ylabel("$"+self._display_names[name2]+"$")
+ 		if "limits" in self.options and name1	in self.options["limits"]:
+ 			pylab.xlim(*self.options["limits"][name1])
+ 		if "limits" in self.options and name1	in self.options["limits"]:
+ 			pylab.ylim(*self.options["limits"][name2])
+ 		if "truth" in self.options and name1 in self.options["truth"] and name2 in self.options["truth"]:
+ 			xc = self.options["truth"][name1]
+ 			yc = self.options["truth"][name2]
+			pylab.plot([xc],[yc],'k*', markersize=10)
  		if self.blind: self.blind_axes()
  		# self.command('pylab.xlabel("${0}$")',self._display_names[name2])
 
