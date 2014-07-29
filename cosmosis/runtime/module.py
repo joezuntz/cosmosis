@@ -78,7 +78,7 @@ class Module(object):
     def execute(self, data_block):
         if not self.is_python:
             data_block = data_block._ptr
-        if self.data:
+        if self.data is not None:
             return self.execute_function(data_block, self.data)
         else:
             return self.execute_function(data_block)
