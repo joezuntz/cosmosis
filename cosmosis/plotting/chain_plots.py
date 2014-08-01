@@ -100,14 +100,15 @@ class ChainPlotter(Plotter):
 		y_axis = np.linspace(ymin, ymax, n+1)
 		histogram, _, _ = np.histogram2d(x, y, bins=[x_axis, y_axis])
 
+
 		def objective(limit, target):
 			w = np.where(like>limit)
 			count = histogram[w]
 			return count.sum() - target
 		target1 = N*(1-contour1)
 		target2 = N*(1-contour2)
-		level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,), xtol=1./N)
-		level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,), xtol=1./N)
+		level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
+		level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
 		return level1, level2, like.sum()
 
 
