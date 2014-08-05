@@ -170,8 +170,8 @@ class CMBSpectrumPlot(Plot):
 		c_ell = self.load_file("cmb_cl", self.name)
 		pylab.plot(ell, c_ell)
 		pylab.grid()
-		pylab.xlabel("ell")
-		pylab.ylabel("C_ell {0} / uK^2".format(self.name.upper()))
+		pylab.xlabel("$\ell$")
+		pylab.ylabel("$\ell(\ell+1) C_\ell/2\pi \mathrm{%s} / uK^2$" % self.name.upper())
 
 class TTPlot(CMBSpectrumPlot):
 	name = filename = "tt"
@@ -199,8 +199,8 @@ class GrandPlot(Plot):
 			pylab.loglog(ell, abs(c_ell), label=name.upper())
 		pylab.legend()
 		pylab.grid()
-		pylab.xlabel("ell")
-		pylab.ylabel("C_ell Spectra / uK^2")
+		pylab.xlabel("$\ell$")
+		pylab.ylabel("$\ell(\ell+1) C_\ell/2\pi / uK^2$")
 
 class MatterPowerPlot(Plot):
 	"Matter power spectrum, maybe including non-linear plot too if available"
