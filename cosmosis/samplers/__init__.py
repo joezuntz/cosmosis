@@ -1,5 +1,6 @@
 from sampler import Sampler, ParallelSampler, sampler_registry
 
+from minuit import minuit_sampler
 from test import test_sampler
 from grid import grid_sampler
 from pymc import pymc_sampler
