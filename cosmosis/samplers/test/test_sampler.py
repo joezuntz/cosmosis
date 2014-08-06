@@ -28,6 +28,7 @@ class TestSampler(Sampler):
         p = np.array([param.start for param in self.pipeline.varied_params])
     
         # try to print likelihood if it exists
+        data=None
         try:
             prior = self.pipeline.prior(p)
             like, extra, data = self.pipeline.likelihood(p, return_data=True)
@@ -39,6 +40,25 @@ class TestSampler(Sampler):
             if self.fatal_errors:
                 raise
             print "(Could not get a likelihood) Error:"+str(e)
+        if not self.pipeline.likelihood_names:
+            print
+            print "There was no likelihood as you did not ask for any"
+            print "Fill in the parameter 'likelihoods ='"
+            print "In the ini file [pipeline] section if you want some"
+            print
+        elif (like==-np.inf) and (data is not None):
+            found_likelihoods = [k[1] for k in data.keys() if k[0]=="likelihoods"]
+            print
+            print "The log-likelihood was -infinity!"
+            print "This means one of three things:"
+            print "1)  A likelihood code returned -inf because it is broken"
+            print "2)  The parameters you chose are really really bad"
+            print "3)  You made a typo filling in the likelihoods in the ini file"
+            print "In case the answer is 3, you asked for these likelihoods:"
+            print "  ",  ", ".join([k+"_like" for k in self.pipeline.likelihood_names])
+            print "And the pipeline calculated these:"
+            print "  ",  ", ".join(found_likelihoods)
+            print
 
         try:
             if self.save_dir:
