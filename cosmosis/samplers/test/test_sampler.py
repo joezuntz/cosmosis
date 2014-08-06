@@ -1,5 +1,7 @@
 from .. import Sampler
 import numpy as np
+from ...runtime import pipeline
+import sys
 
 TEST_INI_SECTION = "test"
 
@@ -36,29 +38,22 @@ class TestSampler(Sampler):
                 print "Prior      = ", prior
                 print "Likelihood = ", like
                 print "Posterior  = ", like+prior
+        except pipeline.MissingLikelihoodError as error:
+            found_likelihoods = [k[1][:-5] for k in error.pipeline_data.keys() if k[0]=="likelihoods"]            
+            sys.stderr.write("\n")
+            sys.stderr.write("One of the likelihoods you asked for was not found.\n")
+            sys.stderr.write("You asked for: %s\n"%error.message)
+            sys.stderr.write("But the only ones calculated in the pipeline were:\n")
+            sys.stderr.write(", ".join(found_likelihoods)+"\n")
+            sys.stderr.write("\n")
         except Exception as e:
             if self.fatal_errors:
                 raise
             print "(Could not get a likelihood) Error:"+str(e)
         if not self.pipeline.likelihood_names:
+            print "(No likelihoods required in ini file)"
             print
-            print "There was no likelihood as you did not ask for any"
-            print "Fill in the parameter 'likelihoods ='"
-            print "In the ini file [pipeline] section if you want some"
-            print
-        elif (like==-np.inf) and (data is not None):
-            found_likelihoods = [k[1] for k in data.keys() if k[0]=="likelihoods"]
-            print
-            print "The log-likelihood was -infinity!"
-            print "This means one of three things:"
-            print "1)  A likelihood code returned -inf because it is broken"
-            print "2)  The parameters you chose are really really bad"
-            print "3)  You made a typo filling in the likelihoods in the ini file"
-            print "In case the answer is 3, you asked for these likelihoods:"
-            print "  ",  ", ".join([k+"_like" for k in self.pipeline.likelihood_names])
-            print "And the pipeline calculated these:"
-            print "  ",  ", ".join(found_likelihoods)
-            print
+
 
         try:
             if self.save_dir:

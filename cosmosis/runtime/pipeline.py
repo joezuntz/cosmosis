@@ -18,6 +18,10 @@ import cosmosis.datablock.cosmosis_py as cosmosis_py
 
 PIPELINE_INI_SECTION = "pipeline"
 
+class MissingLikelihoodError(Exception):
+    def __init__(self, message, data):
+        super(MissingLikelihoodError, self).__init__(message)
+        self.pipeline_data = data
 
 class Pipeline(object):
     def __init__(self, arg=None, load=True):
@@ -347,15 +351,16 @@ class LikelihoodPipeline(Pipeline):
                 return -np.inf, utils.everythingIsNan
 
         # loop through named likelihoods and sum their values
-        try:
-            like = sum([data.get_double(cosmosis_py.section_names.likelihoods,
-                                        likelihood_name+"_like")
-                        for likelihood_name in self.likelihood_names])
-        except block.BlockError:
-            if return_data:
-                return -np.inf, utils.everythingIsNan, data
-            else:
-                return -np.inf, utils.everythingIsNan
+        likelihoods = []
+        section_name = cosmosis_py.section_names.likelihoods
+        for likelihood_name in self.likelihood_names:
+            try:
+                L = data.get_double(section_name,likelihood_name+"_like")
+                likelihoods.append(L)
+            except block.BlockError:
+                raise MissingLikelihoodError(likelihood_name, data)
+
+        like = sum(likelihoods)
 
         if not self.quiet and self.likelihood_names:
             sys.stdout.write("Likelihood %e\n" % (like,))
