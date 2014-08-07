@@ -236,6 +236,7 @@ cosmosis::DataBlock::get_val(std::string section,
     {
       val = def;
       log_access(BLOCK_LOG_READ_DEFAULT, section, name, typeid(val));
+      put_val(section, name, val);
       return DBS_SUCCESS;
     }
   DATABLOCK_STATUS status = isec->second.get_val(name, def, val);
@@ -244,6 +245,7 @@ cosmosis::DataBlock::get_val(std::string section,
     {
       log_access(BLOCK_LOG_READ_DEFAULT, section, name, typeid(val));
       status = DBS_SUCCESS;
+      put_val(section, name, val);      
     }
   else { log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(val)); }
   return status;
