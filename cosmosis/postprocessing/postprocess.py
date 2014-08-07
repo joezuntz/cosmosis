@@ -6,8 +6,7 @@ def postprocessor_for_sampler(sampler):
 	return postprocessor_registry.get(sampler)
 
 class MetropolisHastingsProcessor(PostProcessor):
-	plotClass=plots.MetropolisHastingsPlots
-	statsClass=statistics.MetropolisHastingsStatistics
+	elements=[plots.MetropolisHastingsPlots,statistics.MetropolisHastingsStatistics]
 
 
 class EmceeProcessor(MetropolisHastingsProcessor):
@@ -19,16 +18,13 @@ class PymcProcessor(MetropolisHastingsProcessor):
 	sampler="pymc"
 	pass
 
-
 class GridProcessor(PostProcessor):
+	elements=[plots.GridPlots, statistics.GridStatistics]
 	sampler="grid"
-	plotClass=plots.GridPlots
-	statsClass=statistics.GridStatistics
 
 class TestProcessor(PostProcessor):
+	elements = [plots.TestPlots]
 	sampler="test"
-	plotClass=plots.TestPlots
-	statsClass=statistics.TestStatistics
 	cosmosis_standard_output=False
 
 

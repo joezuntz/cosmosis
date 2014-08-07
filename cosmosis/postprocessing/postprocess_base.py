@@ -16,15 +16,10 @@ class PostProcessMetaclass(abc.ABCMeta):
 
 class PostProcessor(object):
     __metaclass__=PostProcessMetaclass
-    plotClass=plots.Plots
-    statsClass=statistics.Statistics
-    additionalElements = []
     sampler=None
     cosmosis_standard_output=True
     def __init__(self, ini, **options):
-        self.plotter = self.plotClass(self, **options)
-        self.stats = self.statsClass(self, **options)
-        self.elements = [e(self, **options) for e in self.additionalElements]
+        self.steps = [e(self, **options) for e in self.elements]
         self.ini = ini
         if self.cosmosis_standard_output:
             output_options = dict(ini.items('output'))
@@ -45,19 +40,13 @@ class PostProcessor(object):
             index = self.colnames.index(name)
         return self.data[index]
 
-    def run(self, stats=True, plots=True):
+    def run(self):
         files = []
-        if plots:
-            files += self.plotter.run()
-        if stats:
-            files += self.stats.run()
-        for e in self.elements:
+        for e in self.steps:
             files += e.run()
         for f in files:
             print "File: ", f
     def finalize(self):
-        self.plotter.finalize()
-        self.stats.finalize()
-        for e in self.elements:
+        for e in self.steps:
             e.finalize()
 
