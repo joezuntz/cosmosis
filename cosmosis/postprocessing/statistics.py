@@ -81,7 +81,7 @@ class GridStatistics(Statistics):
         self.like_col = column_names.index("like")
         self.like = data[:,self.like_col]
 
-    def run():
+    def run(self):
         self.set_data()
         self.compute_stats()
 

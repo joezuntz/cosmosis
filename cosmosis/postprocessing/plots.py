@@ -6,6 +6,7 @@ import ConfigParser
 import numpy as np
 import scipy.optimize
 import matplotlib
+#We have quite a lot of figures open at once here
 matplotlib.rcParams['figure.max_open_warning'] = 100
 
 class Plots(PostProcessorElement):
@@ -73,9 +74,88 @@ class Plots(PostProcessorElement):
 
 
 
-class GridPlots(Plots):
-    pass
+class GridPlots1D(Plots):
 
+    def run(self):
+        return [self.plot_1d(name) for name in self.source.colnames]
+
+    def plot_1d(self, name1):
+        filename = self.filename(name1)
+        cols1 = self.source.get_col(name1)
+        like = self.source.get_col("like")
+        vals1 = np.unique(cols1)
+        n1 = len(vals1)
+        like_sum = np.zeros(n1)
+
+        #marginalize
+        for k,v1 in enumerate(vals1):
+            w = np.where(cols1==v1)
+            like_sum[k] = np.log(np.exp(like[w]).sum())
+        like = like_sum.flatten()
+
+        #linearly interpolate
+        n1 *= 10
+        vals1_interp = np.linspace(vals1[0], vals1[-1], n1)
+        like_interp = np.interp(vals1_interp, vals1, like)
+        vals1 = vals1_interp
+        like = like_interp
+
+        #normalize
+        like -= like.max()
+
+        #Determine the spacing in the different parameters
+        dx = vals1[1]-vals1[0]
+
+        #Set up the figure
+        fig = self.figure(filename)
+        pylab.figure(fig.number)
+
+        #Plot the likelihood
+        pylab.plot(vals1, np.exp(like), linewidth=3)
+
+        #Find the levels of the 68% and 95% contours
+        X, L = self.find_grid_contours(like, 0.68, 0.95, vals1)
+        #Plot black dotted lines from the y-axis at these contour levels
+        for (x, l) in zip(X,L):
+            pylab.plot([x[0],x[0]], [0, np.exp(l[0])], ':', color='black')
+            pylab.plot([x[1],x[1]], [0, np.exp(l[1])], ':', color='black')
+
+        #Set the x and y limits
+        pylab.xlim(cols1.min()-dx/2., cols1.max()+dx/2.)
+        pylab.ylim(0,1.05)
+        #Add label
+        pylab.xlabel(self.latex(name1,dollar=True))
+        return filename
+
+    @staticmethod
+    def find_grid_contours(log_like, contour1, contour2, vals1, ):
+        like = np.exp(log_like)
+        like_total = like.sum()
+        def objective(limit, target):
+            w = np.where(like>limit)
+            return like[w].sum() - target
+        target1 = like_total*contour1
+        target2 = like_total*contour2
+        level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
+        level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
+        level1 = np.log(level1)
+        level2 = np.log(level2)
+        X = []
+        L = []
+        for level in [level1, level2]:
+            above = np.where(like>level)[0]
+            left = above[0]
+            right = above[-1]
+            x1 = vals1[left]
+            x2 = vals1[right]
+            L1 = like[left]
+            L2 = like[right]
+            X.append((x1,x2))
+            L.append((L1,L2))
+        return X,L
+
+class GridPlots2D(Plots):
+    pass
 
 
 class MetropolisHastingsPlots(Plots):
