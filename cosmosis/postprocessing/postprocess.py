@@ -6,7 +6,11 @@ def postprocessor_for_sampler(sampler):
 	return postprocessor_registry.get(sampler)
 
 class MetropolisHastingsProcessor(PostProcessor):
-	elements=[plots.MetropolisHastingsPlots,statistics.MetropolisHastingsStatistics]
+	elements=[
+		plots.MetropolisHastingsPlots,
+		plots.MetropolisHastings2DPlots,
+		statistics.MetropolisHastingsStatistics,
+		]
 
 
 class EmceeProcessor(MetropolisHastingsProcessor):

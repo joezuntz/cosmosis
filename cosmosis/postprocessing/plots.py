@@ -3,6 +3,10 @@ from ..plotting import cosmology_theory_plots
 from ..plotting.kde import KDE
 import pylab
 import ConfigParser
+import numpy as np
+import scipy.optimize
+import matplotlib
+matplotlib.rcParams['figure.max_open_warning'] = 100
 
 class Plots(PostProcessorElement):
     def __init__(self, *args, **kwargs):
@@ -98,16 +102,85 @@ class MetropolisHastingsPlots(Plots):
 
         return filename
 
-    def make_1d_plots(self):
+    def run(self):
         filenames = []
         for name in self.source.colnames:
             filename = self.make_1d_plot(name)
             filenames.append(filename)
         return filenames
 
+
+
+class MetropolisHastings2DPlots(Plots):
+    def keywords_2d(self):
+        return {}
+
+    @staticmethod
+    def _find_contours(like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
+        N = len(x)
+        x_axis = np.linspace(xmin, xmax, n+1)
+        y_axis = np.linspace(ymin, ymax, n+1)
+        histogram, _, _ = np.histogram2d(x, y, bins=[x_axis, y_axis])
+
+        def objective(limit, target):
+            w = np.where(like>limit)
+            count = histogram[w]
+            return count.sum() - target
+        target1 = N*(1-contour1)
+        target2 = N*(1-contour2)
+        level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,), xtol=1./N)
+        level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,), xtol=1./N)
+        return level1, level2, like.sum()
+
+    def make_2d_plot(self, name1, name2):
+        #Get the data
+        x = self.source.get_col(name1)
+        y = self.source.get_col(name2)
+        filename = self.filename("2d_"+name1+"_"+name2)
+        figure = self.figure(filename)
+
+        #Interpolate using KDE
+        n = self.options.get("n_kde", 100)
+        fill = self.options.get("fill", True)
+        factor = self.options.get("factor_kde", 2.0)
+        kde = KDE([x,y], factor=factor)
+        x_range = (x.min(), x.max())
+        y_range = (y.min(), y.max())
+        (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
+
+        #Choose levels at which to plot contours
+        contour1=1-0.68
+        contour2=1-0.95
+        level1, level2, total_mass = self._find_contours(like, x, y, n, x.min(), x.max(), y.min(), y.max(), contour1, contour2)
+        level0 = 1.1
+        levels = [level2, level1, level0]
+
+
+        #Make the plot
+        pylab.figure(figure.number)
+        keywords = self.keywords_2d()
+        if fill:
+            pylab.contourf(x_axis, y_axis, like.T, [level2,level0], colors=['b'], alpha=0.25)
+            pylab.contourf(x_axis, y_axis, like.T, [level1,level0], colors=['b'], alpha=0.25)
+        else:
+            pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors='b')
+
+        #Do the labels
+        pylab.xlabel(self.latex(name1, dollar=True))
+        pylab.ylabel(self.latex(name2, dollar=True))
+
+        return filename        
+
+
     def run(self):
-        filenames = self.make_1d_plots()
+        filenames = []
+        for name1 in self.source.colnames[:]:
+            for name2 in self.source.colnames[:]:
+                if name1==name2: continue
+                filename = self.make_2d_plot(name1, name2)
+            filenames.append(filename)
         return filenames
+
 
 class TestPlots(Plots):
     def run(self):
