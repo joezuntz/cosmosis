@@ -19,7 +19,7 @@ fi
 
 if [ ! -z "$UPS_DIR" ]
 then
-  echo "Please source this setup-postprocess script from a fresh shell"
+  echo "Please source this setup-postprocess script from a new terminal"
   echo "Not one where you have already sourced the setup-cosmosis script"
   echo "(They do not play well together - matplotlib is to blame)"
   return 1

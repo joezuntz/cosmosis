@@ -37,6 +37,17 @@ def get_sampler(args, ini):
     return sampler, options
 
 def plotting(args, ini):
+    try:
+        import matplotlib
+    except ImportError:
+        print
+        print "No matplotlib: plotting unavailable."
+        print "If using OSX with auto-installed cosmosis"
+        print "You can do:"
+        print "  source/setup-postprocess"
+        print "In a NEW TERMINAL window to get a matplotlib-ready python"
+        print
+        return
     from cosmosis.plotting.chain_plots import ChainPlotter
     from cosmosis.plotting.grid_plots import GridPlotter
     filetype=args.format

@@ -7,7 +7,7 @@ endef
 
 .PHONY: all clean test
 
-all: 
+all::
 	$(process_subdirs)
 
 test:
