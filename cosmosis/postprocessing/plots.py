@@ -1,4 +1,4 @@
-from .elements import PostProcessorElement
+from .elements import PostProcessorElement, MCMCPostProcessorElement
 from ..plotting.kde import KDE
 from . import cosmology_theory_plots
 import ConfigParser
@@ -6,21 +6,26 @@ import numpy as np
 import scipy.optimize
 from . import lazy_pylab as pylab
 import itertools
+import os
 
+default_latex_file = os.path.join(os.path.split(__file__)[0], "latex.ini")
 
 class Plots(PostProcessorElement):
     def __init__(self, *args, **kwargs):
         super(Plots, self).__init__(*args, **kwargs)
         self.figures = {}
-        latex_file = self.options.get("latex") 
+        self.no_latex = self.options.get("no_latex")
+        latex_file = self.options.get("more_latex") 
         self._latex = {}
-        if latex_file:
+        if not self.no_latex:
             self.load_latex(latex_file)
 
     def load_latex(self, latex_file):
         latex_names = {}
         latex_names = ConfigParser.ConfigParser()
-        latex_names.read(latex_file)
+        latex_names.read(default_latex_file)
+        if latex_file:
+            latex_names.read(latex_file)
         for i,col_name in enumerate(self.source.colnames):
             display_name=col_name
             if '--' in col_name:
@@ -35,7 +40,8 @@ class Plots(PostProcessorElement):
             self._latex[col_name]=display_name
 
     def latex(self, name, dollar=True):
-        l = self._latex.get(name, name)
+        l = self._latex.get(name)
+        if l is None: return name
         if dollar:
             l = "$"+l+"$"
         return l
@@ -45,6 +51,7 @@ class Plots(PostProcessorElement):
             base = base + "_" + ("_".join(bases))
         output_dir = self.options.get("outdir", "png")
         prefix=self.options.get("prefix","")
+        if prefix: prefix+="_"
         ftype=self.options.get("file_type", "png")
         return "{0}/{1}{2}.{3}".format(output_dir, prefix, base, ftype)
 
@@ -225,15 +232,17 @@ class GridPlots2D(GridPlots):
 
         return filename
 
+class MetropolisHastingsPlots(Plots, MCMCPostProcessorElement):
+    pass
 
 
-class MetropolisHastingsPlots1D(Plots):
+class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
 
     def keywords_1d(self):
         return {}
 
     def make_1d_plot(self, name):
-        x = self.source.get_col(name)
+        x = self.reduced_col(name)
         filename = self.filename(name)
         figure = self.figure(filename)
 
@@ -259,8 +268,7 @@ class MetropolisHastingsPlots1D(Plots):
         return filenames
 
 
-
-class MetropolisHastingsPlots2D(Plots):
+class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
     def keywords_2d(self):
         return {}
 
@@ -284,8 +292,9 @@ class MetropolisHastingsPlots2D(Plots):
     def make_2d_plot(self, name1, name2):
         #Get the data
         print "  (making %s vs %s)" % (name1, name2)
-        x = self.source.get_col(name1)
-        y = self.source.get_col(name2)
+        x = self.reduced_col(name1)
+        y = self.reduced_col(name2)
+
         filename = self.filename("2D", name1, name2)
         figure = self.figure(filename)
 

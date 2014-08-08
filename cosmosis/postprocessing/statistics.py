@@ -1,5 +1,5 @@
 #coding: utf-8
-from .elements import PostProcessorElement
+from .elements import PostProcessorElement, MCMCPostProcessorElement
 import numpy as np
 
 
@@ -11,6 +11,7 @@ class Statistics(PostProcessorElement):
     def filename(self, base, ftype='txt'):
         output_dir = self.options.get("outdir", "png")
         prefix=self.options.get("prefix","")
+        if prefix: prefix+="_"        
         return "{0}/{1}{2}.{3}".format(output_dir, prefix, base, ftype)
 
 
@@ -86,7 +87,7 @@ class ConstrainingStatistics(Statistics):
             print "for any other parameters correlated with this one"
 
 
-class MetropolisHastingsStatistics(ConstrainingStatistics):
+class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElement):
     def compute_basic_stats(self):
         burn = self.options.get("burn", 0)
         thin = self.options.get("thin", 1)

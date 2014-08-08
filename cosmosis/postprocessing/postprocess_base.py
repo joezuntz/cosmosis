@@ -19,20 +19,17 @@ class PostProcessor(object):
     sampler=None
     cosmosis_standard_output=True
     def __init__(self, ini, **options):
-        elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
-        self.steps = [e(self, **options) for e in elements]
-        self.options=options
-        self.ini = ini
+        super(PostProcessor,self).__init__()
         if self.cosmosis_standard_output:
             output_options = dict(ini.items('output'))
             self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
                 output_module.input_from_options(output_options)
             self.data = self.data[0].T
             self.colnames = [c.lower() for c in self.colnames]
-
-            burn = options.get("burn")
-            if burn:
-                self.data=self.data[:,burn:]
+        elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
+        self.steps = [e(self, **options) for e in elements]
+        self.options=options
+        self.ini = ini
 
     def __len__(self):
         return self.data.shape[1]
