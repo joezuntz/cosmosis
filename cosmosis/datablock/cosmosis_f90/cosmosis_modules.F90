@@ -427,6 +427,70 @@ module cosmosis_modules
 
     end function datablock_get_int_array_1d
 
+    function datablock_put_int_array_2d(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        integer(c_int), dimension(:, :) :: value
+        integer(c_int) :: extents(2)
+
+        !Opposite ordering in fortran vs C
+        extents(2)=size(value, 1)
+        extents(1)=size(value, 2)
+ 
+        status = c_datablock_put_int_array_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, 2, extents)
+ 
+    end function datablock_put_int_array_2d
+
+    function datablock_get_double_array_2d(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        real(c_double), allocatable, dimension(:, :) :: value
+        integer(c_int) :: extents(2)
+        integer(c_int) ndims
+
+        ndims = 2
+        status = c_datablock_get_double_array_shape(block, trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, ndims, extents)
+        if (status .ne. 0) return
+        
+        !Order reversed versus fortran
+        allocate(value(extents(2), extents(1)))
+
+        status = c_datablock_get_double_array_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, 2, extents)
+
+         if (status .ne. 0) deallocate(value)
+
+    end function datablock_get_double_array_2d
+
+    function datablock_get_int_array_2d(block, section, name, value) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: block
+        character(len=*) :: section
+        character(len=*) :: name
+        integer(c_int), allocatable, dimension(:, :) :: value
+        integer(c_int) :: extents(2)
+        integer(c_int) ndims
+
+        ndims = 2
+        status = c_datablock_get_int_array_shape(block, trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, ndims, extents)
+        if (status .ne. 0) return
+        
+        !Order reversed versus fortran
+        allocate(value(extents(2), extents(1)))
+
+        status = c_datablock_get_int_array_wrapper(block, &
+            trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, 2, extents)
+
+         if (status .ne. 0) deallocate(value)
+
+    end function datablock_get_int_array_2d
+
+
     function datablock_put_double_array_2d(block, section, name, value) result(status)
         integer(cosmosis_status) :: status
         integer(cosmosis_block) :: block
@@ -438,13 +502,12 @@ module cosmosis_modules
         !Opposite ordering in fortran vs C
         extents(2)=size(value, 1)
         extents(1)=size(value, 2)
-
-        write(*,*) extents
  
         status = c_datablock_put_double_array_wrapper(block, &
             trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, 2, extents)
  
     end function datablock_put_double_array_2d
+
 
 
      function datablock_put_double_array_1d(block, section, name, value) result(status)
@@ -566,7 +629,6 @@ module cosmosis_modules
         character(256) :: name_x, name_y, name_z
         integer :: nz
         real(8) :: x(:), y(:), z(:,:)
-        real(8), allocatable, dimension(:) :: z_flat
         character(512) :: sentinel_key, sentinel_value
 
         status = 0
@@ -579,13 +641,7 @@ module cosmosis_modules
 
         status = status + datablock_put_double_array_1d(s, section, name_x, x)
         status = status + datablock_put_double_array_1d(s, section, name_y, y)
-        nz = size(z)
-
-        ! Save z as 1D for now, since 2D not ready
-        allocate(z_flat(nz))
-        z_flat = reshape(z, shape(z_flat))
-        status = status + datablock_put_double_array_1d(s, section, name_z, z_flat)
-        deallocate(z_flat)
+        status = status + datablock_put_double_array_2d(s, section, name_z, z)
 
         write(sentinel_key, '("_cosmosis_order_", A)') trim(name_z)
         write(sentinel_value, '(A,"_cosmosis_order_", A)') trim(name_y), trim(name_x)
@@ -618,8 +674,7 @@ module cosmosis_modules
         character(*) :: section, x_name, y_name, z_name
         character(256) :: name_x, name_y, name_z
         integer :: nx, ny, nz
-        real(8), allocatable :: x(:), y(:), z(:,:), z_T(:,:)
-        real(8), allocatable, dimension(:) :: z_flat
+        real(8), allocatable :: x(:), y(:), z(:,:), z_temp(:,:)
         character(512) :: sentinel_key, sentinel_value
 
         status = 0
@@ -636,10 +691,6 @@ module cosmosis_modules
 
         status = status + datablock_get_double_array_1d(s, section, name_x, x, nx)
         status = status + datablock_get_double_array_1d(s, section, name_y, y, ny)
-        status = status + datablock_get_double_array_1d(s, section, name_z, z_flat, nz)
-
-        allocate(z(nx,ny))
-
         !Ordering check
         write(sentinel_key, '("_cosmosis_order_", A)') trim(name_z)
         status = status + datablock_get_string(s, section, sentinel_key, sentinel_value)
@@ -647,20 +698,22 @@ module cosmosis_modules
         if (status .ne. 0) then
             if (allocated(x)) deallocate(x)
             if (allocated(y)) deallocate(y)
-            if (allocated(z)) deallocate(z)
-            if (allocated(z_flat)) deallocate(z_flat)
             return
         endif
 
         if (sentinel_value==(trim(name_y) // "_cosmosis_order_" // trim(name_x))) then
             !Simple ordering
-            z = reshape(z_flat, shape(z))
+            status = status + datablock_get_double_array_2d(s, section, name_z, z)
+
         elseif (sentinel_value==(trim(name_x) // "_cosmosis_order_" // trim(name_y))) then
             !Need to transpose first
-            allocate(z_T(ny,nx))
-            z_T = reshape(z_flat, shape(z_T))
-            z = transpose(z_T)
-            deallocate(z_T)
+            status = status + datablock_get_double_array_2d(s, section, name_z, z_temp)
+
+            if (status==0) then
+                allocate(z(nx,ny))
+                z = transpose(z_temp)
+                deallocate(z_temp)
+            endif
         else
             !Something went wrong
             write(*,*) "Marker error", trim(sentinel_key), "  ",trim(sentinel_value)
@@ -668,8 +721,6 @@ module cosmosis_modules
             write(*,*) (trim(name_x) // "_cosmosis_order_" // trim(name_y))
             status = 8
         endif
-
-        if (allocated(z_flat)) deallocate(z_flat)    
     end function datablock_get_double_grid
 
 

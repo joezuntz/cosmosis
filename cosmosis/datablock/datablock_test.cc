@@ -118,6 +118,33 @@ void test_delete()
 
 }
 
+void test_copy()
+{
+  DataBlock b;
+  assert(b.put_val("A", "a", 10)==DBS_SUCCESS);
+  assert(b.num_sections() == 1);
+  assert(b.has_val("A", "a") == true);  
+  assert(b.copy_section("A", "B")==DBS_SUCCESS);
+  assert(b.num_sections() == 2);
+
+  assert(b.has_val("B", "a") == true);  
+  assert(b.has_val("A", "a") == true); 
+  int a;
+  assert(b.get_val("A", "a", a)==DBS_SUCCESS);
+  assert(a==10);
+  a=0;
+  assert(b.get_val("B", "a", a)==DBS_SUCCESS);
+  assert(a==10);
+  assert(b.delete_section("A")==DBS_SUCCESS);
+  assert(b.num_sections() == 1);
+  a=0;
+  assert(b.get_val("B", "a", a)==DBS_SUCCESS);
+  assert(a==10);
+
+}
+
+
+
 void test_types()
 {
   DataBlock b;
@@ -176,6 +203,7 @@ int main()
   test_sections();
   test_types();
   test_delete();
+  test_copy();
 
   test_multidim(1.5, vector<size_t>{3,4,5});
 }

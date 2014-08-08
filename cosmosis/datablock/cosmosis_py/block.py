@@ -31,6 +31,10 @@ class DataBlock(object):
 		except:
 			pass
 				
+	def clone(self):
+		ptr = lib.clone_c_datablock(self._ptr)
+		return DataBlock(ptr,own=True)
+
 
 	@staticmethod
 	def python_to_c_complex(value):
@@ -141,10 +145,16 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def _get_array_2d(self, section, name, dtype):
+	def _get_array_nd(self, section, name, dtype):
 
 		if dtype is complex or dtype is str:
 			raise ValueError("Sorry - cosmosis support for 2D complex and string values is incomplete")
+
+		ndim = lib.c_int()
+		status = lib.c_datablock_get_array_ndim(self._ptr, section, name, ct.byref(ndim))
+		if status:
+			raise BlockError.exception_for_status(status, section, name)
+
 		ctype, shape_function, get_function = {
 			int: (ct.c_int, lib.c_datablock_get_int_array_shape, lib.c_datablock_get_int_array),
 			float: (ct.c_double, lib.c_datablock_get_double_array_shape, lib.c_datablock_get_double_array),
@@ -152,24 +162,60 @@ class DataBlock(object):
 			#str: (lib.c_str, lib.c_datablock_get_string_array_shape, lib.c_datablock_get_string_array),
 		}[dtype]
 
-		extent = (ct.c_int * 2)()
-		status = shape_function(self._ptr, section, name, 2, extent)
+		#Get the array extent
+		extent = (ct.c_int * ndim.value)()
+		status = shape_function(self._ptr, section, name, ndim, extent)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
-		nx = extent[0]
-		ny = extent[1]
-		r = np.zeros((nx, ny), dtype=dtype)
+
+		#Make the space for it
+		N = tuple([extent[i] for i in xrange(ndim.value)])
+		r = np.zeros(N, dtype=ctype)
 		arr = r.ctypes.data_as(ct.POINTER(ctype))
-		status = get_function(self._ptr, section, name, arr, 2, extent)
+
+		#Fill in with the data
+		status = get_function(self._ptr, section, name, arr, ndim, extent)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def get_double_array_2d(self, section, name):
-		return self._get_array_2d(section, name, float)
+	def _put_replace_array_nd(self, section, name, value, dtype, mode):
+		shape = value.shape
+		ndim = len(shape)
+		extent = (ct.c_int * ndim)()
+		for i in xrange(ndim): extent[i] = shape[i]
+		value = value.flatten()
+		p, arr, arr_size = self.python_to_1d_c_array(value, dtype)
+		put_function={
+			(np.intc, self.PUT):lib.c_datablock_put_int_array,
+			(np.double, self.PUT):lib.c_datablock_put_double_array,
+			(np.intc, self.REPLACE):lib.c_datablock_replace_int_array,
+			(np.double, self.REPLACE):lib.c_datablock_replace_double_array,
+		}.get((dtype,mode))
+		if put_function is None:
+			raise ValueError("I do not know how to save %s in %s of type %s"% (section,name, dtype))
+		status = put_function(self._ptr, section, name, arr, ndim, extent)
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
 
-	def get_int_array_2d(self, section, name):
-		return self._get_array_2d(section, name, int)
+
+	def put_double_array_nd(self, section, name, value):
+		self._put_replace_array_nd(section, name, value, np.double, self.PUT)
+
+	def put_int_array_nd(self, section, name, value):
+		self._put_replace_array_nd(section, name, value, np.intc, self.PUT)
+
+	def replace_double_array_nd(self, section, name, value):
+		self._put_replace_array_nd(section, name, value, np.double, self.REPLACE)
+
+	def replace_int_array_nd(self, section, name, value):
+		self._put_replace_array_nd(section, name, value, np.intc, self.REPLACE)
+
+	def get_double_array_nd(self, section, name):
+		return self._get_array_nd(section, name, float)
+
+	def get_int_array_nd(self, section, name):
+		return self._get_array_nd(section, name, int)
 
 	#def get_complex_array_2d(self, section, name):
 	#	return self._get_array_2d(section, name, complex)
@@ -238,7 +284,8 @@ class DataBlock(object):
 			# types.COMPLEX1D:   (self.get_complex_array_1d, self.put_complex_array_1d, self.replace_complex_array_1d),
 			# types.STRING1D:    (self.get_string_array_1d,  self.put_string_array_1d,  self.replace_string_array_1d)
 			# types.DBT_INT2D:   (self.get_int_array_2d,     self.put_int_array_2d,     self.replace_int_array_2d)
-			# types.DBT_DOUBLEND:(self.get_double_array_2d,  self.put_double_array_2d, self, None)
+			types.DBT_DOUBLEND:(self.get_double_array_nd,  self.put_double_array_nd, None),
+			types.DBT_INTND:(self.get_int_array_nd,  self.put_int_array_nd, None),
 			# types.COMPLEX2D:   (self.get_complex_array_2d, self.put_complex_array_2d, self.replace_complex_array_2d)
 			# types.STRING2D:    (self.get_string_array_2d,  self.put_string_array_2d,  self.replace_string_array_2d)
 				 }.get(code)
@@ -265,7 +312,8 @@ class DataBlock(object):
 				#These are not implemented yet
 				# (2,'i'):(self.get_int_array_2d,self.put_int_array_1d,self.replace_int_array_1d),
 				(1,'f'):(self.get_double_array_1d,self.put_double_array_1d,self.replace_double_array_1d),
-				# (2,'f'):(self.get_double_array_2d,self.put_double_array_1d,self.replace_double_array_1d),
+				(2,'i'):(self.get_int_array_nd,self.put_int_array_nd,self.replace_int_array_nd),
+				(2,'f'):(self.get_double_array_nd,self.put_double_array_nd,self.replace_double_array_nd),
 				# (1,'c'):(self.get_complex_array_1d,self.put_complex_array_1d,self.replace_complex_array_1d),
 				# (2,'c'):(self.get_complex_array_2d,self.put_complex_array_1d,self.replace_complex_array_1d),
 			}.get((array.ndim,array.dtype.kind))
@@ -392,7 +440,14 @@ class DataBlock(object):
 		"Internal use only!"
 		status = lib.c_datablock_delete_section(self._ptr, section)
 		if status!=0:
-			raise BlockError.exception_for_status(status, section, "")
+			raise BlockError.exception_for_status(status, section, "<tried to delete>")
+
+	def _copy_section(self, source, dest):
+		"Internal use only!"
+		status = lib.c_datablock_copy_section(self._ptr, source, dest)
+		if status!=0:
+			raise BlockError.exception_for_status(status, dest, "<tried to copy>")
+
 
 	@staticmethod
 	def _parse_metadata_key(key):
@@ -485,38 +540,64 @@ class DataBlock(object):
 	def put_grid(self, section, name_x, x, name_y, y, name_z, z):
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, False)
 
+	def get_grid(self, section, name_x, name_y, name_z):
+		x = self[section, name_x]
+		y = self[section, name_y]
+		z = self[section, name_z]
+		sentinel_key = "_cosmosis_order_%s"%name_z
+		sentinel_value = self[section, sentinel_key]
+
+		if sentinel_value== "%s_cosmosis_order_%s" % (name_x, name_y):
+			assert z.shape==(x.size, y.size)
+			return x, y, z
+		elif sentinel_value== "%s_cosmosis_order_%s" % (name_y, name_x):
+			assert z.T.shape==(x.size, y.size)
+			return x, y, z.T
+		else:
+			raise BlockError.exception_for_status(errors.DBS_WRONG_VALUE_TYPE, section, name_z)
+
+
+
 	def replace_grid(self, section, name_x, x, name_y, y, name_z, z):
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, True)
 
 	def _grid_put_replace(self, section, name_x, x, name_y, y, name_z, z, replace):
 		
-		x = np.array(x, dtype=np.double)
-		y = np.array(y, dtype=np.double)
-		z = np.array(z, dtype=np.double)
+		self[section, name_x] = x
+		self[section, name_y] = y
+		self[section, name_z] = z
 
-		assert x.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
-		assert y.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+		sentinel_key = "_cosmosis_order_%s"%name_z
+		sentinel_value = "%s_cosmosis_order_%s" % (name_x, name_y)
+		self[section, sentinel_key] = sentinel_value
 
-		nx = len(x)
-		ny = len(y)
+		# x = np.array(x, dtype=np.double)
+		# y = np.array(y, dtype=np.double)
+		# z = np.array(z, dtype=np.double)
 
-		assert z.ndim==2, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
-		assert z.shape==(nx,ny), "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+		# assert x.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+		# assert y.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+
+		# nx = len(x)
+		# ny = len(y)
+
+		# assert z.ndim==2, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+		# assert z.shape==(nx,ny), "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
 
 
-		z = z.copy().astype(np.double)
+		# z = z.copy().astype(np.double)
 
-		z_ptr = (ct.POINTER(ct.c_double) * nx)()
-		temp_x, x_ptr, nx1 = self.python_to_1d_c_array(x, np.double)
-		temp_y, y_ptr, ny1 = self.python_to_1d_c_array(y, np.double)
-		#Now return pointer to start of the data
-		for i in xrange(nx):
-			row_ptr = np.ctypeslib.as_ctypes(z[i])
-			z_ptr[i] = row_ptr
+		# z_ptr = (ct.POINTER(ct.c_double) * nx)()
+		# temp_x, x_ptr, nx1 = self.python_to_1d_c_array(x, np.double)
+		# temp_y, y_ptr, ny1 = self.python_to_1d_c_array(y, np.double)
+		# #Now return pointer to start of the data
+		# for i in xrange(nx):
+		# 	row_ptr = np.ctypeslib.as_ctypes(z[i])
+		# 	z_ptr[i] = row_ptr
 
-		if replace:
-			status = lib.c_datablock_replace_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
-		else:
-			status = lib.c_datablock_put_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
-		if status!=0:
-			raise BlockError.exception_for_status(status, section, ','.join([name_x, name_y, name_z]))
+		# if replace:
+		# 	status = lib.c_datablock_replace_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
+		# else:
+		# 	status = lib.c_datablock_put_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
+		# if status!=0:
+		# 	raise BlockError.exception_for_status(status, section, ','.join([name_x, name_y, name_z]))

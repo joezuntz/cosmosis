@@ -34,6 +34,13 @@ extern "C"
     return new cosmosis::DataBlock();
   }
 
+  c_datablock * 
+  clone_c_datablock(c_datablock* s){
+    DataBlock const* p = static_cast<DataBlock const*>(s);
+    return new cosmosis::DataBlock(*p);
+  }
+
+
   _Bool c_datablock_has_section(c_datablock const* s, const char* name)
   {
     if (s == nullptr || name == nullptr) return false;
@@ -41,9 +48,6 @@ extern "C"
     return p->has_section(name);
   }
 
-  // This is not for public use!  
-  // If you want to delete a section you are 
-  // probably doing something wrong.
   int c_datablock_delete_section(c_datablock * s, const char * section)
   {
     if (s == nullptr) return DBS_DATABLOCK_NULL;
@@ -51,6 +55,16 @@ extern "C"
     auto p = static_cast<DataBlock *>(s);
     return p->delete_section(section);
   }
+
+  int c_datablock_copy_section(c_datablock * s, const char * source, const char * dest)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (source == nullptr) return DBS_SECTION_NULL;
+    if (dest == nullptr) return DBS_SECTION_NULL;
+    auto p = static_cast<DataBlock *>(s);
+    return p->copy_section(source, dest);
+  }
+
 
   int c_datablock_num_sections(c_datablock const* s)
   {
@@ -838,6 +852,27 @@ extern "C"
     return p->put_val(section, name, tmp);
   }
 
+    DATABLOCK_STATUS
+  c_datablock_replace_int_array(c_datablock* s,
+                            const char* section,
+                            const char* name,
+                            int const* val,
+                            int ndims,
+                            int const* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    ndarray<int> tmp(val, ndims, extents);
+    return p->replace_val(section, name, tmp);
+  }
+
+
   DATABLOCK_STATUS
   c_datablock_get_int_array_shape(c_datablock* s,
                                   const char* section,
@@ -912,6 +947,29 @@ extern "C"
     return p->put_val(section, name, tmp);
   }
 
+
+  DATABLOCK_STATUS
+  c_datablock_replace_double_array(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               double const* val,
+                               int ndims,
+                               int const* extents)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (ndims  < 1) return DBS_NDIM_NONPOSITIVE;
+    if (extents == nullptr) return DBS_EXTENTS_NULL;
+
+    auto p = static_cast<DataBlock*>(s);
+    ndarray<double> tmp(val, ndims, extents);
+    return p->replace_val(section, name, tmp);
+  }
+
+
+
   DATABLOCK_STATUS
   c_datablock_get_double_array_shape(c_datablock* s,
                                      const char* section,
@@ -954,9 +1012,11 @@ extern "C"
     try {
       ndarray<double> const& r = p->view<ndarray<double>>(section, name);
       if (clamp(r.ndims()) != ndims) return DBS_NDIM_MISMATCH;
-      for (size_t i = 0, sz = ndims; i != sz; ++i)
-        if (clamp(r.extents()[i]) != extents[i])
+      for (size_t i = 0, sz = ndims; i != sz; ++i){
+        if (clamp(r.extents()[i]) != extents[i]){
           return DBS_EXTENTS_MISMATCH;
+        }
+      }
       std::copy(r.begin(), r.end(), val);
      }
     catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
@@ -1075,7 +1135,9 @@ DATABLOCK_STATUS  c_datablock_put_double_grid(
         z_flat[p++] = z[i][j];
       }
     }
-    status = c_datablock_put_double_array_1d(s, section, name_z, z_flat, n_z);
+    int ndim=2;
+    int extents[2] = {n_x, n_y};
+    status = c_datablock_put_double_array(s, section, name_z, z_flat, ndim, extents);
     free(z_flat);
     if (status) {return status;}
 
@@ -1117,7 +1179,10 @@ DATABLOCK_STATUS  c_datablock_replace_double_grid(
         z_flat[p++] = z[i][j];
       }
     }
-    status = c_datablock_replace_double_array_1d(s, section, name_z, z_flat, n_z);
+
+    int ndim=2;
+    int extents[2] = {n_y, n_x};
+    status = c_datablock_replace_double_array(s, section, name_z, z_flat, ndim, extents);
     free(z_flat);
     if (status) {return status;}
 
@@ -1168,11 +1233,8 @@ DATABLOCK_STATUS  c_datablock_get_double_grid(
     if (status) {return status;}
     status = c_datablock_get_double_array_1d(s, section, name_y, y, &ny);
     if (status) {free(*x); *x=NULL; return status;}
-    int n_z;
-    double * z_flat;
-    status = c_datablock_get_double_array_1d(s, section, name_z, &z_flat, &n_z);
-    if (status) {free(*x); free(*y); *x=NULL; *y=NULL; return status;}
-    double ** z_2d = allocate_2d_double(nx, ny);
+
+    double * z_flat = (double*)malloc(nx*ny*sizeof(double));
 
     //Now we need to check if the ordering requested here is the same
     //as the saved ordering.  If not we need to transpose.
@@ -1180,14 +1242,22 @@ DATABLOCK_STATUS  c_datablock_get_double_grid(
     char * sentinel_value;
     char sentinel_test[512];
 
+    double ** z_2d = allocate_2d_double(nx, ny);
+
     snprintf(sentinel_key, 512, "_cosmosis_order_%s",name_z);
     status = c_datablock_get_string(s,section, sentinel_key, &sentinel_value);
     if (status) {free(*x); free(*y); free(z_flat); *x=NULL; *y=NULL; deallocate_2d_double(&z_2d, nx); return status;}
-
+  
     snprintf(sentinel_test, 512, "%s_cosmosis_order_%s",name_x, name_y);
     if (0==strncmp(sentinel_test, sentinel_value, 512)){
       // This indicates that the requested ordering is the same as the stored one.
       // So we do not need to do any flipping.
+      int ndim=2;
+      int extents[2] = {nx, ny};
+
+      status = c_datablock_get_double_array(s, section, name_z, z_flat, ndim, extents);
+      if (status) {free(*x); free(*y); *x=NULL; *y=NULL; deallocate_2d_double(&z_2d, nx); return status;}
+
       for (int i=0; i<nx; i++){
         for (int j=0; j<ny; j++){
           z_2d[i][j] = z_flat[i*ny+j];
@@ -1196,6 +1266,12 @@ DATABLOCK_STATUS  c_datablock_get_double_grid(
     }
     else{
       snprintf(sentinel_test, 512, "%s_cosmosis_order_%s",name_y, name_x);
+      int ndim=2;
+      int extents[2] = {ny, nx};
+
+      status = c_datablock_get_double_array(s, section, name_z, z_flat, ndim, extents);
+      if (status) {free(*x); free(*y); *x=NULL; *y=NULL; deallocate_2d_double(&z_2d, nx); return status;}
+
       if (0==strncmp(sentinel_test, sentinel_value, 512)){
         for (int i=0; i<nx; i++){
           for (int j=0; j<ny; j++){

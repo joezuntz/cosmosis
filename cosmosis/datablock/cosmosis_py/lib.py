@@ -46,9 +46,9 @@ def load_array_function_types(namespace, c_type, c_name):
 	load_library_function(namespace, "c_datablock_get_%s_array_1d"%c_name, [c_block, c_str, c_str, ct.POINTER(ct.POINTER(c_type)), c_int_p], c_status)
 	load_library_function(namespace, "c_datablock_get_%s_array_shape"%c_name, [c_block, c_str, c_str, c_int, c_int_p], c_status)
 	load_library_function(namespace, "c_datablock_get_%s_array"%c_name, [c_block, c_str, c_str, ct.POINTER(c_type), c_int, c_int_p], c_status)
+	load_library_function(namespace, "c_datablock_put_%s_array"%c_name, [c_block, c_str, c_str, ct.POINTER(c_type), c_int, c_int_p], c_status)
+	load_library_function(namespace, "c_datablock_replace_%s_array"%c_name, [c_block, c_str, c_str, ct.POINTER(c_type), c_int, c_int_p], c_status)
 	load_library_function(namespace, "c_datablock_get_%s_array_1d_preallocated"%c_name, [c_block, c_str, c_str, ct.POINTER(c_type), c_int_p, c_int], c_status)
-
-
 
 load_function_types(locals(), ct.c_int, 'int')
 load_function_types(locals(), ct.c_bool, 'bool')
@@ -74,6 +74,12 @@ load_library_function(
        c_int
 )
 
+load_library_function(
+	locals(), 
+	"clone_c_datablock",
+	[c_block],
+	c_block
+)
 
 
 
@@ -148,6 +154,13 @@ load_library_function(
 	ct.c_int
 	)
 
+load_library_function(
+	locals(),
+	"c_datablock_copy_section",
+	[c_block, c_str, c_str],
+	ct.c_int
+	)
+
 
 load_library_function(
 	locals(),
@@ -215,6 +228,14 @@ load_library_function(
 	    c_str, ct.c_int, ct.POINTER(ct.c_double),
 	    c_str, ct.POINTER(ct.POINTER(ct.c_double)),
 	],
+	ct.c_int
+	)
+
+
+load_library_function(
+	locals(),
+	"c_datablock_get_array_ndim",
+	[c_block, c_str, c_str, c_int_p],
 	ct.c_int
 	)
  
