@@ -23,7 +23,7 @@ class PymcProcessor(MetropolisHastingsProcessor):
 	pass
 
 class GridProcessor(PostProcessor):
-	elements=[plots.GridPlots1D]
+	elements=[plots.GridPlots1D, plots.GridPlots2D]
 	sampler="grid"
 
 class TestProcessor(PostProcessor):

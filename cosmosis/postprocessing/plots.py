@@ -6,8 +6,11 @@ import ConfigParser
 import numpy as np
 import scipy.optimize
 import matplotlib
+import itertools
+
 #We have quite a lot of figures open at once here
 matplotlib.rcParams['figure.max_open_warning'] = 100
+matplotlib.rcParams['figure.figsize'] = (6,6)
 
 class Plots(PostProcessorElement):
     def __init__(self, *args, **kwargs):
@@ -35,13 +38,15 @@ class Plots(PostProcessorElement):
                     display_name=r"{\cal L}"
             self._latex[col_name]=display_name
 
-    def latex(self, name, dollar):
+    def latex(self, name, dollar=True):
         l = self._latex.get(name, name)
         if dollar:
             l = "$"+l+"$"
         return l
 
-    def filename(self, base):
+    def filename(self, base, *bases):
+        if bases:
+            base = base + "_" + ("_".join(bases))
         output_dir = self.options.get("outdir", "png")
         prefix=self.options.get("prefix","")
         ftype=self.options.get("file_type", "png")
@@ -72,9 +77,21 @@ class Plots(PostProcessorElement):
         print "I do not know how to generate plots for this kind of data"
         return []
 
+class GridPlots(Plots):
+    @staticmethod
+    def find_grid_contours(like, contour1, contour2):
+        like_total = like.sum()
+        def objective(limit, target):
+            w = np.where(like>limit)
+            return like[w].sum() - target
+        target1 = like_total*contour1
+        target2 = like_total*contour2
+        level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
+        level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
+        return level1, level2
 
 
-class GridPlots1D(Plots):
+class GridPlots1D(GridPlots):
 
     def run(self):
         return [self.plot_1d(name) for name in self.source.colnames]
@@ -114,11 +131,9 @@ class GridPlots1D(Plots):
         pylab.plot(vals1, np.exp(like), linewidth=3)
 
         #Find the levels of the 68% and 95% contours
-        X, L = self.find_grid_contours(like, 0.68, 0.95, vals1)
+        X, L = self.find_edges(np.exp(like), 0.68, 0.95, vals1)
         #Plot black dotted lines from the y-axis at these contour levels
         for (x, l) in zip(X,L):
-            print "x=",x
-            print "L=",l
             pylab.plot([x[0],x[0]], [0, l[0]], ':', color='black')
             pylab.plot([x[1],x[1]], [0, l[1]], ':', color='black')
 
@@ -126,22 +141,14 @@ class GridPlots1D(Plots):
         pylab.xlim(cols1.min()-dx/2., cols1.max()+dx/2.)
         pylab.ylim(0,1.05)
         #Add label
-        pylab.xlabel(self.latex(name1,dollar=True))
+        pylab.xlabel(self.latex(name1))
         return filename
 
-    @staticmethod
-    def find_grid_contours(log_like, contour1, contour2, vals1, ):
-        like = np.exp(log_like)
-        like_total = like.sum()
-        def objective(limit, target):
-            w = np.where(like>limit)
-            return like[w].sum() - target
-        target1 = like_total*contour1
-        target2 = like_total*contour2
-        level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
-        level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
+    @classmethod
+    def find_edges(cls, like, contour1, contour2, vals1):
         X = []
         L = []
+        level1,level2=cls.find_grid_contours(like, contour1, contour2)
         for level in [level1, level2]:
             above = np.where(like>level)[0]
             left = above[0]
@@ -154,8 +161,72 @@ class GridPlots1D(Plots):
             L.append((L1,L2))
         return X,L
 
-class GridPlots2D(Plots):
-    pass
+
+
+class GridPlots2D(GridPlots):
+    def run(self):
+        filenames=[]
+        for i, name1 in enumerate(self.source.colnames[:]):
+            for name2 in self.source.colnames[i:]:
+                if name1==name2: continue
+                filename=self.plot_2d(name1, name2)
+                if filename: filenames.append(filename)
+        return filenames
+
+    def plot_2d(self, name1, name2):    
+        # Load the columns
+        cols1 = self.source.get_col(name1)
+        cols2 = self.source.get_col(name2)
+        like = self.source.get_col("like")
+        vals1 = np.unique(cols1)
+        vals2 = np.unique(cols2)
+        n1 = len(vals1)
+        n2 = len(vals2)
+        if n1!=n2: return        
+        filename = self.filename("2D", name1, name2)
+
+        #Marginalize over all the other parameters by summing
+        #them up
+        like_sum = np.zeros((n1,n2))
+        for k,(v1, v2) in enumerate(itertools.product(vals1, vals2)):
+            w = np.where((cols1==v1)&(cols2==v2))
+            i,j = np.unravel_index(k, like_sum.shape)
+            like_sum[i,j] = np.log(np.exp(like[w]).sum())
+        like = like_sum.flatten()
+
+        #Normalize the log-likelihood to peak=0
+        like -= like.max()
+
+        #Choose a color mapping
+        norm = matplotlib.colors.Normalize(np.exp(like.min()), np.exp(like.max()))
+        colormap = pylab.cm.Reds
+
+        #Create the figure
+        fig = self.figure(filename)
+        pylab.figure(fig.number)
+
+        #Decide whether to do a smooth or block plot
+        smooth = self.options.get("smooth", True)
+        if smooth:
+            interpolation='bilinear'
+        else:
+            interpolation='nearest'
+
+        like = np.exp(like).reshape((n1,n2))
+        extent=(vals2[0], vals2[-1], vals1[0], vals1[-1])
+        #Make the plot
+        pylab.imshow(like, extent=extent, 
+            aspect='auto', cmap=colormap, norm=norm, interpolation=interpolation, origin='lower')
+
+        #Add contours
+        level1, level2 = self.find_grid_contours(like, 0.68, 0.95)
+        pylab.contour(like, levels = [level1, level2], extent=extent)
+
+        pylab.xlabel(self.latex(name2))
+        pylab.ylabel(self.latex(name1))
+
+        return filename
+
 
 
 class MetropolisHastingsPlots(Plots):
@@ -216,7 +287,7 @@ class MetropolisHastings2DPlots(Plots):
         #Get the data
         x = self.source.get_col(name1)
         y = self.source.get_col(name2)
-        filename = self.filename("2d_"+name1+"_"+name2)
+        filename = self.filename("2D", name1, name2)
         figure = self.figure(filename)
 
         #Interpolate using KDE
