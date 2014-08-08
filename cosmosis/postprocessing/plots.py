@@ -117,8 +117,10 @@ class GridPlots1D(Plots):
         X, L = self.find_grid_contours(like, 0.68, 0.95, vals1)
         #Plot black dotted lines from the y-axis at these contour levels
         for (x, l) in zip(X,L):
-            pylab.plot([x[0],x[0]], [0, np.exp(l[0])], ':', color='black')
-            pylab.plot([x[1],x[1]], [0, np.exp(l[1])], ':', color='black')
+            print "x=",x
+            print "L=",l
+            pylab.plot([x[0],x[0]], [0, l[0]], ':', color='black')
+            pylab.plot([x[1],x[1]], [0, l[1]], ':', color='black')
 
         #Set the x and y limits
         pylab.xlim(cols1.min()-dx/2., cols1.max()+dx/2.)
@@ -138,8 +140,6 @@ class GridPlots1D(Plots):
         target2 = like_total*contour2
         level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
-        level1 = np.log(level1)
-        level2 = np.log(level2)
         X = []
         L = []
         for level in [level1, level2]:
