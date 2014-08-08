@@ -1,5 +1,24 @@
 import sys
 
+"""
+This thing is pretty cool - I found it on StackOverflow.
+
+This is a lazily loaded module that provides an interface to pylab.
+
+If you do:
+
+import lazy_pylab as pylab
+
+then you can use pylab in exactly the normal way:
+pylab.plot(range(10))
+etc., but pylab itself will not be loaded until the first
+access of a pylab function or other attribute.
+
+Since pylab can take a relatively long time to load this 
+can save time if you never actually end up using it in a
+particular run.
+
+"""
 
 class _LazyPylab(object):
 	def __init__(self):
