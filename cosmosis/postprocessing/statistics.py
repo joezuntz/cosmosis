@@ -8,110 +8,183 @@ class Statistics(PostProcessorElement):
         print "I do not know how to generate statistics for this kind of data"
         return []
 
+    def filename(self, base, ftype='txt'):
+        output_dir = self.options.get("outdir", "png")
+        prefix=self.options.get("prefix","")
+        return "{0}/{1}{2}.{3}".format(output_dir, prefix, base, ftype)
 
-class MetropolisHastingsStatistics(Statistics):
+
+class ConstrainingStatistics(Statistics):
+
+    def report_file(self):
+        #Get the filenames to make
+        marge_filename = self.filename("means")
+        best_filename = self.filename("best_fit")
+        median_filename = self.filename("medians")
+
+        #Generate the means file
+        marge_file = open(marge_filename, "w")
+        marge_file.write("#parameter mean std_dev\n")
+        for P in zip(self.source.colnames, self.mu, self.sigma):
+            marge_file.write("%s   %e   %e\n" % P)
+        marge_file.close()
+
+        #Generate the medians file
+        median_file = open(median_filename, "w")
+        median_file.write("#parameter mean std_dev\n")
+        for P in zip(self.source.colnames, self.median, self.sigma):
+            median_file.write("%s   %e   %e\n" % P)
+        median_file.close()
+
+        #Generate the mode file
+        best_file = open(best_filename, "w")
+        best_file.write("#parameter value\n")
+        for P in zip(self.source.colnames, self.source.get_row(self.best_fit_index)):
+            best_file.write("%s        %g\n"%P)
+        best_file.close()
+        return [marge_filename, best_filename, median_filename]
+
+    @staticmethod
+    def find_median(x, P):
+        C = [0] + P.cumsum()
+        return np.interp(C[-1]/2.0,C,x)
+
+    def report_screen(self):
+        #Print the same summary stats that go into the
+        #files but to the screen instead, in a pretty format        
+
+        #Means
+        print
+        print "Marginalized mean, std-dev:"
+        for P in zip(self.source.colnames, self.mu, self.sigma):
+            print '    %s = %g ± %g' % P
+        print
+        #Medians
+        print "Marginalized median, std-dev:"
+        for P in zip(self.source.colnames, self.median, self.sigma):
+            print '    %s = %g ± %g' % P
+        print
+
+        #Mode
+        print "Best likelihood:"
+        for name, val in zip(self.source.colnames, self.source.get_row(self.best_fit_index)):
+            print '    %s = %g' % (name, val)
+        print
+
+    @staticmethod
+    def likelihood_ratio_warning(marge_like, name):
+        #Check for an warn about a bad likelihood ratio,
+        #which would indicate that the likelihood did not fall
+        #off by the edges        
+        if marge_like.min()==0: return
+        like_ratio = marge_like.max() / marge_like.min()
+        if like_ratio < 20:
+            print
+            print "L_max/L_min = %f for %s." % (like_ratio, name)
+            print "This indicates that the grid did not go far from the peak in this dimension"
+            print "Marginalized values will definitely be poor estimates for this parameter, and probably"
+            print "for any other parameters correlated with this one"
+
+
+class MetropolisHastingsStatistics(ConstrainingStatistics):
     def compute_basic_stats(self):
         burn = self.options.get("burn", 0)
         thin = self.options.get("thin", 1)
-        mu = []
-        sigma = []
-        median = []
+        self.mu = []
+        self.sigma = []
+        self.median = []
+        self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         for col in self.source.colnames:
             data = self.source.get_col(col)[burn::thin]
             n = len(data)
-            mu.append(data.mean())
-            sigma.append(data.std())
-            median.append(np.median(data))
-        return n, mu, sigma, median
+            self.mu.append(data.mean())
+            self.sigma.append(data.std())
+            self.median.append(np.median(data))
+        return n
 
     def run(self):
-        N, Mu, Sigma, Median = self.compute_basic_stats()
+        N = self.compute_basic_stats()
         print "Post-burn & thin length:", N
-        #Lots of printout
-        print
-        print "Marginalized:"
-        for p, mu, sigma in zip(self.source.colnames, Mu, Sigma):
-            if p.lower()=="like": continue
-            print '    %s = %g ± %g ' % (p, mu, sigma)
-        print
-        print "Medians:"
-        for p, median in zip(self.source.colnames, Median):
-            if p.lower()=="like": continue
-            print '    %s = %g' % (p, median)
-        print
-        try:
-            like = self.source.get_col("like")
-            best_index = np.argmax(like)
-            best_params = [self.source.get_col(name)[best_index] for name in self.source.colnames]
-        except:
-            best_index=None
 
-        if best_index is None:
-            print "Could not see LIKE column to get best likelihood"
-        else:
-            print "Best fit:"
-            print "    Index = %d" % (best_index)
-            for p, v in zip(self.source.colnames, best_params):
-                print '    %s = %g' % (p, v)
-        print
-        return []
-
-        # cov = np.cov([self.source.get_col(i) for i in xrange(len(self.))])
-        # print "Covariance matrix:"
-        # print '#' + ' '.join(self.params)
-        # np.savetxt(sys.stdout, self.cov)
+        self.report_screen()
+        files = self.report_file()
+        return files
 
 
-class GridStatistics(Statistics):
+class GridStatistics(ConstrainingStatistics):
     def set_data(self):
-        ns = self.source.ini.getint("grid", "nsample_dimension")
-        nc = len(self.source.colnames)
-        extra = self.source.ini.get("pipeline", "extra_output","").split()
-        grid_columns = [i for i in xrange(nc) if not self.source.colnames[i] in extra and self.source.colnames[i]!="like"]
-        data = self.source.data
+        self.nsample = self.source.ini.getint("grid", "nsample_dimension")
+        self.nrow = len(self.source)
+        self.ncol = len(self.source.colnames)
 
-        self.column_names = column_names
-        self.grid_columns = grid_columns
-        self.data = data
-        self.ndim = len(grid_columns)
-        self.ncol = len(column_names)
-        self.ntotal = len(data)
-        self.nsample = int(self.ntotal**(1.0/self.ndim))
-        self.like_col = column_names.index("like")
-        self.like = data[:,self.like_col]
+        extra = self.source.ini.get("pipeline", "extra_output","").split()
+        self.grid_columns = [i for i in xrange(self.ncol) if not self.source.colnames[i] in extra and self.source.colnames[i]!="like"]
+        self.ndim = len(self.grid_columns)
+
+        assert self.nrow == self.nsample**self.ndim
+        self.shape = np.repeat(self.nsample, self.ndim)
+        self.like = np.exp(self.source.get_col("like")).reshape(self.shape)
+        grid_names = [self.source.colnames[i] for i in xrange(self.ncol) if i in self.grid_columns]
+        self.grid = [np.unique(self.source.get_col(name)) for name in grid_names]
 
     def run(self):
         self.set_data()
         self.compute_stats()
+        self.report_screen()
+        files = self.report_file()
+        return files
 
     def compute_stats(self):
         #1D stats
-        self.mu = np.zeros(self.ndim)
-        self.sigma = np.zeros(self.ndim)
-        for i in self.grid_columns:
-            name = self.column_names[i]
-            vals = np.unique(self.data[:,i])
-            lv = np.zeros(self.nsample)
-            assert len(vals==self.nsample)
-            for j,v in enumerate(vals):
-                w = np.where(self.data[:,i]==v)
-                lv[j] = np.exp(self.like[w]).sum()
-            lv_sum = lv.sum()
-            like_ratio = lv.max() / lv.min()
-            if like_ratio < 20:
-                print
-                print "L_max/L_min = %f for %s." % (like_ratio, name)
-                print "This indicates that the grid did not go far from the peak in this dimension"
-                print "Marginalized values will definitely be poor estimates for this parameter, and probably"
-                print "for any other parameters correlated with this one"
-            mu = (vals*lv).sum() / lv_sum
-            sigma2 = ((vals-mu)**2*lv).sum() / lv_sum
-            self.mu[i] = mu
-            self.sigma[i] = sigma2**0.5
-        # Best-fit values
-        best_fit_index = np.argmax(self.like)
-        self.best_fit = self.data[best_fit_index]
+        self.mu = np.zeros(self.ncol-1)
+        self.median = np.zeros(self.ncol-1)
+        self.sigma = np.zeros(self.ncol-1)
+        like = self.source.get_col("like")
+        self.best_fit_index = np.argmax(like)
+        #Loop through colums
+        for i, name in enumerate(self.source.colnames[:-1]):
+            if i in self.grid_columns:
+                self.mu[i], self.median[i], self.sigma[i] = self.compute_grid_stats(i)
+            else:
+                self.mu[i], self.median[i], self.sigma[i] = self.compute_derived_stats(i)
+
+
+
+
+    def compute_grid_stats(self, i):
+        name = self.source.colnames[i]
+        col = self.source.get_col(name)
+
+        #Sum the likelihood over all the axes other than this one
+        #to get the marginalized likelihood
+        marge_like = self.like.sum(tuple(j for j in xrange(self.ndim) if j!=i))
+        marge_like = marge_like / marge_like.sum()
+        
+        #Find the grid points with this value
+        vals = self.grid[i]
+
+        #A quick potential error warning
+        self.likelihood_ratio_warning(marge_like, name)
+
+        #Compute the statistics
+        mu = (vals*marge_like).sum()
+        sigma2 = ((vals-mu)**2*marge_like).sum()
+        median = self.find_median(vals, marge_like)
+        return mu, median, sigma2**0.5
+
+    def compute_derived_stats(self, i):
+        #This is a bit simpler - just need to 
+        #sum over everything
+        name = self.source.colnames[i]
+        col = self.source.get_col(name)
+        like = self.source.get_col("like")
+        like = like / like.sum()
+        mu = (col*like).sum()
+        sigma2 = ((col-mu)**2*like).sum()
+        return mu, sigma2**0.5
+
+
 
 class TestStatistics(Statistics):
     def run(self):

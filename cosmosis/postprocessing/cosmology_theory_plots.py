@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 
 import matplotlib
-matplotlib.use("Agg")
-# We have to import matplotliv first so we can set the output
-# before we load pylab
-# This bit means it is not a great idea to import this script
-# elsewhere
-
-import pylab
+from . import lazy_pylab as pylab
 import os
 import argparse
 import numpy as np

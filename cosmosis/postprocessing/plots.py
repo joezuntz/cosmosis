@@ -1,16 +1,12 @@
 from .elements import PostProcessorElement
-from ..plotting import cosmology_theory_plots
 from ..plotting.kde import KDE
-import pylab
+from . import cosmology_theory_plots
 import ConfigParser
 import numpy as np
 import scipy.optimize
-import matplotlib
+from . import lazy_pylab as pylab
 import itertools
 
-#We have quite a lot of figures open at once here
-matplotlib.rcParams['figure.max_open_warning'] = 100
-matplotlib.rcParams['figure.figsize'] = (6,6)
 
 class Plots(PostProcessorElement):
     def __init__(self, *args, **kwargs):
@@ -71,7 +67,6 @@ class Plots(PostProcessorElement):
 
     def finalize(self):
         self.save_figures()
-
 
     def run(self):
         print "I do not know how to generate plots for this kind of data"
@@ -168,7 +163,7 @@ class GridPlots2D(GridPlots):
         filenames=[]
         for i, name1 in enumerate(self.source.colnames[:]):
             for name2 in self.source.colnames[i:]:
-                if name1==name2: continue
+                if name1<=name2: continue
                 filename=self.plot_2d(name1, name2)
                 if filename: filenames.append(filename)
         return filenames
@@ -198,7 +193,7 @@ class GridPlots2D(GridPlots):
         like -= like.max()
 
         #Choose a color mapping
-        norm = matplotlib.colors.Normalize(np.exp(like.min()), np.exp(like.max()))
+        norm = pylab.matplotlib.colors.Normalize(np.exp(like.min()), np.exp(like.max()))
         colormap = pylab.cm.Reds
 
         #Create the figure
@@ -217,11 +212,14 @@ class GridPlots2D(GridPlots):
         #Make the plot
         pylab.imshow(like, extent=extent, 
             aspect='auto', cmap=colormap, norm=norm, interpolation=interpolation, origin='lower')
+        
+        sm = pylab.cm.ScalarMappable(cmap=colormap, norm=norm)
+        sm._A = [] #hack from StackOverflow to make this work
+        pylab.colorbar(sm, label='Likelihood')
 
         #Add contours
         level1, level2 = self.find_grid_contours(like, 0.68, 0.95)
         pylab.contour(like, levels = [level1, level2], extent=extent)
-
         pylab.xlabel(self.latex(name2))
         pylab.ylabel(self.latex(name1))
 
@@ -229,7 +227,7 @@ class GridPlots2D(GridPlots):
 
 
 
-class MetropolisHastingsPlots(Plots):
+class MetropolisHastingsPlots1D(Plots):
 
     def keywords_1d(self):
         return {}
@@ -262,7 +260,7 @@ class MetropolisHastingsPlots(Plots):
 
 
 
-class MetropolisHastings2DPlots(Plots):
+class MetropolisHastingsPlots2D(Plots):
     def keywords_2d(self):
         return {}
 
@@ -285,6 +283,7 @@ class MetropolisHastings2DPlots(Plots):
 
     def make_2d_plot(self, name1, name2):
         #Get the data
+        print "  (making %s vs %s)" % (name1, name2)
         x = self.source.get_col(name1)
         y = self.source.get_col(name2)
         filename = self.filename("2D", name1, name2)
@@ -317,17 +316,19 @@ class MetropolisHastings2DPlots(Plots):
             pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors='b')
 
         #Do the labels
-        pylab.xlabel(self.latex(name1, dollar=True))
-        pylab.ylabel(self.latex(name2, dollar=True))
+        pylab.xlabel(self.latex(name1))
+        pylab.ylabel(self.latex(name2))
 
         return filename        
 
 
     def run(self):
         filenames = []
+        print "(Making 2D plots using KDE; this takes a while but is really cool)"
         for name1 in self.source.colnames[:]:
             for name2 in self.source.colnames[:]:
-                if name1==name2: continue
+                if name1<=name2: continue
+                if "like" in [name1.lower(), name2.lower()]: continue
                 filename = self.make_2d_plot(name1, name2)
             filenames.append(filename)
         return filenames
@@ -343,7 +344,7 @@ class TestPlots(Plots):
         filenames = []
         for cls in cosmology_theory_plots.plot_list:
             try:
-                p=cls(dirname, output_dir, prefix, ftype, figure=None)
+                p=cls(dirname, output_dir, prefix, ftype, figure=1)
                 filename=p.filename
                 fig = self.figure(filename)
                 p.figure=fig

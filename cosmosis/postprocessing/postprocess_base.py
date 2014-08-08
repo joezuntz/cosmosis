@@ -19,7 +19,9 @@ class PostProcessor(object):
     sampler=None
     cosmosis_standard_output=True
     def __init__(self, ini, **options):
-        self.steps = [e(self, **options) for e in self.elements]
+        elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
+        self.steps = [e(self, **options) for e in elements]
+        self.options=options
         self.ini = ini
         if self.cosmosis_standard_output:
             output_options = dict(ini.items('output'))
@@ -31,6 +33,12 @@ class PostProcessor(object):
             burn = options.get("burn")
             if burn:
                 self.data=self.data[:,burn:]
+
+    def __len__(self):
+        return self.data.shape[1]
+
+    def get_row(self, index):
+        return self.data[:,index]
 
     def get_col(self, index_or_name):
         if isinstance(index_or_name, int):

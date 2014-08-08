@@ -7,8 +7,8 @@ def postprocessor_for_sampler(sampler):
 
 class MetropolisHastingsProcessor(PostProcessor):
 	elements=[
-		plots.MetropolisHastingsPlots,
-		plots.MetropolisHastings2DPlots,
+		plots.MetropolisHastingsPlots1D,
+		plots.MetropolisHastingsPlots2D,
 		statistics.MetropolisHastingsStatistics,
 		]
 
@@ -23,7 +23,11 @@ class PymcProcessor(MetropolisHastingsProcessor):
 	pass
 
 class GridProcessor(PostProcessor):
-	elements=[plots.GridPlots1D, plots.GridPlots2D]
+	elements=[
+		plots.GridPlots1D,
+		plots.GridPlots2D,
+		statistics.GridStatistics
+		]
 	sampler="grid"
 
 class TestProcessor(PostProcessor):
