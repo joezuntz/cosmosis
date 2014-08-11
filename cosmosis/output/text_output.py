@@ -110,6 +110,7 @@ class TextColumnOutput(OutputBase):
         final_metadata = []
         data = []
         comments = []
+        column_names = None
 
         for datafile in datafiles:
             print 'LOADING CHAIN FROM FILE: ', datafile
@@ -153,4 +154,8 @@ class TextColumnOutput(OutputBase):
             metadata.append(chain_metadata)
             final_metadata.append(final_metadata)
             chain_comments.append(comments)
+
+        if column_names is None:
+            raise ValueError("Could not find column names header in file starting %s"%filename)
+
         return column_names, data, metadata, comments, final_metadata
