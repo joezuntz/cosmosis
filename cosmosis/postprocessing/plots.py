@@ -17,7 +17,7 @@ class Plots(PostProcessorElement):
         self.no_latex = self.options.get("no_latex")
         latex_file = self.options.get("more_latex") 
         self._latex = {}
-        if not self.no_latex:
+        if self.source.cosmosis_standard_output and not self.no_latex:
             self.load_latex(latex_file)
 
     def load_latex(self, latex_file):
