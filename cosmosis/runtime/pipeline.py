@@ -18,6 +18,10 @@ import cosmosis.datablock.cosmosis_py as cosmosis_py
 
 PIPELINE_INI_SECTION = "pipeline"
 
+class MissingLikelihoodError(Exception):
+    def __init__(self, message, data):
+        super(MissingLikelihoodError, self).__init__(message)
+        self.pipeline_data = data
 
 class Pipeline(object):
     def __init__(self, arg=None, load=True):
@@ -30,6 +34,9 @@ class Pipeline(object):
             self.options = arg
         else:
             self.options = config.Inifile(arg)
+
+        #This will be set later
+        self.root_directory = None
 
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
@@ -48,7 +55,9 @@ class Pipeline(object):
 
             for module_name in module_list:
                 # identify module file
-                filename = self.options.get(module_name, "file")
+
+                filename = self.find_module_file(
+                    self.options.get(module_name, "file"))
 
                 # identify relevant functions
                 setup_function = self.options.get(module_name,
@@ -77,6 +86,22 @@ class Pipeline(object):
                     print "It will make no difference."
                 self.shortcut_module = index
 
+    def base_directory(self):
+        if self.root_directory is None:
+            try:
+                self.root_directory = os.environ["COSMOSIS_SRC_DIR"]
+                print "Root directory is ", self.root_directory
+            except KeyError:
+                self.root_directory = os.getcwd()
+                print "WARNING: Could not find environment variable"
+                print "COSMOSIS_SRC_DIR. Module paths assumed to be relative"
+                print "to current directory, ", self.root_directory
+        return self.root_directory
+
+    def find_module_file(self, path):
+        """Find a module file, which is assumed to be 
+        either absolute or relative to COSMOSIS_SRC_DIR"""
+        return os.path.join(self.base_directory(), path)
 
     def setup(self):
         if self.timing:
@@ -326,15 +351,16 @@ class LikelihoodPipeline(Pipeline):
                 return -np.inf, utils.everythingIsNan
 
         # loop through named likelihoods and sum their values
-        try:
-            like = sum([data.get_double(cosmosis_py.section_names.likelihoods,
-                                        likelihood_name+"_like")
-                        for likelihood_name in self.likelihood_names])
-        except block.BlockError:
-            if return_data:
-                return -np.inf, utils.everythingIsNan, data
-            else:
-                return -np.inf, utils.everythingIsNan
+        likelihoods = []
+        section_name = cosmosis_py.section_names.likelihoods
+        for likelihood_name in self.likelihood_names:
+            try:
+                L = data.get_double(section_name,likelihood_name+"_like")
+                likelihoods.append(L)
+            except block.BlockError:
+                raise MissingLikelihoodError(likelihood_name, data)
+
+        like = sum(likelihoods)
 
         if not self.quiet and self.likelihood_names:
             sys.stdout.write("Likelihood %e\n" % (like,))
