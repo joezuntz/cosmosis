@@ -9,6 +9,7 @@ PYMC_INI_SECTION = "pymc"
 
 
 class PyMCSampler(ParallelSampler):
+    sampler_outputs = [("like", float)]
 
     def config(self):
         # lazy pymc import to avoid dependency when using other samplers
@@ -21,18 +22,17 @@ class PyMCSampler(ParallelSampler):
         # load sampling parameters
         self.num_samples = 0
 
-        self.nsteps = self.ini.getint(PYMC_INI_SECTION, "nsteps", 100)
-        self.samples = self.ini.getint(PYMC_INI_SECTION, "samples", 1000)
-        fburn = self.ini.getfloat(PYMC_INI_SECTION, "burn_fraction", 0.0)
+        self.nsteps = self.read_ini("nsteps", int, 100)
+        self.samples = self.read_ini("samples", int, 1000)
+        fburn = self.read_ini("burn_fraction", float, 0.0)
         if 0.0 <= fburn < 1.0:
             self.nburn = int(fburn * self.samples)
         else:
             self.nburn = int(fburn)
 
-        if self.ini.has_option(PYMC_INI_SECTION, "Rconverge"):
-            self.Rconverge = self.ini.getfloat(PYMC_INI_SECTION, "Rconverge")
-        else:
-            self.Rconverge = None
+        self.Rconverge = self.read_ini("Rconverge", float, -1.0)
+        if self.Rconverge==-1.0:
+            self.Rconverge=None
 
         params = self.define_parameters()
 
@@ -98,8 +98,7 @@ class PyMCSampler(ParallelSampler):
         likes = -0.5 * self.mcmc.trace('deviance')[:]
 
         for trace, like in itertools.izip(traces, likes):
-            extra = {'LIKE': like}
-            self.output.parameters(trace, extra)
+            self.output.parameters(trace, extra, like)
 
         self.analytics.add_traces(traces, likes)
 

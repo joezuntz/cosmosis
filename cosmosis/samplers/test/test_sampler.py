@@ -11,19 +11,8 @@ class TestSampler(Sampler):
 
     def config(self):
         self.converged = False
-        self.fatal_errors = self.ini.getboolean(TEST_INI_SECTION,
-                                                "fatal_errors",
-                                                default=False)
-        #for backward compatibility we add a version with the hyphen
-        self.fatal_errors = self.fatal_errors or (
-                            self.ini.getboolean(TEST_INI_SECTION,
-                                                "fatal-errors",
-                                                default=False)
-            )
-        self.save_dir = self.ini.get(TEST_INI_SECTION,
-                                     "save_dir",
-                                     default=False)
-
+        self.fatal_errors = self.read_ini("fatal_errors", bool, False)
+        self.save_dir = self.read_ini("save_dir", str, "")
 
     def execute(self):
         # load initial parameter values
