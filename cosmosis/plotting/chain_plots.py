@@ -100,14 +100,15 @@ class ChainPlotter(Plotter):
 		y_axis = np.linspace(ymin, ymax, n+1)
 		histogram, _, _ = np.histogram2d(x, y, bins=[x_axis, y_axis])
 
+
 		def objective(limit, target):
 			w = np.where(like>limit)
 			count = histogram[w]
 			return count.sum() - target
 		target1 = N*(1-contour1)
 		target2 = N*(1-contour2)
-		level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,), xtol=0.01/N)
-		level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,), xtol=0.01/N)
+		level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
+		level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
 		return level1, level2, like.sum()
 
 
@@ -161,7 +162,15 @@ class ChainPlotter(Plotter):
 			else:
 				pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors=color)
 		pylab.xlabel("$"+self._display_names[name1]+"$")
- 		pylab.ylabel("$"+self._display_names[name2]+"$") 		
+ 		pylab.ylabel("$"+self._display_names[name2]+"$")
+ 		if "limits" in self.options and name1	in self.options["limits"]:
+ 			pylab.xlim(*self.options["limits"][name1])
+ 		if "limits" in self.options and name1	in self.options["limits"]:
+ 			pylab.ylim(*self.options["limits"][name2])
+ 		if "truth" in self.options and name1 in self.options["truth"] and name2 in self.options["truth"]:
+ 			xc = self.options["truth"][name1]
+ 			yc = self.options["truth"][name2]
+			pylab.plot([xc],[yc],'k*', markersize=10)
  		if self.blind: self.blind_axes()
  		# self.command('pylab.xlabel("${0}$")',self._display_names[name2])
 
@@ -175,7 +184,7 @@ class ChainPlotter(Plotter):
 		print "Doing W0 - WA plot"
 		w_name  = 'cosmological_parameters--w'
 		wa_name = 'cosmological_parameters--wa'
-		self._plot_2d(w_name, wa_name, factor=1.5)
+		self._plot_2d(w_name, wa_name, fill=self.options.get('fill',True), factor=1.5)
 		w_min,w_max = self.parameter_range(w_name)
 		wa_min,wa_max = self.parameter_range(wa_name)
 		w_axis = np.linspace(w_min,w_max,2)

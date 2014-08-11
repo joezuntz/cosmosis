@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 
 import matplotlib
-matplotlib.use("Agg")
-# We have to import matplotliv first so we can set the output
-# before we load pylab
-# This bit means it is not a great idea to import this script
-# elsewhere
-
-import pylab
+from . import lazy_pylab as pylab
 import os
 import argparse
 import numpy as np
@@ -54,9 +48,12 @@ class Plot(object):
 			#But otherwise we record it in our list
 			plot_list.append(cls)
 
-	def __init__(self, dirname, outdir, prefix, suffix, quiet=False):
+	def __init__(self, dirname, outdir, prefix, suffix, quiet=False, figure=None):
 		#Set up the plotting figure
-		self.figure = pylab.figure()
+		if figure is None:
+			self.figure = pylab.figure()
+		else:
+			self.figure = figure
 		#Can do prefixes if we want to all the filenames
 		if prefix:
 			prefix += "_"
@@ -119,10 +116,11 @@ class Plot(object):
 
 	#Need not be overridden. Called by the main function
 	@classmethod
-	def make(cls, dirname, outdir, prefix, suffix, quiet=False):
-		p = cls(dirname, outdir, prefix, suffix, quiet=quiet)
+	def make(cls, dirname, outdir, prefix, suffix):
+		p = cls(dirname, outdir, prefix, suffix)
 		p.plot()
 		p.save()
+		return p.filename
 
 class DistancePlot(Plot):
 	"Subclasses of this do distance plots as a function of z"
@@ -170,8 +168,8 @@ class CMBSpectrumPlot(Plot):
 		c_ell = self.load_file("cmb_cl", self.name)
 		pylab.plot(ell, c_ell)
 		pylab.grid()
-		pylab.xlabel("ell")
-		pylab.ylabel("C_ell {0} / uK^2".format(self.name.upper()))
+		pylab.xlabel("$\ell$")
+		pylab.ylabel("$\ell(\ell+1) C_\ell/2\pi \mathrm{%s} / uK^2$" % self.name.upper())
 
 class TTPlot(CMBSpectrumPlot):
 	name = filename = "tt"
@@ -199,8 +197,8 @@ class GrandPlot(Plot):
 			pylab.loglog(ell, abs(c_ell), label=name.upper())
 		pylab.legend()
 		pylab.grid()
-		pylab.xlabel("ell")
-		pylab.ylabel("C_ell Spectra / uK^2")
+		pylab.xlabel("$\ell$")
+		pylab.ylabel("$\ell(\ell+1) C_\ell/2\pi / uK^2$")
 
 class MatterPowerPlot(Plot):
 	"Matter power spectrum, maybe including non-linear plot too if available"
