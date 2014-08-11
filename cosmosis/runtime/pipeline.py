@@ -228,6 +228,7 @@ class LikelihoodPipeline(Pipeline):
             section, name = extra_save.upper().split('/')
             self.extra_saves.append((section, name))
 
+        self.number_extra = len(self.extra_saves)
         #pull out all the section names and likelihood names for later
         self.likelihood_names = self.options.get(PIPELINE_INI_SECTION,
                                                  "likelihoods").split()
@@ -238,7 +239,7 @@ class LikelihoodPipeline(Pipeline):
     def output_names(self):
         param_names = [str(p) for p in self.varied_params]
         extra_names = ['%s--%s'%p for p in self.extra_saves]
-        return param_names + extra_names + ['LIKE']
+        return param_names + extra_names
 
     def randomized_start(self):
         # should have different randomization strategies
@@ -335,7 +336,7 @@ class LikelihoodPipeline(Pipeline):
     def posterior(self, p):
         prior = self.prior(p)
         if prior == -np.inf:
-            return prior, utils.everythingIsNan
+            return prior, np.repeat(np.nan, self.number_extra)
         like, extra = self.likelihood(p)
         return prior + like, extra
 
@@ -346,9 +347,9 @@ class LikelihoodPipeline(Pipeline):
         data = self.run_parameters(p)
         if data is None:
             if return_data:
-                return -np.inf, utils.everythingIsNan, data
+                return -np.inf, np.repeat(np.nan, self.number_extra), data
             else:
-                return -np.inf, utils.everythingIsNan
+                return -np.inf, np.repeat(np.nan, self.number_extra)
 
         # loop through named likelihoods and sum their values
         likelihoods = []
@@ -365,7 +366,7 @@ class LikelihoodPipeline(Pipeline):
         if not self.quiet and self.likelihood_names:
             sys.stdout.write("Likelihood %e\n" % (like,))
 
-        extra_saves = {}
+        extra_saves = []
         for option in self.extra_saves:
             try:
                 #JAZ - should this be just .get(*option) ?
@@ -373,8 +374,7 @@ class LikelihoodPipeline(Pipeline):
             except block.BlockError:
                 value = np.nan
 
-            extra_saves[option] = value
-        extra_saves['LIKE'] = like
+            extra_saves.append(value)
 
         self.n_iterations += 1
         if return_data:

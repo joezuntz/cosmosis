@@ -11,16 +11,16 @@ def task(p):
 
 
 class GridMaxSampler(ParallelSampler):
+    sampler_outputs = [("like", float)]
 
     def config(self):
         global pipeline
         pipeline = self.pipeline
 
         if self.is_master():
-            self.nsteps = self.ini.getint(INI_SECTION, "nsteps", 24)
-            self.tolerance = self.ini.getfloat(INI_SECTION, "tolerance", 0.1)
-            self.output_ini = self.ini.get(INI_SECTION,
-                                           "output_ini", "")
+            self.nsteps = self.read_ini("nsteps", int, 24)
+            self.tolerance = self.read_ini("tolerance", float, 0.1)
+            self.output_ini = self.read_ini("output_ini", str, "")
             self.ndim = len(self.pipeline.varied_params)
             self.p = self.pipeline.normalize_vector(self.pipeline.start_vector())
             self.dimension = 0
@@ -59,8 +59,8 @@ class GridMaxSampler(ParallelSampler):
             results = map(task, points)
 
         #Log the results for posterity
-        for p, (_, e) in zip(points, results):
-            self.output.parameters(p, e)
+        for p, (l, e) in zip(points, results):
+            self.output.parameters(p, e, l)
 
         #And now update our information.
         #We need to find the two points either side
