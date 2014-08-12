@@ -22,3 +22,22 @@ class MCMCPostProcessorElement(PostProcessorElement):
         else:
             burn = int(burn)
         return col[burn::thin]
+
+class MultinestPostProcessorElement(PostProcessorElement):
+    def reduced_col(self, name):
+        #we only use the last n samples from a multinest output
+        #file.  And omit zero-weighted samples.
+        n = int(self.source.final_metadata[0]["nsample"])
+        col = self.source.get_col(name)
+        w = self.source.get_col("weight")[-n:]
+        return col[-n:][w>0]
+        
+    def weight_col(self):
+        if hasattr(self, "_weight_col"):
+            return self._weight_col
+        n = int(self.source.final_metadata[0]["nsample"])
+        w = self.source.get_col("weight")[-n:]
+        w = w[w>0].copy()
+        self._weight_col = w
+        return self._weight_col
+

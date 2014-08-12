@@ -36,3 +36,10 @@ class TestProcessor(PostProcessor):
 	cosmosis_standard_output=False
 
 
+class MultinestProcessor(PostProcessor):
+	elements = [
+		plots.MultinestPlots1D, 
+		plots.MultinestPlots2D,
+		statistics.MultinestStatistics,
+		]
+	sampler="multinest"

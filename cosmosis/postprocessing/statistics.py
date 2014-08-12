@@ -1,6 +1,7 @@
 #coding: utf-8
-from .elements import PostProcessorElement, MCMCPostProcessorElement
+from .elements import PostProcessorElement, MCMCPostProcessorElement, MultinestPostProcessorElement
 import numpy as np
+from .utils import std_weight, mean_weight, median_weight
 
 
 class Statistics(PostProcessorElement):
@@ -19,31 +20,40 @@ class ConstrainingStatistics(Statistics):
 
     def report_file(self):
         #Get the filenames to make
-        marge_filename = self.filename("means")
-        best_filename = self.filename("best_fit")
-        median_filename = self.filename("medians")
-
+        return [
+            self.report_file_mean(),
+            self.report_file_median(),
+            self.report_file_mode()
+        ]
+    def report_file_mean(self):        
         #Generate the means file
+        marge_filename = self.filename("means")
         marge_file = open(marge_filename, "w")
         marge_file.write("#parameter mean std_dev\n")
         for P in zip(self.source.colnames, self.mu, self.sigma):
             marge_file.write("%s   %e   %e\n" % P)
         marge_file.close()
+        return marge_filename
 
+    def report_file_median(self):
         #Generate the medians file
+        median_filename = self.filename("medians")
         median_file = open(median_filename, "w")
         median_file.write("#parameter mean std_dev\n")
         for P in zip(self.source.colnames, self.median, self.sigma):
             median_file.write("%s   %e   %e\n" % P)
         median_file.close()
+        return median_filename
 
+    def report_file_mode(self):
         #Generate the mode file
+        best_filename = self.filename("best_fit")
         best_file = open(best_filename, "w")
         best_file.write("#parameter value\n")
         for P in zip(self.source.colnames, self.source.get_row(self.best_fit_index)):
             best_file.write("%s        %g\n"%P)
         best_file.close()
-        return [marge_filename, best_filename, median_filename]
+        return best_filename
 
     @staticmethod
     def find_median(x, P):
@@ -51,21 +61,25 @@ class ConstrainingStatistics(Statistics):
         return np.interp(C[-1]/2.0,C,x)
 
     def report_screen(self):
+        self.report_screen_mean()
+        self.report_screen_median()
+        self.report_screen_mode()
         #Print the same summary stats that go into the
         #files but to the screen instead, in a pretty format        
-
+    def report_screen_mean(self):
         #Means
         print
         print "Marginalized mean, std-dev:"
         for P in zip(self.source.colnames, self.mu, self.sigma):
             print '    %s = %g ± %g' % P
         print
+    def report_screen_median(self):
         #Medians
         print "Marginalized median, std-dev:"
         for P in zip(self.source.colnames, self.median, self.sigma):
             print '    %s = %g ± %g' % P
         print
-
+    def report_screen_mode(self):
         #Mode
         print "Best likelihood:"
         for name, val in zip(self.source.colnames, self.source.get_row(self.best_fit_index)):
@@ -88,25 +102,27 @@ class ConstrainingStatistics(Statistics):
 
 
 class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElement):
+    def compute_basic_stats_col(self, col):
+        data = self.reduced_col(col)
+        n = len(data)
+        return n, data.mean(), data.std(), np.median(data)
+
     def compute_basic_stats(self):
-        burn = self.options.get("burn", 0)
-        thin = self.options.get("thin", 1)
         self.mu = []
         self.sigma = []
         self.median = []
         self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         for col in self.source.colnames:
-            data = self.source.get_col(col)[burn::thin]
-            n = len(data)
-            self.mu.append(data.mean())
-            self.sigma.append(data.std())
-            self.median.append(np.median(data))
+            n, mu, sigma, median = self.compute_basic_stats_col(col)
+            self.mu.append(mu)
+            self.sigma.append(sigma)
+            self.median.append(median)
         return n
 
     def run(self):
         N = self.compute_basic_stats()
-        print "Post-burn & thin length:", N
+        print "Samples after cutting:", N
 
         self.report_screen()
         files = self.report_file()
@@ -191,7 +207,9 @@ class TestStatistics(Statistics):
     def run(self):
         return []
 
-class MultinestStatistics(Statistics):
-    def run(self):
-        return []
-
+class MultinestStatistics(MultinestPostProcessorElement, MetropolisHastingsStatistics):
+    def compute_basic_stats_col(self, col):
+        data = self.reduced_col(col)
+        weight = self.weight_col()
+        n = len(data)
+        return n, mean_weight(data,weight), std_weight(data,weight), median_weight(data, weight)

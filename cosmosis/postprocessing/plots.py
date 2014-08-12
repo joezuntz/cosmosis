@@ -1,5 +1,6 @@
-from .elements import PostProcessorElement, MCMCPostProcessorElement
+from .elements import PostProcessorElement, MCMCPostProcessorElement, MultinestPostProcessorElement 
 from ..plotting.kde import KDE
+from .utils import std_weight, mean_weight
 from . import cosmology_theory_plots
 import ConfigParser
 import numpy as np
@@ -237,20 +238,26 @@ class MetropolisHastingsPlots(Plots, MCMCPostProcessorElement):
 
 
 class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
-
+    excluded_colums = ["like"]
     def keywords_1d(self):
         return {}
+
+    def smooth_likelihood(self, x):
+        #Interpolate using KDE
+        n = self.options.get("n_kde", 100)
+        factor = self.options.get("factor_kde", 2.0)
+        kde = KDE(x, factor=factor)
+        x_axis, like = kde.grid_evaluate(n, (x.min(), x.max()) )
+        return n, x_axis, like
 
     def make_1d_plot(self, name):
         x = self.reduced_col(name)
         filename = self.filename(name)
         figure = self.figure(filename)
 
-        #Interpolate using KDE
-        n = self.options.get("n_kde", 100)
-        factor = self.options.get("factor_kde", 2.0)
-        kde = KDE(x, factor=factor)
-        x_axis, like = kde.grid_evaluate(n, (x.min(), x.max()) )
+        if x.max()-x.min()==0: return
+
+        n, x_axis, like = self.smooth_likelihood(x)
 
         #Make the plot
         pylab.figure(figure.number)
@@ -263,17 +270,18 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
     def run(self):
         filenames = []
         for name in self.source.colnames:
+            if name.lower() in self.excluded_colums: continue
             filename = self.make_1d_plot(name)
-            filenames.append(filename)
+            if filename: filenames.append(filename)
         return filenames
 
 
 class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
+    excluded_colums = ["like"]
     def keywords_2d(self):
         return {}
 
-    @staticmethod
-    def _find_contours(like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
+    def _find_contours(self, like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
         N = len(x)
         x_axis = np.linspace(xmin, xmax, n+1)
         y_axis = np.linspace(ymin, ymax, n+1)
@@ -285,32 +293,39 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
             return count.sum() - target
         target1 = N*(1-contour1)
         target2 = N*(1-contour2)
-        level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,), xtol=1./N)
-        level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,), xtol=1./N)
+        level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
+        level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
 
-    def make_2d_plot(self, name1, name2):
-        #Get the data
-        print "  (making %s vs %s)" % (name1, name2)
-        x = self.reduced_col(name1)
-        y = self.reduced_col(name2)
-
-        filename = self.filename("2D", name1, name2)
-        figure = self.figure(filename)
-
-        #Interpolate using KDE
+    def smooth_likelihood(self, x, y):
         n = self.options.get("n_kde", 100)
-        fill = self.options.get("fill", True)
         factor = self.options.get("factor_kde", 2.0)
         kde = KDE([x,y], factor=factor)
         x_range = (x.min(), x.max())
         y_range = (y.min(), y.max())
         (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
+        return n, x_axis, y_axis, like        
+
+    def make_2d_plot(self, name1, name2):
+        #Get the data
+        x = self.reduced_col(name1)
+        y = self.reduced_col(name2)
+
+        if x.max()-x.min()==0 or y.max()-y.min()==0:
+            return
+        print "  (making %s vs %s)" % (name1, name2)
+
+        filename = self.filename("2D", name1, name2)
+        figure = self.figure(filename)
+
+        #Interpolate using KDE
+        n, x_axis, y_axis, like = self.smooth_likelihood(x, y)
+
 
         #Choose levels at which to plot contours
         contour1=1-0.68
         contour2=1-0.95
-        level1, level2, total_mass = self._find_contours(like, x, y, n, x.min(), x.max(), y.min(), y.max(), contour1, contour2)
+        level1, level2, total_mass = self._find_contours(like, x, y, n, x_axis[0], x_axis[-1], y_axis[0], y_axis[-1], contour1, contour2)
         level0 = 1.1
         levels = [level2, level1, level0]
 
@@ -318,11 +333,21 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         #Make the plot
         pylab.figure(figure.number)
         keywords = self.keywords_2d()
-        if fill:
+        fill = self.options.get("fill", True)
+        imshow = self.options.get("imshow", False)
+        plot_points = self.options.get("plot_points", False)
+
+        if imshow:
+            pylab.imshow(like.T, extent=(x_axis[0], x_axis[-1], y_axis[0], y_axis[-1]), aspect='auto', origin='lower')
+            pylab.colorbar()
+        elif fill:
             pylab.contourf(x_axis, y_axis, like.T, [level2,level0], colors=['b'], alpha=0.25)
             pylab.contourf(x_axis, y_axis, like.T, [level1,level0], colors=['b'], alpha=0.25)
         else:
             pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors='b')
+        if plot_points:
+            pylab.plot(x, y, ',')
+
 
         #Do the labels
         pylab.xlabel(self.latex(name1))
@@ -337,9 +362,11 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         for name1 in self.source.colnames[:]:
             for name2 in self.source.colnames[:]:
                 if name1<=name2: continue
-                if "like" in [name1.lower(), name2.lower()]: continue
+                if name1.lower() in self.excluded_colums: continue
+                if name2.lower() in self.excluded_colums: continue
                 filename = self.make_2d_plot(name1, name2)
-            filenames.append(filename)
+                if filename:
+                    filenames.append(filename)
         return filenames
 
 
@@ -363,5 +390,57 @@ class TestPlots(Plots):
                 print err
         return filenames
 
-class MultinestPlots(Plots):
-    pass
+
+
+class MultinestPlots1D(MultinestPostProcessorElement, MetropolisHastingsPlots1D):
+    excluded_colums = ["like", "weight"]
+    def smooth_likelihood(self, x):
+        #Interpolate using KDE
+        n = self.options.get("n_kde", 100)
+        weights = self.reduced_col("weight")
+        #speed things up by removing zero-weighted samples
+
+        dx = std_weight(x, weights)*4
+        mu_x = mean_weight(x, weights)
+        x_range = (max(x.min(), mu_x-dx), min(x.max(), mu_x+dx))
+
+        factor = self.options.get("factor_kde", 2.0)
+        kde = KDE(x, factor=factor, weights=weights)
+        x_axis, like = kde.grid_evaluate(n, x_range )
+        return n, x_axis, like
+
+
+class MultinestPlots2D(MultinestPostProcessorElement, MetropolisHastingsPlots2D):
+    excluded_colums = ["like", "weight"]
+    def smooth_likelihood(self, x, y):
+        n = self.options.get("n_kde", 100)
+        fill = self.options.get("fill", True)
+        factor = self.options.get("factor_kde", 2.0)
+        weights = self.weight_col()
+
+        kde = KDE([x,y], factor=factor, weights=weights)
+        dx = std_weight(x, weights)*4
+        dy = std_weight(y, weights)*4
+        mu_x = mean_weight(x, weights)
+        mu_y = mean_weight(y, weights)
+        x_range = (max(x.min(), mu_x-dx), min(x.max(), mu_x+dx))
+        y_range = (max(y.min(), mu_y-dy), min(y.max(), mu_y+dy))
+        (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
+        return n, x_axis, y_axis, like        
+
+    def _find_contours(self, like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
+        N = len(x)
+        x_axis = np.linspace(xmin, xmax, n+1)
+        y_axis = np.linspace(ymin, ymax, n+1)
+        weights = self.weight_col()
+        histogram, _, _ = np.histogram2d(x, y, bins=[x_axis, y_axis], weights=weights)
+        def objective(limit, target):
+            w = np.where(like>=limit)
+            count = histogram[w]
+            return count.sum() - target
+        target1 = histogram.sum()*(1-contour1)
+        target2 = histogram.sum()*(1-contour2)
+
+        level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
+        level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
+        return level1, level2, like.sum()
