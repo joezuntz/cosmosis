@@ -152,7 +152,7 @@ class TextColumnOutput(OutputBase):
             
             data.append(np.array(chain))
             metadata.append(chain_metadata)
-            final_metadata.append(final_metadata)
+            final_metadata.append(chain_final_metadata)
             chain_comments.append(comments)
 
         if column_names is None:
