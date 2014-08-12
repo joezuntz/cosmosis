@@ -84,10 +84,13 @@ def likelihood(cube_p, ndim, nparam, context_p):
 	return like
 
 def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
-	sampler.output_params(nsample, post, logz, ins_logz, log_z_err)
+	sampler.output_params(nsample, live, post, logz, ins_logz, log_z_err)
 
 
 class MultinestSampler(Sampler):
+	sampler_outputs = [("like", float), ("importance", float), 
+		("logZ", float)]
+
 	def config(self):
 		global libnest3
 		if libnest3 is None:
@@ -103,31 +106,29 @@ class MultinestSampler(Sampler):
 		self.ndim = len(self.pipeline.varied_params)
 		self.npar = self.ndim + len(self.pipeline.extra_saves)
 
-		self.output.add_column("importance", float)
-
 		#Required options
-		self.max_iterations = self.ini.getint(MULTINEST_SECTION, "max_iterations")
-		self.live_points    = self.ini.getint(MULTINEST_SECTION, "live_points")
+		self.max_iterations = self.read_ini("max_iterations", int)
+		self.live_points    = self.read_ini("live_points", int)
 
 		#Output and feedback options
-		self.feedback               = self.ini.getboolean(MULTINEST_SECTION, "feedback",               default=True)
-		self.resume                 = self.ini.getboolean(MULTINEST_SECTION, "resume",                 default=False)
-		self.multinest_outfile_root = self.ini.get(MULTINEST_SECTION,        "multinest_outfile_root", default="")
-		self.update_interval        = self.ini.getint(MULTINEST_SECTION,     "update_interval",        default=200)
+		self.feedback               = self.read_ini("feedback", bool, True)
+		self.resume                 = self.read_ini("resume", bool, False)
+		self.multinest_outfile_root = self.read_ini("multinest_outfile_root", str, "")
+		self.update_interval        = self.read_ini("update_interval", int, 200)
 
 		#General run options
-		self.random_seed = self.ini.getint(MULTINEST_SECTION,     "random_seed", default=-1)
-		self.importance  = self.ini.getboolean(MULTINEST_SECTION, "ins",         default=True)
-		self.efficiency  = self.ini.getfloat(MULTINEST_SECTION,   "efficiency",  default=1.0)
-		self.tolerance   = self.ini.getfloat(MULTINEST_SECTION,   "tolerance",   default=0.1)
-		self.log_zero    = self.ini.getfloat(MULTINEST_SECTION,   "log_zero",    default=-1e6)
+		self.random_seed = self.read_ini("random_seed", int, -1)
+		self.importance  = self.read_ini("ins", bool, True)
+		self.efficiency  = self.read_ini("efficiency", float, 1.0)
+		self.tolerance   = self.read_ini("tolerance", float, 0.1)
+		self.log_zero    = self.read_ini("log_zero", float, -1e6)
 
 		#Multi-modal options
-		self.mode_separation    = self.ini.getboolean(MULTINEST_SECTION, "mode_separation",     default=False)
-		self.const_efficiency   = self.ini.getboolean(MULTINEST_SECTION, "constant_efficiency", default=False)
-		self.max_modes          = self.ini.getint(MULTINEST_SECTION,     "max_modes",           default=100)
-		self.cluster_dimensions = self.ini.getint(MULTINEST_SECTION,     "cluster_dimensions",  default=-1)
-		self.mode_ztolerance    = self.ini.getfloat(MULTINEST_SECTION,   "mode_ztolerance",     default=0.5)
+		self.mode_separation    = self.read_ini("mode_separation", bool, False)
+		self.const_efficiency   = self.read_ini("constant_efficiency", bool, False)
+		self.max_modes          = self.read_ini("max_modes", int, default=100)
+		self.cluster_dimensions = self.read_ini("cluster_dimensions", int, default=-1)
+		self.mode_ztolerance    = self.read_ini("mode_ztolerance", float, default=0.5)
 
  	
 
@@ -154,7 +155,7 @@ class MultinestSampler(Sampler):
 		self.converged = True
 
 
-	def output_params(self, n, posterior, log_z, ins_log_z, log_z_err):
+	def output_params(self, n, live, posterior, log_z, ins_log_z, log_z_err):
 		self.log_z = ins_log_z if self.importance else log_z
 		self.log_z_err = log_z_err
 		data = np.array([posterior[i] for i in xrange(n*(self.npar+2))]).reshape((self.npar+2, n))
@@ -163,10 +164,7 @@ class MultinestSampler(Sampler):
 			extra_vals = row[self.ndim:self.npar]
 			like = row[self.npar]
 			importance = row[self.npar+1]
-			extra_dict = {'%s--%s'%p:v for (p,v) in zip(self.pipeline.extra_saves,extra_vals)}
-			extra_dict["LIKE"] = like
-			extra_dict["importance"] = importance
-			self.output.parameters(params, extra_dict)
+			self.output.parameters(params, extra_vals, like, importance, self.log_z)
 
 	def is_converged(self):
 		return self.converged
