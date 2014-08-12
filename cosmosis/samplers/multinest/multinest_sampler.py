@@ -84,12 +84,12 @@ def likelihood(cube_p, ndim, nparam, context_p):
 	return like
 
 def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
+	print "Saving %d samples" % nsample
 	sampler.output_params(nsample, live, post, logz, ins_logz, log_z_err)
 
 
 class MultinestSampler(Sampler):
-	sampler_outputs = [("like", float), ("importance", float), 
-		("logZ", float)]
+	sampler_outputs = [("like", float), ("weight", float)]
 
 	def config(self):
 		global libnest3
@@ -164,7 +164,8 @@ class MultinestSampler(Sampler):
 			extra_vals = row[self.ndim:self.npar]
 			like = row[self.npar]
 			importance = row[self.npar+1]
-			self.output.parameters(params, extra_vals, like, importance, self.log_z)
+			self.output.parameters(params, extra_vals, like, importance)
+		self.output.final("nsample", n)
 
 	def is_converged(self):
 		return self.converged
