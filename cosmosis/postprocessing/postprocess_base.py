@@ -2,7 +2,7 @@ import abc
 from . import plots
 from . import statistics
 from cosmosis import output as output_module
-
+from ..runtime.config import Inifile
 postprocessor_registry = {}
 
 class PostProcessMetaclass(abc.ABCMeta):
@@ -30,8 +30,17 @@ class PostProcessor(object):
             if isinstance(ini, tuple):
                 self.colnames, self.data, self.metadata, self.comments, self.final_metadata = ini
             else:
-                output_options = dict(ini.items('output'))
-                self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
+                if isinstance(ini, dict):
+                    output_options=ini["output"]
+                    sampler = ini['sampler']
+                    sampler_options = {}
+                    for key,val in ini[sampler].items():
+                        sampler_options[(sampler,key)]=str(val)
+                    self.colnames, self.data, self.metadata, self.comments, self.final_metadata = ini['data']
+                    ini = Inifile(None, override=sampler_options)
+                else:
+                    output_options = dict(ini.items('output'))
+                    self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
                     output_module.input_from_options(output_options)
             self.data = self.data[0].T
             self.colnames = [c.lower() for c in self.colnames]

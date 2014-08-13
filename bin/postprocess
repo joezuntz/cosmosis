@@ -45,7 +45,9 @@ def main(args):
 			print "This is not a cosmosis output file."
 			print "So I will assume it in a generic MCMC file"
 			sampler = "emcee"
-		ini = output_info
+			ini = output_info
+		else:
+			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="text", filename=ini_filename)}
 	else:
 		#Determine the sampler and get the class
 		#designed to postprocess the output of that sampler

@@ -131,7 +131,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
 
 class GridStatistics(ConstrainingStatistics):
     def set_data(self):
-        self.nsample = self.source.ini.getint("grid", "nsample_dimension")
+        self.nsample = int(self.source.ini.get("grid", "nsample_dimension"))
         self.nrow = len(self.source)
         self.ncol = len(self.source.colnames)
 
