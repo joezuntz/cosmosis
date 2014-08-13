@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import matplotlib
 from . import lazy_pylab as pylab
 import os
 import argparse
