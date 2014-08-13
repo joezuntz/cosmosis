@@ -27,9 +27,12 @@ class PostProcessor(object):
 
     def load(self, ini):
         if self.cosmosis_standard_output:
-            output_options = dict(ini.items('output'))
-            self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
-                output_module.input_from_options(output_options)
+            if isinstance(ini, tuple):
+                self.colnames, self.data, self.metadata, self.comments, self.final_metadata = ini
+            else:
+                output_options = dict(ini.items('output'))
+                self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
+                    output_module.input_from_options(output_options)
             self.data = self.data[0].T
             self.colnames = [c.lower() for c in self.colnames]
         self.ini = ini

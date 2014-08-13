@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from cosmosis.postprocessing.postprocess import postprocessor_for_sampler
 from cosmosis.runtime.config import Inifile
+from cosmosis.output.text_output import TextColumnOutput
 import sys
 import argparse
 
@@ -17,6 +18,9 @@ general.add_argument("-p","--prefix", default="", help="Prefix for all generated
 general.add_argument("--more-latex", default="", help="Load an additional latex file to the default")
 general.add_argument("--no-latex", action='store_true', help="Do not use latex-style labels, just use the text")
 
+inputs=parser.add_argument_group(title="Inputs", description="Options controlling the inputs to this script")
+inputs.add_argument("--text", action='store_true', help="Tell postprocess that its argument is a text file, regardless of its suffix")
+
 plots=parser.add_argument_group(title="Plotting", description="Plotting options")
 plots.add_argument("--no-plots", action='store_true', help="Do not make any default plots")
 plots.add_argument("-f", "--file-type", default="png", help="Filename suffix for plots")
@@ -32,11 +36,22 @@ def main(args):
 	#ini file that created the run
 	args = parser.parse_args(args)
 	ini_filename = args.inifile
-	ini = Inifile(ini_filename)
 
-	#Determine the sampler and get the class
-	#designed to postprocess the output of that sampler
-	sampler = ini.get("runtime", "sampler")
+	if ini_filename.endswith("txt") or args.text:
+		output_info = TextColumnOutput.load_from_options({"filename":ini_filename})
+		metadata=output_info[2][0]
+		sampler = metadata.get("sampler")
+		if sampler is None:
+			print "This is not a cosmosis output file."
+			print "So I will assume it in a generic MCMC file"
+			sampler = "emcee"
+		ini = output_info
+	else:
+		#Determine the sampler and get the class
+		#designed to postprocess the output of that sampler
+		ini = Inifile(ini_filename)
+		sampler = ini.get("runtime", "sampler")
+	
 	processor_class = postprocessor_for_sampler(sampler)
 
 	#We do not know how to postprocess everything.

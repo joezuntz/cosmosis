@@ -33,11 +33,18 @@ class Plots(PostProcessorElement):
                 section,name = col_name.lower().split('--')
                 try:
                     display_name = latex_names.get(section,name)
-                except ConfigParser.NoOptionError:
-                    pass                    
+                except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+                    pass
+
             else:
                 if col_name in ["LIKE","like", "likelihood"]:
                     display_name=r"{\cal L}"
+                else:
+                    try:
+                        display_name = latex_names.get("misc",col_name)
+                    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+                        pass
+
             self._latex[col_name]=display_name
 
     def latex(self, name, dollar=True):
