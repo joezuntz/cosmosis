@@ -2,7 +2,7 @@
 
 import sys
 import argparse
-
+import os
 
 from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.pipeline import LikelihoodPipeline
@@ -95,6 +95,21 @@ def main(args, pool=None):
 
     if output:
         output.close()
+
+    if args.inifile=="demos/demo1.ini":
+        print
+        print "Congratulations: you have just run cosmosis demo one!"
+        if os.path.exists("./conda"):
+            print 
+            print "To make plots you will need a new terminal window"
+            print "Press Command-T to get one, then run these commands:"
+            print "  source config/setup-postprocess"
+            print "  postprocess demos/demo1.ini"
+        else:
+            print "You can make plots of the outputs of this using the command:"
+            print
+            print "postprocess demos/demo1.ini"
+            print
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
