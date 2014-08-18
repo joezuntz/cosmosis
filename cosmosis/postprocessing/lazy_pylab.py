@@ -39,7 +39,7 @@ class _LazyPylab(object):
 			if 'darwin' in os.uname()[0].lower():
 				print "If using OSX with auto-installed cosmosis"
 				print "You should do:"
-				print "  source/setup-postprocess"
+				print "  config/setup-postprocess"
 				print "In a NEW TERMINAL window to get a matplotlib-ready python"
 				print "(press command-t to get  new terminal tab)"
 			print
