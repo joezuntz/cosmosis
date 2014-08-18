@@ -46,8 +46,12 @@ class _LazyPylab(object):
 			print "Unable to continue cleanly so quitting now."
 			print
 			sys.exit(1)
-
-		matplotlib.rcParams['figure.max_open_warning'] = 100
+		#Some options are only available in newer
+		#matplotlibs.
+		try:
+			matplotlib.rcParams['figure.max_open_warning'] = 100
+		except:
+			pass
 		matplotlib.rcParams['figure.figsize'] = (8,6)
 		matplotlib.rcParams['font.family']='serif'
 		matplotlib.rcParams['font.size']=18
