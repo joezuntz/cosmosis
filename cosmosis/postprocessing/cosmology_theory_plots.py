@@ -15,6 +15,9 @@ the first demo we have for an example.
 
 You need to supply at least the name of the directory where
 CosmoSIS data was saved.
+
+You can either call this script directly or use the "postprocess"
+module on the ini file.
 """)
 
 parser.add_argument("dirname", help="A directory of cosmology data as produced by the 'test' sampler")
