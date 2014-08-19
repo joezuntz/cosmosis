@@ -1,7 +1,6 @@
 from .. import ParallelSampler
 import numpy as np
 
-EMCEE_INI_SECTION = "emcee"
 
 def log_probability_function(p):
     return emcee_pipeline.posterior(p)

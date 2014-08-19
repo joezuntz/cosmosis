@@ -4,9 +4,6 @@ import numpy as np
 from .. import ParallelSampler
 
 
-GRID_INI_SECTION = "grid"
-
-
 def task(p):
     return grid_pipeline.posterior(p)
 
