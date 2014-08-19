@@ -36,6 +36,13 @@ else
 fi
 
 export PATH=${COSMOSIS_SRC_DIR}/bin:$PATH
+
+# On OS X, we use the Anaconda python we have installed.
+if [ "$flavor" == "Darwin64bit" ]
+then
+  export PATH=${COSMOSIS_SRC_DIR}/conda/bin:$PATH
+fi
+
 export PYTHONPATH=${COSMOSIS_SRC_DIR}
 
 # don't allow this as it probably causes problems
@@ -60,6 +67,7 @@ fi
 setup -B gsl v1_16 -q +prof
 setup -B fftw v3_3_3 -q +prof
 setup -B cfitsio v3_35_0 -q +prof
+setup -B lapack v3_4_2 -q +e5:+prof
 
 if [ -d "$SETUPS_DIR/planckdata/v1_1" ]
 then
