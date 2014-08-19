@@ -11,22 +11,25 @@ import heapq
 import sys
 
 class Snake(object):
-	def __init__(self, posterior, origin, spacing, posterior_args=() ):
+	def __init__(self, posterior, origin, spacing, pool=None):
 		self.posterior=posterior
 		self.origin=np.array(origin)
-		self.posterior_args=posterior_args
 		self.spacing=np.array(spacing)
 		self.ndim = len(origin)
 		self.best_fit=tuple([0 for i in xrange(self.ndim)])
-		_, self.best_fit_like = self.evaluate([self.best_fit], *posterior_args)[0]
-		if hasattr(self.best_fit_like, "__len__"):
+		#Temporarily set the pool to None because we have
+		#to evaluate the starting point
+		self.pool = None
+		self.best_fit_like = self.evaluate([self.best_fit])[1][0]
+		self.has_blobs = hasattr(self.best_fit_like, "__len__")
+		if self.has_blobs:
 			self.best_fit_like, _ = self.best_fit_like
-
 		self.likelihoods = {self.best_fit:self.best_fit_like}
 		self.internal = set()
 		self.surface = [(-self.best_fit_like,self.best_fit)]
 		self.best_like_ever = self.best_fit_like
 		self.iterations = 0
+		self.pool=pool
 
 	def has_adjacent(self, p):
 		return self.adjacent_points(p, True)
@@ -74,21 +77,28 @@ class Snake(object):
 		#take the adjacent points from the best fit
 		adjacent = self.adjacent_points(self.best_fit)
 		#PARALLEL: take more random choices here
-		p = random.choice(adjacent)
+		n = 1
+		P = random.sample(adjacent, n)
 
 		#PARALLEL: do the full evaluation here
-		x,L = self.evaluate([p])[0]
-		if hasattr(L, "__len__"):
-			L, blob = L
+		X, outputs = self.evaluate(P)
+		if self.has_blobs:
+			likelihoods = [L[0] for L in outputs]
+			blobs = [L[1] for L in outputs]
 		else:
-			blob = None
-		self.likelihoods[p] = L
+			likelihoods = [L for L in outputs]
+			blobs = [None for i in xrange(len(outputs))]
 
-		if self.has_adjacent(p):
-			heapq.heappush(self.surface, (-L,p))
+		for (p,L) in zip(P, likelihoods):
+			self.likelihoods[p] = L
+
+		#We cannot combine this with the loop
+		#above since we then we will not have filled
+		#in the likelihoods for all the points nearby
+		for (p,L) in zip(P, likelihoods):
+			if self.has_adjacent(p):
+				heapq.heappush(self.surface, (-L,p))
 		
-		#PARALLEL: comparison is with number of neighbours
-		#checked
 		if not self.has_adjacent(self.best_fit):
 			#This point should now move off the surface
 			#and into the interior.
@@ -100,14 +110,15 @@ class Snake(object):
 		#it gives us a chance to do a convergence check
 		#cleanly
 		self.find_best_fit()
-		return x, L, blob
+		return X, likelihoods, blobs
 
 	def evaluate(self, indices):
-		output = []
-		for index in indices:
-			p = self.origin + np.array(index)*self.spacing
-			output.append((p, self.posterior(p, *self.posterior_args)))
-		return output
+		points = [self.origin + np.array(index)*self.spacing for index in indices]
+		if self.pool is None:
+			output = map(self.posterior, points)
+		else:
+			output = self.pool.map(self.posterior, points)
+		return points, output
 
 
 def test_like(x):
