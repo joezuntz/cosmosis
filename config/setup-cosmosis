@@ -83,4 +83,4 @@ then
     setup -B $mpich_qualified_version
 fi
 
-export PS1="(cosmosis) $PS1"
+export PS1="(cosmosis) ${PS1:+${PS1}}"
