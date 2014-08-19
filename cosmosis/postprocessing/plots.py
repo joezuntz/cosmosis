@@ -104,7 +104,7 @@ class GridPlots(Plots):
 class GridPlots1D(GridPlots):
 
     def run(self):
-        return [self.plot_1d(name) for name in self.source.colnames]
+        return [self.plot_1d(name) for name in self.source.colnames if not (name=="like" or name.endswith('_like')) ]
 
     def plot_1d(self, name1):
         filename = self.filename(name1)
@@ -178,12 +178,14 @@ class GridPlots2D(GridPlots):
         filenames=[]
         for i, name1 in enumerate(self.source.colnames[:]):
             for name2 in self.source.colnames[:]:
+                if name1=="like" or name2=="like": continue
+                if name1.endswith("_like") or name2.endswith("_like"): continue
                 if name1<=name2: continue
                 filename=self.plot_2d(name1, name2)
                 if filename: filenames.append(filename)
         return filenames
 
-    def plot_2d(self, name1, name2):    
+    def plot_2d(self, name1, name2):
         # Load the columns
         cols1 = self.source.get_col(name1)
         cols2 = self.source.get_col(name2)
@@ -192,7 +194,7 @@ class GridPlots2D(GridPlots):
         vals2 = np.unique(cols2)
         n1 = len(vals1)
         n2 = len(vals2)
-        if n1!=n2: return        
+
         filename = self.filename("2D", name1, name2)
 
         #Marginalize over all the other parameters by summing

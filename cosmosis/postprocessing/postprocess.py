@@ -43,3 +43,10 @@ class MultinestProcessor(PostProcessor):
 		statistics.MultinestStatistics,
 		]
 	sampler="multinest"
+
+class SnakeProcessor(PostProcessor):
+	sampler='snake'
+	elements = [
+		plots.GridPlots1D,
+		plots.GridPlots2D,
+	]
