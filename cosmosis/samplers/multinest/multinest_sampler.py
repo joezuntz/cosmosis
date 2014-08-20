@@ -94,7 +94,14 @@ class MultinestSampler(Sampler):
 	def config(self):
 		global libnest3
 		if libnest3 is None:
-			libnest3 = ct.cdll.LoadLibrary(libname)
+			try:
+				libnest3 = ct.cdll.LoadLibrary(libname)
+			except Exception as error:
+				sys.stderr.write("Multinest could not be loaded correctly.\n")
+				sys.stderr.write("This may mean an MPI compiler was not found to compile it,\n")
+				sys.stderr.write("or that some other error occurred.  More info below.\n")
+				sys.stderr.write(str(error)+'\n')
+				sys.exit(1)
 			self._run = libnest3.run
 			self._run.restype=None
 			self._run.argtypes = multinest_args
