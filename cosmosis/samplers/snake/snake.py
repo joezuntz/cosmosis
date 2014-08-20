@@ -77,8 +77,12 @@ class Snake(object):
 		#take the adjacent points from the best fit
 		adjacent = self.adjacent_points(self.best_fit)
 		#PARALLEL: take more random choices here
-		n = 1
-		P = random.sample(adjacent, n)
+		if self.pool is None:
+			n = 1
+		else:
+			n = min(self.pool.size, len(adjacent))
+
+		P = random.sample(adjacent,n)
 
 		#PARALLEL: do the full evaluation here
 		X, outputs = self.evaluate(P)
