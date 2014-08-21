@@ -34,20 +34,15 @@ class _LazyPylab(object):
 			print "If you are using postprocess you can disable"
 			print "plotting with the --no-plots option"
 			print
-			import os
-			import sys
-			if 'darwin' in os.uname()[0].lower():
-				print "If using OSX with auto-installed cosmosis"
-				print "You should do:"
-				print "  source/setup-postprocess"
-				print "In a NEW TERMINAL window to get a matplotlib-ready python"
-				print "(press command-t to get  new terminal tab)"
-			print
 			print "Unable to continue cleanly so quitting now."
 			print
 			sys.exit(1)
-
-		matplotlib.rcParams['figure.max_open_warning'] = 100
+		#Some options are only available in newer
+		#matplotlibs.
+		try:
+			matplotlib.rcParams['figure.max_open_warning'] = 100
+		except:
+			pass
 		matplotlib.rcParams['figure.figsize'] = (8,6)
 		matplotlib.rcParams['font.family']='serif'
 		matplotlib.rcParams['font.size']=18
