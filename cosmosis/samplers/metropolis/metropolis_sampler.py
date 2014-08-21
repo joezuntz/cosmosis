@@ -22,32 +22,43 @@ class MetropolisSampler(ParallelSampler):
         global pipeline
         pipeline = self.pipeline
         self.samples = self.read_ini("samples", int, default=20000)
+        random_start = self.read_ini("random_start", bool, default=False)
         self.interrupted = False
         self.num_samples = 0
         #Any other options go here
 
         #start values from prior
-        start = self.define_parameters()
-        self.n = len(start)
-
+        start = self.define_parameters(random_start)
+        print "MCMC starting point:"
+        for param, x in zip(self.pipeline.varied_params, start):
+            print param, x
+        self.n = self.read_ini("nstep", int, default=100)
 
         try:
             covmat = self.load_covariance_matrix()
         except IOError:
             covmat = None
 
-        self.sampler = metropolis.MCMC(start, posterior, covmat, self.pool)
+        self.sampler = metropolis.MCMC(start, posterior, covmat)
 
     def execute(self):
         #Run the MCMC  sampler.
-        samples = self.sampler.sample(self.n)
-        self.num_samples += 1
+        try:
+            samples = self.sampler.sample(self.n)
+        except KeyboardInterrupt:
+            self.interrupted=True
+            return
+        self.num_samples += self.n
         for vector, like in samples:
             self.output.parameters(vector, like)
+
+        rate = self.sampler.accepted * 100.0 / self.sampler.iterations
+        print "Accepted %d / %d samples (%.2f%%)" % \
+            (self.sampler.accepted, self.sampler.iterations, rate)
         self.sampler.tune()
 
     def is_converged(self):
-     # user has pressed Ctrl-C
+         # user has pressed Ctrl-C
         if self.interrupted:
             return True
         if self.num_samples >= self.samples:
@@ -80,32 +91,12 @@ class MetropolisSampler(ParallelSampler):
             raise ValueError("The covariance matrix was shape (%d x %d), "
                     "but there are %d varied parameters." %
                     (covmat.shape[0], covmat.shape[1], nparams))
-
-    # normalize covariance matrix   
-    #r = np.array([param.width() for param
-    #   in self.pipeline.varied_params])
-    #for i in xrange(covmat.shape[0]):
-    #   covmat[i, :] /= r
-    #   covmat[:, i] /= r
-
         return covmat
 
 
 
-    def define_parameters(self):
-        priors = []
-        for param in self.pipeline.varied_params:
-            prior = param.prior
-            start_value = param.normalize(param.random_point())
-
-            if prior is None or isinstance(prior, UniformPrior):
-                # uniform prior
-                priors.append(np.random.uniform(*param.limits))
-            elif isinstance(prior, GaussianPrior):
-                sd = (prior.sigma2)**0.5
-                priors.append(np.random.normal(loc=start_value,scale =sd))
-            elif isinstance(prior, ExponentialPrior):
-                priors.append(np.random.exponential(scale=1.0))
-            else:
-                raise RuntimeError("Unknown prior type in MCMC sampler")
-        return priors
+    def define_parameters(self, random_start):
+        if random_start:
+            return self.pipeline.randomized_start()
+        else:
+            return self.pipeline.start_vector()
