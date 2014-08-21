@@ -26,19 +26,16 @@ class MetropolisSampler(ParallelSampler):
         self.num_samples = 0
         #Any other options go here
 
-    #start values from prior
+        #start values from prior
         start = self.define_parameters()
         self.n = len(start)
 
-        try:
-                    start = self.pipeline.denormalize_vector(start)
-        except ValueError:
-            return -np.inf
 
         try:
             covmat = self.load_covariance_matrix()
         except IOError:
             covmat = None
+        
         self.sampler = metropolis.MCMC(start, posterior, covmat, self.pool)
 
     def execute(self):
@@ -64,24 +61,24 @@ class MetropolisSampler(ParallelSampler):
 
 
     def load_covariance_matrix(self):
-    covmat_filename = self.ini.get(METROPOLIS_INI_SECTION, "covmat", "").strip()
-    if covmat_filename == "":
-        return None
-    if not os.path.exists(covmat_filename):
-        raise ValueError(
-        "Covariance matrix %s not found" % covmat_filename)
-    covmat = np.loadtxt(covmat_filename)
+        covmat_filename = self.ini.get(METROPOLIS_INI_SECTION, "covmat", "").strip()
+        if covmat_filename == "":
+            return None
+        if not os.path.exists(covmat_filename):
+            raise ValueError(
+            "Covariance matrix %s not found" % covmat_filename)
+        covmat = np.loadtxt(covmat_filename)
 
-    if covmat.ndim == 0:
-        covmat = covmat.reshape((1, 1))
-    elif covmat.ndim == 1:
-        covmat = np.diag(covmat ** 2)
+        if covmat.ndim == 0:
+            covmat = covmat.reshape((1, 1))
+        elif covmat.ndim == 1:
+            covmat = np.diag(covmat ** 2)
 
-    nparams = len(self.pipeline.varied_params)
-    if covmat.shape != (nparams, nparams):
-        raise ValueError("The covariance matrix was shape (%d x %d), "
-                "but there are %d varied parameters." %
-                (covmat.shape[0], covmat.shape[1], nparams))
+        nparams = len(self.pipeline.varied_params)
+        if covmat.shape != (nparams, nparams):
+            raise ValueError("The covariance matrix was shape (%d x %d), "
+                    "but there are %d varied parameters." %
+                    (covmat.shape[0], covmat.shape[1], nparams))
 
     # normalize covariance matrix   
     #r = np.array([param.width() for param
