@@ -23,6 +23,7 @@ class MetropolisSampler(ParallelSampler):
         pipeline = self.pipeline
         self.samples = self.read_ini("samples", int, default=20000)
         random_start = self.read_ini("random_start", bool, default=False)
+        self.Rconverge = None
         self.interrupted = False
         self.num_samples = 0
         #Any other options go here
@@ -40,6 +41,10 @@ class MetropolisSampler(ParallelSampler):
             covmat = None
 
         self.sampler = metropolis.MCMC(start, posterior, covmat)
+
+    def worker(self):
+        while not self.is_converged():
+            self.execute()
 
     def execute(self):
         #Run the MCMC  sampler.
