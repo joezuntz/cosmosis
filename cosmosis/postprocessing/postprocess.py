@@ -22,6 +22,10 @@ class PymcProcessor(MetropolisHastingsProcessor):
 	sampler="pymc"
 	pass
 
+class MetropolisProcessor(MetropolisHastingsProcessor):
+	sampler="metropolis"
+	pass
+
 class GridProcessor(PostProcessor):
 	elements=[
 		plots.GridPlots1D,
