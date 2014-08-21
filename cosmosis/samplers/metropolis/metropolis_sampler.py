@@ -35,7 +35,7 @@ class MetropolisSampler(ParallelSampler):
             covmat = self.load_covariance_matrix()
         except IOError:
             covmat = None
-        
+
         self.sampler = metropolis.MCMC(start, posterior, covmat, self.pool)
 
     def execute(self):
@@ -51,6 +51,7 @@ class MetropolisSampler(ParallelSampler):
         if self.interrupted:
             return True
         if self.num_samples >= self.samples:
+            print "Full number of samples generated; sampling complete"
             return True
         elif self.num_samples > 0 and self.pool is not None and \
                 self.Rconverge is not None:
@@ -61,7 +62,7 @@ class MetropolisSampler(ParallelSampler):
 
 
     def load_covariance_matrix(self):
-        covmat_filename = self.ini.get(METROPOLIS_INI_SECTION, "covmat", "").strip()
+        covmat_filename = self.read_ini("covmat", str, "").strip()
         if covmat_filename == "":
             return None
         if not os.path.exists(covmat_filename):
@@ -87,7 +88,7 @@ class MetropolisSampler(ParallelSampler):
     #   covmat[i, :] /= r
     #   covmat[:, i] /= r
 
-    return covmat
+        return covmat
 
 
 
@@ -99,7 +100,7 @@ class MetropolisSampler(ParallelSampler):
 
             if prior is None or isinstance(prior, UniformPrior):
                 # uniform prior
-                priors.append(np.random.uniform())
+                priors.append(np.random.uniform(*param.limits))
             elif isinstance(prior, GaussianPrior):
                 sd = (prior.sigma2)**0.5
                 priors.append(np.random.normal(loc=start_value,scale =sd))
