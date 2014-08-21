@@ -2,6 +2,15 @@
 # environment for a development session.
 # Note: this currently only supports bash
 
+# Detect whether CosmoSIS is already set up; if so, do not repeat the
+# setup.
+cosmo_cmd=$(type cosmosis 2> /dev/null)
+if [ ! -z "$cosmo_cmd" ]
+then
+  echo CosmoSIS is already set up.
+  return 0
+fi
+
 # detect COSMOSIS_SRC_DIR
 if [ -z "$COSMOSIS_SRC_DIR" ]
 then
