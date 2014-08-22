@@ -206,6 +206,7 @@ class LikelihoodPipeline(Pipeline):
         self.n_iterations = 0
 
         values_file = self.options.get(PIPELINE_INI_SECTION, "values")
+        self.values_filename=values_file
         priors_files = self.options.get(PIPELINE_INI_SECTION,
                                         "priors", "").split()
 
