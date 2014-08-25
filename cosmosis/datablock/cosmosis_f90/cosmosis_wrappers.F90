@@ -602,7 +602,7 @@ module cosmosis_wrappers
         integer(c_size_t) :: i
 
         !Initialize an empty string
-        do i=1,max_len
+        do i=1,max_len-1
             f_str(i:i+1) = " "
         enddo
 
