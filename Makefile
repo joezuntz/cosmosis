@@ -1,8 +1,6 @@
 include config/compilers.mk
 include config/subdirs.mk
 
-welcome_message=echo Welcome
-
 all:: config/first
 
 config/first:
