@@ -2,10 +2,19 @@
 # environment for a development session.
 # Note: this currently only supports bash
 
+# Detect whether CosmoSIS is already set up; if so, do not repeat the
+# setup.
+cosmo_cmd=$(type cosmosis 2> /dev/null)
+if [ ! -z "$cosmo_cmd" ]
+then
+  echo CosmoSIS is already set up.
+  return 0
+fi
+
 # detect COSMOSIS_SRC_DIR
 if [ -z "$COSMOSIS_SRC_DIR" ]
 then
-  cosmosis_dir=$( (cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
+  cosmosis_dir=$( (builtin cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
   cosmosis_dir=${cosmosis_dir%/config}
   export COSMOSIS_SRC_DIR="$cosmosis_dir"
 fi
@@ -28,14 +37,21 @@ fi
 # Set the library path appropriate for our flavor.
 libdir=${COSMOSIS_SRC_DIR}/cosmosis/datablock
 flavor=$(ups flavor -1)
-if [ "$flavor" == "Darwin64bit" ]
+if [ "$flavor" = "Darwin64bit" ]
 then
-    export DYLD_LIBRARY_PATH=${libdir}:$DYLD_LIBRARY_PATH
+    export DYLD_LIBRARY_PATH="${libdir}${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}"
 else
-    export LD_LIBRARY_PATH=${libdir}:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH="${libdir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 fi
 
 export PATH=${COSMOSIS_SRC_DIR}/bin:$PATH
+
+# On OS X, we use the Anaconda python we have installed.
+if [ "$flavor" == "Darwin64bit" ]
+then
+  export PATH=${COSMOSIS_SRC_DIR}/conda/bin:$PATH
+fi
+
 export PYTHONPATH=${COSMOSIS_SRC_DIR}
 
 # don't allow this as it probably causes problems
@@ -49,12 +65,18 @@ export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
 #fi
 
 # setup UPS packages
-setup -B scipy v0_13_0b -q +e5:+prof
+# We do not use the Python UPS products on OS X.
+if [ "$flavor" != "Darwin64bit" ]
+then
+  setup -B scipy v0_13_0b -q +e5:+prof
+  setup -B pyfits v3_2a -q +e5:+prof
+  setup -B pyyaml v3_11
+fi
+
 setup -B gsl v1_16 -q +prof
 setup -B fftw v3_3_3 -q +prof
 setup -B cfitsio v3_35_0 -q +prof
-setup -B pyfits v3_2a -q +e5:+prof
-setup -B pyyaml v3_11 
+setup -B lapack v3_4_2 -q +e5:+prof
 
 if [ -d "$SETUPS_DIR/planckdata/v1_1" ]
 then
@@ -71,9 +93,11 @@ then
 	setup -B minuit2 v5_28_0 -q +e5:+prof
 fi
 
-if [ "$flavor" == "Darwin64bit" ]
+#if [ "$flavor" = "Darwin64bit" ]
+mpich_qualified_version="mpich v3_1 -q +e5:+prof"
+if ups exist $mpich_qualified_version
 then
-    setup -B mpich v3_1 -q +e5:+prof
+    setup -B $mpich_qualified_version
 fi
 
-export PS1="(cosmosis) $PS1"
+export PS1="(cosmosis) ${PS1:+${PS1}}"

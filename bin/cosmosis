@@ -83,6 +83,24 @@ def main(args, pool=None):
     #for additional parameters
     sampler.config()
 
+    #If there is an output file, save the ini information to
+    #it as well.  We do it here since it's nicer to have it
+    #after the sampler options that get written in sampler.config
+    if output is not None:
+        #Create a buffer to store the output:
+        output.comment("START_OF_PARAMS_INI")
+        comment_wrapper = output.comment_file_wrapper()
+        ini.write(comment_wrapper)
+        output.comment("END_OF_PARAMS_INI")
+        #Do the same with the values file.
+        #Unfortunately that means reading it in again;
+        #if we ever refactor this bit we could eliminate that.
+        values_ini=Inifile(pipeline.values_filename)
+        output.comment("START_OF_VALUES_INI")
+        values_ini.write(comment_wrapper)
+        output.comment("END_OF_VALUES_INI")
+
+
     # Run the sampler until convergence
     # which really means "finished" here - 
     # a sampler can "converge" just by reaching the 
