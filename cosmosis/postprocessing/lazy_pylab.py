@@ -36,6 +36,7 @@ class _LazyPylab(object):
 			print
 			print "Unable to continue cleanly so quitting now."
 			print
+            import sys
 			sys.exit(1)
 		#Some options are only available in newer
 		#matplotlibs.
