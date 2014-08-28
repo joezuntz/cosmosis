@@ -75,6 +75,9 @@ class TextColumnOutput(OutputBase):
             c='  #'+comment
         self._file.write('#{k}={v}{c}\n'.format(k=key,v=value,c=c))
 
+    def _flush(self):
+        self._file.flush()
+
     @classmethod
     def from_options(cls, options):
         #look something up required parameters in the ini file.

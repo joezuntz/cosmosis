@@ -137,6 +137,12 @@ class OutputBase(object):
         #Pass to the subclasses to write output
         self._write_parameters(params)
 
+    def flush(self):
+        """
+        For supported output classes, flush all pending output
+        """
+        self._flush()
+
     def metadata(self, key, value, comment=""):
         """
         Save an item of metadata, with an optional comment.
@@ -173,6 +179,9 @@ class OutputBase(object):
         pass
 
     def _close(self):
+        pass
+
+    def _flush(self):
         pass
 
     @abc.abstractmethod

@@ -108,6 +108,10 @@ def main(args, pool=None):
     if not pool or pool.is_master():
         while not sampler.is_converged():
             sampler.execute()
+            #Flush any output. This is to stop
+            #a problem in some MPI cases where loads
+            #of output is built up before being written
+            if output: output.flush()
     else:
         sampler.worker()
 
