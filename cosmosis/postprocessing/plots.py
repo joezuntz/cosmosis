@@ -8,6 +8,7 @@ import scipy.optimize
 from . import lazy_pylab as pylab
 import itertools
 import os
+import sys
 
 default_latex_file = os.path.join(os.path.split(__file__)[0], "latex.ini")
 
@@ -86,6 +87,24 @@ class Plots(PostProcessorElement):
     def run(self):
         print "I do not know how to generate plots for this kind of data"
         return []
+
+    def tweak(self, tweaks):
+        if tweaks.filename==Tweaks._all_filenames:
+            filenames = self.figures.keys()
+        elif isinstance(tweaks.filename, list):
+                filenames = tweaks.filename
+        else:
+            filenames = [tweaks.filename]
+
+        for filename in filenames:
+            if tweaks.filename!=Tweaks._all_filenames:
+                filename = self.filename(filename)
+            fig = self.figures.get(filename)
+            if fig is None:
+                continue
+            pylab.figure(fig.number)
+            tweaks.run()
+
 
 class GridPlots(Plots):
     @staticmethod
@@ -451,3 +470,38 @@ class MultinestPlots2D(MultinestPostProcessorElement, MetropolisHastingsPlots2D)
         level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
+
+class Tweaks(object):
+    filename="default_nonexistent_filename_ignore"
+    _all_filenames='all plots'
+    def __init__(self):
+        self.has_run=False
+
+    def run(self):
+        print "Please fill in the 'run' method of your tweak to modify a plot"
+
+    @classmethod
+    def subclasses_in_file(cls, filepath):
+        dirname, filename = os.path.split(filepath)
+        # allows .pyc and .py modules to be used
+        impname, ext = os.path.splitext(filename)
+        sys.path.insert(0, dirname)
+        try:
+            library = __import__(impname)
+        except Exception as error:
+            print "Could not find tweaks file %s" % filepath
+            print error
+            return []
+
+        subclasses = []
+        for x in dir(library):
+            x = getattr(library, x)
+            if type(x) == type and issubclass(x, cls) and not x is cls:
+                subclasses.append(x)
+        return subclasses
+
+
+    @classmethod
+    def instances_from_file(cls, filename, *args, **kwargs):
+        subclasses = cls.subclasses_in_file(filename)
+        return [s(*args, **kwargs) for s in subclasses]

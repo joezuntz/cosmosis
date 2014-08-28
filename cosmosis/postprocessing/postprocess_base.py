@@ -70,3 +70,18 @@ class PostProcessor(object):
         for e in self.steps:
             e.finalize()
 
+    def apply_tweaks(self, tweaks):
+        if tweaks.filename==plots.Tweaks.filename:
+            print tweaks.filename
+            print "Please fill in the 'filename' attribute of your tweaks"
+            print "Put the base name (without the directory, prefix, or suffix)"
+            print "of the filename you want to tweak."
+            print "You can use also use a list for more than one plot,"
+            print "or put '%s' to apply to all plots."%plots.Tweaks._all_filenames
+            return
+        for step in self.steps:
+            if isinstance(step, plots.Plots):
+                step.tweak(tweaks)
+
+
+
