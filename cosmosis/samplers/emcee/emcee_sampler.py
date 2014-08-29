@@ -32,7 +32,7 @@ class EmceeSampler(ParallelSampler):
 
             if start_file:
                 self.p0 = self.load_start(start_file)
-                self.output.log_info("Loaded starting position from ", start_file)
+                self.output.log_info("Loaded starting position from %s", start_file)
             else:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in xrange(self.nwalkers)]
@@ -43,7 +43,10 @@ class EmceeSampler(ParallelSampler):
                                                        pool=self.pool)
 
     def load_start(self, filename):
-        data = np.genfromtxt(filename, invalid_raise=False)
+        #Load the data and cut to the bits we need.
+        #This means you can either just use a test file with
+        #starting points, or an emcee output file.
+        data = np.genfromtxt(filename, invalid_raise=False)[-self.nwalkers:, :self.ndim]
         if data.shape != (self.nwalkers, self.ndim):
             raise RuntimeError("There are not enough lines or columns "
                                "in the starting point file %s" % filename)
