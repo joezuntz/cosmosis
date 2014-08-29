@@ -1,4 +1,6 @@
-from .elements import PostProcessorElement, MCMCPostProcessorElement, MultinestPostProcessorElement 
+from .elements import PostProcessorElement
+from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement
+from .elements import Loadable
 from ..plotting.kde import KDE
 from .utils import std_weight, mean_weight
 from . import cosmology_theory_plots
@@ -471,7 +473,7 @@ class MultinestPlots2D(MultinestPostProcessorElement, MetropolisHastingsPlots2D)
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
 
-class Tweaks(object):
+class Tweaks(Loadable):
     filename="default_nonexistent_filename_ignore"
     _all_filenames='all plots'
     def __init__(self):
@@ -479,29 +481,3 @@ class Tweaks(object):
 
     def run(self):
         print "Please fill in the 'run' method of your tweak to modify a plot"
-
-    @classmethod
-    def subclasses_in_file(cls, filepath):
-        dirname, filename = os.path.split(filepath)
-        # allows .pyc and .py modules to be used
-        impname, ext = os.path.splitext(filename)
-        sys.path.insert(0, dirname)
-        try:
-            library = __import__(impname)
-        except Exception as error:
-            print "Could not find tweaks file %s" % filepath
-            print error
-            return []
-
-        subclasses = []
-        for x in dir(library):
-            x = getattr(library, x)
-            if type(x) == type and issubclass(x, cls) and not x is cls:
-                subclasses.append(x)
-        return subclasses
-
-
-    @classmethod
-    def instances_from_file(cls, filename, *args, **kwargs):
-        subclasses = cls.subclasses_in_file(filename)
-        return [s(*args, **kwargs) for s in subclasses]
