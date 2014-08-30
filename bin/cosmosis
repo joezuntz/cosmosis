@@ -118,6 +118,8 @@ def main(args, pool=None):
     if output:
         output.close()
 
+    pipeline.cleanup()
+
     if args.inifile=="demos/demo1.ini":
         print
         print "Congratulations: you have just run cosmosis demo one!"
