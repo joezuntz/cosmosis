@@ -11,7 +11,7 @@ an example of that is below too.
 Instructions for busy people
 ----------------------------
 
-Copy and paste lines 82-88 of this file for
+Copy and paste lines 84-90 of this file for
 each scatter plot that you want.  Change the columns 
 that you want for the x, y, and color, and the filename
 for each one.  Don't mess up the indentation.
@@ -73,7 +73,7 @@ that need over-riding here to define which variables
 to plot and what the filename should be.
 
 The second example, NestPlot, shows a completely custom
-plot.
+plot where the run method is over-ridden.
 """
 
 from cosmosis.postprocessing import plots
