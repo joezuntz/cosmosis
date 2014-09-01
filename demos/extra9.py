@@ -11,7 +11,7 @@ an example of that is below too.
 Instructions for busy people
 ----------------------------
 
-Copy and paste lines 84-90 of this file for
+Copy and paste lines 87-93 of this file for
 each scatter plot that you want.  Change the columns 
 that you want for the x, y, and color, and the filename
 for each one.  Don't mess up the indentation.
@@ -19,14 +19,17 @@ for each one.  Don't mess up the indentation.
 If you use this for an MCMC instead of multinest then change
 MultinestColorScatterPlot -> MCMCColorScatterPlot.
 
+The other plot is a mulitnest example of creating a completely
+new kind of plot.
+
 Explanation for non-python people
 ---------------------------------
 
 All the types of plot that cosmosis makes are represented
 by python "classes".  A class is a collection of functions
 connected together with some space to store data - sort of 
-like a mix between a variable with a Fortran derived type
-and a Fortran "module".
+a mix between a variable with a Fortran derived type and a 
+Fortran "module".
 
 Classes have a family tree, and inherit behaviour from their
 parents.  This can be used when you want to have a range of
@@ -95,24 +98,31 @@ class NestPlot(plots.Plots, plots.MultinestPostProcessorElement):
     def run(self):
         #Get the columns we need, in reduced form 
         #since this is not MCMC
-        like = self.reduced_col("like")
         weight = self.weight_col()
+        weight = weight/weight.max()
+        #Sort the final 500 samples, since they 
+        #are otherwise un-ordered
+        weight[-500:] = np.sort(weight[-500:])
+
+        #x-axis is just the iteration number
+        x = np.arange(weight.size)
 
         #Choose a filename and make a figure for your plot.
         filename = self.filename("nest_weight")
         figure = self.figure(filename)
 
         #Do the plotting, and set the limits and labels
-        pylab.plot(like, 1e4*weight)
-        pylab.xlim(-353, -341.5)
-        pylab.xlabel("Likelihood")
-        pylab.ylabel(r"Weight$\times 10^4$")
+        pylab.plot(x, weight/weight.max())
+        #pylab.xlim(-353, -341.5)
+        pylab.xlim(0,8000)
+        pylab.xlabel("Iteration number $i$")
+        pylab.ylabel(r"$p_i$")
 
         #Add some helpful text, on the title and the plot itself
-        pylab.title("Nested sampling")
-        pylab.text(-351.6, 3, "Increasing likelihood,\n volume still large", size="small")
-        pylab.text(-344.2, 3.5, "Volume\ndecreasing", size='small')
-        pylab.text(-343.6, 0.5, "Final $n_\mathrm{live}$\npoints", size='small')
+        pylab.title("Normalised posterior weight $p_i$", size='medium')
+        pylab.text(500, 0.4, "Increasing likelihood,\n volume still large", size="small")
+        pylab.text(5500,0.65, "Volume\ndecreasing", size='small')
+        pylab.text(6500, 0.12, "Final $n_\mathrm{live}$\npoints", size='small')
 
         #Return the list of filenames we made
         return [filename]
