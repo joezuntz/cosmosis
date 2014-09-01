@@ -11,11 +11,13 @@ an example of that is below too.
 Instructions for busy people
 ----------------------------
 
-Copy and paste the last seven lines of this file for
+Copy and paste lines 82-88 of this file for
 each scatter plot that you want.  Change the columns 
 that you want for the x, y, and color, and the filename
 for each one.  Don't mess up the indentation.
 
+If you use this for an MCMC instead of multinest then change
+MultinestColorScatterPlot -> MCMCColorScatterPlot.
 
 Explanation for non-python people
 ---------------------------------
@@ -36,7 +38,8 @@ create children of this class which know specificially which
 variables to use for x, y, and the color.  This demo contains
 an example using Delta-M, h, and Omega_m as the variables.
 
-We also make another plot to make our own custom multinest plot
+We also make another class to make our own custom plot
+illustrating the concepts of multinest.
 
 
 Explanation for python people
@@ -90,20 +93,26 @@ class ColorScatter(plots.MultinestColorScatterPlot):
 
 class NestPlot(plots.Plots, plots.MultinestPostProcessorElement):
     def run(self):
+        #Get the columns we need, in reduced form 
+        #since this is not MCMC
         like = self.reduced_col("like")
         weight = self.weight_col()
 
+        #Choose a filename and make a figure for your plot.
         filename = self.filename("nest_weight")
         figure = self.figure(filename)
 
+        #Do the plotting, and set the limits and labels
         pylab.plot(like, 1e4*weight)
         pylab.xlim(-353, -341.5)
         pylab.xlabel("Likelihood")
-        pylab.ylabel(r"Weight$\times  10^4$")
-        #Add some helpful text
-        pylab.title("Nested sampling progress")
+        pylab.ylabel(r"Weight$\times 10^4$")
+
+        #Add some helpful text, on the title and the plot itself
+        pylab.title("Nested sampling")
         pylab.text(-351.6, 3, "Increasing likelihood,\n volume still large", size="small")
         pylab.text(-344.2, 3.5, "Volume\ndecreasing", size='small')
         pylab.text(-343.6, 0.5, "Final $n_\mathrm{live}$\npoints", size='small')
 
+        #Return the list of filenames we made
         return [filename]
