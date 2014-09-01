@@ -58,6 +58,16 @@ class MCMCPostProcessorElement(PostProcessorElement):
             burn = int(burn)
         return col[burn::thin]
 
+    def posterior_sample(self):
+        """
+        A posterior sample of MCMC is just all the samples.
+
+        Return an array of Trues with the same length as the chain
+
+        """
+        n = self.source.get_col(0).size
+        return np.ones(n, dtype=True)
+
 class MultinestPostProcessorElement(PostProcessorElement):
     def reduced_col(self, name):
         #we only use the last n samples from a multinest output
@@ -76,10 +86,19 @@ class MultinestPostProcessorElement(PostProcessorElement):
         self._weight_col = w
         return self._weight_col
 
-    def sample_indices(self):
+    def posterior_sample(self):
+        """
+        Multinest chains are *not* drawn from the posterior distribution
+        but we do have the information we need to construct such a sample.
+
+        This function returns a boolean array with True where we should
+        use the sample at that index, and False where we should not.
+
+        """
         w = self.weight_col()
-        w = np.exp(w - w.max())
-        x = np.random.uniform(size=len(w))
-        return np.where(x<w)[0]
+        w = w / w.max()
+        u = np.random.uniform(size=w.size)
+        return u<w
+
 
 
