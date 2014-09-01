@@ -473,6 +473,66 @@ class MultinestPlots2D(MultinestPostProcessorElement, MetropolisHastingsPlots2D)
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
 
+class ColorScatterPlotBase(Plots):
+    scatter_filename='scatter'
+    x_column = None
+    y_column = None
+    color_column = None
+
+    def run(self):
+        if (self.x_column is None) or (self.y_column is None) or (self.color_column is None):
+            print "Please specify x_column, y_column, color_column, and scatter_filename"
+            print "in color scatter plots"
+            return []
+
+        #Get the columns you want to plot
+        #"reduced" means that we skip the burn-in
+        #and apply any thinning.
+        #We get these functions because we inherit
+        #from plots.MetropolisHastingsPlots
+        x = self.reduced_col(self.x_column)
+        y = 100*self.reduced_col(self.y_column)
+        c = self.reduced_col(self.color_column)
+
+        # Multinest chains do not contain equally 
+        # weighted samples (i.e. the chain rows are not
+        # drawn from the posterior) because you need more
+        # than that to do the evidence calculation.
+        # We need to use a method from MultinestPostProcessorElement
+        # to get a posterior sample.
+        # On the other hand regular MCMC chains are posteriors.
+        # So subclasses will need to inherit from either MultinestPostProcessorElement
+        # or MCMCPostProcessorElement.
+        sample = self.posterior_sample()
+        x = x[sample]
+        y = y[sample]
+        c = c[sample]
+
+        #Use these to create figures looked
+        #after by cosmosis.
+        #Though you can also use your own filenames,
+        #saving, etc, in which case do not use these functions
+        filename = self.filename(self.scatter_filename)
+        figure = self.figure(filename)
+
+        #Do the actual plotting.
+        #By default the saving will be handled later.
+        pylab.scatter(x, y, c=c, s=4, lw=0)
+
+        pylab.colorbar(label=self.latex(self.color_column))
+        pylab.xlabel(self.latex(self.x_column))
+        pylab.ylabel(self.latex(self.y_column))
+
+        #Return a list of files you create.
+        return [filename]
+
+class MCMCColorScatterPlot(MCMCPostProcessorElement, ColorScatterPlotBase):
+    pass
+
+class MultinestColorScatterPlot(MultinestPostProcessorElement, ColorScatterPlotBase):
+    pass
+
+
 class Tweaks(Loadable):
     filename="default_nonexistent_filename_ignore"
     _all_filenames='all plots'
