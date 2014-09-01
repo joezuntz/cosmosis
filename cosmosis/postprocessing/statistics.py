@@ -213,3 +213,26 @@ class MultinestStatistics(MultinestPostProcessorElement, MetropolisHastingsStati
         weight = self.weight_col()
         n = len(data)
         return n, mean_weight(data,weight), std_weight(data,weight), median_weight(data, weight)
+
+    def run(self):
+        # Use parent statistics, except add evidence information,
+        # which is just read from the file
+        files = super(MultinestStatistics,self).run()
+        logz = self.source.final_metadata[0]["log_z"]
+        logz_sigma = self.source.final_metadata[0]["log_z_error"]
+        
+        #First print to screen
+        print "Bayesian evidence:"
+        print "    log(Z) = %g ± %g" % (logz,logz_sigma)
+        print
+
+        #Now save to file
+        filename = self.filename("evidence")
+        f = open(filename,'w')
+        f.write('#logz    logz_sigma\n')
+        f.write('%e    %e\n'%(logz,logz_sigma))
+        f.close()
+
+        #Include evidence in list of created files
+        files.append(filename)
+        return files
