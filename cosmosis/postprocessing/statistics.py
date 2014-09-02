@@ -128,6 +128,19 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         files = self.report_file()
         return files
 
+class MetropolisHastingsCovariance(Statistics, MCMCPostProcessorElement):
+    def run(self):
+        col_names = [p for p in self.source.colnames if p.lower() not in ["like", "importance", "weight"]]
+        cols = [self.reduced_col(p) for p in col_names]
+        covmat = np.cov(cols)
+        filename = self.filename("covmat")
+        f = open(filename, 'w')
+        f.write('#'+'    '.join(col_names)+'\n')
+        np.savetxt(f, covmat)
+        f.close()
+        return [filename]
+
+
 
 class GridStatistics(ConstrainingStatistics):
     def set_data(self):
