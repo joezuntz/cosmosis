@@ -105,7 +105,7 @@ class Pipeline(object):
 
     def setup(self):
         if self.timing:
-            timings = [time.clock()]
+            timings = [time.time()]
 
         for module in self.modules:
             # identify parameters needed for module setup
@@ -127,13 +127,13 @@ class Pipeline(object):
             module.setup(config_block, quiet=self.quiet)
 
             if self.timing:
-                timings.append(time.clock())
+                timings.append(time.time())
 
         if not self.quiet:
             sys.stdout.write("Setup all pipeline modules\n")
 
         if self.timing:
-            timings.append(time.clock())
+            timings.append(time.time())
             sys.stdout.write("Module timing:\n")
             for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
                 sys.stdout.write("%s %f\n" % (name, t2-t1))
@@ -154,7 +154,7 @@ class Pipeline(object):
                 sys.stdout.flush()
                 data_package.log_access("MODULE-START", module.name, "")
             if self.timing:
-                t1 = time.clock()
+                t1 = time.time()
 
             status = module.execute(data_package)
 
@@ -163,7 +163,7 @@ class Pipeline(object):
                 sys.stdout.flush()
 
             if self.timing:
-                t2 = time.clock()
+                t2 = time.time()
                 sys.stdout.write("%s took: %f seconds\n"% (module,t2-t1))
 
             if status:
