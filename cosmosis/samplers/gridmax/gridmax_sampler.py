@@ -1,7 +1,6 @@
 from .. import ParallelSampler
 import numpy as np
 
-INI_SECTION = "gridmax"
 
 def task(p):
     #pipeline here refers to a global variable

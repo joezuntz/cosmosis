@@ -1,4 +1,39 @@
-class PostProcessorElement(object):
+import os
+import sys
+import numpy as np
+
+class Loadable(object):
+    """ A series of methods to allow creating instances from python files"""
+    @classmethod
+    def subclasses_in_file(cls, filepath):
+        dirname, filename = os.path.split(filepath)
+        # allows .pyc and .py modules to be used
+        impname, ext = os.path.splitext(filename)
+        sys.path.insert(0, dirname)
+        try:
+            library = __import__(impname)
+        except Exception as error:
+            print "Could not find/load extension file %s:" % filepath
+            print "ERROR:", error
+            return []
+
+        subclasses = []
+        for x in dir(library):
+            x = getattr(library, x)
+            if type(x) == type and issubclass(x, cls) and not x is cls:
+                subclasses.append(x)
+        return subclasses
+
+
+    @classmethod
+    def instances_from_file(cls, filename, *args, **kwargs):
+        subclasses = cls.subclasses_in_file(filename)
+        return [s(*args, **kwargs) for s in subclasses]
+
+
+
+
+class PostProcessorElement(Loadable):
     def __init__(self, data_source, **options):
         super(PostProcessorElement,self).__init__()
         self.source = data_source
@@ -23,6 +58,16 @@ class MCMCPostProcessorElement(PostProcessorElement):
             burn = int(burn)
         return col[burn::thin]
 
+    def posterior_sample(self):
+        """
+        A posterior sample of MCMC is just all the samples.
+
+        Return an array of Trues with the same length as the chain
+
+        """
+        n = self.source.get_col(0).size
+        return np.ones(n, dtype=True)
+
 class MultinestPostProcessorElement(PostProcessorElement):
     def reduced_col(self, name):
         #we only use the last n samples from a multinest output
@@ -40,4 +85,20 @@ class MultinestPostProcessorElement(PostProcessorElement):
         w = w[w>0].copy()
         self._weight_col = w
         return self._weight_col
+
+    def posterior_sample(self):
+        """
+        Multinest chains are *not* drawn from the posterior distribution
+        but we do have the information we need to construct such a sample.
+
+        This function returns a boolean array with True where we should
+        use the sample at that index, and False where we should not.
+
+        """
+        w = self.weight_col()
+        w = w / w.max()
+        u = np.random.uniform(size=w.size)
+        return u<w
+
+
 

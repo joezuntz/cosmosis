@@ -1,4 +1,6 @@
-from .elements import PostProcessorElement, MCMCPostProcessorElement, MultinestPostProcessorElement 
+from .elements import PostProcessorElement
+from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement
+from .elements import Loadable
 from ..plotting.kde import KDE
 from .utils import std_weight, mean_weight
 from . import cosmology_theory_plots
@@ -8,6 +10,7 @@ import scipy.optimize
 from . import lazy_pylab as pylab
 import itertools
 import os
+import sys
 
 default_latex_file = os.path.join(os.path.split(__file__)[0], "latex.ini")
 
@@ -86,6 +89,24 @@ class Plots(PostProcessorElement):
     def run(self):
         print "I do not know how to generate plots for this kind of data"
         return []
+
+    def tweak(self, tweaks):
+        if tweaks.filename==Tweaks._all_filenames:
+            filenames = self.figures.keys()
+        elif isinstance(tweaks.filename, list):
+                filenames = tweaks.filename
+        else:
+            filenames = [tweaks.filename]
+
+        for filename in filenames:
+            if tweaks.filename!=Tweaks._all_filenames:
+                filename = self.filename(filename)
+            fig = self.figures.get(filename)
+            if fig is None:
+                continue
+            pylab.figure(fig.number)
+            tweaks.run()
+
 
 class GridPlots(Plots):
     @staticmethod
@@ -176,8 +197,8 @@ class GridPlots1D(GridPlots):
 class GridPlots2D(GridPlots):
     def run(self):
         filenames=[]
-        for i, name1 in enumerate(self.source.colnames[:]):
-            for name2 in self.source.colnames[i:]:
+        for i, name1 in enumerate(self.source.colnames[:-1]):
+            for name2 in self.source.colnames:
                 if name1<=name2: continue
                 filename=self.plot_2d(name1, name2)
                 if filename: filenames.append(filename)
@@ -451,3 +472,72 @@ class MultinestPlots2D(MultinestPostProcessorElement, MetropolisHastingsPlots2D)
         level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
+
+class ColorScatterPlotBase(Plots):
+    scatter_filename='scatter'
+    x_column = None
+    y_column = None
+    color_column = None
+
+    def run(self):
+        if (self.x_column is None) or (self.y_column is None) or (self.color_column is None):
+            print "Please specify x_column, y_column, color_column, and scatter_filename"
+            print "in color scatter plots"
+            return []
+
+        #Get the columns you want to plot
+        #"reduced" means that we skip the burn-in
+        #and apply any thinning.
+        #We get these functions because we inherit
+        #from plots.MetropolisHastingsPlots
+        x = self.reduced_col(self.x_column)
+        y = 100*self.reduced_col(self.y_column)
+        c = self.reduced_col(self.color_column)
+
+        # Multinest chains do not contain equally 
+        # weighted samples (i.e. the chain rows are not
+        # drawn from the posterior) because you need more
+        # than that to do the evidence calculation.
+        # We need to use a method from MultinestPostProcessorElement
+        # to get a posterior sample.
+        # On the other hand regular MCMC chains are posteriors.
+        # So subclasses will need to inherit from either MultinestPostProcessorElement
+        # or MCMCPostProcessorElement.
+        sample = self.posterior_sample()
+        x = x[sample]
+        y = y[sample]
+        c = c[sample]
+
+        #Use these to create figures looked
+        #after by cosmosis.
+        #Though you can also use your own filenames,
+        #saving, etc, in which case do not use these functions
+        filename = self.filename(self.scatter_filename)
+        figure = self.figure(filename)
+
+        #Do the actual plotting.
+        #By default the saving will be handled later.
+        pylab.scatter(x, y, c=c, s=4, lw=0)
+
+        pylab.colorbar(label=self.latex(self.color_column))
+        pylab.xlabel(self.latex(self.x_column))
+        pylab.ylabel(self.latex(self.y_column))
+
+        #Return a list of files you create.
+        return [filename]
+
+class MCMCColorScatterPlot(MCMCPostProcessorElement, ColorScatterPlotBase):
+    pass
+
+class MultinestColorScatterPlot(MultinestPostProcessorElement, ColorScatterPlotBase):
+    pass
+
+
+class Tweaks(Loadable):
+    filename="default_nonexistent_filename_ignore"
+    _all_filenames='all plots'
+    def __init__(self):
+        self.has_run=False
+
+    def run(self):
+        print "Please fill in the 'run' method of your tweak to modify a plot"

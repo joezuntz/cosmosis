@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-from . import lazy_pylab as pylab
 import os
 import argparse
 import numpy as np
+#Do these as absolute imports instead of relative as
+#we may want to run this program as a script directly.
+from cosmosis.postprocessing import lazy_pylab as pylab
+from cosmosis.runtime import utils
 
 
 #Set up the command line arguments
@@ -15,6 +18,9 @@ the first demo we have for an example.
 
 You need to supply at least the name of the directory where
 CosmoSIS data was saved.
+
+You can either call this script directly or use the "postprocess"
+program on the ini file.
 """)
 
 parser.add_argument("dirname", help="A directory of cosmology data as produced by the 'test' sampler")
@@ -330,6 +336,7 @@ class GrowthPlot(Plot):
 
 
 def main(args):
+	utils.mkdir(args.output_dir)
 	for cls in plot_list:
 		try:
 			cls.make(args.dirname, args.output_dir, args.prefix, args.type)

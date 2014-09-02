@@ -14,8 +14,8 @@ using std::string;
 using std::vector;
 using std::size_t;
 
-template <class T, class W>
-void test(T const& x, T const& y, W const& wrong)
+template <class T>
+void test_empty_datablock(T const& y)
 {
   DataBlock b;
   assert(not b.has_section("sect_a"));
@@ -23,6 +23,15 @@ void test(T const& x, T const& y, W const& wrong)
 
   assert(b.get_val("no such section", "a", y, val) == DBS_SUCCESS);
   assert(val == y);
+}
+
+template <class T, class W>
+void test(T const& x, T const& y, W const& wrong)
+{
+  test_empty_datablock(y);
+
+  DataBlock b;
+  T val;
 
   assert(b.put_val("SECT_A", "param", x) == DBS_SUCCESS);
   assert(b.has_section("sect_a"));
@@ -30,11 +39,11 @@ void test(T const& x, T const& y, W const& wrong)
   assert(b.value_name("sect_a",0)=="param");
   assert(b.has_section("Sect_a"));
   assert(b.has_section("Sect_A"));
-  assert(b.get_val("sect_a", "no such parameter", y, val) == DBS_SUCCESS);
+  assert(b.get_val("sect_a", "parameter_will_be_defaulted", y, val) == DBS_SUCCESS);
   assert(val == y);
 
   assert(b.has_val("no such section", "x") == false);
-  assert(b.has_val("sect_a", "no such parameter") == false);
+  assert(b.has_val("sect_a", "parameter_will_be_defaulted") == true);
   assert(b.has_val("sect_a", "param") == true);
 
   assert(b.get_val("sect_a", "param", val) == DBS_SUCCESS);

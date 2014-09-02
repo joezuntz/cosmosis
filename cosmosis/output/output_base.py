@@ -22,6 +22,21 @@ class OutputMetaclass(abc.ABCMeta):
                 if alias not in output_registry:
                     output_registry[alias] = cls
 
+class CommentFileWrapper(object):
+    """
+    This little wrapper object is to turn an OutputBase object
+    into a write-only file-like object where .write commands
+    are turned into comments.
+
+    This seemed cleaner than just adding a .write function to 
+    OutputBase itself since it would look like that would write directly
+    to file, not as comments.
+    """
+    def __init__(self, obj):
+        self.obj=obj
+    def write(self, text):
+        self.obj.comment(text)
+
 class OutputBase(object):
     __metaclass__ = OutputMetaclass
 
@@ -122,6 +137,12 @@ class OutputBase(object):
         #Pass to the subclasses to write output
         self._write_parameters(params)
 
+    def flush(self):
+        """
+        For supported output classes, flush all pending output
+        """
+        self._flush()
+
     def metadata(self, key, value, comment=""):
         """
         Save an item of metadata, with an optional comment.
@@ -142,6 +163,10 @@ class OutputBase(object):
             raise RuntimeError("Tried to write final info to closed output")
         self._write_final(key, value, comment)
 
+    def comment_file_wrapper(self):
+        return CommentFileWrapper(self)
+
+
     def close(self):
         self.closed=True
         self._close()
@@ -154,6 +179,9 @@ class OutputBase(object):
         pass
 
     def _close(self):
+        pass
+
+    def _flush(self):
         pass
 
     @abc.abstractmethod
