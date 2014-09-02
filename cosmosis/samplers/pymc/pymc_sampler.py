@@ -94,7 +94,7 @@ class PyMCSampler(ParallelSampler):
         likes = -0.5 * self.mcmc.trace('deviance')[:]
 
         for trace, like in itertools.izip(traces, likes):
-            self.output.parameters(trace, extra, like)
+            self.output.parameters(trace, like)
 
         self.analytics.add_traces(traces, likes)
 
