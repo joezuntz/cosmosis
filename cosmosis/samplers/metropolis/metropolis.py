@@ -1,7 +1,7 @@
 import numpy as np
 
 class MCMC(object):
-	def __init__(self, start,posterior, covariance=None):
+	def __init__(self, start,posterior, covariance):
 		#Set up basic variables
 		self.posterior = posterior
 		self.p = np.array(start)
@@ -33,6 +33,7 @@ class MCMC(object):
 			# proposal point and its likelihood
 			q = self.propose()
 			Lq = self.posterior(q)
+			print "  ".join(str(x) for x in q), Lq[0]
 			#acceptance test
 			if  Lq[0] >= self.Lp[0] or  (Lq[0] - self.Lp[0]) >= np.log(np.random.uniform()):
 				#update if accepted

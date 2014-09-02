@@ -35,10 +35,7 @@ class MetropolisSampler(ParallelSampler):
             print param, x
         self.n = self.read_ini("nstep", int, default=100)
 
-        try:
-            covmat = self.load_covariance_matrix()
-        except IOError:
-            covmat = None
+        covmat = self.load_covariance_matrix()
 
         self.sampler = metropolis.MCMC(start, posterior, covmat)
 
@@ -80,11 +77,12 @@ class MetropolisSampler(ParallelSampler):
     def load_covariance_matrix(self):
         covmat_filename = self.read_ini("covmat", str, "").strip()
         if covmat_filename == "":
-            return None
-        if not os.path.exists(covmat_filename):
+            covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
+        elif not os.path.exists(covmat_filename):
             raise ValueError(
             "Covariance matrix %s not found" % covmat_filename)
-        covmat = np.loadtxt(covmat_filename)
+        else:
+            covmat = np.loadtxt(covmat_filename)
 
         if covmat.ndim == 0:
             covmat = covmat.reshape((1, 1))
