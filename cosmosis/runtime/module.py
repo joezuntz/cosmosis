@@ -4,6 +4,7 @@ import sys
 import numpy as np
 
 from cosmosis.datablock import option_section
+import cosmosis.runtime.timer
 
 MODULE_TYPE_EXECUTE_SIMPLE = "execute"
 MODULE_TYPE_EXECUTE_CONFIG = "execute_config"
@@ -52,7 +53,8 @@ class Module(object):
         for (section, name) in config.keys(self.name):
             config[option_section, name] = config[section, name]
 
-    def setup(self, config, quiet=True):
+    def setup(self, config, timer, quiet=True):
+        timer.start(self.name, cosmosis.runtime.timer.SETUP_SAMPLE_ID)
         self.copy_section_to_module_options(config)
         if not self.is_python:
             config = config._ptr
@@ -72,16 +74,22 @@ class Module(object):
         self.execute_function = Module.load_function(self.library,
                                                      self.execute_function,
                                                      module_type)
+        timer.capture()
         if self.execute_function is None:
             raise ValueError("Could not find a function 'execute' in module %s"%self.name)
 
-    def execute(self, data_block):
+    def execute(self, data_block, timer, sampleid):
+        timer.start(self.name, sampleid)
+
         if not self.is_python:
             data_block = data_block._ptr
+        rc = None
         if self.data is not None:
-            return self.execute_function(data_block, self.data)
+            rc = self.execute_function(data_block, self.data)
         else:
-            return self.execute_function(data_block)
+            rc = self.execute_function(data_block)
+        timer.capture()
+        return rc
 
     def cleanup(self):
         if self.cleanup_function:
