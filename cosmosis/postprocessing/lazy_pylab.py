@@ -52,6 +52,8 @@ class _LazyPylab(object):
         matplotlib.rcParams['xtick.minor.size'] = 5.0
         matplotlib.rcParams['ytick.major.size'] = 10.0
         matplotlib.rcParams['ytick.minor.size'] = 5.0
+        matplotlib.rcParams['figure.subplot.bottom'] = 0.125
+        matplotlib.rcParams['figure.subplot.left'] = 0.175
         matplotlib.use("Agg")
 
     def __getattr__(self, name):
