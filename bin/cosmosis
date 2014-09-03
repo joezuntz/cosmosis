@@ -129,10 +129,16 @@ def main(args, pool=None):
             print "Press Command-T to get one, then run these commands:"
             print "  source config/setup-postprocess"
             print "  postprocess demos/demo1.ini -o plots -p demo1"
+            print
+            print "Then you can try out the other demos..."
+            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
         else:
             print "You can make plots of the outputs of this using the command:"
             print
             print "postprocess demos/demo1.ini -o plots -p demo1"
+            print
+            print "Then you can try out the other demos..."
+            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
             print
 
 if __name__=="__main__":
