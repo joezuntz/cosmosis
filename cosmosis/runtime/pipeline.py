@@ -3,6 +3,7 @@ import ctypes
 import sys
 import string
 import numpy as np
+import time
 import collections
 import ConfigParser
 
@@ -13,7 +14,7 @@ import prior
 import module
 from cosmosis.datablock.cosmosis_py import block
 import cosmosis.datablock.cosmosis_py as cosmosis_py
-import cosmosis.runtime.timer as timer
+
 
 PIPELINE_INI_SECTION = "pipeline"
 
@@ -39,19 +40,9 @@ class Pipeline(object):
 
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
-        if self.options.getboolean(PIPELINE_INI_SECTION, "timing", False):
-            fname = self.options.get(PIPELINE_INI_SECTION,
-                                     "timing_file",
-                                     "cosmosis-timing-%d.db" % os.getpid())
-            self.timer = timer.Timer(fname)
-        else:
-            self.timer = timer.NullTimer()
+        self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
         shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", "")
         if shortcut=="": shortcut=None
-
-        # Count of samples executed so far. This is used to correlate
-        # timing information.
-        self.num_samples = 0
 
         # initialize modules
         self.modules = []
@@ -113,6 +104,9 @@ class Pipeline(object):
         return os.path.join(self.base_directory(), path)
 
     def setup(self):
+        if self.timing:
+            timings = [time.clock()]
+
         for module in self.modules:
             # identify parameters needed for module setup
             relevant_sections = [PIPELINE_INI_SECTION,
@@ -130,18 +124,25 @@ class Pipeline(object):
                     if val is not None:
                         config_block.put(section, name, val)
 
-            module.setup(config_block, self.timer, quiet=self.quiet)
+            module.setup(config_block, quiet=self.quiet)
+
+            if self.timing:
+                timings.append(time.clock())
 
         if not self.quiet:
             sys.stdout.write("Setup all pipeline modules\n")
 
+        if self.timing:
+            timings.append(time.clock())
+            sys.stdout.write("Module timing:\n")
+            for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
+                sys.stdout.write("%s %f\n" % (name, t2-t1))
+
     def cleanup(self):
         for module in self.modules:
             module.cleanup()
-        self.timer.close(sys.stdout)
 
     def run(self, data_package):
-        self.num_samples += 1
         modules = self.modules
         first = (self.shortcut_data is None)
         if self.shortcut_module and not first:
@@ -152,12 +153,18 @@ class Pipeline(object):
                 sys.stdout.write("Running %.20s ...\n" % module)
                 sys.stdout.flush()
                 data_package.log_access("MODULE-START", module.name, "")
+            if self.timing:
+                t1 = time.clock()
 
-            status = module.execute(data_package, self.timer, self.num_samples)
+            status = module.execute(data_package)
 
             if self.debug:
                 sys.stdout.write("Done %.20s status = %d \n" % (module,status))
                 sys.stdout.flush()
+
+            if self.timing:
+                t2 = time.clock()
+                sys.stdout.write("%s took: %f seconds\n"% (module,t2-t1))
 
             if status:
                 if self.debug:
