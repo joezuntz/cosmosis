@@ -407,14 +407,21 @@ class TestPlots(Plots):
         ftype=self.options.get("file_type", "png")
         filenames = []
         for cls in cosmology_theory_plots.plot_list:
+            fig = None
             try:
-                p=cls(dirname, output_dir, prefix, ftype, figure=1)
+                p=cls(dirname, output_dir, prefix, ftype, figure=None)
                 filename=p.filename
-                fig = self.figure(filename)
+                fig = p.figure
                 p.figure=fig
                 p.plot()
+                self.figures[filename] = fig
                 filenames.append(filename)
             except IOError as err:
+                if fig is not None:
+                    #Then we got as far as making the figure before
+                    #failing.  so remove it
+                    print 'close'
+                    pylab.close()
                 print err
         return filenames
 
