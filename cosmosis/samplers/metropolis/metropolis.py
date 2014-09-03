@@ -25,6 +25,7 @@ class MCMC(object):
 
 	def sample(self, n):
 		samples = []
+		blobs = []
 		#Take n sample mcmc steps
 		for i in xrange(n):
 			#this function is designed to be called
@@ -41,7 +42,7 @@ class MCMC(object):
 				self.p = q
 				self.accepted += 1
 			#store next point
-			samples.append((self.p, self.Lp[0]))
+			samples.append((self.p, self.Lp[0], self.Lp[1]))
 		return samples
 
 	def randomize_rotation(self):

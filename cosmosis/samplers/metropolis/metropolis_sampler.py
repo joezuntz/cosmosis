@@ -51,8 +51,8 @@ class MetropolisSampler(ParallelSampler):
             self.interrupted=True
             return
         self.num_samples += self.n
-        for vector, like in samples:
-            self.output.parameters(vector, like)
+        for vector, like, extra in samples:
+            self.output.parameters(vector, extra, like)
 
         rate = self.sampler.accepted * 100.0 / self.sampler.iterations
         print "Accepted %d / %d samples (%.2f%%)" % \
