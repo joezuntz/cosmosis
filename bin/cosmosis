@@ -128,11 +128,11 @@ def main(args, pool=None):
             print "To make plots you will need a new terminal window"
             print "Press Command-T to get one, then run these commands:"
             print "  source config/setup-postprocess"
-            print "  postprocess demos/demo1.ini"
+            print "  postprocess demos/demo1.ini -o plots -p demo1"
         else:
             print "You can make plots of the outputs of this using the command:"
             print
-            print "postprocess demos/demo1.ini"
+            print "postprocess demos/demo1.ini -o plots -p demo1"
             print
 
 if __name__=="__main__":
