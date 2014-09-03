@@ -1,4 +1,5 @@
 import abc
+from . import elements
 from . import plots
 from . import statistics
 from cosmosis import output as output_module
@@ -12,8 +13,6 @@ class PostProcessMetaclass(abc.ABCMeta):
         if d is None: return
         postprocessor_registry[sampler] = cls
 
-
-
 class PostProcessor(object):
     __metaclass__=PostProcessMetaclass
     sampler=None
@@ -24,6 +23,12 @@ class PostProcessor(object):
         elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
         self.steps = [e(self, **options) for e in elements]
         self.options=options
+
+    def load_extra_steps(self, filename):
+        extra = elements.PostProcessorElement.instances_from_file(filename, self, **self.options)
+        for e in extra:
+            print "Adding post-processor step: %s" % (e.__class__.__name__)
+        self.steps.extend(extra)
 
     def load(self, ini):
         if self.cosmosis_standard_output:
@@ -69,4 +74,19 @@ class PostProcessor(object):
     def finalize(self):
         for e in self.steps:
             e.finalize()
+
+    def apply_tweaks(self, tweaks):
+        if tweaks.filename==plots.Tweaks.filename:
+            print tweaks.filename
+            print "Please fill in the 'filename' attribute of your tweaks"
+            print "Put the base name (without the directory, prefix, or suffix)"
+            print "of the filename you want to tweak."
+            print "You can use also use a list for more than one plot,"
+            print "or put '%s' to apply to all plots."%plots.Tweaks._all_filenames
+            return
+        for step in self.steps:
+            if isinstance(step, plots.Plots):
+                step.tweak(tweaks)
+
+
 

@@ -5,8 +5,6 @@ import itertools
 from cosmosis.runtime.analytics import Analytics
 import logging
 
-PYMC_INI_SECTION = "pymc"
-
 
 class PyMCSampler(ParallelSampler):
     sampler_outputs = [("like", float)]
@@ -56,9 +54,7 @@ class PyMCSampler(ParallelSampler):
             covmat = None
 
         # determine step method
-        self.do_adaptive = self.ini.getboolean(PYMC_INI_SECTION,
-                                               "adaptive_mcmc",
-                                               False)
+        self.do_adaptive = self.read_ini("adaptive_mcmc", bool, False)
         if self.do_adaptive:
             delay = 100
         else:
@@ -98,7 +94,7 @@ class PyMCSampler(ParallelSampler):
         likes = -0.5 * self.mcmc.trace('deviance')[:]
 
         for trace, like in itertools.izip(traces, likes):
-            self.output.parameters(trace, extra, like)
+            self.output.parameters(trace, like)
 
         self.analytics.add_traces(traces, likes)
 
@@ -124,7 +120,7 @@ class PyMCSampler(ParallelSampler):
             return False
 
     def load_covariance_matrix(self):
-        covmat_filename = self.ini.get(PYMC_INI_SECTION, "covmat", "").strip()
+        covmat_filename = self.read_ini("covmat",str,"").strip()
         if covmat_filename == "":
             return None
         if not os.path.exists(covmat_filename):

@@ -1,14 +1,19 @@
+MPI = $(shell which mpif90 &> /dev/null)
+
+ifeq ($(MPI),)
+$(warning Building a non-MPI version of the MultiNest sampler)
+FC = gfortran
+CC = gcc
+CXX = g++
+FFLAGS += -O3 -fPIC -ffree-line-length-none
+CFLAGS += -O3 -fPIC
+else
 FC = mpif90
 CC = mpicc
 CXX = mpicxx
 FFLAGS += -O3 -DMPI -fPIC -ffree-line-length-none
 CFLAGS += -O3 -DMPI -fPIC
-
-#FC = gfortran
-#CC = gcc
-#CXX = g++
-#FFLAGS += -O3 -fPIC -ffree-line-length-none
-#CFLAGS += -O3 -fPIC
+endif
 
 LAPACKLIB = -llapack
 
@@ -28,10 +33,14 @@ NSOBJECTS = utils.o utils1.o priors.o kmeans_clstr.o xmeans_clstr.o posterior.o 
 %.o: %.F90
 	$(FC) $(FFLAGS) -c -o $@ $^ 
 
-default: libnest3.a
+#default: libnest3.a
 
 all: libnest3.so
 
+
+test:
+	@echo "Alas, MultiNest has no tests"
+	
 # all: libnest3.a obj_detect eggbox eggboxC eggboxC++ gaussian gauss_shell \
 # rosenbrock himmelblau ackley
  

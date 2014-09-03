@@ -79,7 +79,7 @@ class Plot(object):
 		try:
 			return np.loadtxt(filename)
 		except Exception as e:
-			raise IOError("Not making plot: %s (no data in this run)"% self.__class__.__name__[:-4])
+			raise IOError("Not making plot: %s (no data in this sample)"% self.__class__.__name__[:-4])
 
 	#Handy little method for trying to numeric-ify a value
 	@staticmethod

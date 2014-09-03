@@ -3,8 +3,6 @@ import numpy as np
 from ...runtime import pipeline
 import sys
 
-TEST_INI_SECTION = "test"
-
 
 class TestSampler(Sampler):
     needs_output = False
