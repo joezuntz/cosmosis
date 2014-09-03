@@ -40,13 +40,10 @@ class Pipeline(object):
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
         if self.options.getboolean(PIPELINE_INI_SECTION, "timing", False):
-            maxrecords = self.options.getint(PIPELINE_INI_SECTION,
-                                             "max_timing_records",
-                                             100 * 1000)
             fname = self.options.get(PIPELINE_INI_SECTION,
                                      "timing_file",
                                      "cosmosis-timing-%d.db" % os.getpid())
-            self.timer = timer.Timer(fname, maxrecords, sys.stdout)
+            self.timer = timer.Timer(fname)
         else:
             self.timer = timer.NullTimer()
         shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", "")
@@ -141,7 +138,7 @@ class Pipeline(object):
     def cleanup(self):
         for module in self.modules:
             module.cleanup()
-        self.timer.close()
+        self.timer.close(sys.stdout)
 
     def run(self, data_package):
         self.num_samples += 1
