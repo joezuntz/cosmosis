@@ -65,8 +65,8 @@ class MCMCPostProcessorElement(PostProcessorElement):
         Return an array of Trues with the same length as the chain
 
         """
-        n = self.source.get_col(0).size
-        return np.ones(n, dtype=True)
+        n = self.reduced_col(self.source.colnames[0]).size
+        return np.ones(n, dtype=bool)
 
 class MultinestPostProcessorElement(PostProcessorElement):
     def reduced_col(self, name):
