@@ -420,7 +420,6 @@ class TestPlots(Plots):
                 if fig is not None:
                     #Then we got as far as making the figure before
                     #failing.  so remove it
-                    print 'close'
                     pylab.close()
                 print err
         return filenames
