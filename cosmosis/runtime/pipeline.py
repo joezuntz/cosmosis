@@ -337,6 +337,8 @@ class LikelihoodPipeline(Pipeline):
     def posterior(self, p):
         prior = self.prior(p)
         if prior == -np.inf:
+            if not self.quiet:
+                sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
             return prior, np.repeat(np.nan, self.number_extra)
         like, extra = self.likelihood(p)
         return prior + like, extra
