@@ -10,7 +10,7 @@ class Statistics(PostProcessorElement):
         return []
 
     def filename(self, base, ftype='txt'):
-        output_dir = self.options.get("outdir", "png")
+        output_dir = self.options.get("outdir", "./")
         prefix=self.options.get("prefix","")
         if prefix: prefix+="_"        
         return "{0}/{1}{2}.{3}".format(output_dir, prefix, base, ftype)
@@ -236,6 +236,92 @@ class GridStatistics(ConstrainingStatistics):
 class TestStatistics(Statistics):
     def run(self):
         return []
+
+class DunkleyTest(MetropolisHastingsStatistics):
+    """
+    Run the Dunley et al (2005) power spectrum test
+    for MCMC convergence.  This is, loosely speaking,
+    the Fourier domain version of an auto-correlation
+    length check.
+
+    """
+    #This is the value recommended in Dunkely et al.
+    #You can probably get away with less than this
+    jstar_convergence_limit = 20.0
+
+    def run(self):
+        n = self.source.metadata[0]['n_varied']
+        jstar = []
+        #Just sample over the sample parameters,
+        #not the likelihood or the derived parameters
+        params = self.source.colnames[:n]
+        print "Dunkely et al (2005) power spectrum test."
+        print "For converged chains j* > %.1f:" %self.jstar_convergence_limit
+        for param in params:
+            col = self.reduced_col(param)
+            js = self.compute_jstar(col)
+            jstar.append(js)
+            m = "%-35s j* = %-.1f" % (param, js)
+            if js>20:
+                print "    %-50s" % m
+            else:
+                print "    %-50s NOT CONVERGED!" % m
+        print
+        if not np.min(jstar)>self.jstar_convergence_limit:
+            print "The Dunkley et al (2005) power spectrum test shows that this chain has NOT CONVERGED."
+        else:
+            print "The power spectrum for this chain suggests good convergence."
+        print
+        filename = self.filename("dunkley")
+        f = open(filename,'w')
+        f.write('#'+'    '.join(params))
+        f.write("\n")
+        f.write('    '.join(str(js) for jz in jstar))
+        f.write("\n")
+        f.close()
+        return [filename]
+
+
+    @staticmethod
+    def compute_jstar(x):
+        import scipy.optimize
+
+        #Get the power spectrum of the chain
+        n=len(x)
+        p = abs(np.fft.rfft(x)[1:(n/2+1)])**2
+        #And the k-axis
+        j = np.arange(p.size)+1.
+        k = j / (2*np.pi*n)
+        #fitting is done on the log of the power 
+        #spectrum
+        logp = np.log(p)
+
+        #The model for the power spectrum.
+        #See Dunkley et al for info on the 
+        #constant
+        def template(k, L0, a, kstar):
+            K = (kstar / k)**a
+            euler_mascheroni = 0.5772156649015
+            return L0 + np.log(K/(1.+K)) - euler_mascheroni
+
+        #Starting guess values for parameters.
+        #These are usually fine.
+        L0 = logp[0:10].mean()
+        a  = 1.0
+        kstar = 0.1/n
+
+        #Fit curve with LevMar least-squares
+        start_params = [L0, a, kstar]
+        try:
+            params, cov = scipy.optimize.curve_fit(template, k, logp, start_params)
+        except RuntimeError:
+            #Runtime Errors signal that the fitting process has failed.
+            #This usually happens because the chain is too short,
+            #or has periodic or other features in like an emcee chain
+            params = [np.nan, np.nan, np.nan]
+        L0, a, kstar = params
+        return kstar * x.size * 2 * np.pi
+
 
 class MultinestStatistics(MultinestPostProcessorElement, MetropolisHastingsStatistics):
     def compute_basic_stats_col(self, col):
