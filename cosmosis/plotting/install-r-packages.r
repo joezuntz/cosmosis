@@ -12,7 +12,9 @@ install.if.needed <- function(pkgname)
 needed.packages <- c( "optparse"
                     , "latticeExtra"
                     , "reshape2"
+                    , "RSQLite"
+                    , "doBy"
+                    , "MASS"
                     )
 for (pkg in needed.packages)
   install.if.needed(pkg)
-
