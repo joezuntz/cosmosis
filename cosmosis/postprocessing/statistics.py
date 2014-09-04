@@ -130,15 +130,32 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
 
 class MetropolisHastingsCovariance(Statistics, MCMCPostProcessorElement):
     def run(self):
+        #Determine the parameters to use
+
         col_names = [p for p in self.source.colnames if p.lower() not in ["like", "importance", "weight"]]
         cols = [self.reduced_col(p) for p in col_names]
         covmat = np.cov(cols)
+
+        #For the proposal we just want the first 
+        #nvaried rows/cols - we don't want to include
+        #extra parameters like sigma8
+        n = self.source.metadata[0]['n_varied']
+        proposal = covmat[:n,:n]
+
+        #Save the covariance matrix
         filename = self.filename("covmat")
         f = open(filename, 'w')
         f.write('#'+'    '.join(col_names)+'\n')
         np.savetxt(f, covmat)
         f.close()
-        return [filename]
+
+        #Save the proposal matrix
+        proposal_filename = self.filename("proposal")
+        f = open(proposal_filename, 'w')
+        f.write('#'+'    '.join(col_names[:n])+'\n')
+        np.savetxt(f, proposal)
+        f.close()
+        return [filename, proposal_filename]
 
 
 
