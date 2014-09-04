@@ -32,12 +32,15 @@ class MetropolisSampler(ParallelSampler):
         start = self.define_parameters(random_start)
         print "MCMC starting point:"
         for param, x in zip(self.pipeline.varied_params, start):
-            print param, x
+            print "    ", param, x
         self.n = self.read_ini("nstep", int, default=100)
 
+        #Covariance matrix
         covmat = self.load_covariance_matrix()
 
-        self.sampler = metropolis.MCMC(start, posterior, covmat)
+        #Sampler object itself.
+        quiet = self.pipeline.quiet
+        self.sampler = metropolis.MCMC(start, posterior, covmat, quiet=quiet)
 
     def worker(self):
         while not self.is_converged():
@@ -55,7 +58,7 @@ class MetropolisSampler(ParallelSampler):
             self.output.parameters(vector, extra, like)
 
         rate = self.sampler.accepted * 100.0 / self.sampler.iterations
-        print "Accepted %d / %d samples (%.2f%%)" % \
+        print "Accepted %d / %d samples (%.2f%%)\n" % \
             (self.sampler.accepted, self.sampler.iterations, rate)
         self.sampler.tune()
 

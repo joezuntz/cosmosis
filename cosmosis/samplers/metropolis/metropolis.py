@@ -1,11 +1,12 @@
 import numpy as np
 
 class MCMC(object):
-	def __init__(self, start,posterior, covariance):
+	def __init__(self, start,posterior, covariance, quiet=False):
 		#Set up basic variables
 		self.posterior = posterior
 		self.p = np.array(start)
 		self.ndim = len(self.p)
+		self.quiet=quiet
 		#Run the pipeline for the first time, on the 
 		#starting point
 		self.Lp = self.posterior(self.p)
@@ -33,8 +34,11 @@ class MCMC(object):
 			self.iterations += 1
 			# proposal point and its likelihood
 			q = self.propose()
+			if not self.quiet:
+				print "  ".join(str(x) for x in q)
 			Lq = self.posterior(q)
-			print "  ".join(str(x) for x in q), Lq[0]
+			if not self.quiet:
+				print
 			#acceptance test
 			if  Lq[0] >= self.Lp[0] or  (Lq[0] - self.Lp[0]) >= np.log(np.random.uniform()):
 				#update if accepted
