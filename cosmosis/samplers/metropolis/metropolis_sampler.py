@@ -62,9 +62,8 @@ class MetropolisSampler(ParallelSampler):
         likes = np.empty((self.n))
         for i, (vector, like, extra) in enumerate(samples):
             self.output.parameters(vector, extra, like)
-        traces[i,:] = vector
-        likes[i] = like
-        self.analytics.add_traces(traces, likes)	
+            traces[i,:] = vector
+        self.analytics.add_traces(traces)	
 
         rate = self.sampler.accepted * 100.0 / self.sampler.iterations
         print "Accepted %d / %d samples (%.2f%%)\n" % \
@@ -78,10 +77,10 @@ class MetropolisSampler(ParallelSampler):
         if self.num_samples >= self.samples:
             print "Full number of samples generated; sampling complete"
             return True
-        elif self.num_samples > 0 and self.pool is not None and \
+        elif self.num_samples > 0 and \
+                self.pool is not None and \
                 self.Rconverge is not None:
-            R = self.analytics.gelman_rubin()
-            print R
+            R = self.analytics.gelman_rubin(quiet=self.pipeline.quiet)
             return np.all(R <= self.Rconverge)
         else:
             return False

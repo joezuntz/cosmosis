@@ -96,7 +96,7 @@ class PyMCSampler(ParallelSampler):
         for trace, like in itertools.izip(traces, likes):
             self.output.parameters(trace, like)
 
-        self.analytics.add_traces(traces, likes)
+        self.analytics.add_traces(traces)
 
         self.output.log_noisy("Done %d iterations" % self.num_samples)
 
