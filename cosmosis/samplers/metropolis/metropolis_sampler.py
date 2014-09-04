@@ -24,9 +24,9 @@ class MetropolisSampler(ParallelSampler):
         pipeline = self.pipeline
         self.samples = self.read_ini("samples", int, default=20000)
         random_start = self.read_ini("random_start", bool, default=False)
-	self.Rconverge = self.read_ini("Rconverge", float, -1.0)
-	if self.Rconverge==-1.0:
-		self.Rconverge=None
+        self.Rconverge = self.read_ini("Rconverge", float, -1.0)
+        if self.Rconverge==-1.0:
+            self.Rconverge=None
         self.interrupted = False
         self.num_samples = 0
         #Any other options go here
@@ -44,7 +44,7 @@ class MetropolisSampler(ParallelSampler):
         #Sampler object itself.
         quiet = self.pipeline.quiet
         self.sampler = metropolis.MCMC(start, posterior, covmat, quiet=quiet)
-	self.analytics = Analytics(self.pipeline.varied_params, self.pool)
+        self.analytics = Analytics(self.pipeline.varied_params, self.pool)
 
     def worker(self):
         while not self.is_converged():
@@ -58,14 +58,13 @@ class MetropolisSampler(ParallelSampler):
             self.interrupted=True
             return
         self.num_samples += self.n
-	traces = np.empty((self.n,len(self.pipeline.varied_params)))
-	likes = np.empty((self.n))
+        traces = np.empty((self.n,len(self.pipeline.varied_params)))
+        likes = np.empty((self.n))
         for i, (vector, like, extra) in enumerate(samples):
             self.output.parameters(vector, extra, like)
-	    traces[i,:] = vector
-	    likes[i] = like
-		
-	self.analytics.add_traces(traces, likes)	
+        traces[i,:] = vector
+        likes[i] = like
+        self.analytics.add_traces(traces, likes)	
 
         rate = self.sampler.accepted * 100.0 / self.sampler.iterations
         print "Accepted %d / %d samples (%.2f%%)\n" % \
@@ -81,7 +80,9 @@ class MetropolisSampler(ParallelSampler):
             return True
         elif self.num_samples > 0 and self.pool is not None and \
                 self.Rconverge is not None:
-            return np.all(self.analytics.gelman_rubin() <= self.Rconverge)
+            R = self.analytics.gelman_rubin()
+            print R
+            return np.all(R <= self.Rconverge)
         else:
             return False
 
