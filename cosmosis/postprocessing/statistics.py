@@ -270,7 +270,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
         if not np.min(jstar)>self.jstar_convergence_limit:
             print "The Dunkley et al (2005) power spectrum test shows that this chain has NOT CONVERGED."
         else:
-            print "The power spectrum for this chain suggests good convergence."
+            print "The power spectra for this chain suggests good convergence."
         print
         filename = self.filename("dunkley")
         f = open(filename,'w')
