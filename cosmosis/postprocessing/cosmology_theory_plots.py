@@ -280,6 +280,11 @@ class ShearSpectrumPlot(Plot):
 				else:
 					pylab.gca().xaxis.set_ticklabels([])
 					pylab.gca().yaxis.set_ticklabels([])
+				pylab.gca().tick_params(length=0.0, which='minor')
+				pylab.gca().tick_params(length=3.0, which='major')
+				pylab.gca().tick_params(labelsize=10)
+
+
 				if section=="shear_cl":
 					pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
 					pylab.grid()
@@ -316,7 +321,11 @@ class ShearCorrelationPlot(Plot):
 				else:
 					pylab.gca().xaxis.set_ticklabels([])
 					pylab.gca().yaxis.set_ticklabels([])
-				pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
+				pylab.gca().tick_params(length=0.0, which='minor')
+				pylab.gca().tick_params(length=3.0, which='major')
+				pylab.gca().tick_params(labelsize=10)
+
+				pylab.text(1.5e-3,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
 				pylab.grid()
 
 class GrowthPlot(Plot):
