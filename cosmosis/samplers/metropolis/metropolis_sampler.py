@@ -81,7 +81,8 @@ class MetropolisSampler(ParallelSampler):
                 self.pool is not None and \
                 self.Rconverge is not None:
             R = self.analytics.gelman_rubin(quiet=self.pipeline.quiet)
-            return np.all(R <= self.Rconverge)
+            R1 = abs(R - 1)
+            return np.all(R1 <= self.Rconverge)
         else:
             return False
 
