@@ -221,17 +221,27 @@ class MatterPowerPlot(Plot):
 
 	def plot(self):
 		super(MatterPowerPlot, self).plot()
-		self.plot_section("matter_power_lin", "Linear")
+		done_any=False
+		if os.path.exists("{0}/matter_power_lin".format(self.dirname)):
+			self.plot_section("matter_power_lin", "Linear")
+			done_any=True
 		if os.path.exists("{0}/matter_power_nl".format(self.dirname)):
 			self.plot_section("matter_power_nl", "Non-Linear")
+			done_any=True
 		if os.path.exists("{0}/matter_power_gal".format(self.dirname)):
 			self.plot_section("matter_power_gal", "Galaxy")
+			done_any=True
 		if os.path.exists("{0}/matter_power_no_bao".format(self.dirname)):
 			self.plot_section("matter_power_no_bao", "No BAO")
+			done_any=True
 		if os.path.exists("{0}/intrinsic_alignment_parameters".format(self.dirname)):
 			self.plot_section("intrinsic_alignment_parameters", "Intrinsic-intrinsic", p_name='p_ii')
+			done_any=True
 		if os.path.exists("{0}/intrinsic_alignment_parameters".format(self.dirname)):
 			self.plot_section("intrinsic_alignment_parameters", "Shear-intrinsic", p_name='p_gi')
+			done_any=True
+		if not done_any:
+			raise IOError("Not making plot: %s (no data in this sample)"% self.__class__.__name__[:-4])
 		pylab.xlabel("k / (Mpc/h)")
 		pylab.ylabel("P(k) / (h^1 Mpc)^3")
 		pylab.grid()

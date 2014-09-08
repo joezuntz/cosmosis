@@ -19,3 +19,8 @@ CFLAGS=$(COMMON_C_FLAGS) $(USER_CFLAGS) -std=c99
 FFLAGS=$(COMMON_FLAGS) -I${COSMOSIS_SRC_DIR}/cosmosis/datablock $(USER_FFLAGS) -std=gnu -ffree-line-length-none
 LDFLAGS=$(USER_LDFLAGS) -L${COSMOSIS_SRC_DIR}/cosmosis/datablock
 PYTHON=python
+
+ifeq (1,${COSMOSIS_OMP})
+COMMON_FLAGS+= -fopenmp
+LDFLAGS+=-lgomp
+endif

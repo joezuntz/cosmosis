@@ -523,7 +523,7 @@ class ColorScatterPlotBase(Plots):
 
         #Do the actual plotting.
         #By default the saving will be handled later.
-        pylab.scatter(x, y, c=c, s=4, lw=0)
+        pylab.scatter(x, y, c=c, s=5, lw=0, cmap=pylab.cm.bwr)
 
         pylab.colorbar(label=self.latex(self.color_column))
         pylab.xlabel(self.latex(self.x_column))

@@ -96,7 +96,7 @@ class PyMCSampler(ParallelSampler):
         for trace, like in itertools.izip(traces, likes):
             self.output.parameters(trace, like)
 
-        self.analytics.add_traces(traces, likes)
+        self.analytics.add_traces(traces)
 
         self.output.log_noisy("Done %d iterations" % self.num_samples)
 
@@ -114,8 +114,10 @@ class PyMCSampler(ParallelSampler):
         if self.num_samples >= self.samples:
             return True
         elif self.num_samples > 0 and self.pool is not None and \
-             self.Rconverge is not None:
-            return np.all(self.analytics.gelman_rubin() <= self.Rconverge)
+            self.Rconverge is not None:
+            R = self.analytics.gelman_rubin(quiet=self.pipeline.quiet)
+            R1 = abs(R - 1)
+            return np.all(R1 <= self.Rconverge)
         else:
             return False
 
