@@ -48,15 +48,20 @@ class PostProcessorElement(Loadable):
         pass
 
 class MCMCPostProcessorElement(PostProcessorElement):
-    def reduced_col(self, name):
-        col = self.source.get_col(name)
+    def reduced_col(self, name, stacked=True):
+        cols = self.source.get_col(name, stacked=False)
         burn = self.options.get("burn", 0)
         thin = self.options.get("thin", 1)
+
         if 0.0<burn<1.0:
             burn = len(col)*burn
         else:
             burn = int(burn)
-        return col[burn::thin]
+        cols = [col[burn::thin] for col in cols]
+        if stacked:
+            return np.concatenate(cols)
+        else:
+            return cols
 
     def posterior_sample(self):
         """

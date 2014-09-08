@@ -258,17 +258,19 @@ class DunkleyTest(MetropolisHastingsStatistics):
         print "Dunkely et al (2005) power spectrum test."
         print "For converged chains j* > %.1f:" %self.jstar_convergence_limit
         for param in params:
-            col = self.reduced_col(param)
-            js = self.compute_jstar(col)
-            jstar.append(js)
-            m = "%-35s j* = %-.1f" % (param, js)
-            if js>20:
-                print "    %-50s" % m
-            else:
-                print "    %-50s NOT CONVERGED!" % m
+            cols = self.reduced_col(param, stacked=False)
+            for c,col in enumerate(cols):
+                js = self.compute_jstar(col)
+                jstar.append(js)
+                m = "Chain %d:  %-35s j* = %-.1f" % (c+1, param, js)
+                if js>20:
+                    print "    %-50s" % m
+                else:
+                    print "    %-50s NOT CONVERGED!" % m
         print
         if not np.min(jstar)>self.jstar_convergence_limit:
             print "The Dunkley et al (2005) power spectrum test shows that this chain has NOT CONVERGED."
+            print "It is quite a conservative test, so no need to panic."
         else:
             print "The power spectra for this chain suggests good convergence."
         print
