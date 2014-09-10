@@ -2,7 +2,7 @@
 
 osname=`uname`
 #Check if we are under UPS, on a mac
-if [ $osname -eq "Darwin" ] && [ "$UPS_DIR" -ne "" ]
+if [ $osname == "Darwin" ] && [ "$UPS_DIR" != "" ]
 	then
 	DYLD_LIBRARY_PATH="" python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py $@
 
