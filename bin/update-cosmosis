@@ -67,8 +67,8 @@ def check_for_changes():
 #This just lets us know about them; it does not
 #download or apply them
 online=True
-status = os.system("git fetch")
-status |= os.system("cd cosmosis-standard-library; git fetch")
+status = os.system("git fetch --tags")
+status |= os.system("cd cosmosis-standard-library; git fetch --tags")
 if status:
 	online=False
 	print """
