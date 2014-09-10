@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+osname=`uname`
+#Check if we are under UPS, on a mac
+if [ $osname -eq "Darwin" ] && [ "$UPS_DIR" -ne "" ]
+	then
+	DYLD_LIBRARY_PATH="" python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py $@
+
+else
+	python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py $@
+fi
+
