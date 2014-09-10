@@ -187,8 +187,7 @@ else:
 		print "Updating to version (%s), which is NOT the newest"%requested_version 
 
 subdir_has_tag = os.popen("cd cosmosis-standard-library; git tag -l %s"%requested_version).read().strip()
-print "cd cosmosis-standard-library; git tag -l %s"%requested_version
-print 'tag info', subdir_has_tag
+
 if not subdir_has_tag:
 	print "There is some kind of error - the cosmosis-standard-library subdirectory"
 	print "does not have the version you want.  Sorry - this is probably a cosmosis"
