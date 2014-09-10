@@ -144,7 +144,6 @@ for v in all_versions:
 	print "   ", v
 print
 
-print requested_version, latest_version, current_tags
 if requested_version==latest_version and latest_version in current_tags:
 	print "You are already at the latest release of cosmosis."
 	print
