@@ -5,8 +5,8 @@
 
 if [ "${COSMOSIS_SRC_DIR}" == "" ]
 	then
-	echo "Please set up cosmosis (or set $COSMOSIS_SRC_DIR) before postprocessing"
-	return
+	echo "Please set up cosmosis (or set the environment variable COSMOSIS_SRC_DIR) before postprocessing"
+	exit 1
 fi
 
 osname=`uname`
