@@ -2,6 +2,7 @@ import abc
 from . import elements
 from . import plots
 from . import statistics
+import numpy as np
 from cosmosis import output as output_module
 from ..runtime.config import Inifile
 postprocessor_registry = {}
@@ -47,7 +48,8 @@ class PostProcessor(object):
                     output_options = dict(ini.items('output'))
                     self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
                     output_module.input_from_options(output_options)
-            self.data = self.data[0].T
+            #self.data = self.data[0].T
+            self.data_stacked = np.concatenate(self.data).T
             self.colnames = [c.lower() for c in self.colnames]
         self.ini = ini
 
@@ -55,15 +57,20 @@ class PostProcessor(object):
         return self.data.shape[1]
 
     def get_row(self, index):
-        return self.data[:,index]
+        return self.data_stacked[:,index]
 
-    def get_col(self, index_or_name):
+    def get_col(self, index_or_name, stacked=True):
+        """Get the named or numbered column."""
         if isinstance(index_or_name, int):
             index = index_or_name
         else:
             name = index_or_name
             index = self.colnames.index(name)
-        return self.data[index]
+        cols = [d[:,index] for d in self.data]
+        if stacked:
+            return np.concatenate(cols)
+        else:
+            return cols
 
     def run(self):
         files = []

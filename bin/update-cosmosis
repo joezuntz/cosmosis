@@ -1,0 +1,234 @@
+#!/usr/bin/env python
+import os
+import sys
+
+#Move to the cosmosis directory
+try:
+	dirname=os.environ['COSMOSIS_SRC_DIR']
+except KeyError:
+	sys.stdout.write("Please set up cosmosis before updating\n")
+	sys.exit(1)
+os.chdir(dirname)
+
+#Read command line input
+import argparse
+parser = argparse.ArgumentParser(description="Update cosmosis to a different release version.", 
+	epilog = """
+This script is really just a wrapper around some "git"
+commands.  If you know git well you should probably just
+use that instead.
+""")
+parser.add_argument("version", nargs="?", default="xxx-no-version", help="Name/number of version to update to.  Leave blank for latest.")
+parser.add_argument("--master", action='store_true', help="(For people who vaguely understand git): switch to the head of the master branch (bleeding edge mode)")
+args = parser.parse_args()
+
+
+def check_for_changes():
+	if os.system("git diff --quiet"):
+		print
+		print "You seem to have made changes to the files in this directory."
+		print "You should have a look at what files have changed with the command:"
+		print "    git status --untracked=no"
+		print "and at what the changes are with:"
+		print "    git diff"
+		print
+		print "Then if you are okay to lose ALL these changes, please run:"
+		print "   git checkout ."
+		print "in the main cosmosis dir, then run this script again."
+		print "Otherwise I'm afraid you're going to have to learn a bit about git"
+		print
+		print "I have NOT updated anything - please read the info above"
+		print
+		sys.exit(0)
+
+	if os.system("cd cosmosis-standard-library; git diff --quiet"):
+		print
+		print "You have made changes to cosmosis-standard-library"
+		print "(That's a subdirectory managed separately)"
+
+		print 
+		print "You should have a look at what files have changed with the command:"
+		print "    cd cosmosis-standard-library"
+		print "    git status --untracked=no"
+		print "and at what the changes are with:"
+		print "    git diff"
+		print
+		print "Then if you are okay to lose ALL these changes, please run, from the cosmosis-standard-library dir:"
+		print "   git checkout ."
+		print "then run this script again."
+		print "Otherwise I'm afraid you're going to have to learn a bit about git"
+		print
+		print "I have NOT updated anything - please read the info above"
+		print "(This is about the subdirectory cosmosis-standard-library, not the main dir)"
+		print
+		sys.exit(0)
+
+#Check on the site for new versions.
+#This just lets us know about them; it does not
+#download or apply them
+online=True
+status = os.system("git fetch --tags")
+status |= os.system("cd cosmosis-standard-library; git fetch --tags")
+if status:
+	online=False
+	print """
+Sorry - I couldn't get online to look for updates
+If you are online then please try again later
+If it continues to fail please open an issue:
+bitbucket.org/joezuntz/cosmosis/issues/new
+
+In the mean time you can update (or go back to)
+versions that are already known.
+"""
+
+#This is a whole different mode - we update to master 
+if args.master:
+	print "Updating to the master branch."
+	if not online:
+		print "But not pulling from bitbucket as couldn't get online to check."
+
+	def error_check(status,msg):
+		if status:
+			print "There was an error %s"%msg
+			sys.exit(1)
+
+	check_for_changes()
+	error_check(os.system("git checkout master"), "checking out the master branch in cosmosis")
+	error_check(os.system("cd cosmosis-standard-library; git checkout master"), "checking out the master branch in CSL")
+	if online:
+		error_check(os.system("git pull"), "pulling the master branch in cosmosis")
+		error_check(os.system("cd cosmosis-standard-library; git pull"), "pulling the master branch in CSL")
+	print 
+	print "Successfully updated to MASTER"
+	sys.exit(0)
+
+
+# Determine what version we are currently at
+current_tags = os.popen("git tag --points-at HEAD").read().split("\n")
+for tag in current_tags:
+	if tag.startswith('v'):
+		current_version = tag
+		print
+		print "You are currently at version %s of cosmosis" % (tag[1:])
+		break
+else:
+	print "You seem not to be at a numbered version of cosmosis"
+	print "I think you probably manually switched to a different version"
+	print
+	current_version = "Unkown"
+
+#Get a list of all available version numbers
+all_versions = [tag for tag in os.popen("git tag -l").read().split("\n") if tag.startswith('v')]
+
+# See what the user asked to do
+if args.version=="xxx-no-version":
+	requested_version = "latest-release"
+	check=True
+else:
+	requested_version = sys.argv[1]
+	if not requested_version.startswith('v') and requested_version != "latest-release": 
+		requested_version = 'v'+requested_version
+	check=False
+
+
+# Figure out which version number is the latest
+latest_release_tags = os.popen("git tag -l --contains latest-release").read().split("\n")
+latest_version = [tag for tag in latest_release_tags if tag.startswith("v")]
+
+# Print this info to the user
+if latest_version:
+	latest_version = latest_version[0]
+	print "The most up-to-date version of cosmosis is %s"%latest_version
+	print
+else:
+	latest_version = "Unknown"
+	print "Hmm.  I can't find a version tag for the latest version."
+	print "This is either a cosmosis team mistake or you have manually"
+	print "changed some git tags somewhere"
+	print
+
+#List all versions
+print "All versions I know about:"
+for v in all_versions:
+	print "   ", v
+print
+
+if requested_version=="latest-release":
+	if "latest-release" in current_tags:
+		print "You are already at the latest release of cosmosis."
+		print
+		print "To update to a different version please run the script"
+		print "again with an argument saying what version you want, e.g."
+		print "update-cosmosis v1.0"
+		print
+		sys.exit(0)
+
+
+# Now decide what we actually want to do
+if check:
+	print "Do you want to update to the latest version of cosmosis (%s)?" % latest_version
+	print
+	print "If you want a different version type 'n' and run the script"
+	print "again with an argument saying what version you want, e.g."
+	print "update-cosmosis v1.0"
+	print
+	#Keep asking the user for input until they actually 
+	#type something
+	while True:
+		answer = raw_input("y/n\n>").strip()
+		if answer: break
+	if answer.lower() !='y':
+		print "Exiting"
+		sys.exit(0)
+
+
+if requested_version=="latest-release":
+	print "Updating to latest version (%s)"%latest_version
+else:
+	if requested_version not in all_versions:
+		print "Sorry - I do not know of a version %s"% requested_version
+		sys.exit(1)
+	if requested_version in current_tags:
+		print "You are already at version %s" % requested_version
+		sys.exit(0)
+	if requested_version in latest_release_tags:
+		print "Updating to version (%s), which is the newest"%requested_version 
+	else:
+		print "Updating to version (%s), which is NOT the newest"%requested_version 
+
+subdir_has_tag = os.popen("cd cosmosis-standard-library; git tag -l %s"%requested_version).read().strip()
+print "cd cosmosis-standard-library; git tag -l %s"%requested_version
+print 'tag info', subdir_has_tag
+if not subdir_has_tag:
+	print "There is some kind of error - the cosmosis-standard-library subdirectory"
+	print "does not have the version you want.  Sorry - this is probably a cosmosis"
+	print "team error.  You could try making sure you are online and trying again."
+	print "If this does not work please open an issue:"
+	print "bitbucket.org/joezuntz/cosmosis/issues/new"
+	sys.exit(0)
+
+
+check_for_changes()
+
+
+print
+print "Some git jargon will follow:"
+print
+print '-'*80
+
+
+status = os.system("git checkout %s"%requested_version)
+status |= os.system("cd cosmosis-standard-library; git checkout %s"%requested_version)
+print '-'*80
+
+print
+if status:
+	sys.exit(status)
+	print "Sorry - looks like something went wrong"
+	print
+else:
+	if requested_version == 'latest-release':
+		print "Update complete - you are at version %s" % latest_version
+	else:
+		print "Update complete - you are at version %s" % requested_version
+	print

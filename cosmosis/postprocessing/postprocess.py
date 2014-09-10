@@ -10,6 +10,7 @@ class MetropolisHastingsProcessor(PostProcessor):
 		plots.MetropolisHastingsPlots1D,
 		plots.MetropolisHastingsPlots2D,
 		statistics.MetropolisHastingsStatistics,
+		statistics.MetropolisHastingsCovariance,
 		]
 
 
@@ -21,6 +22,16 @@ class EmceeProcessor(MetropolisHastingsProcessor):
 class PymcProcessor(MetropolisHastingsProcessor):
 	sampler="pymc"
 	pass
+
+class MetropolisProcessor(MetropolisHastingsProcessor):
+	sampler="metropolis"
+	elements=[
+		plots.MetropolisHastingsPlots1D,
+		plots.MetropolisHastingsPlots2D,
+		statistics.MetropolisHastingsStatistics,
+		statistics.MetropolisHastingsCovariance,
+		statistics.DunkleyTest,
+		]
 
 class GridProcessor(PostProcessor):
 	elements=[
