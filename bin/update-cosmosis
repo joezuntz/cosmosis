@@ -118,34 +118,25 @@ else:
 	current_version = "Unkown"
 
 #Get a list of all available version numbers
-all_versions = [tag for tag in os.popen("git tag -l").read().split("\n") if tag.startswith('v')]
+all_versions = [tag for tag in os.popen("git tag -l").read().split("\n") if tag.startswith('v') and '.' in tag]
+
+#work out the latest version from the tags
+latest_version = sorted([tag[1:].split('.') for tag in all_versions])[-1]
+latest_version = 'v' + ('.'.join(latest_version))
 
 # See what the user asked to do
 if args.version=="xxx-no-version":
-	requested_version = "latest-release"
+	requested_version = latest_version
 	check=True
 else:
 	requested_version = sys.argv[1]
-	if not requested_version.startswith('v') and requested_version != "latest-release": 
+	if not requested_version.startswith('v'):
 		requested_version = 'v'+requested_version
 	check=False
 
 
-# Figure out which version number is the latest
-latest_release_tags = os.popen("git tag -l --contains latest-release").read().split("\n")
-latest_version = [tag for tag in latest_release_tags if tag.startswith("v")]
-
 # Print this info to the user
-if latest_version:
-	latest_version = latest_version[0]
-	print "The most up-to-date version of cosmosis is %s"%latest_version
-	print
-else:
-	latest_version = "Unknown"
-	print "Hmm.  I can't find a version tag for the latest version."
-	print "This is either a cosmosis team mistake or you have manually"
-	print "changed some git tags somewhere"
-	print
+print "The most up-to-date version of cosmosis is %s"%latest_version
 
 #List all versions
 print "All versions I know about:"
@@ -153,15 +144,15 @@ for v in all_versions:
 	print "   ", v
 print
 
-if requested_version=="latest-release":
-	if "latest-release" in current_tags:
-		print "You are already at the latest release of cosmosis."
-		print
-		print "To update to a different version please run the script"
-		print "again with an argument saying what version you want, e.g."
-		print "update-cosmosis v1.0"
-		print
-		sys.exit(0)
+print requested_version, latest_version, current_tags
+if requested_version==latest_version and latest_version in current_tags:
+	print "You are already at the latest release of cosmosis."
+	print
+	print "To update to a different version please run the script"
+	print "again with an argument saying what version you want, e.g."
+	print "update-cosmosis v1.0"
+	print
+	sys.exit(0)
 
 
 # Now decide what we actually want to do
@@ -191,7 +182,7 @@ else:
 	if requested_version in current_tags:
 		print "You are already at version %s" % requested_version
 		sys.exit(0)
-	if requested_version in latest_release_tags:
+	if requested_version == latest_version:
 		print "Updating to version (%s), which is the newest"%requested_version 
 	else:
 		print "Updating to version (%s), which is NOT the newest"%requested_version 
