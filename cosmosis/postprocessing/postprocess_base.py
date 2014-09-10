@@ -54,7 +54,7 @@ class PostProcessor(object):
         self.ini = ini
 
     def __len__(self):
-        return self.data.shape[1]
+        return self.data_stacked.shape[1]
 
     def get_row(self, index):
         return self.data_stacked[:,index]
