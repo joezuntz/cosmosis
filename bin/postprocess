@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 
+# This little wrapper around postprocess
+# fixes a bug with libraries on OSX.
+
+if [ "${COSMOSIS_SRC_DIR}" == "" ]
+	then
+	echo "Please set up cosmosis (or set $COSMOSIS_SRC_DIR) before postprocessing"
+	return
+fi
+
 osname=`uname`
 #Check if we are under UPS, on a mac
 if [ $osname == "Darwin" ] && [ "$UPS_DIR" != "" ]
 	then
-	DYLD_LIBRARY_PATH="" python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py $@
-
+	NEW_DYLD_PATH=`python ${COSMOSIS_SRC_DIR}/bin/sanitize-cosmosis-path.py`
+	DYLD_LIBRARY_PATH="$NEW_DYLD_PATH" python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py $@
 else
 	python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py $@
 fi
