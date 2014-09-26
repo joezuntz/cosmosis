@@ -80,7 +80,7 @@ def likelihood(cube_p, ndim, nparam, context_p):
 		cube_p[i] = vector[i]
 	
 	for i in xrange(nextra):
-		cube_p[ndim+i] = extra[pipeline.extra_saves[i]]
+		cube_p[ndim+i] = extra[i]
 	return like
 
 def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
