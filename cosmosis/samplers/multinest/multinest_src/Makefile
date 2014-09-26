@@ -1,7 +1,7 @@
-MPI = $(shell which mpif90 &> /dev/null)
+MPI = $(shell which mpif90 2> /dev/null)
 
 ifeq ($(MPI),)
-$(warning Building a non-MPI version of the MultiNest sampler)
+$(warning MPI not found, building a non-MPI version of the MultiNest sampler.)
 FC = gfortran
 CC = gcc
 CXX = g++

@@ -407,14 +407,20 @@ class TestPlots(Plots):
         ftype=self.options.get("file_type", "png")
         filenames = []
         for cls in cosmology_theory_plots.plot_list:
+            fig = None
             try:
-                p=cls(dirname, output_dir, prefix, ftype, figure=1)
+                p=cls(dirname, output_dir, prefix, ftype, figure=None)
                 filename=p.filename
-                fig = self.figure(filename)
+                fig = p.figure
                 p.figure=fig
                 p.plot()
+                self.figures[filename] = fig
                 filenames.append(filename)
             except IOError as err:
+                if fig is not None:
+                    #Then we got as far as making the figure before
+                    #failing.  so remove it
+                    pylab.close()
                 print err
         return filenames
 
@@ -517,7 +523,7 @@ class ColorScatterPlotBase(Plots):
 
         #Do the actual plotting.
         #By default the saving will be handled later.
-        pylab.scatter(x, y, c=c, s=4, lw=0)
+        pylab.scatter(x, y, c=c, s=5, lw=0, cmap=pylab.cm.bwr)
 
         pylab.colorbar(label=self.latex(self.color_column))
         pylab.xlabel(self.latex(self.x_column))

@@ -22,6 +22,7 @@ class EmceeSampler(ParallelSampler):
             self.nwalkers = self.read_ini("walkers", int, 2)
             self.samples = self.read_ini("samples", int, 1000)
             self.nsteps = self.read_ini("nsteps", int, 100)
+            random_start = self.read_ini("random_start", bool, False)
             start_file = self.read_ini("start_points", str, "")
             self.ndim = len(self.pipeline.varied_params)
 
@@ -33,9 +34,14 @@ class EmceeSampler(ParallelSampler):
             if start_file:
                 self.p0 = self.load_start(start_file)
                 self.output.log_info("Loaded starting position from %s", start_file)
-            else:
+            elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in xrange(self.nwalkers)]
+            else:
+                center_norm = self.pipeline.normalize_vector(self.pipeline.start_vector())
+                sigma_norm=np.repeat(1e-3, center_norm.size)
+                p0_norm = self.emcee.utils.sample_ball(center_norm, sigma_norm, size=self.nwalkers)
+                self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
 
             #Finally we can create the sampler
             self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, self.ndim,

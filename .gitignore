@@ -13,6 +13,8 @@ cosmosis/names.py
 *.mod
 plots/*.png
 demo_output_*
+demo*_output
+demo*.txt
 config/ups
 lib/
 share/
@@ -20,3 +22,6 @@ ups/
 .RData
 .Rapp.history
 .Rhistory
+conda/
+config/first
+cosmosis-des-library/
