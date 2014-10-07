@@ -119,6 +119,12 @@ class Parameter(object):
         try:
             values = [float(p) for p in line.split()]
             if len(values) == 1:
+                if values[0]==int(values[0]):
+                    try:
+                        v = int(line)
+                        return v, None
+                    except ValueError:
+                        return values[0], None
                 return values[0], None
             elif len(values) == 2:
                 return 0.5*(values[0]+values[1]), tuple(values)
