@@ -347,7 +347,7 @@ class LikelihoodPipeline(Pipeline):
             return prior + like, extra, data
         else:
             like, extra = self.likelihood(p)
-            return prior, np.repeat(np.nan, self.number_extra)
+            return prior + like, extra
         
     def likelihood(self, p, return_data=False):
         #Set the parameters by name from the parameter vector
