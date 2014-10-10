@@ -84,7 +84,7 @@ versions that are already known.
 
 #This is a whole different mode - we update to develop
 if args.develop:
-	print "Updating to the development branch."
+	print "Updating to the newest changes in the development branch."
 	if not online:
 		print "But not pulling from bitbucket as couldn't get online to check."
 
@@ -113,10 +113,16 @@ for tag in current_tags:
 		print "You are currently at version %s of cosmosis" % (tag[1:])
 		break
 else:
-	print "You seem not to be at a numbered version of cosmosis"
-	print "I think you probably manually switched to a different version"
-	print
-	current_version = "Unkown"
+	if "develop" in os.popen("git branch --contains HEAD").read():
+		print "You are currently using the bleeding-edge development branch"
+		print
+		current_version = "develop"
+
+	else:
+		print "You seem not to be at a numbered version of cosmosis"
+		print "I think you probably manually switched to a different version"
+		print
+		current_version = "Unkown"
 
 #Get a list of all available version numbers
 all_versions = [tag for tag in os.popen("git tag -l").read().split("\n") if tag.startswith('v') and '.' in tag]
@@ -156,19 +162,27 @@ if requested_version==latest_version and latest_version in current_tags:
 	print "again with an argument saying what version you want, e.g."
 	print "update-cosmosis v1.0"
 	print
+	print "OR you can get the bleeding edge with:"
+	print "update-cosmosis --develop"	
+	print
 	sys.exit(0)
 
 
 # Now decide what we actually want to do
 if check:
-	print "Do you want to update to the latest version of cosmosis (%s)?" % latest_version
+	print "I can update you to the latest numbered version of cosmosis (%s)?" % latest_version
 	print
 	print "If you want a different version type 'n' and run the script"
 	print "again with an argument saying what version you want, e.g."
 	print "update-cosmosis v1.0"
+	print "OR you can get the bleeding edge with:"
+	print "update-cosmosis --develop"
 	print
 	#Keep asking the user for input until they actually 
 	#type something
+	print "Get latest numbered version (%s)?" % latest_version
+	if current_version=="develop":
+		print "  (this may be older than your current bleeding edge version)"
 	while True:
 		answer = raw_input("y/n\n>").strip()
 		if answer: break
@@ -226,3 +240,4 @@ else:
 	else:
 		print "Update complete - you are at version %s" % requested_version
 	print
+	print "If you want to save changes that you make to a new branch"
