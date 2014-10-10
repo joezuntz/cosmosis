@@ -137,7 +137,20 @@ class MultinestSampler(Sampler):
 		self.cluster_dimensions = self.read_ini("cluster_dimensions", int, default=-1)
 		self.mode_ztolerance    = self.read_ini("mode_ztolerance", float, default=0.5)
 
- 	
+	@classmethod
+ 	def needs_output(cls):
+		try:
+			import mpi4py.MPI
+		except Exception as error:
+				sys.stderr.write("mpi4py could not be imported or loaded.\n")
+				sys.stderr.write("Our multinest interface needs it.\n")
+				sys.stderr.write("You could try: pip install mpi4py\n")
+				sys.stderr.write("More info below:")
+				sys.stderr.write(str(error)+'\n')
+				sys.exit(1)
+		rank = mpi4py.MPI.COMM_WORLD.Get_rank()
+		return (rank==0)
+
 
 	def execute(self):
 
@@ -166,8 +179,9 @@ class MultinestSampler(Sampler):
 			self.resume, self.multinest_outfile_root!="", init_mpi, self.log_zero, self.max_iterations, wrapped_likelihood, 
 			wrapped_output_logger, context)
 
-		self.output.final("log_z", self.log_z)
-		self.output.final("log_z_error", self.log_z_err)
+		if self.output:
+			self.output.final("log_z", self.log_z)
+			self.output.final("log_z_error", self.log_z_err)
 		self.converged = True
 
 
