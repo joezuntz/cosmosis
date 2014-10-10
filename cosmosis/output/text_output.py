@@ -30,9 +30,22 @@ class TextColumnOutput(OutputBase):
 
         #also used to store comments:
         self._metadata = OrderedDict()
+        self._final_metadata = OrderedDict()
 
     def _close(self):
+        self._flush_metadata(self._final_metadata)
+        self._final_metadata={}
         self._file.close()
+
+    def _flush_metadata(self, metadata):
+        for (key,(value,comment)) in metadata.items():
+            if key.startswith(comment_indicator):
+                self._file.write("## %s\n"%value.strip())
+            elif comment:
+                self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
+            else:
+                self._file.write('#{k}={v}\n'.format(k=key,v=value,c=comment))
+
 
     def _begun_sampling(self, params):
         #write the name line
@@ -40,13 +53,7 @@ class TextColumnOutput(OutputBase):
         self._file.write(name_line)
         #now write any metadata.
         #text mode does not support comments
-        for (key,(value,comment)) in self._metadata.items():
-            if key.startswith(comment_indicator):
-                self._file.write("## %s\n"%value.strip())
-            elif comment:
-                self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
-            else:
-                self._file.write('#{k}={v}\n'.format(k=key,v=value,c=comment))
+        self._flush_metadata(self._metadata)
         self._metadata={}
 
     def _write_metadata(self, key, value, comment=''):
@@ -70,10 +77,7 @@ class TextColumnOutput(OutputBase):
 
     def _write_final(self, key, value, comment=''):
         #I suppose we can put this at the end - why not?
-        c=''
-        if comment:
-            c='  #'+comment
-        self._file.write('#{k}={v}{c}\n'.format(k=key,v=value,c=c))
+        self._final_metadata[key]= (value, comment)
 
     def _flush(self):
         self._file.flush()
