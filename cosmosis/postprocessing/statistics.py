@@ -278,7 +278,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
         f = open(filename,'w')
         f.write('#'+'    '.join(params))
         f.write("\n")
-        f.write('    '.join(str(js) for jz in jstar))
+        f.write('    '.join(str(js) for js in jstar))
         f.write("\n")
         f.close()
         return [filename]
