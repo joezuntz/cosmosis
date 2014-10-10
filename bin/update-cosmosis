@@ -20,7 +20,7 @@ commands.  If you know git well you should probably just
 use that instead.
 """)
 parser.add_argument("version", nargs="?", default="xxx-no-version", help="Name/number of version to update to.  Leave blank for latest.")
-parser.add_argument("--master", action='store_true', help="(For people who vaguely understand git): switch to the head of the master branch (bleeding edge mode)")
+parser.add_argument("--develop", action='store_true', help="(For people who vaguely understand git): switch to the head of the develop branch (bleeding edge mode)")
 args = parser.parse_args()
 
 
@@ -82,9 +82,9 @@ In the mean time you can update (or go back to)
 versions that are already known.
 """
 
-#This is a whole different mode - we update to master 
-if args.master:
-	print "Updating to the master branch."
+#This is a whole different mode - we update to develop
+if args.develop:
+	print "Updating to the development branch."
 	if not online:
 		print "But not pulling from bitbucket as couldn't get online to check."
 
@@ -94,13 +94,13 @@ if args.master:
 			sys.exit(1)
 
 	check_for_changes()
-	error_check(os.system("git checkout master"), "checking out the master branch in cosmosis")
-	error_check(os.system("cd cosmosis-standard-library; git checkout master"), "checking out the master branch in CSL")
+	error_check(os.system("git checkout develop"), "checking out the development branch in cosmosis")
+	error_check(os.system("cd cosmosis-standard-library; git checkout develop"), "checking out the development branch in CSL")
 	if online:
-		error_check(os.system("git pull"), "pulling the master branch in cosmosis")
-		error_check(os.system("cd cosmosis-standard-library; git pull"), "pulling the master branch in CSL")
+		error_check(os.system("git pull"), "pulling the development branch in cosmosis")
+		error_check(os.system("cd cosmosis-standard-library; git pull"), "pulling the development branch in CSL")
 	print 
-	print "Successfully updated to MASTER"
+	print "Successfully updated to DEVELOP"
 	sys.exit(0)
 
 
