@@ -619,7 +619,110 @@ module cosmosis_modules
  !           trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR, value, sz)
  !
  !   end function datablock_replace_complex_array_1d
- 
+    
+    function datablock_put_grid_sentinel(s, section, name_x, name_y, name_z) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: s
+        character(*) :: section, name_x, name_y, name_z
+        character(512) :: sentinel_key, sentinel_value
+        write(sentinel_key, '("_cosmosis_order_", A)') trim(name_z)
+        write(sentinel_value, '(A,"_cosmosis_order_", A)') trim(name_y), trim(name_x)
+
+        status = datablock_put_string(s, trim(section), trim(sentinel_key), trim(sentinel_value))
+    end function 
+
+
+
+    function datablock_put_double_grids(s, section, &
+            x_name, x, y_name, y, &
+            z1_name, z1, z2_name, z2, z3_name, z3, z4_name, z4, z5_name, z5, &
+            z6_name, z6, z7_name, z7, z8_name, z8, z9_name, z9, z10_name, z10) result(status)
+        integer(cosmosis_status) :: status
+        integer(cosmosis_block) :: s
+        character(*) :: section, x_name, y_name, z1_name
+        character(256) :: name_x, name_y, name_z
+        real(8) :: x(:), y(:),  z1(:,:)
+        character(512) :: sentinel_key, sentinel_value
+        character(*), optional :: z2_name, z3_name, z4_name, z5_name
+        character(*), optional :: z6_name, z7_name, z8_name, z9_name, z10_name
+        real(8), optional :: z2(:,:), z3(:,:),  z4(:,:),  z5(:,:)
+        real(8), optional :: z6(:,:), z7(:,:),  z8(:,:),  z9(:,:),  z10(:,:)
+
+        status = datablock_put_double_grid(s, section, x_name, x, y_name, y, z1_name, z1)
+        if (status .ne. 0) return
+
+        name_x = x_name
+        name_y = y_name
+        call lowercase_ascii(name_x)
+        call lowercase_ascii(name_y)
+
+
+        if (present(z2) .and. present(z2_name)) then
+            name_z = z2_name
+            call lowercase_ascii(name_z)
+            status = status + datablock_put_double_array_2d(s, section, name_z, z2)
+            status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
+        endif
+
+        if (present(z3) .and. present(z3_name)) then
+            name_z = z3_name
+            call lowercase_ascii(name_z)
+            status = status + datablock_put_double_array_2d(s, section, name_z, z3)
+            status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
+        endif
+
+        if (present(z4) .and. present(z4_name)) then
+            name_z = z4_name
+            call lowercase_ascii(name_z)
+            status = status + datablock_put_double_array_2d(s, section, name_z, z4)
+            status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
+        endif
+
+        if (present(z5) .and. present(z5_name)) then
+            name_z = z5_name
+            call lowercase_ascii(name_z)
+            status = status + datablock_put_double_array_2d(s, section, name_z, z5)
+            status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
+        endif
+
+        if (present(z6) .and. present(z6_name)) then
+            name_z = z6_name
+            call lowercase_ascii(name_z)
+            status = status + datablock_put_double_array_2d(s, section, name_z, z6)
+            status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
+        endif
+
+        if (present(z7) .and. present(z7_name)) then
+            name_z = z7_name
+            call lowercase_ascii(name_z)
+            status = status + datablock_put_double_array_2d(s, section, name_z, z7)
+            status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
+        endif
+
+        if (present(z8) .and. present(z8_name)) then
+            name_z = z8_name
+            call lowercase_ascii(name_z)
+            status = status + datablock_put_double_array_2d(s, section, name_z, z8)
+            status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
+        endif
+
+        if (present(z9) .and. present(z9_name)) then
+            name_z = z9_name
+            call lowercase_ascii(name_z)
+            status = status + datablock_put_double_array_2d(s, section, name_z, z9)
+            status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
+        endif
+
+        if (present(z10) .and. present(z10_name)) then
+            name_z = z10_name
+            call lowercase_ascii(name_z)
+            status = status + datablock_put_double_array_2d(s, section, name_z, z10)
+            status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
+        endif
+
+
+    end function datablock_put_double_grids
+
 
     function datablock_put_double_grid(s, section, &
         x_name, x, y_name, y, z_name, z) result(status)
@@ -643,10 +746,7 @@ module cosmosis_modules
         status = status + datablock_put_double_array_1d(s, section, name_y, y)
         status = status + datablock_put_double_array_2d(s, section, name_z, z)
 
-        write(sentinel_key, '("_cosmosis_order_", A)') trim(name_z)
-        write(sentinel_value, '(A,"_cosmosis_order_", A)') trim(name_y), trim(name_x)
-
-        status = status + datablock_put_string(s, section, trim(sentinel_key), trim(sentinel_value))
+        status = status + datablock_put_grid_sentinel(s, section, name_x, name_y, name_z)
     end function datablock_put_double_grid
 
     !There appears to be no intrinsic to do this!
