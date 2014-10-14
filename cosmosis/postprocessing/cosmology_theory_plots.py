@@ -215,8 +215,8 @@ class MatterPowerPlot(Plot):
 		if (p<0).all(): p*=-1
 		nk = len(kh)
 		nz = len(z)
-		#soon this will be saved as a 2D array!
-		p  = p.reshape((nz, nk)).T
+		if p.shape==(nz,nk):
+			p = p.T
 		pylab.loglog(kh, p[:,0], label=label)
 
 	def plot(self):
