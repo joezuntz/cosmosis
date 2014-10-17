@@ -117,8 +117,14 @@ class GridPlots(Plots):
             return like[w].sum() - target
         target1 = like_total*contour1
         target2 = like_total*contour2
-        level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
-        level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
+        try:
+            level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
+        except RuntimeError:
+            level1 = np.nan
+        try:
+            level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
+        except RuntimeError:
+            level2 = np.nan
         return level1, level2
 
 
@@ -135,6 +141,7 @@ class GridPlots1D(GridPlots):
         n1 = len(vals1)
         like_sum = np.zeros(n1)
 
+
         #marginalize
         for k,v1 in enumerate(vals1):
             w = np.where(cols1==v1)
@@ -149,7 +156,9 @@ class GridPlots1D(GridPlots):
         like = like_interp
 
         #normalize
+        like[np.isnan(like)] = -np.inf
         like -= like.max()
+
 
         #Determine the spacing in the different parameters
         dx = vals1[1]-vals1[0]
@@ -165,6 +174,7 @@ class GridPlots1D(GridPlots):
         X, L = self.find_edges(np.exp(like), 0.68, 0.95, vals1)
         #Plot black dotted lines from the y-axis at these contour levels
         for (x, l) in zip(X,L):
+            if np.isnan(x[0]): continue
             pylab.plot([x[0],x[0]], [0, l[0]], ':', color='black')
             pylab.plot([x[1],x[1]], [0, l[1]], ':', color='black')
 
@@ -181,6 +191,10 @@ class GridPlots1D(GridPlots):
         L = []
         level1,level2=cls.find_grid_contours(like, contour1, contour2)
         for level in [level1, level2]:
+            if np.isnan(level):
+                X.append((np.nan,np.nan))
+                L.append((np.nan,np.nan))
+                continue
             above = np.where(like>level)[0]
             left = above[0]
             right = above[-1]
