@@ -20,6 +20,7 @@ class PostProcessor(object):
     cosmosis_standard_output=True
     def __init__(self, ini, **options):
         super(PostProcessor,self).__init__()
+        self.steps = []
         self.load(ini)
         elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
         self.steps = [e(self, **options) for e in elements]
@@ -32,6 +33,8 @@ class PostProcessor(object):
         self.steps.extend(extra)
 
     def load(self, ini):
+        for step in self.steps:
+            step.reset()
         if self.cosmosis_standard_output:
             if isinstance(ini, tuple):
                 self.colnames, self.data, self.metadata, self.comments, self.final_metadata = ini

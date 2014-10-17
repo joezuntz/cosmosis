@@ -10,6 +10,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Post-process cosmosis output")
 parser.add_argument("inifile")
+parser.add_argument("inifile2")
 mcmc=parser.add_argument_group(title="MCMC", description="Options for MCMC-type samplers")
 mcmc.add_argument("--burn", default=0.0, type=float, help="Fraction or number of samples to burn at the start")
 mcmc.add_argument("--thin", default=1, type=int, help="Keep every n'th sampler in MCMC")
@@ -72,6 +73,10 @@ def main(args):
 	processor = processor_class(ini, **vars(args))
 	if args.extra:
 		processor.load_extra_steps(args.extra)
+	processor.run()
+
+	ini2 = Inifile(args.inifile2)
+	processor.load(ini2)
 	processor.run()
 
 	#Run any tweaks that the user specified

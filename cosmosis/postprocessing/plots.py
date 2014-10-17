@@ -21,8 +21,13 @@ class Plots(PostProcessorElement):
         self.no_latex = self.options.get("no_latex")
         latex_file = self.options.get("more_latex") 
         self._latex = {}
+        self.plot_set = 0
         if self.source.cosmosis_standard_output and not self.no_latex:
             self.load_latex(latex_file)
+
+    def reset(self):
+        super(Plots, self).reset()
+        self.plot_set += 1
 
     def load_latex(self, latex_file):
         latex_names = {}
@@ -282,15 +287,18 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
         x = self.reduced_col(name)
         filename = self.filename(name)
         figure = self.figure(filename)
-
         if x.max()-x.min()==0: return
 
         n, x_axis, like = self.smooth_likelihood(x)
 
+        #Choose colors
+        possible_colors = ['b','g','r','m','y']
+        color = possible_colors[self.plot_set%len(possible_colors)]
+
         #Make the plot
         pylab.figure(figure.number)
         keywords = self.keywords_1d()
-        pylab.plot(x_axis, like, '-', **keywords)
+        pylab.plot(x_axis, like, color+'-', **keywords)
         pylab.xlabel(self.latex(name, dollar=True))
 
         return filename
@@ -303,9 +311,12 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
             if filename: filenames.append(filename)
         return filenames
 
+def next_entry(l, m):
+    return m[(l.index(m) + 1)%len(m)]
 
 class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
     excluded_colums = ["like"]
+
     def keywords_2d(self):
         return {}
 
@@ -364,15 +375,17 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         fill = self.options.get("fill", True)
         imshow = self.options.get("imshow", False)
         plot_points = self.options.get("plot_points", False)
+        possible_colors = ['b','g','r','m','y']
+        color = possible_colors[self.plot_set%len(possible_colors)]
 
         if imshow:
             pylab.imshow(like.T, extent=(x_axis[0], x_axis[-1], y_axis[0], y_axis[-1]), aspect='auto', origin='lower')
             pylab.colorbar()
         elif fill:
-            pylab.contourf(x_axis, y_axis, like.T, [level2,level0], colors=['b'], alpha=0.25)
-            pylab.contourf(x_axis, y_axis, like.T, [level1,level0], colors=['b'], alpha=0.25)
+            pylab.contourf(x_axis, y_axis, like.T, [level2,level0], colors=[color], alpha=0.25)
+            pylab.contourf(x_axis, y_axis, like.T, [level1,level0], colors=[color], alpha=0.25)
         else:
-            pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors='b')
+            pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors=color)
         if plot_points:
             pylab.plot(x, y, ',')
 
