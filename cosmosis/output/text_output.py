@@ -160,7 +160,7 @@ class TextColumnOutput(OutputBase):
             data.append(np.array(chain))
             metadata.append(chain_metadata)
             final_metadata.append(chain_final_metadata)
-            chain_comments.append(comments)
+            comments.append(chain_comments)
 
         if column_names is None:
             raise ValueError("Could not find column names header in file starting %s"%filename)
