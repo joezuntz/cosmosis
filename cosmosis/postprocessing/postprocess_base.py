@@ -35,12 +35,14 @@ class PostProcessor(object):
     def load(self, ini):
         for step in self.steps:
             step.reset()
+        filename = "Unknown"
         if self.cosmosis_standard_output:
             if isinstance(ini, tuple):
                 self.colnames, self.data, self.metadata, self.comments, self.final_metadata = ini
             else:
                 if isinstance(ini, dict):
                     output_options=ini["output"]
+                    filename = output_options['filename']
                     sampler = ini['sampler']
                     sampler_options = {}
                     for key,val in ini[sampler].items():
@@ -49,12 +51,14 @@ class PostProcessor(object):
                     ini = Inifile(None, override=sampler_options)
                 else:
                     output_options = dict(ini.items('output'))
+                    filename = output_options['filename']
                     self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
-                    output_module.input_from_options(output_options)
+                        output_module.input_from_options(output_options)
             #self.data = self.data[0].T
             self.data_stacked = np.concatenate(self.data).T
             self.colnames = [c.lower() for c in self.colnames]
         self.ini = ini
+        self.name = filename
 
     def __len__(self):
         return self.data_stacked.shape[1]

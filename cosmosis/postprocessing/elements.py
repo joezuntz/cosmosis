@@ -113,5 +113,3 @@ class MultinestPostProcessorElement(PostProcessorElement):
         u = np.random.uniform(size=w.size)
         return u<w
 
-
-

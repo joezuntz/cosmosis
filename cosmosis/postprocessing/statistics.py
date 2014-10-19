@@ -5,6 +5,10 @@ from .utils import std_weight, mean_weight, median_weight
 
 
 class Statistics(PostProcessorElement):
+    def __init__(self, *args, **kwargs):
+        super(Statistics, self).__init__(*args, **kwargs)
+        self.text_files = {}
+
     def run(self):
         print "I do not know how to generate statistics for this kind of data"
         return []
@@ -14,6 +18,25 @@ class Statistics(PostProcessorElement):
         prefix=self.options.get("prefix","")
         if prefix: prefix+="_"        
         return "{0}/{1}{2}.{3}".format(output_dir, prefix, base, ftype)
+
+    def open_output(self, base, header="", section_name="", ftype='txt'):
+        filename = self.filename(base, ftype)
+        if filename in self.text_files:
+            f = self.text_files[filename]
+            new_file = False
+        else:
+            f = open(filename, 'w')
+            self.text_files[filename] = f
+            new_file = True
+            if header:
+                f.write(header+'\n')
+        if section_name:
+            f.write("#%s\n"%section_name)
+        return f, filename, new_file
+
+    def finalize(self):
+        for f in self.text_files.values():
+            f.close()
 
 
 class ConstrainingStatistics(Statistics):
@@ -27,32 +50,26 @@ class ConstrainingStatistics(Statistics):
         ]
     def report_file_mean(self):        
         #Generate the means file
-        marge_filename = self.filename("means")
-        marge_file = open(marge_filename, "w")
-        marge_file.write("#parameter mean std_dev\n")
+        header = "#parameter mean std_dev"
+        marge_file, marge_filename, new_file = self.open_output("means", header, self.source.name)
         for P in zip(self.source.colnames, self.mu, self.sigma):
             marge_file.write("%s   %e   %e\n" % P)
-        marge_file.close()
         return marge_filename
 
     def report_file_median(self):
         #Generate the medians file
-        median_filename = self.filename("medians")
-        median_file = open(median_filename, "w")
-        median_file.write("#parameter mean std_dev\n")
+        header = "#parameter mean std_dev\n"
+        median_file, median_filename, new_file = self.open_output("medians", header, self.source.name)
         for P in zip(self.source.colnames, self.median, self.sigma):
             median_file.write("%s   %e   %e\n" % P)
-        median_file.close()
         return median_filename
 
     def report_file_mode(self):
         #Generate the mode file
-        best_filename = self.filename("best_fit")
-        best_file = open(best_filename, "w")
-        best_file.write("#parameter value\n")
+        header = "#parameter value"
+        best_file, best_filename, new_file = self.open_output("best_fit", header, self.source.name)
         for P in zip(self.source.colnames, self.source.get_row(self.best_fit_index)):
             best_file.write("%s        %g\n"%P)
-        best_file.close()
         return best_filename
 
     @staticmethod
@@ -128,7 +145,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         files = self.report_file()
         return files
 
-class MetropolisHastingsCovariance(Statistics, MCMCPostProcessorElement):
+class ChainCovariance(object):
     def run(self):
         #Determine the parameters to use
 
@@ -144,18 +161,24 @@ class MetropolisHastingsCovariance(Statistics, MCMCPostProcessorElement):
 
         #Save the covariance matrix
         filename = self.filename("covmat")
-        f = open(filename, 'w')
-        f.write('#'+'    '.join(col_names)+'\n')
-        np.savetxt(f, covmat)
-        f.close()
+        f, filename, new_file = self.open_output("covmat")
+        if new_file:
+            f.write('#'+'    '.join(col_names)+'\n')
+            np.savetxt(f, covmat)
+        else:
+            print "NOT saving more than covariance matrix - just using first ini file"
 
         #Save the proposal matrix
-        proposal_filename = self.filename("proposal")
-        f = open(proposal_filename, 'w')
-        f.write('#'+'    '.join(col_names[:n])+'\n')
-        np.savetxt(f, proposal)
-        f.close()
+        f, proposal_filename, new_file = self.open_output("proposal")
+        if new_file:
+            f.write('#'+'    '.join(col_names[:n])+'\n')
+            np.savetxt(f, proposal)
+        else:
+            print "NOT saving more than proposal matrix - just using first ini file"
         return [filename, proposal_filename]
+
+class MetropolisHastingsCovariance(ChainCovariance, Statistics, MCMCPostProcessorElement):
+    pass
 
 
 
@@ -274,13 +297,11 @@ class DunkleyTest(MetropolisHastingsStatistics):
         else:
             print "The power spectra for this chain suggests good convergence."
         print
-        filename = self.filename("dunkley")
-        f = open(filename,'w')
-        f.write('#'+'    '.join(params))
+        header = '#'+'    '.join(params)
+        f, filename, new_file = self.open_output("dunkley", header, self.source.name)
         f.write("\n")
         f.write('    '.join(str(js) for js in jstar))
         f.write("\n")
-        f.close()
         return [filename]
 
 
@@ -345,12 +366,32 @@ class MultinestStatistics(MultinestPostProcessorElement, MetropolisHastingsStati
         print
 
         #Now save to file
-        filename = self.filename("evidence")
-        f = open(filename,'w')
-        f.write('#logz    logz_sigma\n')
+        header = '#logz    logz_sigma'
+        f, filename, new_file  = self.open_output("evidence", header, self.source.name)
         f.write('%e    %e\n'%(logz,logz_sigma))
-        f.close()
 
         #Include evidence in list of created files
         files.append(filename)
         return files
+
+class MultinestCovariance(ChainCovariance, Statistics, MultinestPostProcessorElement):
+    pass
+
+
+class Citations(Statistics):
+    #This isn't really a statistic but it uses all the same
+    #mechanisms
+    def run(self):
+        print 
+        message = "#You should cite these papers in any publication based on this pipeline."
+        print message
+        f, filename, new_file = self.open_output("citations", message, self.source.name)
+        for comment_set in self.source.comments:
+            for comment in comment_set:
+                comment = comment.strip()
+                if comment.startswith("CITE"):
+                    citation =comment[4:].strip()
+                    print "    ", citation
+                    f.write("%s\n"%citation)
+        print
+        return [filename]

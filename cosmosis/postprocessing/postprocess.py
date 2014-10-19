@@ -11,7 +11,8 @@ class MetropolisHastingsProcessor(PostProcessor):
 		plots.MetropolisHastingsPlots2D,
 		statistics.MetropolisHastingsStatistics,
 		statistics.MetropolisHastingsCovariance,
-		]
+		statistics.Citations,
+]
 
 
 class EmceeProcessor(MetropolisHastingsProcessor):
@@ -31,13 +32,15 @@ class MetropolisProcessor(MetropolisHastingsProcessor):
 		statistics.MetropolisHastingsStatistics,
 		statistics.MetropolisHastingsCovariance,
 		statistics.DunkleyTest,
+		statistics.Citations,		
 		]
 
 class GridProcessor(PostProcessor):
 	elements=[
 		plots.GridPlots1D,
 		plots.GridPlots2D,
-		statistics.GridStatistics
+		statistics.GridStatistics,
+		statistics.Citations,
 		]
 	sampler="grid"
 
@@ -52,5 +55,7 @@ class MultinestProcessor(PostProcessor):
 		plots.MultinestPlots1D, 
 		plots.MultinestPlots2D,
 		statistics.MultinestStatistics,
+		statistics.MultinestCovariance,
+		statistics.Citations,
 		]
 	sampler="multinest"
