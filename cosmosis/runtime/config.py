@@ -46,6 +46,8 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
                     cursect[optname].append(value)
             # a section header or option header?
             else:
+                #JAZ add environment variable expansion
+                line = os.path.expandvars(line)
                 # is it a section header?
                 mo = self.SECTCRE.match(line)
                 if mo:
