@@ -141,19 +141,32 @@ class GridPlots1D(GridPlots):
         n1 = len(vals1)
         like_sum = np.zeros(n1)
 
+        #normalizing like this is a bit help 
+        #numerically
+        like = like-like.max()
 
         #marginalize
         for k,v1 in enumerate(vals1):
             w = np.where(cols1==v1)
             like_sum[k] = np.log(np.exp(like[w]).sum())
         like = like_sum.flatten()
+        like -= like.max()
+
 
         #linearly interpolate
-        n1 *= 10
-        vals1_interp = np.linspace(vals1[0], vals1[-1], n1)
+        n1_interp = n1*10
+        vals1_interp = np.linspace(vals1[0], vals1[-1], n1_interp)
         like_interp = np.interp(vals1_interp, vals1, like)
-        vals1 = vals1_interp
-        like = like_interp
+        if np.isfinite(like_interp).any():
+            vals1 = vals1_interp
+            like = like_interp
+            n1 = n1_interp
+        else:
+            print
+            print "Parameter %s has a very wide range in likelihoods " % name1
+            print "So I couldn't do a smooth likelihood interpolation for plotting"
+            print
+
 
         #normalize
         like[np.isnan(like)] = -np.inf
@@ -229,6 +242,8 @@ class GridPlots2D(GridPlots):
         n2 = len(vals2)
         if n1!=n2: return        
         filename = self.filename("2D", name1, name2)
+
+        like = like - like.max()
 
         #Marginalize over all the other parameters by summing
         #them up
