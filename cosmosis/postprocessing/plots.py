@@ -47,12 +47,15 @@ class Plots(PostProcessorElement):
                         display_name = latex_names.get("misc",col_name)
                     except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
                         pass
-
-            self._latex[col_name]=display_name
+            if display_name != col_name:
+                self._latex[col_name]=display_name
 
     def latex(self, name, dollar=True):
         l = self._latex.get(name)
-        if l is None: return name
+        if l is None:
+            if '--' in name:
+                name = name.split('--', 1)[1]
+            return name
         if dollar:
             l = "$"+l+"$"
         return l
