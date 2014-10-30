@@ -250,6 +250,7 @@ class MatterPowerPlot(Plot):
 class ShearSpectrumPlot(Plot):
 	"Shear-shear power spectrum"
 	filename = "shear_power"
+	ylim = (1e-8,1e-3)
 	def plot(self):
 		super(ShearSpectrumPlot, self).plot()
 		self.plot_section("shear_cl")
@@ -283,7 +284,7 @@ class ShearSpectrumPlot(Plot):
 				if all(cl<=0):
 					cl *= -1
 				pylab.loglog(ell, ell*(ell+1.) * cl/2/np.pi)
-				pylab.ylim(1e-8,1e-3)
+				pylab.ylim(*self.ylim)
 				if i==1 and j==1:
 					pylab.xlabel("$\ell$")
 					pylab.ylabel("$\ell (\ell+1) C_\ell / 2 \pi$")
@@ -298,6 +299,14 @@ class ShearSpectrumPlot(Plot):
 				if section=="shear_cl":
 					pylab.text(1.5*ell.min(),1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
 					pylab.grid()
+
+class MatterPower2D(ShearSpectrumPlot):
+	"2D Matter power spectrum"
+	filename = "matter_power_2d"
+	ylim = (1e-6,1.0)
+	def plot(self):
+		super(ShearSpectrumPlot, self).plot()
+		self.plot_section("matter_cl")
 
 class ShearCorrelationPlot(Plot):
 	"Shear-shear power spectrum"

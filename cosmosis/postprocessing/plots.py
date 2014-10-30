@@ -52,12 +52,15 @@ class Plots(PostProcessorElement):
                         display_name = latex_names.get("misc",col_name)
                     except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
                         pass
-
-            self._latex[col_name]=display_name
+            if display_name != col_name:
+                self._latex[col_name]=display_name
 
     def latex(self, name, dollar=True):
         l = self._latex.get(name)
-        if l is None: return name
+        if l is None:
+            if '--' in name:
+                name = name.split('--', 1)[1]
+            return name
         if dollar:
             l = "$"+l+"$"
         return l
@@ -122,8 +125,14 @@ class GridPlots(Plots):
             return like[w].sum() - target
         target1 = like_total*contour1
         target2 = like_total*contour2
-        level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
-        level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
+        try:
+            level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
+        except RuntimeError:
+            level1 = np.nan
+        try:
+            level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
+        except RuntimeError:
+            level2 = np.nan
         return level1, level2
 
 
@@ -140,21 +149,37 @@ class GridPlots1D(GridPlots):
         n1 = len(vals1)
         like_sum = np.zeros(n1)
 
+        #normalizing like this is a bit help 
+        #numerically
+        like = like-like.max()
+
         #marginalize
         for k,v1 in enumerate(vals1):
             w = np.where(cols1==v1)
             like_sum[k] = np.log(np.exp(like[w]).sum())
         like = like_sum.flatten()
+        like -= like.max()
+
 
         #linearly interpolate
-        n1 *= 10
-        vals1_interp = np.linspace(vals1[0], vals1[-1], n1)
+        n1_interp = n1*10
+        vals1_interp = np.linspace(vals1[0], vals1[-1], n1_interp)
         like_interp = np.interp(vals1_interp, vals1, like)
-        vals1 = vals1_interp
-        like = like_interp
+        if np.isfinite(like_interp).any():
+            vals1 = vals1_interp
+            like = like_interp
+            n1 = n1_interp
+        else:
+            print
+            print "Parameter %s has a very wide range in likelihoods " % name1
+            print "So I couldn't do a smooth likelihood interpolation for plotting"
+            print
+
 
         #normalize
+        like[np.isnan(like)] = -np.inf
         like -= like.max()
+
 
         #Determine the spacing in the different parameters
         dx = vals1[1]-vals1[0]
@@ -170,6 +195,7 @@ class GridPlots1D(GridPlots):
         X, L = self.find_edges(np.exp(like), 0.68, 0.95, vals1)
         #Plot black dotted lines from the y-axis at these contour levels
         for (x, l) in zip(X,L):
+            if np.isnan(x[0]): continue
             pylab.plot([x[0],x[0]], [0, l[0]], ':', color='black')
             pylab.plot([x[1],x[1]], [0, l[1]], ':', color='black')
 
@@ -186,6 +212,10 @@ class GridPlots1D(GridPlots):
         L = []
         level1,level2=cls.find_grid_contours(like, contour1, contour2)
         for level in [level1, level2]:
+            if np.isnan(level):
+                X.append((np.nan,np.nan))
+                L.append((np.nan,np.nan))
+                continue
             above = np.where(like>level)[0]
             left = above[0]
             right = above[-1]
@@ -220,6 +250,8 @@ class GridPlots2D(GridPlots):
         n2 = len(vals2)
         if n1!=n2: return        
         filename = self.filename("2D", name1, name2)
+
+        like = like - like.max()
 
         #Marginalize over all the other parameters by summing
         #them up
