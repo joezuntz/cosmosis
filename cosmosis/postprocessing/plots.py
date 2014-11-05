@@ -283,16 +283,24 @@ class GridPlots2D(GridPlots):
         like = np.exp(like).reshape((n1,n2))
         extent=(vals2[0], vals2[-1], vals1[0], vals1[-1])
         #Make the plot
-        pylab.imshow(like, extent=extent, 
-            aspect='auto', cmap=colormap, norm=norm, interpolation=interpolation, origin='lower')
-        
-        sm = pylab.cm.ScalarMappable(cmap=colormap, norm=norm)
-        sm._A = [] #hack from StackOverflow to make this work
-        pylab.colorbar(sm, label='Likelihood')
+
+        if self.options.get("image", True):
+            pylab.imshow(like, extent=extent, 
+                aspect='auto', cmap=colormap, norm=norm, interpolation=interpolation, origin='lower')
+            
+            sm = pylab.cm.ScalarMappable(cmap=colormap, norm=norm)
+            sm._A = [] #hack from StackOverflow to make this work
+            pylab.colorbar(sm, label='Likelihood')
 
         #Add contours
         level1, level2 = self.find_grid_contours(like, 0.68, 0.95)
-        pylab.contour(like, levels = [level1, level2], extent=extent)
+        if not self.options.get("image", True):
+            possible_colors = ['b','g','r','m','y']
+            color = possible_colors[self.plot_set%len(possible_colors)]
+            colors=[color, color]
+        else:
+            colors=None
+        pylab.contour(like, levels = [level1, level2], extent=extent, linewidths=[3,1], colors=colors)
         pylab.xlabel(self.latex(name2))
         pylab.ylabel(self.latex(name1))
 
