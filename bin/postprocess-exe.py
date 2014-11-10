@@ -32,6 +32,7 @@ plots.add_argument("--factor-kde", default=2.0, type=float, help="Smoothing fact
 plots.add_argument("--no-fill", dest='fill', default=True, action='store_false', help="Do not fill in 2D constraint plots with color")
 plots.add_argument("--extra", dest='extra', default="", help="Load extra post-processing steps from this file.")
 plots.add_argument("--tweaks", dest='tweaks', default="", help="Load plot tweaks from this file.")
+plots.add_argument("--no-image", dest='image', default=True, action='store_false', help="Do not plot the image in  2D grids; just show the contours")
 
 def read_input(ini_filename, force_text):
 	if ini_filename.endswith("txt") or force_text:
