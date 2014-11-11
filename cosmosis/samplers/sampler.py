@@ -29,7 +29,7 @@ class Sampler(object):
 
             self.attribution.write_output(self.output)
         blinding_header = self.ini.getboolean("output","blinding-header", False)
-        if blinding_header:
+        if blinding_header and self.output:
             output.comment("")
             output.comment("Blank lines prevent accidental unblinding")
             for i in xrange(250):
