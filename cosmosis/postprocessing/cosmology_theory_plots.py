@@ -297,7 +297,7 @@ class ShearSpectrumPlot(Plot):
 
 
 				if section=="shear_cl":
-					pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
+					pylab.text(1.5*ell.min(),1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
 					pylab.grid()
 
 class MatterPower2D(ShearSpectrumPlot):

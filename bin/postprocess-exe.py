@@ -9,7 +9,7 @@ import argparse
 
 
 parser = argparse.ArgumentParser(description="Post-process cosmosis output")
-parser.add_argument("inifile")
+parser.add_argument("inifile", nargs="+")
 mcmc=parser.add_argument_group(title="MCMC", description="Options for MCMC-type samplers")
 mcmc.add_argument("--burn", default=0.0, type=float, help="Fraction or number of samples to burn at the start")
 mcmc.add_argument("--thin", default=1, type=int, help="Keep every n'th sampler in MCMC")
@@ -32,23 +32,17 @@ plots.add_argument("--factor-kde", default=2.0, type=float, help="Smoothing fact
 plots.add_argument("--no-fill", dest='fill', default=True, action='store_false', help="Do not fill in 2D constraint plots with color")
 plots.add_argument("--extra", dest='extra', default="", help="Load extra post-processing steps from this file.")
 plots.add_argument("--tweaks", dest='tweaks', default="", help="Load plot tweaks from this file.")
+plots.add_argument("--no-image", dest='image', default=True, action='store_false', help="Do not plot the image in  2D grids; just show the contours")
 
-
-
-def main(args):
-	#Read the command line arguments and load the
-	#ini file that created the run
-	args = parser.parse_args(args)
-	ini_filename = args.inifile
-
-	if ini_filename.endswith("txt") or args.text:
+def read_input(ini_filename, force_text):
+	if ini_filename.endswith("txt") or force_text:
 		output_info = TextColumnOutput.load_from_options({"filename":ini_filename})
 		metadata=output_info[2][0]
 		sampler = metadata.get("sampler")
 		if sampler is None:
 			print "This is not a cosmosis output file."
 			print "So I will assume it in a generic MCMC file"
-			sampler = "emcee"
+			sampler = "metropolis"
 			ini = output_info
 		else:
 			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="text", filename=ini_filename)}
@@ -57,7 +51,16 @@ def main(args):
 		#designed to postprocess the output of that sampler
 		ini = Inifile(ini_filename)
 		sampler = ini.get("runtime", "sampler")
-	
+	return sampler, ini
+
+
+def main(args):
+	#Read the command line arguments and load the
+	#ini file that created the run
+	args = parser.parse_args(args)
+	ini_filename = args.inifile[0]
+
+	sampler, ini = read_input(ini_filename, args.text)
 	processor_class = postprocessor_for_sampler(sampler)
 
 	#We do not know how to postprocess everything.
@@ -73,6 +76,14 @@ def main(args):
 	if args.extra:
 		processor.load_extra_steps(args.extra)
 	processor.run()
+
+	#Run it again for each subsequent file
+	for ini_filename in args.inifile[1:]:
+		sampler2, ini = read_input(ini_filename, args.text)
+		if sampler2!=sampler:
+			raise ValueError("Sorry - cannot currently process samples from two different samplers at once")
+		processor.load(ini)
+		processor.run()
 
 	#Run any tweaks that the user specified
 	if args.tweaks:
