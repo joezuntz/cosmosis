@@ -188,10 +188,9 @@ class GridStatistics(ConstrainingStatistics):
         self.nrow = len(self.source)
         self.ncol = len(self.source.colnames)
 
-        extra = self.source.ini.get("pipeline", "extra_output","").split()
-        self.grid_columns = [i for i in xrange(self.ncol) if not self.source.colnames[i] in extra and self.source.colnames[i]!="like"]
+        extra = self.source.ini.get("pipeline", "extra_output","").replace('/','--').split()
+        self.grid_columns = [i for i in xrange(self.ncol) if (not self.source.colnames[i] in extra) and (self.source.colnames[i]!="like")]
         self.ndim = len(self.grid_columns)
-
         assert self.nrow == self.nsample**self.ndim
         self.shape = np.repeat(self.nsample, self.ndim)
         self.like = np.exp(self.source.get_col("like")).reshape(self.shape)
@@ -252,7 +251,8 @@ class GridStatistics(ConstrainingStatistics):
         like = like / like.sum()
         mu = (col*like).sum()
         sigma2 = ((col-mu)**2*like).sum()
-        return mu, sigma2**0.5
+        median = self.find_median(col, like)
+        return mu, median, sigma2**0.5
 
 
 
