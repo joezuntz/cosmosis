@@ -49,8 +49,8 @@ def main(args, pool=None):
     if sampler_class.needs_output and \
        (pool is None 
         or pool.is_master() 
-        or sampler_class.parallel_output) \
-       and (sample_method!="multinest" or sampler_class.needs_output()):
+        or sampler_class.parallel_output):
+
         #create the output files and methods
         try:
             output_options = dict(ini.items('output'))
