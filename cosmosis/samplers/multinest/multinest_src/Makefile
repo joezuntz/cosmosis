@@ -37,7 +37,7 @@ mpi/%.o: %.F90 mpi/.phony
 	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
 
 mpi/.phony:
-	@mkdir mpi
+	@mkdir -p mpi
 	@touch mpi/.phony
 
 test:
