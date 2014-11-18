@@ -30,16 +30,15 @@ NSOBJECTS_MPI = $(patsubst %.o,mpi/%.o,$(NSOBJECTS))
 %.o: %.F90
 	$(FC) $(FFLAGS) -c -o $@ $^ 
 
-mpi/%.o: %.f90
+mpi/%.o: %.f90 mpi/.phony
 	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
 
-mpi/%.o: %.F90
+mpi/%.o: %.F90 mpi/.phony
 	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
 
-$(NSOBJECTS_MPI): mpi
-
-mpi:
+mpi/.phony:
 	@mkdir mpi
+	@touch mpi/.phony
 
 test:
 	@echo "Alas, MultiNest has no tests"
@@ -79,7 +78,8 @@ eggboxC++:
 
 clean: 
 ifneq ($(MPI),)
-	-rm -f $(NESTLIBDIR)/libnest3_mpi.* mpi/*.o mpi/*.mod
+	-rm -f $(NESTLIBDIR)/libnest3_mpi.*
+	-rm -rf mpi
 endif
 	-rm -f $(NESTLIBDIR)/libnest3.* *.o *.mod
 
