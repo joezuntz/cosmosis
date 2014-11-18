@@ -233,7 +233,7 @@ class GridPlots2D(GridPlots):
     def run(self):
         filenames=[]
         for i, name1 in enumerate(self.source.colnames[:-1]):
-            for name2 in self.source.colnames:
+            for name2 in self.source.colnames[:-1]:
                 if name1<=name2: continue
                 filename=self.plot_2d(name1, name2)
                 if filename: filenames.append(filename)
