@@ -14,7 +14,7 @@ FFLAGS += -O3 -fPIC -ffree-line-length-none
 ifeq ($(LAPACK_LIB),)
 LAPACKLIB = -llapack
 else
-LAPACKLIB = -L$(LAPACK_LIB) -llapack
+LAPACKLIB = -L$(LAPACK_LIB) -llapack -lblas
 endif
 
 NESTLIBDIR = ./
@@ -49,7 +49,7 @@ libnest3_mpi.so: $(NSOBJECTS_MPI)
 	$(MPIFC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)
 	
 libnest3.so: $(NSOBJECTS) 
-	$(FC) -o  $@ $^ $(LIBS) $(LAPACKLIB)
+	$(FC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)
 
 obj_detect:
 	make -C example_obj_detect
