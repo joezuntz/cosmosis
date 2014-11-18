@@ -5,9 +5,9 @@ ifneq ($(MPI),)
 TARGETS+=libnest3_mpi.so
 endif
 
+all: $(TARGETS)
+
 FC = gfortran
-CC = gcc
-CXX = g++
 MPIFC = mpif90
 FFLAGS += -O3 -fPIC -ffree-line-length-none
 
@@ -22,6 +22,8 @@ NESTLIBDIR = ./
 NSOBJECTS = utils.o utils1.o priors.o kmeans_clstr.o xmeans_clstr.o posterior.o nested.o cwrapper.o
 NSOBJECTS_MPI = $(patsubst %.o,mpi/%.o,$(NSOBJECTS))
 
+
+
 %.o: %.f90
 	$(FC) $(FFLAGS) -c -o $@ $^ 
 
@@ -34,8 +36,6 @@ mpi/%.o: %.f90
 mpi/%.o: %.F90
 	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
 
-all: $(TARGETS)
-
 $(NSOBJECTS_MPI): mpi
 
 mpi:
@@ -45,7 +45,6 @@ test:
 	@echo "Alas, MultiNest has no tests"
 
 libnest3_mpi.so: $(NSOBJECTS_MPI)
-	@echo "libnest3_mpi.so: $^"
 	$(MPIFC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)
 	
 libnest3.so: $(NSOBJECTS) 
