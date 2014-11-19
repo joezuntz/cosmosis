@@ -5,7 +5,14 @@ from .. import ParallelSampler
 
 
 def task(p):
-    return grid_sampler.pipeline.posterior(p, return_data=grid_sampler.save_name)
+    i,p = p
+    results = grid_sampler.pipeline.posterior(p, return_data=grid_sampler.save_name)
+    #If requested, save the data to file
+    if grid_sampler.save_name and results[2] is not None:
+        results[2].save_to_file(grid_sampler.save_name+"_%d"%i)
+    return (results[0], results[1])
+
+
 
 
 class GridSampler(ParallelSampler):
@@ -18,29 +25,26 @@ class GridSampler(ParallelSampler):
 
         self.converged = False
         self.nsample = self.read_ini("nsample_dimension", int, 1)
-        self.save_name = self.read_ini("save_name", str, "")
+        self.save_name = self.read_ini("save", str, "")
 
     def execute(self):
         samples = list(itertools.product(*[np.linspace(*param.limits,
                                                        num=self.nsample)
                                            for param
                                            in self.pipeline.varied_params]))
+        sample_index = range(len(samples))
+        jobs = list(zip(sample_index, samples))
+
         if self.pool:
-            results = self.pool.map(task, samples)
+            results = self.pool.map(task, jobs)
         else:
-            results = map(task, samples)
+            results = map(task, jobs)
 
         #Save the results of the sampling
-        for i,(sample, result)  in enumerate(itertools.izip(samples, results)):
+        for sample, result  in itertools.izip(samples, results):
             #Optionally save all the results calculated by each
             #pipeline run to files
-            if self.save_name:
-                (prob, extra, data) = result
-                #If prior is violated no results are returned
-                if data is not None:
-                    data.save_to_file(self.save_name+"_%d"%i)
-            else:
-                (prob, extra) = result
+            (prob, extra) = result
             #always save the usual text output
             self.output.parameters(sample, extra, prob)
         #We only ever run this once, though that could 
