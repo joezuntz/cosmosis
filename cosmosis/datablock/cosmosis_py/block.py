@@ -464,6 +464,13 @@ class DataBlock(object):
 	def save_to_file(self, dirname, clobber=False):
 		filename = dirname + ".tgz"
 
+		base_dirname,base_filename=os.path.split(filename)
+		if base_dirname:
+			try:
+				os.mkdir(base_dirname)
+			except OSError:
+				pass
+
 		if os.path.exists(filename) and not clobber:
 			raise ValueError("File %s already exists and not clobbering"%filename)
 
