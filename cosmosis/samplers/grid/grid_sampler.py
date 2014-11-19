@@ -9,7 +9,7 @@ def task(p):
     results = grid_sampler.pipeline.posterior(p, return_data=grid_sampler.save_name)
     #If requested, save the data to file
     if grid_sampler.save_name and results[2] is not None:
-        results[2].save_to_file(grid_sampler.save_name+"_%d"%i)
+        results[2].save_to_file(grid_sampler.save_name+"_%d"%i, clobber=True)
     return (results[0], results[1])
 
 
