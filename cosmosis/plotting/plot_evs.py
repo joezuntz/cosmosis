@@ -24,15 +24,16 @@ like /= like.max()
 
 #make the plot
 pylab.xscale("log")
-pylab.plot(m/0.70799558006015664, like, lw=2) # mass in M_sun
+pylab.plot(m, like, lw=2) # mass in M_sun
 
 #Add a vertical bar for the observation:
 #XXMU J0044  Santos et al. 2011
-pylab.plot([4.02E14,4.02E14],[0.0,1.0],
+mass=4.02E14*0.7
+pylab.plot([mass,mass],[0.0,1.0],
 	label="XXMU J0044 z = 1.579", linestyle='--', lw=2, color="red")
 
 #Set the axis and display setup
-pylab.xlabel("Maximum Mass ($M_\odot$)")
+pylab.xlabel("Maximum Mass ($M_\odot /h$)")
 pylab.ylabel("Likelihood")
 pylab.minorticks_on()
 pylab.legend()
