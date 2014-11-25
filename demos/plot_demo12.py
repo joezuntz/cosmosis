@@ -15,8 +15,8 @@ import pylab
 import numpy as np
 
 #Load in the cosmosis output files
-log_like = np.loadtxt("demo13_output/evs/logphi.txt").T
-m = np.loadtxt("demo13_output/evs/m.txt").T
+log_like = np.loadtxt("demo12_output/evs/logphi.txt").T
+m = np.loadtxt("demo12_output/evs/m.txt").T
 
 #convert to like from log-like and normalize
 like = np.exp(log_like)
