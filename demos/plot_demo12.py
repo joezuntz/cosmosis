@@ -40,4 +40,4 @@ pylab.legend()
 pylab.grid()
 
 #Save the file
-pylab.savefig("maxmass.png")
+pylab.savefig("demo12_pdf.png")
