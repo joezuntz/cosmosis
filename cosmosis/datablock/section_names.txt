@@ -12,6 +12,7 @@ intrinsic_alignment_parameters
 baryon_parameters
 shear_calibration_parameters
 number_density_params
+post_friedmann_parameters
 
 # source number density
 wl_number_density
@@ -55,3 +56,8 @@ test_parameters
 #Halo things
 mass_function
 
+#Extreme Value Statistics
+evs
+
+#clusters
+clusters

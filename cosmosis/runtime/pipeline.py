@@ -334,15 +334,21 @@ class LikelihoodPipeline(Pipeline):
         return sum([param.evaluate_prior(x) for param, x in
                     zip(self.varied_params, p)])
 
-    def posterior(self, p):
+    def posterior(self, p, return_data=False):
         prior = self.prior(p)
         if prior == -np.inf:
             if not self.quiet:
                 sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
+            if return_data:
+                return prior, np.repeat(np.nan, self.number_extra), None
             return prior, np.repeat(np.nan, self.number_extra)
-        like, extra = self.likelihood(p)
-        return prior + like, extra
-
+        if return_data:
+            like, extra, data = self.likelihood(p, return_data=True)
+            return prior + like, extra, data
+        else:
+            like, extra = self.likelihood(p)
+            return prior + like, extra
+        
     def likelihood(self, p, return_data=False):
         #Set the parameters by name from the parameter vector
         #If one is out of range then return -infinity as the log-likelihood

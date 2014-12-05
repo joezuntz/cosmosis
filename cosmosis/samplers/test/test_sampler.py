@@ -45,7 +45,10 @@ class TestSampler(Sampler):
         try:
             if self.save_dir:
                 if data is not None:
-                    data.save_to_directory(self.save_dir, clobber=True)
+                    if self.save_dir.endswith('.tgz'):
+                        data.save_to_file(self.save_dir[:-4], clobber=True)
+                    else:
+                        data.save_to_directory(self.save_dir, clobber=True)
                 else:
                     print "(There was an error so no output to save)"
         except Exception as e:

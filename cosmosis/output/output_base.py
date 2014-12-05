@@ -168,8 +168,8 @@ class OutputBase(object):
 
 
     def close(self):
-        self.closed=True
         self._close()
+        self.closed=True
 
     #These are the methods that subclasses should
     #implement.  _begun_sampling and _close are optional.

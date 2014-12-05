@@ -40,6 +40,9 @@ class PostProcessorElement(Loadable):
         self.options = {}
         self.options.update(options)
 
+    def reset(self):
+        pass
+
     def run(self):
         print "I do not know how to produce some results for this kind of data"
         return []
@@ -81,6 +84,11 @@ class MultinestPostProcessorElement(PostProcessorElement):
         col = self.source.get_col(name)
         w = self.source.get_col("weight")[-n:]
         return col[-n:][w>0]
+
+    def reset(self):
+        super(MultinestPostProcessorElement, self).reset()
+        if hasattr(self, "_weight_col"):
+            del self._weight_col
         
     def weight_col(self):
         if hasattr(self, "_weight_col"):
@@ -104,6 +112,4 @@ class MultinestPostProcessorElement(PostProcessorElement):
         w = w / w.max()
         u = np.random.uniform(size=w.size)
         return u<w
-
-
 
