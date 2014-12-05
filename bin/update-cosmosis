@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+import re
 from distutils.version import StrictVersion
 
 #Move to the cosmosis directory
@@ -132,7 +133,8 @@ latest_version = sorted([StrictVersion(tag.lstrip('v')) for tag in all_versions]
 latest_version = 'v' + ('.'.join(str(vp) for vp in latest_version.version))
 
 #Convert, e.g. v1.0.0 back to v1.0
-if latest_version.endswith('.0.0'):
+
+if re.search(r"\.[0-9]+\.0", latest_version):
 	latest_version = latest_version[:-2]
 
 # See what the user asked to do
