@@ -21,7 +21,7 @@ class SnakeSampler(ParallelSampler):
         snake_pipeline=self.pipeline
         if self.is_master():
             self.threshold = self.read_ini("threshold", float, 6.0)
-            self.grid_size = self.read_ini("grid_size", float, 0.01)
+            self.grid_size = 1.0/self.read_ini("nsample_grid", float, 0.01)
             self.maxiter = self.read_ini("maxiter", int, 100000)
 
             
