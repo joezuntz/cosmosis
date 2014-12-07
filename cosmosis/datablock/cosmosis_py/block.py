@@ -6,6 +6,8 @@ from .errors import BlockError
 import numpy as np
 import os
 import collections
+import tarfile
+import StringIO
 
 option_section = "module_options"
 metadata_prefix = "cosmosis_metadata:"
@@ -459,6 +461,55 @@ class DataBlock(object):
 		meta = key[s+1:]
 		return name, meta
 
+	def save_to_file(self, dirname, clobber=False):
+		filename = dirname + ".tgz"
+
+		base_dirname,base_filename=os.path.split(filename)
+		if base_dirname:
+			try:
+				os.mkdir(base_dirname)
+			except OSError:
+				pass
+
+		if os.path.exists(filename) and not clobber:
+			raise ValueError("File %s already exists and not clobbering"%filename)
+
+		tar = tarfile.open(filename, "w:gz")
+
+		for (section, scalar_outputs, vector_outputs, meta) in self._save_paths():
+			#Save all the vector outputs as individual files
+			for name, value in vector_outputs:
+				vector_outfile = os.path.join(dirname,section,name+'.txt')
+				header = "%s\n"%name
+				if name in meta:
+					for key,val in meta[name].items():
+						header+='%s = %s\n' % (key,val)
+
+				#Save this file into the tar file
+				string_output = StringIO.StringIO()
+				np.savetxt(string_output, value, header=header.rstrip("\n"))
+				string_output.seek(0)
+				info = tarfile.TarInfo(name=vector_outfile)
+				info.size=len(string_output.buf)
+				tar.addfile(tarinfo=info, fileobj=string_output)
+
+			#Save all the scalar outputs together as a single file
+			#inside the tar file
+			if scalar_outputs:
+				scalar_outfile = os.path.join(dirname,section,"values.txt")
+				string_output = StringIO.StringIO()
+				for s in scalar_outputs:
+					string_output.write("%s = %r\n"%s)
+					if s[0] in meta:
+						for key,val in meta[s[0]].items():
+							string_output.write("#%s %s = %s\n"%(s[0],key,val))
+				string_output.seek(0)
+				info = tarfile.TarInfo(name=scalar_outfile)
+				info.size=len(string_output.buf)
+				tar.addfile(tarinfo=info, fileobj=string_output)
+		tar.close()
+
+
 	def save_to_directory(self, dirname, clobber=False):
 		try:
 			os.mkdir(dirname)
@@ -466,14 +517,39 @@ class DataBlock(object):
 			if not clobber:
 				print "Not clobbering", clobber
 				raise
-		keys = self.keys()
-		sections = set(k[0] for k in keys)
-		for section in sections:
+		for (section, scalar_outputs, vector_outputs, meta) in self._save_paths():
+			
+			#Create the sub-directory for this 
+			#section
 			try:
 				os.mkdir(os.path.join(dirname,section))
 			except OSError:
 				if not clobber:
 					raise
+
+			#Save all the vector outputs as individual files
+			for name, value in vector_outputs:
+				vector_outfile = os.path.join(dirname,section,name+'.txt')
+				header = "%s\n"%name
+				if name in meta:
+					for key,val in meta[name].items():
+						header+='%s = %s\n' % (key,val)
+				np.savetxt(vector_outfile, value, header=header.rstrip("\n"))
+
+			#Save all the scalar outputs together as a single file
+			if scalar_outputs:
+				f=open(os.path.join(dirname,section,"values.txt"), 'w')
+				for s in scalar_outputs:
+					f.write("%s = %r\n"%s)
+					if s[0] in meta:
+						for key,val in meta[s[0]].items():
+							f.write("#%s %s = %s\n"%(s[0],key,val))
+				f.close()
+
+	def _save_paths(self):
+		keys = self.keys()
+		sections = set(k[0] for k in keys)
+		for section in sections:
 			scalar_outputs = []
 			meta = collections.defaultdict(dict)
 			vector_outputs = []
@@ -489,21 +565,8 @@ class DataBlock(object):
 					scalar_outputs.append((name,value))
 				else:
 					vector_outputs.append((name,value))
-			for name, value in vector_outputs:
-				vector_outfile = os.path.join(dirname,section,name+'.txt')
-				header = "%s\n"%name
-				if name in meta:
-					for key,val in meta[name].items():
-						header+='%s = %s\n' % (key,val)
-				np.savetxt(vector_outfile, value, header=header.rstrip("\n"))
-			if scalar_outputs:
-				f=open(os.path.join(dirname,section,"values.txt"), 'w')
-				for s in scalar_outputs:
-					f.write("%s = %r\n"%s)
-					if s[0] in meta:
-						for key,val in meta[s[0]].items():
-							f.write("#%s %s = %s\n"%(s[0],key,val))
-				f.close()
+			yield section, scalar_outputs, vector_outputs, meta
+
 
 	def report_failures(self):
 		status = lib.c_datablock_report_failures(self._ptr)

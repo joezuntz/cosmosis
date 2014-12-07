@@ -25,9 +25,11 @@ class Sampler(object):
                 self.output.add_column(p, float)
             for p,ptype in self.sampler_outputs:
                 self.output.add_column(p, ptype)
+            output.metadata("n_varied", len(self.pipeline.varied_params))
+
             self.attribution.write_output(self.output)
         blinding_header = self.ini.getboolean("output","blinding-header", False)
-        if blinding_header:
+        if blinding_header and self.output:
             output.comment("")
             output.comment("Blank lines prevent accidental unblinding")
             for i in xrange(250):

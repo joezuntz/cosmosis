@@ -47,6 +47,10 @@ class UniformPrior(Prior):
         else:
             return -np.inf
 
+    def sample(self, n=None):
+        return np.random.uniform(self.a, self.b, n)
+
+
 
 class GaussianPrior(Prior):
     def __init__(self, mu, sigma):
@@ -55,6 +59,9 @@ class GaussianPrior(Prior):
 
     def __call__(self, x):
         return -0.5 * (x-self.mu)**2 / self.sigma2
+
+    def sample(self, n=None):
+        return np.random.normal(self.mu, self.sigma2**0.5, n)
 
 
 class ExponentialPrior(Prior):
@@ -66,3 +73,6 @@ class ExponentialPrior(Prior):
             return -x/self.beta
         else:
             return -np.inf
+
+    def sample(self, n=None):
+        return np.random.exponential(self.beta, n)

@@ -52,8 +52,20 @@ class Parameter(object):
         return self.limits[1] - self.limits[0]
 
     def random_point(self):
-        # TODO: should sample from prior distribution
-        return random.uniform(*self.limits)
+        if self.prior is None:
+            return np.random.uniform(*self.limits)
+        else:
+            #For non-uniform priors we can get samples
+            #out of range.
+            x=np.nan
+            n=1000
+            for i in xrange(1000):
+                x = self.prior.sample()
+                if self.in_range(x): break
+            else:
+                raise ValueError("The priors and limits on parameter %s "
+                    "probably do not match (tried 1000 times)."%self)
+            return x
 
     def normalize(self, p):
         if self.is_fixed():
@@ -107,6 +119,12 @@ class Parameter(object):
         try:
             values = [float(p) for p in line.split()]
             if len(values) == 1:
+                if values[0]==int(values[0]):
+                    try:
+                        v = int(line)
+                        return v, None
+                    except ValueError:
+                        return values[0], None
                 return values[0], None
             elif len(values) == 2:
                 return 0.5*(values[0]+values[1]), tuple(values)

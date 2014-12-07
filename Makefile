@@ -1,8 +1,6 @@
 include config/compilers.mk
 include config/subdirs.mk
 
-welcome_message=echo Welcome
-
 all:: config/first
 
 config/first:
@@ -14,3 +12,11 @@ config/first:
 	@touch config/first
 
 SUBDIRS=cosmosis example-modules cosmosis-standard-library modules
+
+
+ifneq ($(wildcard cosmosis-des-library/*),)
+SUBDIRS+=cosmosis-des-library
+$(info )
+$(info    Compiling DES code in cosmosis-des-library)
+$(info )
+endif

@@ -105,7 +105,7 @@ class Pipeline(object):
 
     def setup(self):
         if self.timing:
-            timings = [time.clock()]
+            timings = [time.time()]
 
         for module in self.modules:
             # identify parameters needed for module setup
@@ -127,13 +127,13 @@ class Pipeline(object):
             module.setup(config_block, quiet=self.quiet)
 
             if self.timing:
-                timings.append(time.clock())
+                timings.append(time.time())
 
         if not self.quiet:
             sys.stdout.write("Setup all pipeline modules\n")
 
         if self.timing:
-            timings.append(time.clock())
+            timings.append(time.time())
             sys.stdout.write("Module timing:\n")
             for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
                 sys.stdout.write("%s %f\n" % (name, t2-t1))
@@ -154,7 +154,7 @@ class Pipeline(object):
                 sys.stdout.flush()
                 data_package.log_access("MODULE-START", module.name, "")
             if self.timing:
-                t1 = time.clock()
+                t1 = time.time()
 
             status = module.execute(data_package)
 
@@ -163,7 +163,7 @@ class Pipeline(object):
                 sys.stdout.flush()
 
             if self.timing:
-                t2 = time.clock()
+                t2 = time.time()
                 sys.stdout.write("%s took: %f seconds\n"% (module,t2-t1))
 
             if status:
@@ -206,6 +206,7 @@ class LikelihoodPipeline(Pipeline):
         self.n_iterations = 0
 
         values_file = self.options.get(PIPELINE_INI_SECTION, "values")
+        self.values_filename=values_file
         priors_files = self.options.get(PIPELINE_INI_SECTION,
                                         "priors", "").split()
 
@@ -333,13 +334,21 @@ class LikelihoodPipeline(Pipeline):
         return sum([param.evaluate_prior(x) for param, x in
                     zip(self.varied_params, p)])
 
-    def posterior(self, p):
+    def posterior(self, p, return_data=False):
         prior = self.prior(p)
         if prior == -np.inf:
+            if not self.quiet:
+                sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
+            if return_data:
+                return prior, np.repeat(np.nan, self.number_extra), None
             return prior, np.repeat(np.nan, self.number_extra)
-        like, extra = self.likelihood(p)
-        return prior + like, extra
-
+        if return_data:
+            like, extra, data = self.likelihood(p, return_data=True)
+            return prior + like, extra, data
+        else:
+            like, extra = self.likelihood(p)
+            return prior + like, extra
+        
     def likelihood(self, p, return_data=False):
         #Set the parameters by name from the parameter vector
         #If one is out of range then return -infinity as the log-likelihood

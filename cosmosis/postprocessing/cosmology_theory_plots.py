@@ -79,7 +79,7 @@ class Plot(object):
 		try:
 			return np.loadtxt(filename)
 		except Exception as e:
-			raise IOError("Not making plot: %s (no data in this run)"% self.__class__.__name__[:-4])
+			raise IOError("Not making plot: %s (no data in this sample)"% self.__class__.__name__[:-4])
 
 	#Handy little method for trying to numeric-ify a value
 	@staticmethod
@@ -215,23 +215,33 @@ class MatterPowerPlot(Plot):
 		if (p<0).all(): p*=-1
 		nk = len(kh)
 		nz = len(z)
-		#soon this will be saved as a 2D array!
-		p  = p.reshape((nz, nk)).T
+		if p.shape==(nz,nk):
+			p = p.T
 		pylab.loglog(kh, p[:,0], label=label)
 
 	def plot(self):
 		super(MatterPowerPlot, self).plot()
-		self.plot_section("matter_power_lin", "Linear")
+		done_any=False
+		if os.path.exists("{0}/matter_power_lin".format(self.dirname)):
+			self.plot_section("matter_power_lin", "Linear")
+			done_any=True
 		if os.path.exists("{0}/matter_power_nl".format(self.dirname)):
 			self.plot_section("matter_power_nl", "Non-Linear")
+			done_any=True
 		if os.path.exists("{0}/matter_power_gal".format(self.dirname)):
 			self.plot_section("matter_power_gal", "Galaxy")
+			done_any=True
 		if os.path.exists("{0}/matter_power_no_bao".format(self.dirname)):
 			self.plot_section("matter_power_no_bao", "No BAO")
+			done_any=True
 		if os.path.exists("{0}/intrinsic_alignment_parameters".format(self.dirname)):
 			self.plot_section("intrinsic_alignment_parameters", "Intrinsic-intrinsic", p_name='p_ii')
+			done_any=True
 		if os.path.exists("{0}/intrinsic_alignment_parameters".format(self.dirname)):
 			self.plot_section("intrinsic_alignment_parameters", "Shear-intrinsic", p_name='p_gi')
+			done_any=True
+		if not done_any:
+			raise IOError("Not making plot: %s (no data in this sample)"% self.__class__.__name__[:-4])
 		pylab.xlabel("k / (Mpc/h)")
 		pylab.ylabel("P(k) / (h^1 Mpc)^3")
 		pylab.grid()
@@ -240,6 +250,7 @@ class MatterPowerPlot(Plot):
 class ShearSpectrumPlot(Plot):
 	"Shear-shear power spectrum"
 	filename = "shear_power"
+	ylim = (1e-8,1e-3)
 	def plot(self):
 		super(ShearSpectrumPlot, self).plot()
 		self.plot_section("shear_cl")
@@ -273,16 +284,29 @@ class ShearSpectrumPlot(Plot):
 				if all(cl<=0):
 					cl *= -1
 				pylab.loglog(ell, ell*(ell+1.) * cl/2/np.pi)
-				pylab.ylim(1e-8,1e-3)
+				pylab.ylim(*self.ylim)
 				if i==1 and j==1:
 					pylab.xlabel("$\ell$")
 					pylab.ylabel("$\ell (\ell+1) C_\ell / 2 \pi$")
 				else:
 					pylab.gca().xaxis.set_ticklabels([])
 					pylab.gca().yaxis.set_ticklabels([])
+				pylab.gca().tick_params(length=0.0, which='minor')
+				pylab.gca().tick_params(length=3.0, which='major')
+				pylab.gca().tick_params(labelsize=10)
+
+
 				if section=="shear_cl":
-					pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
+					pylab.text(1.5*ell.min(),1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
 					pylab.grid()
+
+class MatterPower2D(ShearSpectrumPlot):
+	"2D Matter power spectrum"
+	filename = "matter_power_2d"
+	ylim = (1e-6,1.0)
+	def plot(self):
+		super(ShearSpectrumPlot, self).plot()
+		self.plot_section("matter_cl")
 
 class ShearCorrelationPlot(Plot):
 	"Shear-shear power spectrum"
@@ -316,7 +340,11 @@ class ShearCorrelationPlot(Plot):
 				else:
 					pylab.gca().xaxis.set_ticklabels([])
 					pylab.gca().yaxis.set_ticklabels([])
-				pylab.text(15,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
+				pylab.gca().tick_params(length=0.0, which='minor')
+				pylab.gca().tick_params(length=3.0, which='major')
+				pylab.gca().tick_params(labelsize=10)
+
+				pylab.text(1.5e-3,1.8e-4,"(%d,%d)"%(i,j), fontsize=8, color='red')
 				pylab.grid()
 
 class GrowthPlot(Plot):

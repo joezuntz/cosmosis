@@ -2,9 +2,6 @@ from .. import Sampler
 import numpy as np
 
 
-MAXLIKE_INI_SECTION = "maxlike"
-
-
 class MaxlikeSampler(Sampler):
     sampler_outputs = [("like", float)]
 
