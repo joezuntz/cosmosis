@@ -64,5 +64,5 @@ class SnakeProcessor(PostProcessor):
 	sampler='snake'
 	elements = [
 		plots.GridPlots1D,
-		plots.GridPlots2D,
+		plots.SnakePlots2D,
 	]

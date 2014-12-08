@@ -11,11 +11,12 @@ import heapq
 import sys
 
 class Snake(object):
-	def __init__(self, posterior, origin, spacing, pool=None):
+	def __init__(self, posterior, origin, spacing, threshold, pool=None):
 		self.posterior=posterior
 		self.origin=np.array(origin)
 		self.spacing=np.array(spacing)
 		self.ndim = len(origin)
+		self.threshold = threshold
 		self.best_fit=tuple([0 for i in xrange(self.ndim)])
 		#Temporarily set the pool to None because we have
 		#to evaluate the starting point
@@ -69,7 +70,7 @@ class Snake(object):
 			self.best_like_ever = self.best_fit_like
 
 	def converged(self):
-		return (self.best_like_ever - self.best_fit_like > 6.0)
+		return (self.best_like_ever - self.best_fit_like > self.threshold)
 
 
 	def iterate(self):

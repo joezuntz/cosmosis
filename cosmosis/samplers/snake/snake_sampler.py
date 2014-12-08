@@ -20,14 +20,14 @@ class SnakeSampler(ParallelSampler):
         global snake_pipeline
         snake_pipeline=self.pipeline
         if self.is_master():
-            self.threshold = self.read_ini("threshold", float, 6.0)
-            self.grid_size = 1.0/self.read_ini("nsample_grid", float, 0.01)
+            threshold = self.read_ini("threshold", float, 4.0)
+            self.grid_size = 1.0/self.read_ini("nsample_dimension", int, 10)
             self.maxiter = self.read_ini("maxiter", int, 100000)
 
             
             origin = self.pipeline.normalize_vector(self.pipeline.start_vector())
             spacing = np.repeat(self.grid_size, len(self.pipeline.varied_params))
-            self.snake = Snake(posterior, origin, spacing, pool=self.pool)
+            self.snake = Snake(posterior, origin, spacing, threshold, pool=self.pool)
 
     def execute(self):
         X, P, E = self.snake.iterate()
