@@ -150,6 +150,11 @@ class ChainCovariance(object):
         #Determine the parameters to use
 
         col_names = [p for p in self.source.colnames if p.lower() not in ["like", "importance", "weight"]]
+
+        if len(col_names)<2:
+            return []
+
+
         cols = [self.reduced_col(p) for p in col_names]
         covmat = np.cov(cols)
 
