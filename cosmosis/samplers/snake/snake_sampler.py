@@ -41,4 +41,4 @@ class SnakeSampler(ParallelSampler):
 
 
     def is_converged(self):
-        return self.snake.converged() or self.snake.iterations > self.maxiter
+        return self.snake.converged() or (self.snake.iterations > self.maxiter)
