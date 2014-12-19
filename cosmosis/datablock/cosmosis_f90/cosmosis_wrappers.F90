@@ -45,7 +45,7 @@ module cosmosis_wrappers
             use iso_c_binding
             use cosmosis_types
             implicit none
-            integer (cosmosis_status) :: c_datablock_has_section_wrapper
+            logical (kind=c_bool) :: c_datablock_has_section_wrapper
             integer(kind=cosmosis_block), value :: s
             character(kind=c_char), dimension(*) :: name
         end function c_datablock_has_section_wrapper

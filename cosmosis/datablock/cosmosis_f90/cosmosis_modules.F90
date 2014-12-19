@@ -33,13 +33,11 @@ module cosmosis_modules
 
     !Check whether the block contains a given section
     function datablock_has_section(block, section) result(found)
-        logical :: found
+        logical(c_bool) :: found
         integer(cosmosis_block) :: block
         character(*) :: section
-        integer(cosmosis_status) :: found_status
 
-        found_status = c_datablock_has_section_wrapper(block, trim(section)//C_NULL_CHAR)
-        found = (found_status .ne. 0)
+        found = c_datablock_has_section_wrapper(block, trim(section)//C_NULL_CHAR)
     end function datablock_has_section
 
     function datablock_num_sections(block) result(n)
