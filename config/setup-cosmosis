@@ -68,15 +68,15 @@ export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
 # We do not use the Python UPS products on OS X.
 if [ "$flavor" != "Darwin64bit" ]
 then
-  setup -B scipy v0_13_0b -q +e5:+prof
-  setup -B pyfits v3_2a -q +e5:+prof
-  setup -B pyyaml v3_11
+  setup -B scipy v0_14_0 -q +e7:+prof
+  setup -B pyfits v3_3 -q +e7:+prof
+  setup -B pyyaml v3_11a
 fi
 
 setup -B gsl v1_16 -q +prof
-setup -B fftw v3_3_3 -q +prof
-setup -B cfitsio v3_35_0 -q +prof
-setup -B lapack v3_4_2 -q +e5:+prof
+setup -B fftw v3_3_4 -q +prof
+setup -B cfitsio v3_37_0 -q +prof
+setup -B lapack v3_5_0 -q +e7:+prof
 
 if [ -d "$SETUPS_DIR/planckdata/v1_1" ]
 then
@@ -90,11 +90,11 @@ fi
 
 if [ -d "$SETUPS_DIR/minuit2/v5_28_0" ]
 then
-	setup -B minuit2 v5_28_0 -q +e5:+prof
+	setup -B minuit2 v5_34_14 -q +e7:+prof
 fi
 
 #if [ "$flavor" = "Darwin64bit" ]
-mpich_qualified_version="mpich v3_1 -q +e5:+prof"
+mpich_qualified_version="mpich v3_1_2a -q +e7:+prof"
 if ups exist $mpich_qualified_version
 then
     setup -B $mpich_qualified_version
