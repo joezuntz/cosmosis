@@ -6,6 +6,7 @@ from cosmosis.runtime.utils import mkdir
 from cosmosis.output.text_output import TextColumnOutput
 import sys
 import argparse
+import os
 
 
 parser = argparse.ArgumentParser(description="Post-process cosmosis output")
@@ -46,6 +47,13 @@ def read_input(ini_filename, force_text):
 			ini = output_info
 		else:
 			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="text", filename=ini_filename)}
+	elif os.path.isdir(ini_filename):
+		ini = Inifile(None)
+		ini.add_section("runtime")
+		ini.add_section("test")
+		sampler = "test"
+		ini.set("runtime", "sampler", sampler)
+		ini.set("test", "save_dir", ini_filename)
 	else:
 		#Determine the sampler and get the class
 		#designed to postprocess the output of that sampler
