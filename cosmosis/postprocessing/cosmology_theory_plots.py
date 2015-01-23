@@ -333,6 +333,7 @@ class ShearCorrelationPlot(Plot):
 				#pylab.subplot(nbin, nbin, (nbin*nbin)-nbin*(j-1)+i)
 				xi = self.load_file("shear_xi", "xiplus_{0}_{1}".format(i,j))
 				pylab.loglog(theta, xi)
+				pylab.xlim(1e-4,1e-1)
 				pylab.ylim(2e-7,1e-3)
 				if i==1 and j==1:
 					pylab.xlabel(r"$\theta$")
