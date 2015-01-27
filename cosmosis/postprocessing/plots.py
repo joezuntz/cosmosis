@@ -1,5 +1,5 @@
 from .elements import PostProcessorElement
-from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement
+from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement, WeightedMCMCPostProcessorElement
 from .elements import Loadable
 from ..plotting.kde import KDE
 from .utils import std_weight, mean_weight
@@ -477,10 +477,7 @@ class TestPlots(Plots):
                 print err
         return filenames
 
-
-
-class MultinestPlots1D(MultinestPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_colums = ["like", "weight"]
+class WeightedPlots1D(object):
     def smooth_likelihood(self, x):
         #Interpolate using KDE
         n = self.options.get("n_kde", 100)
@@ -497,14 +494,19 @@ class MultinestPlots1D(MultinestPostProcessorElement, MetropolisHastingsPlots1D)
         return n, x_axis, like
 
 
-class MultinestPlots2D(MultinestPostProcessorElement, MetropolisHastingsPlots2D):
+class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
     excluded_colums = ["like", "weight"]
+
+class WeightedMetropolisPlots1D(WeightedPlots1D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots1D):
+    pass
+
+
+class WeightedPlots2D(object):
     def smooth_likelihood(self, x, y):
         n = self.options.get("n_kde", 100)
         fill = self.options.get("fill", True)
         factor = self.options.get("factor_kde", 2.0)
         weights = self.weight_col()
-
         kde = KDE([x,y], factor=factor, weights=weights)
         dx = std_weight(x, weights)*4
         dy = std_weight(y, weights)*4
@@ -531,6 +533,14 @@ class MultinestPlots2D(MultinestPostProcessorElement, MetropolisHastingsPlots2D)
         level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,))
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
+
+class WeightedMetropolisPlots2D(WeightedPlots2D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots2D):
+    excluded_colums = ["like", "weight"]
+    pass
+
+class MultinestPlots2D(WeightedPlots2D, MultinestPostProcessorElement, MetropolisHastingsPlots2D):
+    excluded_colums = ["like", "weight"]
+    pass
 
 class ColorScatterPlotBase(Plots):
     scatter_filename='scatter'
