@@ -83,7 +83,12 @@ def main(args):
 	processor = processor_class(ini, **vars(args))
 	if args.extra:
 		processor.load_extra_steps(args.extra)
-	processor.run()
+	try:
+		processor.run()
+	except:
+		import traceback
+		print "There was an error with one of the postprocessing steps:"
+		traceback.print_exc()
 
 	#Run it again for each subsequent file
 	for ini_filename in args.inifile[1:]:
@@ -91,7 +96,12 @@ def main(args):
 		if sampler2!=sampler:
 			raise ValueError("Sorry - cannot currently process samples from two different samplers at once")
 		processor.load(ini)
-		processor.run()
+		try:
+			processor.run()
+		except:
+			import traceback
+			print "There was an error with one of the postprocessing steps:"
+			traceback.print_exc()
 
 	#Run any tweaks that the user specified
 	if args.tweaks:
