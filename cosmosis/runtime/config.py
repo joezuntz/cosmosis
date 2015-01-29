@@ -14,6 +14,36 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
         This is assumed to end a section, and the last section
         in the included file is assumed to end as well
     """
+    def read(self, filenames):
+        """Read and parse a filename or a list of filenames.
+
+        Files that cannot be opened are silently ignored; this is
+        designed so that you can specify a list of potential
+        configuration file locations (e.g. current directory, user's
+        home directory, systemwide directory), and all existing
+        configuration files in the list will be read.  A single
+        filename may also be given.
+
+        Return list of successfully read files.
+
+        COSMOSIS OVERRIDE: Allow file-like objects
+        """
+        if isinstance(filenames, basestring):
+            filenames = [filenames]
+        read_ok = []
+        for filename in filenames:
+            if hasattr(filename, 'read'):
+                fp = filename
+            else:
+                try:
+                    fp = open(filename)
+                except IOError:
+                    continue
+            self._read(fp, filename)
+            fp.close()
+            read_ok.append(filename)
+        return read_ok
+
     def _read(self, fp, fpname):
         """Parse a sectioned setup file.
 
@@ -135,7 +165,7 @@ class Inifile(IncludingConfigParser):
         # default read behavior is to ignore unreadable files which
         # is probably not what we want here
         if filename is not None:
-            if not os.path.exists(filename):
+            if isinstance(filename, basestring) and not os.path.exists(filename):
                 raise IOError("Unable to open configuration file %s." % (filename, ))
             self.read(filename)
 

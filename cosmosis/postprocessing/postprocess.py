@@ -1,6 +1,7 @@
 from . import plots
 from . import statistics
 from .postprocess_base import PostProcessor, postprocessor_registry
+from . import reruns
 
 def postprocessor_for_sampler(sampler):
 	return postprocessor_registry.get(sampler)
@@ -12,6 +13,7 @@ class MetropolisHastingsProcessor(PostProcessor):
 		statistics.MetropolisHastingsStatistics,
 		statistics.MetropolisHastingsCovariance,
 		statistics.Citations,
+		reruns.Rerunner,
 ]
 
 

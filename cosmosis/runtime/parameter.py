@@ -89,7 +89,10 @@ class Parameter(object):
 
     @staticmethod
     def load_parameters(value_file, priors_files=None, override=None):
-        values_ini = config.Inifile(value_file)
+        if isinstance(value_file, config.Inifile):
+            values_ini = value_file
+        else:
+            values_ini = config.Inifile(value_file)
 
         if priors_files:
             priors = Prior.load_priors(priors_files)
