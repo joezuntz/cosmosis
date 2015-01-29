@@ -15,6 +15,7 @@ import sys
 default_latex_file = os.path.join(os.path.split(__file__)[0], "latex.ini")
 
 class Plots(PostProcessorElement):
+    excluded_columns = []
     def __init__(self, *args, **kwargs):
         super(Plots, self).__init__(*args, **kwargs)
         self.figures = {}
@@ -114,9 +115,22 @@ class Plots(PostProcessorElement):
                 continue
             pylab.figure(fig.number)
             tweaks.run()
+    def parameter_pairs(self):
+        swap=self.options.get("swap")
+        for name1 in self.source.colnames[:]:
+            for name2 in self.source.colnames[:]:
+                if name1<=name2: continue
+                if name1.lower() in self.excluded_columns: continue
+                if name2.lower() in self.excluded_columns: continue
+                if swap:
+                    yield name2,name1
+                else:
+                    yield name1, name2
+
 
 
 class GridPlots(Plots):
+    excluded_columns=["like"]
     @staticmethod
     def find_grid_contours(like, contour1, contour2):
         like_total = like.sum()
@@ -307,11 +321,10 @@ class GridPlots2D(GridPlots):
         return filename
 
 class MetropolisHastingsPlots(Plots, MCMCPostProcessorElement):
-    pass
+    excluded_columns = ["like"]
 
 
 class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
-    excluded_colums = ["like"]
     def keywords_1d(self):
         return {}
 
@@ -346,7 +359,7 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
     def run(self):
         filenames = []
         for name in self.source.colnames:
-            if name.lower() in self.excluded_colums: continue
+            if name.lower() in self.excluded_columns: continue
             filename = self.make_1d_plot(name)
             if filename: filenames.append(filename)
         return filenames
@@ -355,7 +368,6 @@ def next_entry(l, m):
     return m[(l.index(m) + 1)%len(m)]
 
 class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
-    excluded_colums = ["like"]
 
     def keywords_2d(self):
         return {}
@@ -440,11 +452,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
     def run(self):
         filenames = []
         print "(Making 2D plots using KDE; this takes a while but is really cool)"
-        for name1 in self.source.colnames[:]:
-            for name2 in self.source.colnames[:]:
-                if name1<=name2: continue
-                if name1.lower() in self.excluded_colums: continue
-                if name2.lower() in self.excluded_colums: continue
+        for name1,name2 in self.parameter_pairs():
                 filename = self.make_2d_plot(name1, name2)
                 if filename:
                     filenames.append(filename)
@@ -480,7 +488,7 @@ class TestPlots(Plots):
 
 
 class MultinestPlots1D(MultinestPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_colums = ["like", "weight"]
+    excluded_columns = ["like", "weight"]
     def smooth_likelihood(self, x):
         #Interpolate using KDE
         n = self.options.get("n_kde", 100)
@@ -498,7 +506,7 @@ class MultinestPlots1D(MultinestPostProcessorElement, MetropolisHastingsPlots1D)
 
 
 class MultinestPlots2D(MultinestPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_colums = ["like", "weight"]
+    excluded_columns = ["like", "weight"]
     def smooth_likelihood(self, x, y):
         n = self.options.get("n_kde", 100)
         fill = self.options.get("fill", True)

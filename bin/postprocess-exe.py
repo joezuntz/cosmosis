@@ -25,6 +25,7 @@ inputs=parser.add_argument_group(title="Inputs", description="Options controllin
 inputs.add_argument("--text", action='store_true', help="Tell postprocess that its argument is a text file, regardless of its suffix")
 
 plots=parser.add_argument_group(title="Plotting", description="Plotting options")
+plots.add_argument("--swap", action='store_true', help="Swap the ordering of the parameters in (x,y)")
 plots.add_argument("--no-plots", action='store_true', help="Do not make any default plots")
 plots.add_argument("-f", "--file-type", default="png", help="Filename suffix for plots")
 plots.add_argument("--no-smooth", dest='smooth', default=True, action='store_false', help="Do not smooth grid plot joint constraints")
