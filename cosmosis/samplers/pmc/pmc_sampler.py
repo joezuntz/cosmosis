@@ -50,8 +50,7 @@ class PMCSampler(ParallelSampler):
         for (vector, like, extra, weight) in zip(*results):
             self.output.parameters(vector, extra, (like,weight))
 
-        if not self.pipeline.quiet:
-            print "Done %d iterations, %d samples" % (self.iterations, self.samples)
+        print "Done %d iterations, %d samples" % (self.iterations, self.samples)
 
 
     def is_converged(self):

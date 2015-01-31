@@ -83,7 +83,7 @@ class PopulationMonteCarlo(object):
 			try:
 				m.update(w_norm, x, rho_d, self.kill_alpha)
 			except np.linalg.LinAlgError as error:
-				print "Removing component" d, error.message
+				print "Removing component", d, error.message
 				self.kill[d] = True
 
 		self.components = [c for c,kill in zip(self.components,self.kill) if not kill]
