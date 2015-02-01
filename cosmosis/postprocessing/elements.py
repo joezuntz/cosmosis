@@ -79,7 +79,6 @@ class MCMCPostProcessorElement(PostProcessorElement):
 class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
     def reduced_col(self, name, stacked=True):
         col = MCMCPostProcessorElement.reduced_col(self, name, stacked=stacked)
-        w = self.weight_col()
         return col
 
     def reset(self):
@@ -91,6 +90,7 @@ class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
         if hasattr(self, "_weight_col"):
             return self._weight_col
         w = MCMCPostProcessorElement.reduced_col(self, "weight").copy()
+        w/=w.max()
         self._weight_col = w
         return self._weight_col    
 

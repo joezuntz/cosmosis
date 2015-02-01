@@ -71,3 +71,15 @@ class MultinestProcessor(PostProcessor):
 		statistics.Citations,
 		]
 	sampler="multinest"
+
+class PMCPostProcessor(PostProcessor):
+	sampler="pmc"
+	elements = [
+		plots.WeightedMetropolisPlots1D,
+		plots.WeightedMetropolisPlots2D,
+		statistics.WeightedMetropolisStatistics,
+		#statistics.WeightedMetropolisHastingsCovariance,
+		#statistics.DunkleyTest,
+		statistics.Citations,		
+
+	]
