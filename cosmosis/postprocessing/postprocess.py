@@ -72,6 +72,7 @@ class MultinestProcessor(PostProcessor):
 		]
 	sampler="multinest"
 
+
 class PMCPostProcessor(PostProcessor):
 	sampler="pmc"
 	elements = [
@@ -81,5 +82,11 @@ class PMCPostProcessor(PostProcessor):
 		#statistics.WeightedMetropolisHastingsCovariance,
 		#statistics.DunkleyTest,
 		statistics.Citations,		
+	]
 
+class SnakeProcessor(PostProcessor):
+	sampler='snake'
+	elements = [
+		plots.GridPlots1D,
+		plots.SnakePlots2D,
 	]
