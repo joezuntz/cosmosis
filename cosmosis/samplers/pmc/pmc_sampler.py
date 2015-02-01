@@ -21,6 +21,8 @@ class PMCSampler(ParallelSampler):
         self.n_components = self.read_ini("components", int, default=5)
         self.n_samples = self.read_ini("samples_per_iteration", int, 
             default=1000)
+        self.final_samples = self.read_ini("final_samples", int, 
+            default=5000)
 
         #start values from prior
         start = self.pipeline.start_vector()
@@ -36,16 +38,22 @@ class PMCSampler(ParallelSampler):
         self.samples = 0
 
     def execute(self):
+        if self.iterations==self.n_iterations:
+            n = self.final_samples
+            update=False
+        else:
+            n = self.n_samples
+            update=True
         #Run the MCMC  sampler.
         try:
-            results = self.sampler.sample(self.n_samples)
+            results = self.sampler.sample(n,update)
             #returns samples, like, extra, weights
         except KeyboardInterrupt:
             self.interrupted=True
             return
             
         self.iterations += 1
-        self.samples += self.n_samples
+        self.samples += n
 
         for (vector, like, extra, weight) in zip(*results):
             self.output.parameters(vector, extra, (like,weight))
@@ -58,7 +66,7 @@ class PMCSampler(ParallelSampler):
         if self.interrupted:
             print "Interrupted..."
             return True
-        if self.iterations >= self.n_iterations:
+        if self.iterations >= self.n_iterations+1:
             print "Full number of samples generated; sampling complete"
             return True
         return False

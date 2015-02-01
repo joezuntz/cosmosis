@@ -28,7 +28,7 @@ class PopulationMonteCarlo(object):
 		self.pool = pool
 		self.quiet=quiet #not currently used
 
-	def sample(self, n):
+	def sample(self, n, update=True):
 		"Draw a sample from the Gaussian mixture and update the mixture"
 		self.kill_count = n*1./len(self.components)/50.
 		self.kill_alpha = 0.002
@@ -46,7 +46,7 @@ class PopulationMonteCarlo(object):
 		extra = [s[1] for s in samples]
 
 		#update components
-		weights = self.update_components(x, np.exp(post))
+		weights = self.update_components(x, np.exp(post), update)
 
 		return x, post, extra, weights
 
@@ -65,13 +65,15 @@ class PopulationMonteCarlo(object):
 		x = np.array([self.components[c].sample() for c in C])
 		return x
 
-	def update_components(self, x, post):
+	def update_components(self, x, post, update):
 		"Equations 13-16 of arxiv.org 0903.0837v1"
 
 		#x #n_sample*n_dim
 		Aphi = np.array([m.alpha*m.phi(x) for m in self.components]) #n-component * n_sample
 		w = post/Aphi.sum(0) #n_sample
 		w_norm = w/w.sum()  #n_sample
+		if not update:
+			return w
 		A = [m.alpha for m in self.components]
 		#rho_top = einsum('i,ij->ij', A, phi)  #n_component * n_sample
 		rho_bottom = Aphi.sum(0) #n_sample
@@ -122,7 +124,7 @@ class GasussianComponent(object):
 		"Update the parameters according to the samples and rho values"
 		alpha = dot(w_norm, rho_d)  #scalar
 		if not alpha>kill_alpha:
-			raise np.linalg.LinAlgError("alpha = %f"%kill_alpha)
+			raise np.linalg.LinAlgError("alpha = %f"%alpha)
 		mu = einsum('i,ij,i->j',w_norm, x, rho_d) / alpha  #scalar
 		delta = x-mu  #n_sample * n_dim
 		sigma = einsum('i,ij,ik,i->jk',w_norm, delta, delta, rho_d) / alpha  #n_dim * n_dim
