@@ -74,9 +74,13 @@ class PopulationMonteCarlo(object):
 		#x #n_sample*n_dim
 		Aphi = np.array([m.alpha*m.phi(x) for m in self.components]) #n-component * n_sample
 		w = post/Aphi.sum(0) #n_sample
-		w_norm = w/w.sum()  #n_sample
+
 		if not update:
 			return w
+
+		w_norm = w/w.sum()  #n_sample
+		Aphi[np.isnan(Aphi)] = 0.0
+		w_norm[np.isnan(w_norm)] = 0.0
 		A = [m.alpha for m in self.components]
 		#rho_top = einsum('i,ij->ij', A, phi)  #n_component * n_sample
 		rho_bottom = Aphi.sum(0) #n_sample
