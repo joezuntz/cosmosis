@@ -27,6 +27,14 @@ class PMCSampler(ParallelSampler):
         #Student's t mode
         student = self.read_ini("student", bool, default=False)
         if student:
+            print
+            print "WARNING"
+            print
+            print "Student's t mode probably not working yet"
+            print "Unless you are testing you should probably set"
+            print "student=F"
+            print
+            print
             nu = self.read_ini("nu", float, default=2.0)
         else:
             nu = None
