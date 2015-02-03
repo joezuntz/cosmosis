@@ -24,6 +24,14 @@ class PMCSampler(ParallelSampler):
         self.final_samples = self.read_ini("final_samples", int, 
             default=5000)
 
+        #Student's t mode
+        student = self.read_ini("student", bool, default=False)
+        if student:
+            nu = self.read_ini("nu", float, default=2.0)
+        else:
+            nu = None
+
+
         #start values from prior
         start = self.pipeline.start_vector()
         covmat = self.load_covariance_matrix()
@@ -31,7 +39,7 @@ class PMCSampler(ParallelSampler):
         #Sampler object itself.
         quiet = self.pipeline.quiet
         self.sampler = pmc.PopulationMonteCarlo(posterior, self.n_components, 
-            start, covmat, quiet=quiet)
+            start, covmat, quiet=quiet, student=student, nu=nu)
 
         self.interrupted = False
         self.iterations = 0

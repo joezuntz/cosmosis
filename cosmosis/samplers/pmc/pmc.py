@@ -13,18 +13,21 @@ class PopulationMonteCarlo(object):
 
 
 	"""
-	def __init__(self, posterior, n, start, sigma, pool=None, quiet=False):
+	def __init__(self, posterior, n, start, sigma, pool=None, quiet=False, student=False, nu=2.0):
 		"""
 		posterior: the posterior function
 		n: number of components to use in the mixture
 		start: estimated mean of the distribution
-		sigmas: estimated std. devs. of the distribution
+		sigma: estimated covariance matrix
 		pool (optional): an MPI or multiprocessing worker pool
 
 		"""
 		self.posterior = posterior
 		mu = np.random.multivariate_normal(start, sigma, size=n)
-		self.components = [GasussianComponent(1.0/n, m, sigma) for m in mu]
+		if student:
+			self.components = [StudentsTComponent(1.0/n, m, sigma, nu) for m in mu]	
+		else:
+			self.components = [GasussianComponent(1.0/n, m, sigma) for m in mu]	
 		self.pool = pool
 		self.quiet=quiet #not currently used
 
@@ -142,6 +145,63 @@ class GasussianComponent(object):
 		return np.random.multivariate_normal(self.mu, self.sigma)
 
 
+
+
+class StudentsTComponent(object):
+	"""
+	A single Students-t component of the mixture model.
+
+	Implements (unnumbered) equations between A8
+	and A9 in http://arxiv.org/pdf/0903.0837v1.pdf
+	"""
+	def __init__(self,alpha, mu, sigma, nu):
+		self.nu=nu
+		self.ndim = len(mu)
+		self.set(alpha, mu, sigma)
+
+	def set(self, alpha, mu, sigma):
+		"Set the parameters of this distribution component"
+		from scipy.special import gamma
+		self.alpha = alpha
+		self.mu = mu
+		p = self.ndim
+		nu=self.nu
+		self.sigma = sigma
+		self.sigma_inv = np.linalg.inv(self.sigma)
+		self.A = gamma((nu+p)/2.)/gamma(nu/2.) / (pi*nu)**(p/2.) * np.linalg.det(self.sigma)**-0.5
+
+	def update(self, w_norm, x, rho_d, kill_alpha):
+		"Update the parameters according to the samples and rho values"
+		alpha = dot(w_norm, rho_d)  #scalar
+		if not alpha>kill_alpha:
+			raise np.linalg.LinAlgError("alpha = %f"%alpha)
+		nu=self.nu
+		p=self.ndim
+		gamma = (nu+p)/(nu+self.chi2)  #size n_sampl
+		mu = einsum('i,ij,i,i->j',w_norm, x, rho_d,gamma)  #scalar
+		mu /= einsum('i,i,i',w_norm,rho_d,gamma)
+		delta = x-mu  #n_sample * n_dim
+		sigma = einsum('i,ij,ik,i,i->jk',w_norm, delta, delta, rho_d,gamma)  #n_dim * n_dim
+		sigma/= einsum('i,i',w_norm,rho_d)
+		self.set(alpha, mu, sigma)
+
+	def phi(self, x):
+		"Evaluate the distribution.  This is called tau in the paper"
+		d = (x-self.mu) #n_sample * n_dim
+		chi2 = einsum('ij,jk,ik->i',d,self.sigma_inv,d) #size n_sample
+		#record this chi2 as we will need it later.
+		#valid until x,mu,or sigma_d changes
+		self.chi2=chi2
+		#result size n_sample
+		nu=self.nu
+		p=self.ndim
+		return self.A * (1.0+chi2/nu)**(-(nu+p)/2.0)
+
+	def sample(self):
+		"Draw a sample from the distribution"
+		y = np.random.multivariate_normal(np.zeros_like(self.mu), self.sigma)
+		z = np.random.chisquare(self.nu)
+		return self.mu + y*(self.nu/z)**0.5
 
 
 
