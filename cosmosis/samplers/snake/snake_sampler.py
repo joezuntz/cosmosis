@@ -41,4 +41,12 @@ class SnakeSampler(ParallelSampler):
 
 
     def is_converged(self):
-        return self.snake.converged() or (self.snake.iterations > self.maxiter)
+        if self.snake.converged():
+            print "Snake has converged!"
+            print "Best like = %f    Best surface point = %f" %(self.snake.best_like_ever, self.snake.best_fit_like)
+            return True
+        if self.snake.iterations > self.maxiter:
+            print "Run out of iterations."
+            print "Done %d, max allowed %d" % (self.snake.iterations, self.maxiter)
+            return True
+        return False

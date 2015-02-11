@@ -34,7 +34,7 @@ class PopulationMonteCarlo(object):
 	def sample(self, n, update=True):
 		"Draw a sample from the Gaussian mixture and update the mixture"
 		self.kill_count = n*1./len(self.components)/50.
-		self.kill_alpha = 0.002
+		self.kill_alpha = 1.0/len(self.components)/100.
 		self.kill = [False for c in self.components]
 		#draw sample from current mixture
 		x = self.draw(n)
@@ -47,6 +47,7 @@ class PopulationMonteCarlo(object):
 
 		post = np.array([s[0] for s in samples])
 		extra = [s[1] for s in samples]
+		post[np.isnan(post)] = -np.inf
 
 		#update components
 		weights = self.update_components(x, np.exp(post), update)
@@ -105,15 +106,6 @@ class GasussianComponent(object):
 	"""
 	A single Gaussian component of the mixture model.
 
-	Could implememnt equations in the appendix of
-	http://arxiv.org/pdf/0903.0837v1.pdf
-	on another class with the same interface
-	to implement the student's t distribution,
-	which should sample distributions with heavier
-	tails more efficiently.
-
-	Anyone have a Masters student in need of a quick
-	project?
 	"""
 	def __init__(self,alpha, mu, sigma):
 		self.set(alpha, mu, sigma)
@@ -157,6 +149,8 @@ class StudentsTComponent(object):
 
 	Implements (unnumbered) equations between A8
 	and A9 in http://arxiv.org/pdf/0903.0837v1.pdf
+
+	Not yet working
 	"""
 	def __init__(self,alpha, mu, sigma, nu):
 		self.nu=nu
