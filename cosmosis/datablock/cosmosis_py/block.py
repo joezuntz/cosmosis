@@ -592,8 +592,6 @@ class DataBlock(object):
 			raise ValueError("Asked for log entry above maximum or less than zero")
 		return ptype.value, section.value, name.value, dtype.value
 
-
-
 	def log_access(self, log_type, section, name):
 		status = lib.c_datablock_log_access(self._ptr, log_type, section, name)
 		if status!=0:

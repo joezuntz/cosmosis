@@ -297,6 +297,7 @@ cosmosis::DataBlock::view(std::string section, std::string name)
   downcase(section); downcase(name);
   auto isec = sections_.find(section);
   if (isec == sections_.end()) {log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(void*)); throw BadDataBlockAccess(); }
+  log_access(BLOCK_LOG_READ, section, name, typeid(void*)); 
   return isec->second.view<T>(name);
 }
 
