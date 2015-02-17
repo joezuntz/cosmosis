@@ -142,6 +142,55 @@ class Pipeline(object):
         for module in self.modules:
             module.cleanup()
 
+    def make_graph(self, data, filename):
+        try:
+            import pygraphviz as pgv
+        except ImportError:
+            print "Cannot generate a graphical pipeline; please install the python package pydot (e.g. with pip install pydot)"
+        P = pgv.AGraph(directed=True)
+        # P = pydot.Cluster(label="Pipeline", color='black',  style='dashed')
+        # G.add_subgraph(P)
+        def norm_name(name):
+            return name.replace("_", " ").title()
+        P.add_node("Sampler", color='Pink', style='filled', group='pipeline',shape='octagon')
+        for module in self.modules:
+            # module_node = pydot.Node(module.name, color='Yellow', style='filled')
+            P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline', shape='box')
+        P.add_edge("Sampler", norm_name(self.modules[0].name), color='lightskyblue')
+        for i in xrange(len(self.modules)-1):
+            P.add_edge(norm_name(self.modules[i].name),norm_name(self.modules[i+1].name), color='lightskyblue')
+        # D = pydot.Cluster(label="Data", color='red', style='dashed')
+        # G.add_subgraph(D)
+        # #find
+        log = [data.get_log_entry(i) for i in xrange(data.get_log_count())]
+        known_sections = set()
+        for entry in log:
+            if entry!="MODULE-START":
+                section = entry[1]
+                if section not in known_sections:
+                    if section=="Results":
+                        P.add_node(norm_name(section), color='Pink', style='filled', shape='star')
+                    else:                        
+                        P.add_node(norm_name(section), color='yellow', style='filled')
+                    known_sections.add(section)
+        module="Sampler"
+        known_edges = set()
+        for entry in log:
+            if entry[0]=="MODULE-START":
+                module=entry[1]
+            elif entry[0]=="WRITE-OK":
+                section=entry[1]
+                if (module,section) not in known_edges:
+                    P.add_edge(norm_name(module), norm_name(section), color='green')
+                    known_edges.add((module,section))
+            elif entry[0]=="READ-OK":
+                section=entry[1]
+                if (section,module) not in known_edges:
+                    P.add_edge((norm_name(section),norm_name(module)), color='lightcoral')
+                    known_edges.add((section,module))
+
+        P.write(filename)
+
     def run(self, data_package):
         modules = self.modules
         first = (self.shortcut_data is None)
@@ -152,7 +201,7 @@ class Pipeline(object):
             if self.debug:
                 sys.stdout.write("Running %.20s ...\n" % module)
                 sys.stdout.flush()
-                data_package.log_access("MODULE-START", module.name, "")
+            data_package.log_access("MODULE-START", module.name, "")
             if self.timing:
                 t1 = time.time()
 
@@ -190,7 +239,7 @@ class Pipeline(object):
         if not self.quiet:
             sys.stdout.write("Pipeline ran okay.\n")
 
-
+        data_package.log_access("MODULE-START", "Results", "")
         # return something
         return True
 
