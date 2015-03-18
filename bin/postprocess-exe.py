@@ -20,7 +20,8 @@ general.add_argument("-o","--outdir", default=".", help="Output directory for al
 general.add_argument("-p","--prefix", default="", help="Prefix for all generated files")
 general.add_argument("--more-latex", default="", help="Load an additional latex file to the default")
 general.add_argument("--no-latex", action='store_true', help="Do not use latex-style labels, just use the text")
-general.add_argument("--blind", action='store_true', help="Blind results by adding adding a secret value to each parameter")
+general.add_argument("--blind-add", action='store_true', help="Blind results by adding adding a secret value to each parameter")
+general.add_argument("--blind-mul", action='store_true', help="Blind results by scaling by a secret value for each parameter")
 
 inputs=parser.add_argument_group(title="Inputs", description="Options controlling the inputs to this script")
 inputs.add_argument("--text", action='store_true', help="Tell postprocess that its argument is a text file, regardless of its suffix")

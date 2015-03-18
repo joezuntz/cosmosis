@@ -47,20 +47,29 @@ class PostProcessor(object):
             print "Adding post-processor step: %s" % (e.__class__.__name__)
         self.steps.extend(extra)
 
-    def blind_data(self):
+    def blind_data(self,multiplicative):
         #blind self.data
         for c,col in enumerate(self.colnames):
-            if col in ['like', 'weight']: continue
+            if col.lower() in ['like', 'weight']: continue
             #get col mean to get us a rough scale to work with
-            r = np.mean([d[:,c].std() for d in self.data])
-            if r==0.0:
-                print "Not blinding constant %s" % col
-                continue
-            scale = 10 * (10**np.ceil(np.log10(abs(r))))
-            #make a random number between -1 and 1 based on the column name
-            for d in self.data:
-                d[:,c] += scale * blinding_value(col.upper())
-            print "Blinding scale for %s = %f" % (col, scale)
+            if multiplicative:
+                #use upper here so it is different from non-multiplicative
+                #scale by value between 0.75 and 1.25
+                for d in self.data:
+                    scale = 0.2
+                    d[:,c] *= (1+scale*blinding_value(col.lower()))
+                print "Blinding scale value for %s in %f - %f" % (col, 1-scale, 1+scale)
+
+            else:
+                r = np.mean([d[:,c].std() for d in self.data])
+                if r==0.0:
+                    print "Not blinding constant %s" % col
+                    continue
+                scale = 10 * (10**np.ceil(np.log10(abs(r))))
+                #make a random number between -1 and 1 based on the column name
+                for d in self.data:
+                    d[:,c] += scale * blinding_value(col.upper())
+                print "Blinding additive value for %s ~ %f" % (col, scale)
 
     def load(self, ini):
         for step in self.steps:
@@ -86,8 +95,10 @@ class PostProcessor(object):
                         output_module.input_from_options(output_options)
             #self.data = self.data[0].T
             self.colnames = [c.lower() for c in self.colnames]
-            if self.options['blind']:
-                self.blind_data()
+            if self.options['blind_add']:
+                self.blind_data(multiplicative=False)
+            if self.options['blind_mul']:
+                self.blind_data(multiplicative=True)
             self.data_stacked = np.concatenate(self.data).T
         self.ini = ini
         self.name = filename
