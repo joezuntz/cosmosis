@@ -100,4 +100,31 @@ then
     setup -B $mpich_qualified_version
 fi
 
-export PS1="(cosmosis) ${PS1:+${PS1}}"
+function git-show-top-level {
+    local __toplevel=`git rev-parse --show-toplevel 2> /dev/null`
+    if [ -z "$__toplevel" ]
+    then
+        :
+    else
+        echo "(`basename $__toplevel 2> /dev/null`) "
+    fi
+}
+
+function set-git-prompt-repo-name {
+  export OLD_PS1="$PS1"
+  local __git_repo='`git-show-top-level`'
+  export PS1="\[$(tput setaf 4)\]$__git_repo\[$(tput sgr0)\]${PS1:+${PS1}}"
+}
+
+function reset-prompt {
+  export PS1="$OLD_PS1"
+}
+
+set-git-prompt-repo-name
+
+echo
+echo "CosmoSIS initialized"
+echo
+echo "Your prompt will now show which repository (part of cosmosis) you are in"
+echo "Use the command reset-prompt to undo this"
+echo
