@@ -179,16 +179,16 @@ class Pipeline(object):
         for entry in log:
             if entry[0]=="MODULE-START":
                 module=entry[1]
-            elif entry[0]=="WRITE-OK":
+            elif entry[0]=="WRITE-OK" or entry[0]=="REPLACE-OK":
                 section=entry[1]
-                if (module,section) not in known_edges:
+                if (module,section,'write') not in known_edges:
                     P.add_edge(norm_name(module), norm_name(section), color='green')
-                    known_edges.add((module,section))
+                    known_edges.add((module,section,'write'))
             elif entry[0]=="READ-OK":
                 section=entry[1]
-                if (section,module) not in known_edges:
+                if (section,module,'read') not in known_edges:
                     P.add_edge((norm_name(section),norm_name(module)), color='grey50')
-                    known_edges.add((section,module))
+                    known_edges.add((section,module,'read'))
 
         P.write(filename)
 
