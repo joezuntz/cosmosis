@@ -578,6 +578,20 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
+	def get_log_count(self):
+		return lib.c_datablock_get_log_count(self._ptr)
+
+	def get_log_entry(self, i):
+		smax = 128
+		ptype = ct.create_string_buffer(smax)
+		section = ct.create_string_buffer(smax)
+		name = ct.create_string_buffer(smax)
+		dtype = ct.create_string_buffer(smax)
+		status = lib.c_datablock_get_log_entry(self._ptr, i, smax, ptype, section, name, dtype)
+		if status:
+			raise ValueError("Asked for log entry above maximum or less than zero")
+		return ptype.value, section.value, name.value, dtype.value
+
 	def log_access(self, log_type, section, name):
 		status = lib.c_datablock_log_access(self._ptr, log_type, section, name)
 		if status!=0:

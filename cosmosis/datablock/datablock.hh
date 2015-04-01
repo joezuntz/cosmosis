@@ -176,7 +176,9 @@ namespace cosmosis
     void print_log();
     void report_failures(std::ostream& output);
     void log_access(const std::string& log_type, const std::string& section, const std::string& name, const std::type_info& type);
-
+    int get_log_count();
+    DATABLOCK_STATUS
+    get_log_entry(int i, std::string& log_type, std::string& section, std::string &name, std::string & type);
   private:
     std::map<std::string, Section> sections_;
     std::vector<log_entry> access_log_;
@@ -295,6 +297,7 @@ cosmosis::DataBlock::view(std::string section, std::string name)
   downcase(section); downcase(name);
   auto isec = sections_.find(section);
   if (isec == sections_.end()) {log_access(BLOCK_LOG_READ_FAIL, section, name, typeid(void*)); throw BadDataBlockAccess(); }
+  log_access(BLOCK_LOG_READ, section, name, typeid(void*)); 
   return isec->second.view<T>(name);
 }
 
