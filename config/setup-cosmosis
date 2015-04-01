@@ -142,25 +142,24 @@ function git-show-top-level {
 }
 
 function set-git-prompt-repo-name {
-  if [ -z "$PS1" ] 
+  if [ ! -z "${PS1-}" ] 
   then
-    export OLD_PS1=""
-  else
     export OLD_PS1="$PS1"
+    local __git_repo='`git-show-top-level`'
+    export PS1="\[$(tput setaf 4)\]$__git_repo\[$(tput sgr0)\]${OLD_PS1}"
+  echo "Your prompt will now show which repository (part of cosmosis) you are in"
+  echo "Use the command reset-prompt to undo this"
+  echo
   fi
-  local __git_repo='`git-show-top-level`'
-  export PS1="\[$(tput setaf 4)\]$__git_repo\[$(tput sgr0)\]${OLD_PS1}"
 }
 
 function reset-prompt {
   export PS1="$OLD_PS1"
 }
 
-set-git-prompt-repo-name
 
 echo
 echo "CosmoSIS initialized"
 echo
-echo "Your prompt will now show which repository (part of cosmosis) you are in"
-echo "Use the command reset-prompt to undo this"
-echo
+
+set-git-prompt-repo-name
