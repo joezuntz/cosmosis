@@ -66,6 +66,8 @@ export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
 
 # setup UPS packages
 # We do not use the Python UPS products on OS X.
+setup -B gcc v4_9_2
+
 if [ "$flavor" != "Darwin64bit" ]
 then
   setup -B scipy v0_13_0b -q +e5:+prof
