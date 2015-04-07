@@ -36,7 +36,7 @@ sigma_r_nl
 #nuisance parameters
 planck
 intrinsic_alignment_field
-
+fgas_parameters
 shear_calibration
 supernova_params
 
