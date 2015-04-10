@@ -95,9 +95,9 @@ class PostProcessor(object):
                         output_module.input_from_options(output_options)
             #self.data = self.data[0].T
             self.colnames = [c.lower() for c in self.colnames]
-            if self.options['blind_add']:
+            if self.options.get('blind_add',False):
                 self.blind_data(multiplicative=False)
-            if self.options['blind_mul']:
+            if self.options.get('blind_mul',False):
                 self.blind_data(multiplicative=True)
             self.data_stacked = np.concatenate(self.data).T
         self.ini = ini
