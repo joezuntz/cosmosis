@@ -130,7 +130,7 @@ class MultinestSampler(ParallelSampler):
             cube_vector = np.array([cube_p[i] for i in xrange(ndim)])
             vector = self.pipeline.denormalize_vector(cube_vector)
             try:
-                like, extra = self.pipeline.likelihood(vector)
+                like, extra = self.pipeline.posterior(vector)
             except KeyboardInterrupt:
                 raise sys.exit(1)
 

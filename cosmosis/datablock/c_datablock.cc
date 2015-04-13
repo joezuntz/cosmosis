@@ -1341,6 +1341,42 @@ c_datablock_log_access(c_datablock* s,
   return DBS_SUCCESS;
 }
 
+int c_datablock_get_log_count(c_datablock *s)
+{
+    if (s == nullptr) return -1;
+    auto p = static_cast<DataBlock*>(s);
+    return p->get_log_count();
+
+
+}
+
+DATABLOCK_STATUS
+c_datablock_get_log_entry(c_datablock* s,
+                          int i,
+                          int smax,
+                          char *log_type,
+                          char *section,
+                          char *name,
+                          char *dtype
+  )
+{
+  
+  if (s == nullptr) return DBS_DATABLOCK_NULL;
+  auto p = static_cast<DataBlock*>(s);
+  std::string log_type_string, section_string, name_string, dtype_string;
+  DATABLOCK_STATUS status = p->get_log_entry(i, 
+    log_type_string, section_string, name_string, dtype_string);
+
+  if (status) return status;
+
+  strncpy(log_type, log_type_string.c_str(), smax);
+  strncpy(section, section_string.c_str(), smax);
+  strncpy(name, name_string.c_str(), smax);
+  strncpy(dtype, dtype_string.c_str(), smax);
+
+  return DBS_SUCCESS;
+}
+
 
 DATABLOCK_STATUS
 c_datablock_get_metadata(c_datablock* s, 

@@ -1,0 +1,237 @@
+from numpy import pi, dot, exp, einsum
+import numpy as np
+
+
+class PopulationMonteCarlo(object):
+	"""
+	A Population Monte Carlo (PMC) sampler,
+	which combines expectation-maximization and
+	importance sampling
+	
+	This code follows the notation and methodolgy in
+	http://arxiv.org/pdf/0903.0837v1.pdf
+
+
+	"""
+	def __init__(self, posterior, n, start, sigma, pool=None, quiet=False, student=False, nu=2.0):
+		"""
+		posterior: the posterior function
+		n: number of components to use in the mixture
+		start: estimated mean of the distribution
+		sigma: estimated covariance matrix
+		pool (optional): an MPI or multiprocessing worker pool
+
+		"""
+		self.posterior = posterior
+		mu = np.random.multivariate_normal(start, sigma, size=n)
+		if student:
+			self.components = [StudentsTComponent(1.0/n, m, sigma, nu) for m in mu]	
+		else:
+			self.components = [GasussianComponent(1.0/n, m, sigma) for m in mu]	
+		self.pool = pool
+		self.quiet=quiet #not currently used
+
+	def sample(self, n, update=True):
+		"Draw a sample from the Gaussian mixture and update the mixture"
+		self.kill_count = n*1./len(self.components)/50.
+		self.kill_alpha = 1.0/len(self.components)/100.
+		self.kill = [False for c in self.components]
+		#draw sample from current mixture
+		x = self.draw(n)
+
+		#calculate likelihoods
+		if self.pool is None:
+			samples = map(self.posterior, x)
+		else:
+			samples = pool.map(self.posterior, x)
+
+		post = np.array([s[0] for s in samples])
+		extra = [s[1] for s in samples]
+		post[np.isnan(post)] = -np.inf
+
+		#update components
+		weights = self.update_components(x, np.exp(post), update)
+
+		return x, post, extra, weights
+
+	def draw(self, n):
+		"Draw a sample from the Gaussian mixture"
+		A = [m.alpha for m in self.components]
+		A = np.array(A)
+		A/=A.sum()
+		#Components to draw from
+		N = np.arange(len(self.components))
+		C = np.random.choice(N, size=n, replace=True, p=A)
+		for i in N:
+			if np.sum(C==i)<self.kill_count:
+				self.kill[i] = True
+
+		x = np.array([self.components[c].sample() for c in C])
+		return x
+
+	def update_components(self, x, post, update):
+		"Equations 13-16 of arxiv.org 0903.0837v1"
+
+		#x #n_sample*n_dim
+		Aphi = np.array([m.alpha*m.phi(x) for m in self.components]) #n-component * n_sample
+		w = post/Aphi.sum(0) #n_sample
+
+		if not update:
+			return w
+
+		w_norm = w/w.sum()  #n_sample
+		Aphi[np.isnan(Aphi)] = 0.0
+		w_norm[np.isnan(w_norm)] = 0.0
+		A = [m.alpha for m in self.components]
+		#rho_top = einsum('i,ij->ij', A, phi)  #n_component * n_sample
+		rho_bottom = Aphi.sum(0) #n_sample
+		rho = [rho_t/rho_bottom for rho_t in Aphi]
+
+
+
+		for d,(m,rho_d) in enumerate(zip(self.components, rho)):
+			try:
+				m.update(w_norm, x, rho_d, self.kill_alpha)
+			except np.linalg.LinAlgError as error:
+				print "Removing component", d, error.message
+				self.kill[d] = True
+
+		self.components = [c for c,kill in zip(self.components,self.kill) if not kill]
+
+		return w
+
+
+
+class GasussianComponent(object):
+	"""
+	A single Gaussian component of the mixture model.
+
+	"""
+	def __init__(self,alpha, mu, sigma):
+		self.set(alpha, mu, sigma)
+
+	def set(self, alpha, mu, sigma):
+		"Set the parameters of this distribution component"
+		self.alpha = alpha
+		self.mu = mu
+		ndim = len(self.mu)
+		self.sigma = sigma
+		self.sigma_inv = np.linalg.inv(self.sigma)
+		self.A = (2*pi)**(-ndim/2.0) * np.linalg.det(self.sigma)**-0.5
+
+	def update(self, w_norm, x, rho_d, kill_alpha):
+		"Update the parameters according to the samples and rho values"
+		alpha = dot(w_norm, rho_d)  #scalar
+		if not alpha>kill_alpha:
+			raise np.linalg.LinAlgError("alpha = %f"%alpha)
+		mu = einsum('i,ij,i->j',w_norm, x, rho_d) / alpha  #scalar
+		delta = x-mu  #n_sample * n_dim
+		sigma = einsum('i,ij,ik,i->jk',w_norm, delta, delta, rho_d) / alpha  #n_dim * n_dim
+		self.set(alpha, mu, sigma)
+
+	def phi(self, x):
+		"Evaluate the distribution"
+		d = (x-self.mu) #n_sample * n_dim
+		chi2 = einsum('ij,jk,ik->i',d,self.sigma_inv,d)
+		#result size n_sample
+		return self.A * exp(-0.5*chi2)
+
+	def sample(self):
+		"Draw a sample from the distribution"
+		return np.random.multivariate_normal(self.mu, self.sigma)
+
+
+
+
+class StudentsTComponent(object):
+	"""
+	A single Students-t component of the mixture model.
+
+	Implements (unnumbered) equations between A8
+	and A9 in http://arxiv.org/pdf/0903.0837v1.pdf
+
+	Not yet working
+	"""
+	def __init__(self,alpha, mu, sigma, nu):
+		self.nu=nu
+		self.ndim = len(mu)
+		self.set(alpha, mu, sigma)
+
+	def set(self, alpha, mu, sigma):
+		"Set the parameters of this distribution component"
+		from scipy.special import gamma
+		self.alpha = alpha
+		self.mu = mu
+		p = self.ndim
+		nu=self.nu
+		self.sigma = sigma
+		self.sigma_inv = np.linalg.inv(self.sigma)
+		self.A = gamma((nu+p)/2.)/gamma(nu/2.) / (pi*nu)**(p/2.) * np.linalg.det(self.sigma)**-0.5
+
+	def update(self, w_norm, x, rho_d, kill_alpha):
+		"Update the parameters according to the samples and rho values"
+		alpha = dot(w_norm, rho_d)  #scalar
+		if not alpha>kill_alpha:
+			raise np.linalg.LinAlgError("alpha = %f"%alpha)
+		nu=self.nu
+		p=self.ndim
+		gamma = (nu+p)/(nu+self.chi2)  #size n_sampl
+		mu = einsum('i,ij,i,i->j',w_norm, x, rho_d,gamma)  #scalar
+		mu /= einsum('i,i,i',w_norm,rho_d,gamma)
+		delta = x-mu  #n_sample * n_dim
+		sigma = einsum('i,ij,ik,i,i->jk',w_norm, delta, delta, rho_d,gamma)  #n_dim * n_dim
+		sigma/= einsum('i,i',w_norm,rho_d)
+		self.set(alpha, mu, sigma)
+
+	def phi(self, x):
+		"Evaluate the distribution.  This is called tau in the paper"
+		d = (x-self.mu) #n_sample * n_dim
+		chi2 = einsum('ij,jk,ik->i',d,self.sigma_inv,d) #size n_sample
+		#record this chi2 as we will need it later.
+		#valid until x,mu,or sigma_d changes
+		self.chi2=chi2
+		#result size n_sample
+		nu=self.nu
+		p=self.ndim
+		return self.A * (1.0+chi2/nu)**(-(nu+p)/2.0)
+
+	def sample(self):
+		"Draw a sample from the distribution"
+		y = np.random.multivariate_normal(np.zeros_like(self.mu), self.sigma)
+		z = np.random.chisquare(self.nu)
+		return self.mu + y*(self.nu/z)**0.5
+
+
+
+def test_like(p):
+	x,y=p
+	a = (x+y)/np.sqrt(2)
+	b = (x-y)/np.sqrt(2)
+	return 0.2*exp(-0.5*(a**2+b**2/25.0)) + 0.8*exp(-0.5*(a**2/25.0+b**2))
+
+
+def test():
+	pmc = PopulationMonteCarlo(test_like, 2, [0.0, 0.0], [1.0, 1.0])
+	for i in xrange(50):
+		s = pmc.sample(4000)
+	import pylab
+	x = s[:,0]
+	y = s[:,1]
+	# pylab.plot(x[:,0], x[:,1], '.')
+	xmin=x.min()
+	xmax=x.max()
+	ymin=y.min()
+	ymax=y.max()
+	Y,X=np.mgrid[ymin:ymax:100j,xmin:xmax:100j]
+	r = np.array(zip(X.flatten(),Y.flatten()))
+	P = np.array([test_like((xi,yi) ) for (xi,yi) in r])
+	P = P.reshape(X.shape)
+	for c in pmc.components:
+		pylab.contour(X, Y, c.phi(r).reshape(X.shape), 3)
+	pylab.contourf(X,Y,P,50, cmap='Reds')
+	pylab.plot(x, y, 'k,')
+	pylab.show()
+
+
+if __name__ == '__main__':
+	test()

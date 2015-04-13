@@ -76,6 +76,24 @@ class MCMCPostProcessorElement(PostProcessorElement):
         n = self.reduced_col(self.source.colnames[0]).size
         return np.ones(n, dtype=bool)
 
+class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
+    def reduced_col(self, name, stacked=True):
+        col = MCMCPostProcessorElement.reduced_col(self, name, stacked=stacked)
+        return col
+
+    def reset(self):
+        super(WeightedMCMCPostProcessorElement, self).reset()
+        if hasattr(self, "_weight_col"):
+            del self._weight_col
+        
+    def weight_col(self):
+        if hasattr(self, "_weight_col"):
+            return self._weight_col
+        w = MCMCPostProcessorElement.reduced_col(self, "weight").copy()
+        w/=w.max()
+        self._weight_col = w
+        return self._weight_col    
+
 class MultinestPostProcessorElement(PostProcessorElement):
     def reduced_col(self, name):
         #we only use the last n samples from a multinest output

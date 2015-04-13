@@ -185,6 +185,21 @@ load_library_function(
 	ct.c_int
 	)
 
+load_library_function(
+	locals(),
+	"c_datablock_get_log_count",
+	[c_block],
+	ct.c_int
+	)
+
+load_library_function(
+	locals(),
+	"c_datablock_get_log_entry",
+	[c_block, ct.c_int, ct.c_int, c_str, c_str, c_str, c_str],
+	c_status
+	)
+
+
 
 
 load_library_function(
