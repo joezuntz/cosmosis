@@ -34,14 +34,14 @@ Then instead run:
 Or you can run:
 %(prog)s --help for more options
 
-A limitation: you cannot currently pass extra arguments to this script - sorry.
+A limitation: you cannot currently pass extra arguments to this script like you can with cosmosis - sorry.
  
 """
 
 parser = argparse.ArgumentParser(usage=usage)
 parser.add_argument("ini", help="The ini file you are trying to run with")
 parser.add_argument("--mpi", type=int, default=0, help="Run under MPI with this many processes")
-parser.add_argument("--no-web", action='store_true', help="Do not open a web browser to file an issue at the end, for example if you are running remotely")
+parser.add_argument("--no-web", action='store_true', help="Do not open a web browser to file an issue at the end, for example if you are running remotely on a cluster")
 parser.add_argument("--no-zip", action='store_true', help="Do not zip up the output at the end, in case you want to look at it first")
 args = parser.parse_args()
 
