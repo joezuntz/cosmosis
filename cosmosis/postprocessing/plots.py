@@ -81,7 +81,7 @@ class Plots(PostProcessorElement):
         #call this function
         fig = self.figures.get(name)
         if fig is None:
-            fig = pylab.figure(figsize=(6,6))
+            fig = pylab.figure()
             self.figures[name] = fig
         return fig
 
