@@ -554,11 +554,12 @@ class WeightedPlots1D(object):
 
 
 class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_colums = ["like", "weight"]
+    excluded_columns = ["like", "weight"]
 
 
 class WeightedMetropolisPlots1D(WeightedPlots1D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots1D):
-    pass
+    excluded_columns = ["like", "weight"]
+
 
 
 class WeightedPlots2D(object):
@@ -595,11 +596,11 @@ class WeightedPlots2D(object):
         return level1, level2, like.sum()
 
 class WeightedMetropolisPlots2D(WeightedPlots2D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_colums = ["like", "weight"]
+    excluded_columns = ["like", "weight"]
     pass
 
 class MultinestPlots2D(WeightedPlots2D, MultinestPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_colums = ["like", "weight"]
+    excluded_columns = ["like", "weight"]
     pass
 
 class ColorScatterPlotBase(Plots):
