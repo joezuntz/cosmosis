@@ -81,7 +81,7 @@ class Plots(PostProcessorElement):
         #call this function
         fig = self.figures.get(name)
         if fig is None:
-            fig = pylab.figure()
+            fig = pylab.figure(figsize=(6,6))
             self.figures[name] = fig
         return fig
 
@@ -115,7 +115,7 @@ class Plots(PostProcessorElement):
                 continue
             pylab.figure(fig.number)
             tweaks.run()
-    
+
     def parameter_pairs(self):
         swap=self.options.get("swap")
         for name1 in self.source.colnames[:]:
