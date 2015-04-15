@@ -35,6 +35,18 @@ class MetropolisProcessor(MetropolisHastingsProcessor):
 		statistics.Citations,		
 		]
 
+
+class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
+	sampler="weighted_metropolis"
+	elements=[
+		plots.WeightedMetropolisPlots1D,
+		plots.WeightedMetropolisPlots2D,
+		statistics.WeightedMetropolisStatistics,
+		#statistics.WeightedMetropolisHastingsCovariance,
+		#statistics.DunkleyTest,
+		statistics.Citations,		
+		]
+
 class GridProcessor(PostProcessor):
 	elements=[
 		plots.GridPlots1D,
@@ -59,3 +71,22 @@ class MultinestProcessor(PostProcessor):
 		statistics.Citations,
 		]
 	sampler="multinest"
+
+
+class PMCPostProcessor(PostProcessor):
+	sampler="pmc"
+	elements = [
+		plots.WeightedMetropolisPlots1D,
+		plots.WeightedMetropolisPlots2D,
+		statistics.WeightedMetropolisStatistics,
+		#statistics.WeightedMetropolisHastingsCovariance,
+		#statistics.DunkleyTest,
+		statistics.Citations,		
+	]
+
+class SnakeProcessor(PostProcessor):
+	sampler='snake'
+	elements = [
+		plots.GridPlots1D,
+		plots.SnakePlots2D,
+	]

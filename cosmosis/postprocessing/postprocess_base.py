@@ -3,9 +3,24 @@ from . import elements
 from . import plots
 from . import statistics
 import numpy as np
+import hashlib
 from cosmosis import output as output_module
 from ..runtime.config import Inifile
 postprocessor_registry = {}
+
+
+def blinding_value(name):
+    #hex number derived from code phrase
+    m = hashlib.md5(name).hexdigest()
+    #convert to decimal
+    s = int(m, 16)
+    # last 8 digits
+    f = s%100000000
+    # turn 8 digit number into value between 0 and 1
+    g = f*1e-8
+    #get value between -1 and 1
+    return g*2-1
+
 
 class PostProcessMetaclass(abc.ABCMeta):
     def __init__(cls, name, b, d):
@@ -20,17 +35,41 @@ class PostProcessor(object):
     cosmosis_standard_output=True
     def __init__(self, ini, **options):
         super(PostProcessor,self).__init__()
+        self.options=options
         self.steps = []
         self.load(ini)
         elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
         self.steps = [e(self, **options) for e in elements]
-        self.options=options
 
     def load_extra_steps(self, filename):
         extra = elements.PostProcessorElement.instances_from_file(filename, self, **self.options)
         for e in extra:
             print "Adding post-processor step: %s" % (e.__class__.__name__)
         self.steps.extend(extra)
+
+    def blind_data(self,multiplicative):
+        #blind self.data
+        for c,col in enumerate(self.colnames):
+            if col.lower() in ['like', 'weight']: continue
+            #get col mean to get us a rough scale to work with
+            if multiplicative:
+                #use upper here so it is different from non-multiplicative
+                #scale by value between 0.75 and 1.25
+                for d in self.data:
+                    scale = 0.2
+                    d[:,c] *= (1+scale*blinding_value(col.lower()))
+                print "Blinding scale value for %s in %f - %f" % (col, 1-scale, 1+scale)
+
+            else:
+                r = np.mean([d[:,c].std() for d in self.data])
+                if r==0.0:
+                    print "Not blinding constant %s" % col
+                    continue
+                scale = 10 * (10**np.ceil(np.log10(abs(r))))
+                #make a random number between -1 and 1 based on the column name
+                for d in self.data:
+                    d[:,c] += scale * blinding_value(col.upper())
+                print "Blinding additive value for %s ~ %f" % (col, scale)
 
     def load(self, ini):
         for step in self.steps:
@@ -55,8 +94,12 @@ class PostProcessor(object):
                     self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
                         output_module.input_from_options(output_options)
             #self.data = self.data[0].T
-            self.data_stacked = np.concatenate(self.data).T
             self.colnames = [c.lower() for c in self.colnames]
+            if self.options.get('blind_add',False):
+                self.blind_data(multiplicative=False)
+            if self.options.get('blind_mul',False):
+                self.blind_data(multiplicative=True)
+            self.data_stacked = np.concatenate(self.data).T
         self.ini = ini
         self.name = filename
 

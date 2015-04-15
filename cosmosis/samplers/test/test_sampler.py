@@ -11,6 +11,7 @@ class TestSampler(Sampler):
         self.converged = False
         self.fatal_errors = self.read_ini("fatal_errors", bool, False)
         self.save_dir = self.read_ini("save_dir", str, "")
+        self.graph = self.read_ini("graph", str, "")
 
     def execute(self):
         # load initial parameter values
@@ -41,6 +42,8 @@ class TestSampler(Sampler):
             print "(No likelihoods required in ini file)"
             print
 
+        if self.graph:
+            self.pipeline.make_graph(data, self.graph)
 
         try:
             if self.save_dir:

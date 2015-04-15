@@ -66,6 +66,16 @@ export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
 
 # setup UPS packages
 # We do not use the Python UPS products on OS X.
+
+setup -B gcc v4_9_2 2> /dev/null
+status=$?
+
+if [[ $status != 0 ]]
+then
+setup -B gcc v4_8_2
+fi
+
+
 if [ "$flavor" != "Darwin64bit" ]
 then
   setup -B scipy v0_13_0b -q +e5:+prof
@@ -74,9 +84,30 @@ then
 fi
 
 setup -B gsl v1_16 -q +prof
-setup -B fftw v3_3_3 -q +prof
-setup -B cfitsio v3_35_0 -q +prof
+
+setup -B fftw v3_3_3 -q +prof 2> /dev/null
+status=$?
+
+if [[ $status != 0 ]]
+then
+setup -B fftw v3_3_4   -q +prof
+fi
+
+setup -B cfitsio v3_35_0 -q +prof 2> /dev/null
+status=$?
+
+if [[ $status != 0 ]]
+then
+setup -B cfitsio v3_37_0   -q +prof
+fi
+
+
+if [ "$flavor" == "Darwin64bit" ]
+then
+export LAPACK_LIB=.
+else
 setup -B lapack v3_4_2 -q +e5:+prof
+fi
 
 if [ -d "$SETUPS_DIR/planckdata/v1_1" ]
 then
@@ -98,6 +129,43 @@ mpich_qualified_version="mpich v3_1 -q +e5:+prof"
 if ups exist $mpich_qualified_version
 then
     setup -B $mpich_qualified_version
+else
+  mpich_qualified_version="mpich v3_1_2a -q +e7:+prof"
+  if ups exist $mpich_qualified_version
+  then
+      setup -B $mpich_qualified_version
+  fi
 fi
 
-export PS1="(cosmosis) ${PS1:+${PS1}}"
+function git-show-top-level {
+    local __toplevel=`git rev-parse --show-toplevel 2> /dev/null`
+    if [ -z "$__toplevel" ]
+    then
+        :
+    else
+        echo "(`basename $__toplevel 2> /dev/null`) "
+    fi
+}
+
+function set-git-prompt-repo-name {
+  if [ ! -z "${PS1-}" ] 
+  then
+    export OLD_PS1="$PS1"
+    local __git_repo='`git-show-top-level`'
+    export PS1="\[$(tput setaf 4)\]$__git_repo\[$(tput sgr0)\]${OLD_PS1}"
+  echo "Your prompt will now show which repository (part of cosmosis) you are in"
+  echo "Use the command reset-prompt to undo this"
+  echo
+  fi
+}
+
+function reset-prompt {
+  export PS1="$OLD_PS1"
+}
+
+
+echo
+echo "CosmoSIS initialized"
+echo
+
+set-git-prompt-repo-name

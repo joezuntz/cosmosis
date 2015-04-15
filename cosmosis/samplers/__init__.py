@@ -8,3 +8,5 @@ from emcee import emcee_sampler
 from maxlike import maxlike_sampler
 from gridmax import gridmax_sampler
 from multinest import multinest_sampler
+from pmc import pmc_sampler
+from snake import snake_sampler

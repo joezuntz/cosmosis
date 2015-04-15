@@ -92,7 +92,7 @@ class Parameter(object):
         values_ini = config.Inifile(value_file)
 
         if priors_files:
-            priors = Prior.load_priors(priors_files)
+            priors = prior.Prior.load_priors(priors_files)
         else:
             priors = {}
 
@@ -106,11 +106,11 @@ class Parameter(object):
             start, limits = Parameter.parse_parameter(value)
 
             # check for prior
-            prior = priors.get((section, name), None)
+            pri = priors.get((section, name), None)
 
 
             parameters.append(Parameter(section, name,
-                                        start, limits, prior))
+                                        start, limits, pri))
 
         return parameters
 
