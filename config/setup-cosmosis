@@ -78,9 +78,9 @@ fi
 
 if [ "$flavor" != "Darwin64bit" ]
 then
-  setup -B scipy v0_13_0b -q +e5:+prof
-  setup -B pyfits v3_2a -q +e5:+prof
-  setup -B pyyaml v3_11
+  setup -B scipy v0_14_0 -q +e7:+prof
+  setup -B pyfits v3_3 -q +e7:+prof
+  setup -B pyyaml v3_11a
 fi
 
 setup -B gsl v1_16 -q +prof
@@ -106,7 +106,7 @@ if [ "$flavor" == "Darwin64bit" ]
 then
 export LAPACK_LIB=.
 else
-setup -B lapack v3_4_2 -q +e5:+prof
+setup -B lapack v3_5_0 -q +e7:+prof
 fi
 
 if [ -d "$SETUPS_DIR/planckdata/v1_1" ]
