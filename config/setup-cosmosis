@@ -96,7 +96,7 @@ then
 
   setup -B pyyaml v3_11a 2> /dev/null
   status=$?
-  if [[ status != 0]]
+  if [[ $status != 0 ]]
   then
     setup -B pyyaml v3_11
   fi
@@ -130,7 +130,7 @@ else
 setup -B lapack v3_5_0 -q +e7:+prof 2> /dev/null
 status=$?
 
-if [[ status != 0]]
+if [[ $status != 0 ]]
 then
 setup -B lapack v3_4_2 -q +e5:+prof
 fi
