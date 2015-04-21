@@ -73,7 +73,8 @@ class MCMC(object):
 def proposal_distance(ndim):
 	# See http://cosmologist.info/notes/CosmoMC.pdf
 	#for more details on this
-	r = (np.random.normal(size=ndim)**2).mean()**0.5
+	n = min(ndim,2)
+	r = (np.random.normal(size=n)**2).mean()**0.5
 	return r
 
 #I've been copying this algorithm out of CosmoMC
