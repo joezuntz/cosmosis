@@ -1,6 +1,6 @@
 
 try:
-	from cosmosis.datablock import names as section_names
+	from cosmosis import names as section_names
 except ImportError:
 	print "Running without cosmosis: no pretty section names"
 	section_names = None

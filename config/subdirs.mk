@@ -1,13 +1,13 @@
 define process_subdirs
 	@for d in $(SUBDIRS); \
 	do \
-	  (cd $$d && $(MAKE) $@); \
+	  (cd $$d && $(MAKE) $@) || exit $$?; \
 	done
 endef
 
 .PHONY: all clean test
 
-all: 
+all::
 	$(process_subdirs)
 
 test:

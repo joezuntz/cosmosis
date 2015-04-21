@@ -10,6 +10,9 @@ import yaml
 import os
 import collections
 import sys
+import codecs
+UTF8Writer = codecs.getwriter('utf8')
+sys.stdout = UTF8Writer(sys.stdout)
 
 #From stack overflow!
 def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=collections.OrderedDict):
@@ -36,39 +39,39 @@ for dirpath, dirnames, filenames in os.walk('.'):
 
 
 def print_part(name, info):
-	print '_%s_' % name.capitalize()
+	print u'_%s_' % name.capitalize()
 	print
 	section = info[name]
 	for (section_name, params) in section.items():
-		print '- %s' % section_name
+		print u'- %s' % section_name
 		print
 		for (param, meaning) in params.items():
-			print '    * %s: %s' % (param, meaning)
+			print u'    * %s: %s' % (param, meaning)
 			print
 	print
 
 def print_params(info):
-	print '_Parameters_:'
+	print u'_Parameters_:'
 	print
 	for (param, meaning) in info['params'].items():
-		print '- %s: %s' % (param, meaning)
+		print u'- %s: %s' % (param, meaning)
 		print
 	print
 
 for cat in outputs:
-	print '# [%s](https://bitbucket.org/joezuntz/cosmosis/wiki/default_modules#%s)'%(cat,cat)
+	print u'# [%s](https://bitbucket.org/joezuntz/cosmosis/wiki/default_modules#%s)'%(cat,cat)
 	print
 	for mod in outputs[cat]:
-		print '- [%s](https://bitbucket.org/joezuntz/cosmosis/wiki/default_modules#markdown-header-%s)'%(mod,mod)
+		print u'- [%s](https://bitbucket.org/joezuntz/cosmosis/wiki/default_modules#markdown-header-%s)'%(mod,mod)
 		print
 	print
 
 
 for cat in outputs:
-	print '# %s' % (cat, )
+	print u'# %s' % (cat, )
 	print
 	for mod in outputs[cat]:
-		print '## %s'%(mod,)
+		print u'## %s'%(mod,)
 		print
 		info = outputs[cat][mod]
 		print info['explanation'].strip('"')

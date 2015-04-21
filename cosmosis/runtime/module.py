@@ -64,7 +64,7 @@ class Module(object):
         else:
             self.data = None
 
-        if self.data:
+        if self.data is not None:
             module_type = MODULE_TYPE_EXECUTE_CONFIG
         else:
             module_type = MODULE_TYPE_EXECUTE_SIMPLE

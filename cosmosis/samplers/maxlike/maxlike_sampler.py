@@ -2,23 +2,15 @@ from .. import Sampler
 import numpy as np
 
 
-MAXLIKE_INI_SECTION = "maxlike"
-
-
 class MaxlikeSampler(Sampler):
+    sampler_outputs = [("like", float)]
 
     def config(self):
-        self.tolerance = self.ini.getfloat(MAXLIKE_INI_SECTION,
-                                           "tolerance", 1e-3)
-        self.maxiter = self.ini.getint(MAXLIKE_INI_SECTION,
-                                       "maxiter", 1000)
-        self.output_ini = self.ini.get(MAXLIKE_INI_SECTION,
-                                       "output_ini", "")
-
-        self.output_cov = self.ini.get(MAXLIKE_INI_SECTION,
-                                       "output_covmat", "")
-        self.method = self.ini.get(MAXLIKE_INI_SECTION,
-                                       "method", "Nelder-Mead")
+        self.tolerance = self.read_ini("tolerance", float, 1e-3)
+        self.maxiter = self.read_ini("maxiter", int, 1000)
+        self.output_ini = self.read_ini("output_ini", str, "")
+        self.output_cov = self.read_ini("output_covmat", str, "")
+        self.method = self.read_ini("method",str,"Nelder-Mead")
 
         self.converged = False
 
@@ -53,7 +45,7 @@ class MaxlikeSampler(Sampler):
         self.output.log_warning("Best fit:\n%s"%'   '.join(str(x) for x in opt))
 
         #Next save them to the proper table file
-        self.output.parameters(opt, extra)
+        self.output.parameters(opt, extra, like)
 
         #If requested, create a new ini file for the
         #best fit.

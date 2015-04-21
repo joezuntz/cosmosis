@@ -22,7 +22,7 @@ make.data.frame <- function(fname, burn)
   parts <- strsplit(first, "\t")[[1]]   # split on tabs
   cols <- sub("[a-zA-Z_]+--", "", parts) # remove leading section names
   names(d) <- cols
-  likes <- exp(d$LIKE)
+  likes <- exp(d$like)
   norm <- sum(likes)
   d$l <- likes/norm
   return(d)

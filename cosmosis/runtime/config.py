@@ -46,6 +46,8 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
                     cursect[optname].append(value)
             # a section header or option header?
             else:
+                #JAZ add environment variable expansion
+                line = os.path.expandvars(line)
                 # is it a section header?
                 mo = self.SECTCRE.match(line)
                 if mo:
@@ -132,10 +134,10 @@ class Inifile(IncludingConfigParser):
                                        dict_type=collections.OrderedDict)
         # default read behavior is to ignore unreadable files which
         # is probably not what we want here
-        if not os.path.exists(filename):
-            raise IOError("Unable to open configuration file %s." % (filename, ))
- 
-        self.read(filename)
+        if filename is not None:
+            if not os.path.exists(filename):
+                raise IOError("Unable to open configuration file %s." % (filename, ))
+            self.read(filename)
 
         # override parameters
         if override:

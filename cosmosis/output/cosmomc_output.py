@@ -3,6 +3,7 @@ import numpy as np
 import os
 from glob import glob
 from collections import OrderedDict
+import numpy as np
 
 PARAM_NAME = '.paramnames'
 
@@ -40,7 +41,7 @@ class CosmoMCOutput(TextColumnOutput):
         pass
 
     def _write_parameters(self, params):
-        if np.all(self._last_params==params):
+        if all([p==q for (p,q) in zip(self._last_params,params)]):
             self._multiplicity += 1
         else:
             self._write_parameters_multiplicity()

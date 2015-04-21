@@ -2,7 +2,7 @@
 
 import sys
 import argparse
-
+import os
 
 from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.pipeline import LikelihoodPipeline
@@ -47,7 +47,10 @@ def main(args, pool=None):
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.
     if sampler_class.needs_output and \
-       (pool is None or pool.is_master() or sampler_class.parallel_output):
+       (pool is None 
+        or pool.is_master() 
+        or sampler_class.parallel_output):
+
         #create the output files and methods
         try:
             output_options = dict(ini.items('output'))
@@ -83,6 +86,24 @@ def main(args, pool=None):
     #for additional parameters
     sampler.config()
 
+    #If there is an output file, save the ini information to
+    #it as well.  We do it here since it's nicer to have it
+    #after the sampler options that get written in sampler.config
+    if output is not None:
+        #Create a buffer to store the output:
+        output.comment("START_OF_PARAMS_INI")
+        comment_wrapper = output.comment_file_wrapper()
+        ini.write(comment_wrapper)
+        output.comment("END_OF_PARAMS_INI")
+        #Do the same with the values file.
+        #Unfortunately that means reading it in again;
+        #if we ever refactor this bit we could eliminate that.
+        values_ini=Inifile(pipeline.values_filename)
+        output.comment("START_OF_VALUES_INI")
+        values_ini.write(comment_wrapper)
+        output.comment("END_OF_VALUES_INI")
+
+
     # Run the sampler until convergence
     # which really means "finished" here - 
     # a sampler can "converge" just by reaching the 
@@ -90,11 +111,41 @@ def main(args, pool=None):
     if not pool or pool.is_master():
         while not sampler.is_converged():
             sampler.execute()
+            #Flush any output. This is to stop
+            #a problem in some MPI cases where loads
+            #of output is built up before being written
+            if output: output.flush()
     else:
         sampler.worker()
 
     if output:
         output.close()
+
+    pipeline.cleanup()
+
+    if args.inifile=="demos/demo1.ini":
+        print
+        print "Congratulations: you have just run cosmosis demo one!"
+        if os.path.exists("./conda"):
+            print 
+            print "You can make plots of the outputs of this using this command:"
+            print "  postprocess demos/demo1.ini -o plots -p demo1"
+            print
+            print "If you get a message about 'Abort Trap 6' then see the FAQ:"
+            print "https://bitbucket.org/joezuntz/cosmosis/wiki/FAQ"
+            print
+            print "Then you can try out the other demos..."
+            print "... and read the information about plotting their output and what they are doing online."
+            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
+        else:
+            print "You can make plots of the outputs of this using the command:"
+            print
+            print "postprocess demos/demo1.ini -o plots -p demo1"
+            print
+            print "Then you can try out the other demos..."
+            print "... and read the information about plotting their output and what they are doing online."
+            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
+            print
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
