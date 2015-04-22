@@ -33,12 +33,15 @@ class ListSampler(ParallelSampler):
 
         #overwrite the parameter limits
         if not limits:
-            self.output.columns = []
+            if self.output is not None:
+                self.output.columns = []
             for p in self.pipeline.parameters:
                 p.limits = (-np.inf, np.inf)
-                self.output.add_column(str(p), float)
-            for p,ptype in self.sampler_outputs:
-                self.output.add_column(p, ptype)
+                if self.output is not None:
+                    self.output.add_column(str(p), float)
+            if self.output is not None:
+                for p,ptype in self.sampler_outputs:
+                    self.output.add_column(p, ptype)
 
 
     def execute(self):
