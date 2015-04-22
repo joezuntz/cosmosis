@@ -10,3 +10,4 @@ from gridmax import gridmax_sampler
 from multinest import multinest_sampler
 from pmc import pmc_sampler
 from snake import snake_sampler
+from .list import list_sampler
