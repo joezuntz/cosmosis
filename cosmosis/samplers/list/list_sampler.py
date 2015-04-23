@@ -6,11 +6,11 @@ from .. import ParallelSampler
 
 def task(p):
     i,p = p
-    results = grid_sampler.pipeline.posterior(p, 
-        return_data=grid_sampler.save_name, all_params=True)
+    results = list_sampler.pipeline.posterior(p, 
+        return_data=list_sampler.save_name, all_params=True)
     #If requested, save the data to file
-    if grid_sampler.save_name and results[2] is not None:
-        results[2].save_to_file(grid_sampler.save_name+"_%d"%i, clobber=True)
+    if list_sampler.save_name and results[2] is not None:
+        results[2].save_to_file(list_sampler.save_name+"_%d"%i, clobber=True)
     return (results[0], results[1])
 
 
@@ -21,8 +21,8 @@ class ListSampler(ParallelSampler):
     sampler_outputs = [("like", float)]
 
     def config(self):
-        global grid_sampler
-        grid_sampler = self
+        global list_sampler
+        list_sampler = self
 
         self.converged = False
         self.filename = self.read_ini("filename", str)
