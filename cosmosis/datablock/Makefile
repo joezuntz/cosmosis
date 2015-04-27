@@ -136,6 +136,7 @@ cosmosis_f90/cosmosis_section_names.F90: section_names.txt generate_sections.py
 
 cosmosis_py/section_names.py: section_names.txt generate_sections.py 
 	python generate_sections.py section_names.txt python cosmosis_py/section_names.py
+	ln -s -f ${PWD}/cosmosis_py/section_names.py ${PWD}/../names.py 
 
 .PHONY: test_datablock test_c_datablock test_section test_entry test_fortran test clean test_python 
 

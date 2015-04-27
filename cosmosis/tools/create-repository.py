@@ -97,8 +97,8 @@ def create_repository(library_name, *module_names):
 	os.mkdir(project_dir)
 
 	#Use modules/Makefile as a template
-	old_makefile=os.path.join(cosmosis_dir, "modules", "Makefile")
-	old_makefile_text=open(old_makefile).read()
+	makefile_template=os.path.join(cosmosis_dir, "cosmosis", "tools", "Makefile.template")
+	makefile_template=open(makefile_template).read()
 
 	#Create the project Makefile
 	if module_names:
@@ -106,7 +106,7 @@ def create_repository(library_name, *module_names):
 	else:
 		module_text=""
 	new_makefile=os.path.join(project_dir, "Makefile")
-	new_makefile_text=old_makefile_text.replace("SUBDIRS =", "SUBDIRS = {0} \n#".format(module_text))
+	new_makefile_text=makefile_template.replace("SUBDIRS =", "SUBDIRS = {0} \n#".format(module_text))
 	open(new_makefile,"w").write(new_makefile_text)
 
 	#Create directories for each module in the project and 
@@ -125,9 +125,10 @@ def create_repository(library_name, *module_names):
 	system("git commit -m 'Initial commit of %s'"%library_name)
 
 	#Update that parent makefile with the new text
-	old_makefile_new_text=old_makefile_text.replace("SUBDIRS =", "SUBDIRS = "+library_name)
-	open(old_makefile,"w").write(old_makefile_new_text+"\n")
-	print "Modifying: ", old_makefile
+	parent_makefile=os.path.join(cosmosis_dir,"modules","Makefile.modules")
+	parent_include="SUBDIRS+={0}".format(library_name)
+	open(parent_makefile,"a").write(parent_include+"\n")
+	print "Modifying: ", parent_makefile
 	print final_help % (project_dir, new_makefile)
 
 import argparse

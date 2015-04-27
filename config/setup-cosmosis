@@ -2,10 +2,19 @@
 # environment for a development session.
 # Note: this currently only supports bash
 
+# Detect whether CosmoSIS is already set up; if so, do not repeat the
+# setup.
+cosmo_cmd=$(type cosmosis 2> /dev/null)
+if [ ! -z "$cosmo_cmd" ]
+then
+  echo CosmoSIS is already set up.
+  return 0
+fi
+
 # detect COSMOSIS_SRC_DIR
 if [ -z "$COSMOSIS_SRC_DIR" ]
 then
-  cosmosis_dir=$( (cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
+  cosmosis_dir=$( (builtin cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
   cosmosis_dir=${cosmosis_dir%/config}
   export COSMOSIS_SRC_DIR="$cosmosis_dir"
 fi
@@ -28,14 +37,21 @@ fi
 # Set the library path appropriate for our flavor.
 libdir=${COSMOSIS_SRC_DIR}/cosmosis/datablock
 flavor=$(ups flavor -1)
-if [ "$flavor" == "Darwin64bit" ]
+if [ "$flavor" = "Darwin64bit" ]
 then
-    export DYLD_LIBRARY_PATH=${libdir}:$DYLD_LIBRARY_PATH
+    export DYLD_LIBRARY_PATH="${libdir}${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}"
 else
-    export LD_LIBRARY_PATH=${libdir}:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH="${libdir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 fi
 
 export PATH=${COSMOSIS_SRC_DIR}/bin:$PATH
+
+# On OS X, we use the Anaconda python we have installed.
+if [ "$flavor" == "Darwin64bit" ]
+then
+  export PATH=${COSMOSIS_SRC_DIR}/conda/bin:$PATH
+fi
+
 export PYTHONPATH=${COSMOSIS_SRC_DIR}
 
 # don't allow this as it probably causes problems
@@ -49,12 +65,77 @@ export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
 #fi
 
 # setup UPS packages
-setup -B scipy v0_13_0b -q +e5:+prof
+# We do not use the Python UPS products on OS X.
+
+setup -B gcc v4_9_2 2> /dev/null
+status=$?
+
+if [[ $status != 0 ]]
+then
+setup -B gcc v4_8_2
+fi
+
+
+if [ "$flavor" != "Darwin64bit" ]
+then
+  setup -B scipy v0_14_0 -q +e7:+prof 2> /dev/null
+  status=$?
+
+  if [[ $status != 0 ]]
+  then
+    setup -B v0_13_0b -q +e5:+prof
+  fi
+
+  setup -B pyfits v3_3 -q +e7:+prof 2> /dev/null
+  status=$?
+
+  if [[ $status != 0 ]]
+  then
+    setup -B pyfits v3_2a -q +e5:+prof
+  fi
+
+  setup -B pyyaml v3_11a 2> /dev/null
+  status=$?
+  if [[ $status != 0 ]]
+  then
+    setup -B pyyaml v3_11
+  fi
+
+fi
+
 setup -B gsl v1_16 -q +prof
-setup -B fftw v3_3_3 -q +prof
-setup -B cfitsio v3_35_0 -q +prof
-setup -B pyfits v3_2a -q +e5:+prof
-setup -B pyyaml v3_11 
+
+setup -B fftw v3_3_3 -q +prof 2> /dev/null
+status=$?
+
+if [[ $status != 0 ]]
+then
+setup -B fftw v3_3_4   -q +prof
+fi
+
+setup -B cfitsio v3_35_0 -q +prof 2> /dev/null
+status=$?
+
+if [[ $status != 0 ]]
+then
+setup -B cfitsio v3_37_0   -q +prof
+fi
+
+
+if [ "$flavor" == "Darwin64bit" ]
+then
+export LAPACK_LIB=.
+else
+
+setup -B lapack v3_5_0 -q +e7:+prof 2> /dev/null
+status=$?
+
+if [[ $status != 0 ]]
+then
+setup -B lapack v3_4_2 -q +e5:+prof
+fi
+
+fi
 
 if [ -d "$SETUPS_DIR/planckdata/v1_1" ]
 then
@@ -71,9 +152,48 @@ then
 	setup -B minuit2 v5_28_0 -q +e5:+prof
 fi
 
-if [ "$flavor" == "Darwin64bit" ]
+#if [ "$flavor" = "Darwin64bit" ]
+mpich_qualified_version="mpich v3_1 -q +e5:+prof"
+if ups exist $mpich_qualified_version
 then
-    setup -B mpich v3_1 -q +e5:+prof
+    setup -B $mpich_qualified_version
+else
+  mpich_qualified_version="mpich v3_1_2a -q +e7:+prof"
+  if ups exist $mpich_qualified_version
+  then
+      setup -B $mpich_qualified_version
+  fi
 fi
 
-export PS1="(cosmosis) $PS1"
+function git-show-top-level {
+    local __toplevel=`git rev-parse --show-toplevel 2> /dev/null`
+    if [ -z "$__toplevel" ]
+    then
+        :
+    else
+        echo "(`basename $__toplevel 2> /dev/null`) "
+    fi
+}
+
+function set-git-prompt-repo-name {
+  if [ ! -z "${PS1-}" ] 
+  then
+    export OLD_PS1="$PS1"
+    local __git_repo='`git-show-top-level`'
+    export PS1="\[$(tput setaf 4)\]$__git_repo\[$(tput sgr0)\]${OLD_PS1}"
+  echo "Your prompt will now show which repository (part of cosmosis) you are in"
+  echo "Use the command reset-prompt to undo this"
+  echo
+  fi
+}
+
+function reset-prompt {
+  export PS1="$OLD_PS1"
+}
+
+
+echo
+echo "CosmoSIS initialized"
+echo
+
+set-git-prompt-repo-name

@@ -1,5 +1,6 @@
 import abc
 import logging
+import numpy as np
 
 
 output_registry = {}
@@ -20,6 +21,21 @@ class OutputMetaclass(abc.ABCMeta):
                 #Do not over-ride superclass aliases
                 if alias not in output_registry:
                     output_registry[alias] = cls
+
+class CommentFileWrapper(object):
+    """
+    This little wrapper object is to turn an OutputBase object
+    into a write-only file-like object where .write commands
+    are turned into comments.
+
+    This seemed cleaner than just adding a .write function to 
+    OutputBase itself since it would look like that would write directly
+    to file, not as comments.
+    """
+    def __init__(self, obj):
+        self.obj=obj
+    def write(self, text):
+        self.obj.comment(text)
 
 class OutputBase(object):
     __metaclass__ = OutputMetaclass
@@ -84,32 +100,48 @@ class OutputBase(object):
         """
         self._write_comment(comment)
 
-    def parameters(self, params, extra=None):
+    def parameters(self, *param_groups):
         """ 
         Tell the outputter to save a vector of parameters.
+
+        You can pass in either arrays/lists, which will
+        be concatenated together, or mix in some scalars
+        which will be included too.  Any number of arguments
+        can be used.
+
+        A typical pattern is for a sampler to send in three
+        groups: sampled variable, extra outputs, and sampler 
+        outputs (e.g. likelihoods or weights).
+
         The number of parameters and their types
         must match what the columns are.
         """
         #Check that the length is correct
         if self.closed:
             raise RuntimeError("Tried to write parameters to closed output")
-        if extra:
-            params = list(params[:])
-            nstandard = len(params)
-            for i in xrange(nstandard,len(self._columns)):
-                name = self._columns[i][0]
-                if name is 'LIKE':
-                    params.append(extra[name])
-                else:
-                    (section, name) = name.split('--')
-                    params.append(extra[section, name])
+
+        #This is very generic
+        params = []
+        for p in param_groups:
+            if np.isscalar(p):
+                params.append(p)
+            else:
+                params += list(p[:])
         if not len(params)==len(self._columns):
             raise ValueError("Sampler error - tried to save wrong number of parameters, or failed to set column names")
+
         #If this is our first sample then 
         if not self.begun_sampling:
             self._begun_sampling(params)
             self.begun_sampling=True
+        #Pass to the subclasses to write output
         self._write_parameters(params)
+
+    def flush(self):
+        """
+        For supported output classes, flush all pending output
+        """
+        self._flush()
 
     def metadata(self, key, value, comment=""):
         """
@@ -131,9 +163,13 @@ class OutputBase(object):
             raise RuntimeError("Tried to write final info to closed output")
         self._write_final(key, value, comment)
 
+    def comment_file_wrapper(self):
+        return CommentFileWrapper(self)
+
+
     def close(self):
-        self.closed=True
         self._close()
+        self.closed=True
 
     #These are the methods that subclasses should
     #implement.  _begun_sampling and _close are optional.
@@ -143,6 +179,9 @@ class OutputBase(object):
         pass
 
     def _close(self):
+        pass
+
+    def _flush(self):
         pass
 
     @abc.abstractmethod

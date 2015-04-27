@@ -105,7 +105,7 @@ class Pipeline(object):
 
     def setup(self):
         if self.timing:
-            timings = [time.clock()]
+            timings = [time.time()]
 
         for module in self.modules:
             # identify parameters needed for module setup
@@ -127,13 +127,13 @@ class Pipeline(object):
             module.setup(config_block, quiet=self.quiet)
 
             if self.timing:
-                timings.append(time.clock())
+                timings.append(time.time())
 
         if not self.quiet:
             sys.stdout.write("Setup all pipeline modules\n")
 
         if self.timing:
-            timings.append(time.clock())
+            timings.append(time.time())
             sys.stdout.write("Module timing:\n")
             for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
                 sys.stdout.write("%s %f\n" % (name, t2-t1))
@@ -141,6 +141,56 @@ class Pipeline(object):
     def cleanup(self):
         for module in self.modules:
             module.cleanup()
+
+    def make_graph(self, data, filename):
+        try:
+            import pygraphviz as pgv
+        except ImportError:
+            print "Cannot generate a graphical pipeline; please install the python package pydot (e.g. with pip install pydot)"
+            return
+        P = pgv.AGraph(directed=True)
+        # P = pydot.Cluster(label="Pipeline", color='black',  style='dashed')
+        # G.add_subgraph(P)
+        def norm_name(name):
+            return name #.replace("_", " ").title()
+        P.add_node("Sampler", color='Pink', style='filled', group='pipeline',shape='octagon', fontname='Courier')
+        for module in self.modules:
+            # module_node = pydot.Node(module.name, color='Yellow', style='filled')
+            P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline')
+        P.add_edge("Sampler", norm_name(self.modules[0].name), color='lightskyblue', style='bold', arrowhead='none')
+        for i in xrange(len(self.modules)-1):
+            P.add_edge(norm_name(self.modules[i].name),norm_name(self.modules[i+1].name), color='lightskyblue', style='bold', arrowhead='none')
+        # D = pydot.Cluster(label="Data", color='red', style='dashed')
+        # G.add_subgraph(D)
+        # #find
+        log = [data.get_log_entry(i) for i in xrange(data.get_log_count())]
+        known_sections = set()
+        for entry in log:
+            if entry!="MODULE-START":
+                section = entry[1]
+                if section not in known_sections:
+                    if section=="Results":
+                        P.add_node(norm_name(section), color='Pink', style='filled', shape='octagon', fontname='Courier')
+                    else:                        
+                        P.add_node(norm_name(section), color='yellow', style='filled', fontname='Courier', shape='box')
+                    known_sections.add(section)
+        module="Sampler"
+        known_edges = set()
+        for entry in log:
+            if entry[0]=="MODULE-START":
+                module=entry[1]
+            elif entry[0]=="WRITE-OK" or entry[0]=="REPLACE-OK":
+                section=entry[1]
+                if (module,section,'write') not in known_edges:
+                    P.add_edge(norm_name(module), norm_name(section), color='green')
+                    known_edges.add((module,section,'write'))
+            elif entry[0]=="READ-OK":
+                section=entry[1]
+                if (section,module,'read') not in known_edges:
+                    P.add_edge((norm_name(section),norm_name(module)), color='grey50')
+                    known_edges.add((section,module,'read'))
+
+        P.write(filename)
 
     def run(self, data_package):
         modules = self.modules
@@ -152,9 +202,9 @@ class Pipeline(object):
             if self.debug:
                 sys.stdout.write("Running %.20s ...\n" % module)
                 sys.stdout.flush()
-                data_package.log_access("MODULE-START", module.name, "")
+            data_package.log_access("MODULE-START", module.name, "")
             if self.timing:
-                t1 = time.clock()
+                t1 = time.time()
 
             status = module.execute(data_package)
 
@@ -163,7 +213,7 @@ class Pipeline(object):
                 sys.stdout.flush()
 
             if self.timing:
-                t2 = time.clock()
+                t2 = time.time()
                 sys.stdout.write("%s took: %f seconds\n"% (module,t2-t1))
 
             if status:
@@ -190,7 +240,7 @@ class Pipeline(object):
         if not self.quiet:
             sys.stdout.write("Pipeline ran okay.\n")
 
-
+        data_package.log_access("MODULE-START", "Results", "")
         # return something
         return True
 
@@ -206,6 +256,7 @@ class LikelihoodPipeline(Pipeline):
         self.n_iterations = 0
 
         values_file = self.options.get(PIPELINE_INI_SECTION, "values")
+        self.values_filename=values_file
         priors_files = self.options.get(PIPELINE_INI_SECTION,
                                         "priors", "").split()
 
@@ -228,6 +279,7 @@ class LikelihoodPipeline(Pipeline):
             section, name = extra_save.upper().split('/')
             self.extra_saves.append((section, name))
 
+        self.number_extra = len(self.extra_saves)
         #pull out all the section names and likelihood names for later
         self.likelihood_names = self.options.get(PIPELINE_INI_SECTION,
                                                  "likelihoods").split()
@@ -238,7 +290,7 @@ class LikelihoodPipeline(Pipeline):
     def output_names(self):
         param_names = [str(p) for p in self.varied_params]
         extra_names = ['%s--%s'%p for p in self.extra_saves]
-        return param_names + extra_names + ['LIKE']
+        return param_names + extra_names
 
     def randomized_start(self):
         # should have different randomization strategies
@@ -332,13 +384,21 @@ class LikelihoodPipeline(Pipeline):
         return sum([param.evaluate_prior(x) for param, x in
                     zip(self.varied_params, p)])
 
-    def posterior(self, p):
+    def posterior(self, p, return_data=False):
         prior = self.prior(p)
         if prior == -np.inf:
-            return prior, utils.everythingIsNan
-        like, extra = self.likelihood(p)
-        return prior + like, extra
-
+            if not self.quiet:
+                sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
+            if return_data:
+                return prior, np.repeat(np.nan, self.number_extra), None
+            return prior, np.repeat(np.nan, self.number_extra)
+        if return_data:
+            like, extra, data = self.likelihood(p, return_data=True)
+            return prior + like, extra, data
+        else:
+            like, extra = self.likelihood(p)
+            return prior + like, extra
+        
     def likelihood(self, p, return_data=False):
         #Set the parameters by name from the parameter vector
         #If one is out of range then return -infinity as the log-likelihood
@@ -346,9 +406,9 @@ class LikelihoodPipeline(Pipeline):
         data = self.run_parameters(p)
         if data is None:
             if return_data:
-                return -np.inf, utils.everythingIsNan, data
+                return -np.inf, np.repeat(np.nan, self.number_extra), data
             else:
-                return -np.inf, utils.everythingIsNan
+                return -np.inf, np.repeat(np.nan, self.number_extra)
 
         # loop through named likelihoods and sum their values
         likelihoods = []
@@ -365,7 +425,7 @@ class LikelihoodPipeline(Pipeline):
         if not self.quiet and self.likelihood_names:
             sys.stdout.write("Likelihood %e\n" % (like,))
 
-        extra_saves = {}
+        extra_saves = []
         for option in self.extra_saves:
             try:
                 #JAZ - should this be just .get(*option) ?
@@ -373,8 +433,7 @@ class LikelihoodPipeline(Pipeline):
             except block.BlockError:
                 value = np.nan
 
-            extra_saves[option] = value
-        extra_saves['LIKE'] = like
+            extra_saves.append(value)
 
         self.n_iterations += 1
         if return_data:
