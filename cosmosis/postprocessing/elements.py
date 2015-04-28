@@ -89,8 +89,15 @@ class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
     def weight_col(self):
         if hasattr(self, "_weight_col"):
             return self._weight_col
-        w = MCMCPostProcessorElement.reduced_col(self, "weight").copy()
-        w/=w.max()
+        if self.source.has_col("weight"):
+            w = MCMCPostProcessorElement.reduced_col(self, "weight").copy()
+            w/=w.max()
+        elif self.source.has_col("log_weight"):
+            w = MCMCPostProcessorElement.reduced_col(self, "log_weight").copy()
+            w-=w.max()
+            w=np.exp(w)
+        else:
+            raise ValueError("No 'weight' or 'log_weight' column found in chain.")
         self._weight_col = w
         return self._weight_col    
 

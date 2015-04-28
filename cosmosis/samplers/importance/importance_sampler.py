@@ -25,6 +25,7 @@ class ImportanceSampler(ParallelSampler):
         importance_pipeline = self.pipeline
         self.input_filename = self.ini.get(INI_SECTION, "input")
         self.nstep = self.ini.getint(INI_SECTION, "nstep", 128)
+        self.add_to_likelihood = self.ini.getboolean(INI_SECTION, "add_to_likelihood", False)
         self.converged = False
         if self.is_master():
             self.load_samples(self.input_filename)
@@ -83,6 +84,7 @@ class ImportanceSampler(ParallelSampler):
         #P is the original likelihood in the old chain we have samples from
         #P' is the new likelihood.
         self.output.add_column("old_like", float) #This is the old likelihood, log(P)
+        self.output.add_column("log_weight", float) #This is the log-weight, the ratio of the likelihoods
         self.output.add_column("like", float) #This is the new likelihood, log(P')
 
 
@@ -123,7 +125,10 @@ class ImportanceSampler(ParallelSampler):
                 extra.append(col[start+i])
             #and then the old and new likelihoods
             old_like = self.original_likelihoods[start+i]
-            extra += [old_like,new_like]
+            if self.add_to_likelihood:
+                new_like += old_like
+            weight = new_like-old_like
+            extra += [old_like,weight,new_like]
             #and save results
             self.output.parameters(sample, extra)
         #Update the current index

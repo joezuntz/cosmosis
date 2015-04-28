@@ -109,6 +109,9 @@ class PostProcessor(object):
     def get_row(self, index):
         return self.data_stacked[:,index]
 
+    def has_col(self, name):
+        return name in self.colnames
+
     def get_col(self, index_or_name, stacked=True):
         """Get the named or numbered column."""
         if isinstance(index_or_name, int):

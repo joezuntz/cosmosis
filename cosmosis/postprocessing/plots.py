@@ -540,7 +540,7 @@ class WeightedPlots1D(object):
     def smooth_likelihood(self, x):
         #Interpolate using KDE
         n = self.options.get("n_kde", 100)
-        weights = self.reduced_col("weight")
+        weights = self.weight_col()
         #speed things up by removing zero-weighted samples
 
         dx = std_weight(x, weights)*4
