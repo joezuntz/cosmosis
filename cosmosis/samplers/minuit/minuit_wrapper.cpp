@@ -39,28 +39,36 @@ double CosmosisMinuitFunction::operator()(const std::vector<double>& x) const
 }
 
 extern "C" {
-int cosmosis_minuit2_wrapper(int nparam, double * start, likelihood_function f)
+int cosmosis_minuit2_wrapper(
+	int nparam, 
+	double * start, 
+	likelihood_function f, 
+	unsigned int max_evals,
+	const char ** param_names
+	)
 {
 
 	CosmosisMinuitFunction func(f);
 
+	// Set up all the parameters required
 	MnUserParameters upar;
 	for (int i=0; i<nparam; i++){
-		char name[8];
-		snprintf(name, 8, "p_%d", i);
-		upar.Add(name, start[i], 0.05);
-	    upar.SetLimits(name, 0.0, 1.0);
+		upar.Add(param_names[i], start[i], 0.1);
+		// Since we will pass in normalized parameters
+		// the limits are all (0,1)
+	    upar.SetLimits(param_names[i], 0.0, 1.0);
 	}
 
 	MnMigrad migrad(func, upar);
-	FunctionMinimum min = migrad();
+	FunctionMinimum min = migrad(max_evals, 0.01);
 
-	std::cout << "Minimum =  " << min << std::endl;
+	std::cout << "MINUIT convergence information:" << min;
 
 	for (int i=0; i<nparam; i++){
 		start[i] = min.UserState().Value(i);
-	}	
-	return 0;
+	}
+	int status = min.IsValid() ? 0 : 1;
+	return status;
 }
 
 }
