@@ -19,6 +19,10 @@ class EmceeProcessor(MetropolisHastingsProcessor):
 	sampler="emcee"
 	pass
 
+class KombineProcessor(MetropolisHastingsProcessor):
+	sampler="kombine"
+	pass
+
 
 class PymcProcessor(MetropolisHastingsProcessor):
 	sampler="pymc"

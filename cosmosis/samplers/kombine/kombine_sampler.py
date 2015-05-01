@@ -73,7 +73,8 @@ class KombineSampler(ParallelSampler):
             except ValueError:
                 pos, post, prop = results
                 extra_info = None
-
+            if self.is_master():
+                print "Burn-in phase complete."
             self.p0 = pos
             self.lnpost0 = post
             self.lnprop0 = prop

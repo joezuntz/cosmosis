@@ -69,7 +69,7 @@ class Plots(PostProcessorElement):
     def filename(self, base, *bases):
         if bases:
             base = base + "_" + ("_".join(bases))
-        output_dir = self.options.get("outdir", "png")
+        output_dir = self.options.get("outdir", ".")
         prefix=self.options.get("prefix","")
         if prefix: prefix+="_"
         ftype=self.options.get("file_type", "png")
