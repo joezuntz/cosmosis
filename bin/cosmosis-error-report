@@ -19,13 +19,16 @@ usage="""
 This program can be used to help report a problem running CosmoSIS.
 
 It makes a text file listing:
- - the files in the CosmoSIS directory (and subdirectories)
+ - the files in the CosmoSIS directory and subdirectories (not the file contents)
  - any changes you have made to CosmoSIS files
  - all environment variables 
  - the ini files you are running on
  - the standard output of the run
+Please be sure you are happy with these files being uploaded to the internet before
+creating the issue at the end of this process.
 
-Run it with an ini file that is giving you an error.  If you normally run:
+
+You run thie program with an ini file that is giving you an error.  If you normally run:
 cosmosis filename.ini
 
 Then instead run:
@@ -40,7 +43,7 @@ A limitation: you cannot currently pass extra arguments to this script like you 
 
 parser = argparse.ArgumentParser(usage=usage)
 parser.add_argument("ini", help="The ini file you are trying to run with")
-parser.add_argument("--mpi", type=int, default=0, help="Run under MPI with this many processes")
+parser.add_argument("--mpi", type=int, default=0, help="Run under MPI with this many processes (you do *NOT* need to use mpirun - this script will do that for you)")
 parser.add_argument("--no-web", action='store_true', help="Do not open a web browser to file an issue at the end, for example if you are running remotely on a cluster")
 parser.add_argument("--no-zip", action='store_true', help="Do not zip up the output at the end, in case you want to look at it first")
 args = parser.parse_args()
