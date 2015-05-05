@@ -1,0 +1,19 @@
+#This is a template for sampler description files
+name: ""
+version: ""
+purpose: ""
+url: ""
+attribution: []
+cite:
+    - ""
+    - ""
+
+explanation: >
+    ""
+
+installation: >
+    ""
+
+# List of configuration options for this sampler
+params:
+    name: meaning

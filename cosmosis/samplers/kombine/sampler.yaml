@@ -1,0 +1,21 @@
+name: "kombine"
+version: "0.01"
+purpose: "Clustered KDE "
+url: "https://github.com/bfarr/kombine"
+attribution: [Benjamin Farr]
+cite:
+    - "Farr, B. and Farr, W.M., \"kombine: a kernel-density-based, embarrassingly parallel ensemble sampler\", in preparation."
+    - "http://arxiv.org/abs/1309.7709"
+
+explanation: >
+    "kombine is an ensemble sampler that uses a clustered kernel-density-estimate proposal density, which allows it to efficiently sample multimodal or non-gaussian posteriors. In between updates to the proposal density estimate, each member of the ensemble is sampled independently, allowing for massive parallelization."
+
+installation: >
+    "kombine can be installed from github using pip: pip install --user git+git://github.com/bfarr/kombine"
+
+params:
+    walkers: number of independent walkers in the ensemble
+    samples: total sample steps taken 
+    nsteps: number of sample steps taken in between 
+    update_interval: number of steps taken in between updating the posterior 
+    start_file: (optional) a file containing starting points for the walkers. If not specified walkers are initialized randomly from the prior distribution.
