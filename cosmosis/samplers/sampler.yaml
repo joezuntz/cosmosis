@@ -1,6 +1,7 @@
 #This is a template for sampler description files
 name: ""
 version: ""
+parallel: false
 purpose: ""
 url: ""
 attribution: []
