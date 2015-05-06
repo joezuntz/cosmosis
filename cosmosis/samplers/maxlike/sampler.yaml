@@ -53,4 +53,4 @@ params:
     tolerance: (real; default=1e-3) The tolerance parameter for termination.  Meaning depends on the sampler - see scipy docs.
     maxiter: (integer; default=1000) Maximum number of iterations of the sampler
     output_ini: "(string; default='') if present, save the resulting parameters to a new ini file with this name"
-    output_cov: "(string; default='') if present and the sampler supports it, save the estimated covariance to this file"
+    output_covmat: "(string; default='') if present and the sampler supports it, save the estimated covariance to this file"

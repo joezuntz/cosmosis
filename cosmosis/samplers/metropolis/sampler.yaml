@@ -1,0 +1,45 @@
+name: "metropolis"
+version: "1.0"
+parallel: true
+purpose: "Classic Metropolis-Hastings sampling"
+url: "https://bitbucket.org/joezuntz/cosmosis"
+attribution: ["CosmoSIS Team"]
+cite:
+    - "Journal of Chemical Physics 21 6 1087–1092 (1953)"
+
+explanation: >
+    "Metropolis-Hastings is the classic Monte-Carlo Markov Chain method
+    for sampling from distributions.
+
+    MH as a Markov process where from each point in chain there is a 
+    process for choosing the next point in such a way that the distribution of
+    chain points tends to the underlying distribution.
+
+    In MH a proposal function is defined that suggests a possible next point
+    in the chain.  The posterior of that point is evaluated and if:
+    P_new / P_ol > U[0,1]
+    where U[0,1] is a random number from 0-1, then the new point is 'accepted'
+    and becomes the next chain element.  Otherwise the current point is repeated.
+
+    The choice of proposal function strongly determines how quickly the sampler
+    converges to the underlying distribution.  In particular a covariance matrix
+    approximately describing the distribution provides a significant speed up.
+
+    The CosmoSIS metropolis sampler tries to mirror the
+    CosmoMC MH implementation (though we do not yet have the fast-slow split).
+
+    Metropolis-Hastings is intrinsically a serial (non-parallel) algorithm. Like
+    CosmoMC, CosmoSIS parallelizes it by running several independent chains in parallel
+    and comparing them to assess convergence using the Gelman-Rubin test.
+    "
+
+installation: >
+    "No special installation required; everything is packaged with CosmoSIS"
+
+# List of configuration options for this sampler
+params:
+    samples: (integer) number of walkers in the space
+    random_start: (bool; default=N) whether to start the chains at random points in the prior instead of the ini file start 
+    Rconverge: "(float; default=-1.0) when multiple chains are run, use this as the Gelman-Rubin statistic"
+    covmat: "(string; default='') load a covariance matrix from this file.  The parameter order should match the order of varied parameters in the ini file 
+    nsteps: "(integer; default=100) number of points between saving data and testing convergence"
