@@ -19,25 +19,25 @@ explanation: >
     of your results.
 
     These samplers are wrapped in the current version of scipy:
-		Nelder-Mead
-		Powell
-		CG
-		BFGS
-		Newton-CG
-		Anneal (deprecated by scipy)
-		L-BFGS-B
-		TNC
-		COBYLA
-		SLSQP
-		dogleg
-		trust-ncg
+        Nelder-Mead
+        Powell
+        CG
+        BFGS
+        Newton-CG
+        Anneal (deprecated by scipy)
+        L-BFGS-B
+        TNC
+        COBYLA
+        SLSQP
+        dogleg
+        trust-ncg
 
-	Each has different (dis)advantages, and which works best will depend on your
-	particular application.  The default in CosmoSIS is Nelder-Mead.
-	See the references on the scipy URL above for more details.
+    Each has different (dis)advantages, and which works best will depend on your
+    particular application.  The default in CosmoSIS is Nelder-Mead.
+    See the references on the scipy URL above for more details.
 
-	Some methods can also output an estimated covariance matrix at the likelihood 
-	peak.
+    Some methods can also output an estimated covariance matrix at the likelihood 
+    peak.
     "
 
 installation: >
@@ -49,7 +49,7 @@ installation: >
     "
 
 params:
-	method: (string; default=Nelder-Mead) The minimization method to use.
+    method: (string; default=Nelder-Mead) The minimization method to use.
     tolerance: (real; default=1e-3) The tolerance parameter for termination.  Meaning depends on the sampler - see scipy docs.
     maxiter: (integer; default=1000) Maximum number of iterations of the sampler
     output_ini: "(string; default='') if present, save the resulting parameters to a new ini file with this name"

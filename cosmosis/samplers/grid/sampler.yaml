@@ -1,5 +1,5 @@
 #This is a template for sampler description files
-name: "Grid"
+name: "grid"
 version: "1.0"
 parallel: true
 purpose: "Simple grid sampler"

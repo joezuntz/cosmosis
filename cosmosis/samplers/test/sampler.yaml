@@ -5,7 +5,7 @@ parallel: false
 purpose: "Evaluate a single parameter set"
 url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: [CosmoSIS Team]
-cite:[]
+cite: []
 explanation: >
     "
     This is the most trivial possible 'sampler' - it just runs on a single
@@ -17,12 +17,12 @@ explanation: >
 
     At the end of the run it will print out the prior and likelihood (if there
     is one), and can optionally also save all the data saved along the pipeline,
-	so that you can make plots of the useful cosmological quantities.
+    so that you can make plots of the useful cosmological quantities.
 
-	Experimental: we have a new test feature where you can plot your pipeline
-	and the data flow through it as a graphical diagram.  This requires pygraphviz
-	and the graphviz suite to make an image - use a command like:
-	dot -Tpng -o graph.png graph.dot
+    Experimental: we have a new test feature where you can plot your pipeline
+    and the data flow through it as a graphical diagram.  This requires pygraphviz
+    and the graphviz suite to make an image - use a command like:
+    dot -Tpng -o graph.png graph.dot
 
     "
 
