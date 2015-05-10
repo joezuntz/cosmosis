@@ -597,6 +597,31 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
+	def get_first_parameter_use(self, params_of_interest):
+		"Analyze the log and figure out when each parameter is first used"
+		params_by_module = []
+		current_module = []
+		#make a copy of the parameter list so we can remove things
+		#from it as we find their first use
+		params = [(p.section,p.name) for p in params_of_interest]
+		#now actually parse the log
+		current_module = None
+		for i in xrange(self.get_log_count()):
+			ptype, section, name, _ = self.get_log_entry(i)
+			if ptype=="MODULE-START":
+				# The previous current_module is already the
+				#last element in params_by_module (unless it's the
+				#very first one in which case we discard it because
+				#it is the parameters being set in the sampler)
+				current_module = []
+				params_by_module.append(current_module)
+			elif ptype=="READ-OK" and (section,name) in params:
+				current_module.append((section,name))
+				params.remove((section,name))
+		#Return a list of lists of parameter first used in each section
+		return params_by_module
+
+
 	def get_metadata(self, section, name, key):
 		r = lib.c_str()
 		status = lib.c_datablock_get_metadata(self._ptr,section,name,key, r)
