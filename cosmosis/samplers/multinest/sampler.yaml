@@ -1,6 +1,6 @@
 name: "multinest"
 version: "3.7"
-parallel: true
+parallel: parallel
 purpose: "Nested sampling"
 url: "https://ccpforge.cse.rl.ac.uk/gf/project/multinest/"
 attribution: ["Farhan Feroz", "Mike Hobson"]

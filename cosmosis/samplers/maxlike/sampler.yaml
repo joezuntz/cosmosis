@@ -1,6 +1,6 @@
 name: "maxlike"
 version: "1.0"
-parallel: false
+parallel: serial
 purpose: "Find the maximum likelihood using various methods in scipy"
 url: "http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.optimize.minimize.html"
 attribution: ["SciPy developers"]

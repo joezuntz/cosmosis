@@ -1,6 +1,6 @@
 name: "list"
 version: "1.0"
-parallel: true
+parallel: embarrassing
 purpose: "Re-run existing chain samples"
 url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: ["CosmoSIS Team"]

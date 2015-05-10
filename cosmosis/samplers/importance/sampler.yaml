@@ -1,6 +1,6 @@
 name: "importance"
 version: "1.0"
-parallel: true
+parallel: embarrassing
 purpose: "Importance sampling"
 url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: ["CosmoSIS Team"]

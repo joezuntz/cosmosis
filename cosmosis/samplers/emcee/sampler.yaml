@@ -1,6 +1,6 @@
 name: "emcee"
 version: "2.1.0"
-parallel: true
+parallel: parallel
 purpose: "Ensemble walker sampling"
 url: "http://dan.iel.fm/emcee/"
 attribution: ["Dan Foreman-Mackey and contributors"]

@@ -1,6 +1,6 @@
 name: "metropolis"
 version: "1.0"
-parallel: true
+parallel: multi-serial
 purpose: "Classic Metropolis-Hastings sampling"
 url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: ["CosmoSIS Team"]

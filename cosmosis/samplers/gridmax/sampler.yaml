@@ -1,7 +1,7 @@
 #This is a template for sampler description files
 name: "gridmax"
 version: "1.0"
-parallel: true
+parallel: parallel
 purpose: "Naive grid maximum-posterior"
 url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: [CosmoSIS Team]

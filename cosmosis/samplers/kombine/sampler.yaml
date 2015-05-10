@@ -1,6 +1,6 @@
 name: "kombine"
 version: "0.01"
-parallel: true
+parallel: parallel
 purpose: "Clustered KDE"
 url: "https://github.com/bfarr/kombine"
 attribution: [Benjamin Farr]

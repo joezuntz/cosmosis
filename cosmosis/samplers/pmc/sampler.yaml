@@ -1,6 +1,6 @@
 name: "pmc"
 version: "1.0"
-parallel: true
+parallel: embarrassing
 purpose: "Adaptive Importance Sampling"
 url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: ["CosmoSIS Team"]

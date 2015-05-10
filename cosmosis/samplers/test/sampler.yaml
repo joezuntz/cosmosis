@@ -1,7 +1,7 @@
 #This is a template for sampler description files
 name: "test"
 version: "1.0"
-parallel: false
+parallel: serial
 purpose: "Evaluate a single parameter set"
 url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: [CosmoSIS Team]

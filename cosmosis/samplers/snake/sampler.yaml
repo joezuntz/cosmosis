@@ -1,7 +1,7 @@
 #This is a template for sampler description files
 name: "snake"
 version: "1.0"
-parallel: true
+parallel: parallel
 purpose: "Intelligent Grid exploration"
 url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: [CosmoSIS Team]
