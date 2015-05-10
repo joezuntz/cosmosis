@@ -8,7 +8,7 @@ cite:
     - "PASP, 125, 925, 306-312"
 
 explanation: >
-    " The emcee sampler is a form of Monte-Carlo Markov Chain that uses
+    The emcee sampler is a form of Monte-Carlo Markov Chain that uses
     an ensemble of 'walkers' that explore the parameter space.
 
     It is parallel, so multiple processes can be used to speed up the 
@@ -26,14 +26,14 @@ explanation: >
     maxlike or similar samplers can help you find this.
 
     The total number of samples taken is walkers*samples.
-    "
+    
 
 installation: >
-    "emcee is included in the cosmosis bootstrap, but if you are installing
+    emcee is included in the cosmosis bootstrap, but if you are installing
     manually you can get emcee using the command:
     pip install emcee  #to install centrally, may require sudo
     pip install emcee --user #to install just for you
-    "
+    
 
 # List of configuration options for this sampler
 params:
