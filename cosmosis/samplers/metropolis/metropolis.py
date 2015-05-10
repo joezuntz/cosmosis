@@ -9,7 +9,7 @@ class MCMC(object):
 		self.quiet=quiet
 		#Run the pipeline for the first time, on the 
 		#starting point
-		self.Lp = self.posterior(self.p)
+		self.Lp = self.posterior(self.p, fast=False)
 
 		#Set up the covariance and initial
 		#proposal axes
@@ -36,7 +36,7 @@ class MCMC(object):
 			q = self.propose()
 			if not self.quiet:
 				print "  ".join(str(x) for x in q)
-			Lq = self.posterior(q)
+			Lq = self.posterior(q, fast=False)
 			if not self.quiet:
 				print
 			#acceptance test
