@@ -5,10 +5,10 @@ purpose: "Classic Metropolis-Hastings sampling"
 url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: ["CosmoSIS Team"]
 cite:
-    - "Journal of Chemical Physics 21 6 1087–1092 (1953)"
+    - "Journal of Chemical Physics 21 6 1087-1092 (1953)"
 
 explanation: >
-    "Metropolis-Hastings is the classic Monte-Carlo Markov Chain method
+    Metropolis-Hastings is the classic Monte-Carlo Markov Chain method
     for sampling from distributions.
 
     MH as a Markov process where from each point in chain there is a 
@@ -17,7 +17,7 @@ explanation: >
 
     In MH a proposal function is defined that suggests a possible next point
     in the chain.  The posterior of that point is evaluated and if:
-    P_new / P_ol > U[0,1]
+    P_new / P_old > U[0,1]
     where U[0,1] is a random number from 0-1, then the new point is 'accepted'
     and becomes the next chain element.  Otherwise the current point is repeated.
 
@@ -31,10 +31,10 @@ explanation: >
     Metropolis-Hastings is intrinsically a serial (non-parallel) algorithm. Like
     CosmoMC, CosmoSIS parallelizes it by running several independent chains in parallel
     and comparing them to assess convergence using the Gelman-Rubin test.
-    "
+    
 
 installation: >
-    "No special installation required; everything is packaged with CosmoSIS"
+    No special installation required; everything is packaged with CosmoSIS
 
 # List of configuration options for this sampler
 params:

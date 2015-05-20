@@ -6,7 +6,6 @@ url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: ["CosmoSIS Team"]
 cite: []
 explanation: >
-    "
     Importance sampling is a general method for estimating quantities from
     one distribution, P', when what you have is samples from another, similar
     distribution, P. In IS a weight is calculated for each sample that depends
@@ -17,10 +16,10 @@ explanation: >
 
     There's a nice introduction to the general idea in Mackay ch. 29:
     http://www.inference.phy.cam.ac.uk/itila/book.html
-    "
+
 
 installation: >
-    "No special installation required; everything is packaged with CosmoSIS"
+    No special installation required; everything is packaged with CosmoSIS
 
 params:
     input_filename: (string) cosmosis-format chain of input samples

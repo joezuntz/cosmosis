@@ -6,7 +6,6 @@ url: "http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.optimize.
 attribution: ["SciPy developers"]
 cite: []
 explanation: >
-    "
     This sampler attempts to find the single point in parameter space with the highest
     likelihood.  It wraps a variety of samplers from the scipy.minimize package.
 
@@ -19,18 +18,31 @@ explanation: >
     of your results.
 
     These samplers are wrapped in the current version of scipy:
-        Nelder-Mead
-        Powell
-        CG
-        BFGS
-        Newton-CG
-        Anneal (deprecated by scipy)
-        L-BFGS-B
-        TNC
-        COBYLA
-        SLSQP
-        dogleg
-        trust-ncg
+
+    - Nelder-Mead
+
+    - Powell
+
+    - CG
+
+    - BFGS
+
+    - Newton-CG
+
+    - Anneal (deprecated by scipy)
+
+    - L-BFGS-B
+
+    - TNC
+
+    - COBYLA
+
+    - SLSQP
+
+    - dogleg
+
+    - trust-ncg
+
 
     Each has different (dis)advantages, and which works best will depend on your
     particular application.  The default in CosmoSIS is Nelder-Mead.
@@ -38,15 +50,15 @@ explanation: >
 
     Some methods can also output an estimated covariance matrix at the likelihood 
     peak.
-    "
 
 installation: >
-    "Requires SciPy 0.14 or above.  This is installed by the CosmoSIS bootstrap,
+    Requires SciPy 0.14 or above.  This is installed by the CosmoSIS bootstrap,
     but if you are installing manually you can get it with the command:
+
     pip install scipy  #to install centrally, may require sudo
+    
     pip install scipy --user #to install just for you
 
-    "
 
 params:
     method: (string; default=Nelder-Mead) The minimization method to use.

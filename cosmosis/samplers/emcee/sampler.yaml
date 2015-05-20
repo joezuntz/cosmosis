@@ -9,17 +9,14 @@ cite:
 
 explanation: >
     The emcee sampler is a form of Monte-Carlo Markov Chain that uses
-    an ensemble of 'walkers' that explore the parameter space.
-
-    It is parallel, so multiple processes can be used to speed up the 
-    running.
-
-    It is also affine invariant, so that no covariance matrix or other 
-    tuning is required for the proposal.
-
+    an ensemble of 'walkers' that explore the parameter space. 
     Each walker chooses another walker at random and proposes along the
     line connecting the two of them using the Metropolis acceptance rule.
     The proposal scale is given by the separation of the two walkers.
+
+    It is parallel, so multiple processes can be used to speed up the 
+    running. It is also affine invariant, so that no covariance matrix or other 
+    tuning is required for the proposal.
 
     The burn-in behavior of emcee can sometimes be poor; it is much better
     to start the chain as near to the maximum posterior as possible.  The 
@@ -31,7 +28,9 @@ explanation: >
 installation: >
     emcee is included in the cosmosis bootstrap, but if you are installing
     manually you can get emcee using the command:
+
     pip install emcee  #to install centrally, may require sudo
+    
     pip install emcee --user #to install just for you
     
 

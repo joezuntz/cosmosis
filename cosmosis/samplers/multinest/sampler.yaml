@@ -10,7 +10,7 @@ cite:
     - "arXiv:1306.2144"
 
 explanation: >
-    "Nested sampling is a method designed to calculate the Bayesian Evidence
+    Nested sampling is a method designed to calculate the Bayesian Evidence
     of a distribution, for use in comparing multiple models to see which fit
     the data better.
 
@@ -36,10 +36,9 @@ explanation: >
     If this number is too small you will get too few posterior samples in the result,
     and if it is too large the sampling will take a long time.  A few hundred seems
     to be reasonable for typical cosmology problems.
-    "
 
 installation: >
-    "No special installation required; everything is packaged with CosmoSIS"
+    No special installation required; everything is packaged with CosmoSIS
 
 # List of configuration options for this sampler
 params:

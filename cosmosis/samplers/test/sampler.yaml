@@ -7,7 +7,6 @@ url: "https://bitbucket.org/joezuntz/cosmosis"
 attribution: [CosmoSIS Team]
 cite: []
 explanation: >
-    "
     This is the most trivial possible 'sampler' - it just runs on a single
     parameter sample. It is mainly useful for testing and for generating 
     cosmology results for plotting.
@@ -24,16 +23,18 @@ explanation: >
     and the graphviz suite to make an image - use a command like:
     dot -Tpng -o graph.png graph.dot
 
-    "
 
 installation: >
-    "No special installation required; everything is packaged with CosmoSIS.
+    No special installation required; everything is packaged with CosmoSIS.
     If you want to make a graphical diagram of your pipeline you need to have
     pygraphviz installed.  You can get this with:
+
     pip install pygraphviz  #to install centrally, may require sudo
+
     pip install pygraphviz --user #to install just for you
+    
     You also need graphviz to turn the result into an image.
-    "
+
 
 # List of configuration options for this sampler
 params:
