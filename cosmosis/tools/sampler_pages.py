@@ -101,7 +101,7 @@ def generate_links(infos):
 		name = info['name']
 		page = name_for_sampler_page(name)
 		slug = info['purpose']
-		print(" - [{0} sampler]({1}) {2}".format(page, name, slug))
+		print(" - [{0} sampler](samplers/{1}) {2}".format(page, name, slug))
 
 
 def main():
