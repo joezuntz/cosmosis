@@ -1,0 +1,31 @@
+#This is a template for sampler description files
+name: "gridmax"
+version: "1.0"
+parallel: parallel
+purpose: "Naive grid maximum-posterior"
+url: "https://bitbucket.org/joezuntz/cosmosis"
+attribution: [CosmoSIS Team]
+cite: []
+
+
+explanation: >
+    This sampler is a naive and experimental attempt to try a parallel ML/MAP sampler.
+
+    It samples through the dimensions of the space one-by-one, and draws a line of evenly
+    space samples through that dimension, and finds the best fit along that line.
+
+    It then changes that parameter value to the best fit, leaving all the others fixed.
+    The idea is that at moves in on a "square spiral" towards the best fit.
+
+    The sampling is parallel along the line.
+
+    This sampler is experimental and should probably only be used for testing purposes.
+
+installation: >
+    No special installation required; everything is packaged with CosmoSIS
+
+# List of configuration options for this sampler
+params:
+    nsteps: (integer) The number of sample points along each line through the space
+    tolerance: "(real; default=0.1) tolerance for Delta Log Like along one complete loop through the dimensions"
+    output_ini: "(string; default='') if present, save the resulting parameters to a new ini file with this name"

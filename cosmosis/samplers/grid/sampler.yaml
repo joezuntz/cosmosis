@@ -1,0 +1,32 @@
+#This is a template for sampler description files
+name: "grid"
+version: "1.0"
+parallel: embarrassing
+purpose: "Simple grid sampler"
+url: "https://bitbucket.org/joezuntz/cosmosis"
+attribution: [CosmoSIS Team]
+cite: []
+
+
+explanation: >
+    Grid sampling is the simplest and most brute-force way to explore a parameter space.
+    It simply builds an even grid of points in parameter space and samples all of them.
+
+    As such it scales extremely badly with the number of dimensions in the problem:
+    n_sample = grid_size ^ n_dim
+    and so quickly becomes unfeasible for more than about 4 dimensions.
+
+    It is extremely useful, though, in lower dimensions, where it is perfectly parallel
+    and provides a much smoother and more exact picture of the parameter space than MCMC
+    methods do.  It is also useful for taking lines and planes through the parameter space.
+
+    The main parameter for the grid sampler is the number of sample points per dimension (grid_size above).
+    
+
+installation: >
+    No special installation required; everything is packaged with CosmoSIS
+
+# List of configuration options for this sampler
+params:
+    nsample_dimension: (integer) The number of grid points along each dimension of the space
+    save: "(string; default='') If set, a base directory or .tgz name for saving the cosmology output for every point in the grid"
