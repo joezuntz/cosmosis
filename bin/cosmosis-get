@@ -59,7 +59,7 @@ if os.path.exists(dirname) and os.path.isdir(dirname):
 	print "Is it possible you already downloaded this module?"
 	print "Or you could specify a name for the directory you want this "
 	print 'to go into instead of just using the default.  Use the '
-	print "-d or --dirname flat on the command line"
+	print "-d or --dirname flag on the command line"
 	sys.exit(1)
 elif os.path.exists(dirname):
 	print "There is already a file called {0}".format(dirname)
