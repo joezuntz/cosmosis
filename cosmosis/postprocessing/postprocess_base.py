@@ -65,7 +65,7 @@ class PostProcessor(object):
                 if r==0.0:
                     print "Not blinding constant %s" % col
                     continue
-                scale = 10 * (10**np.ceil(np.log10(abs(r))))
+                scale = (10**np.ceil(np.log10(abs(r))))
                 #make a random number between -1 and 1 based on the column name
                 for d in self.data:
                     d[:,c] += scale * blinding_value(col.upper())
