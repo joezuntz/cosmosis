@@ -83,7 +83,7 @@ then
 
   if [[ $status != 0 ]]
   then
-    setup -B v0_13_0b -q +e5:+prof
+    setup -B scipy v0_13_0b -q +e5:+prof
   fi
 
   setup -B pyfits v3_3 -q +e7:+prof 2> /dev/null
