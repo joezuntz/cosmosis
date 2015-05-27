@@ -12,7 +12,7 @@ class TextColumnOutput(OutputBase):
     FILE_EXTENSION = ".txt"
     _aliases = ["text", "txt"]
 
-    def __init__(self, filename, rank=0, nchain=1, delimiter='\t'):
+    def __init__(self, filename, rank=0, nchain=1, delimiter='\t', lock=True):
         super(TextColumnOutput, self).__init__()
         self.delimiter = delimiter
 
@@ -27,11 +27,13 @@ class TextColumnOutput(OutputBase):
             self._filename = filename + self.FILE_EXTENSION
 
         self._file = open(self._filename, "w")
-        try:
-            self.lock_file(self._file)
-        except IOError:
-            error_msg = "Another CosmoSIS process was trying to use the same output file. This probably means you either left out the --mpi flag when using mpirun or have two CosmoSIS runs trying to use the same filename."
-            raise IOError(error_msg)
+
+        if lock:
+            try:
+                self.lock_file(self._file)
+            except IOError:
+                error_msg = "Another CosmoSIS process was trying to use the same output file. This probably means you either left out the --mpi flag when using mpirun or have two CosmoSIS runs trying to use the same filename."
+                raise IOError(error_msg)
 
         #also used to store comments:
         self._metadata = OrderedDict()
@@ -95,7 +97,8 @@ class TextColumnOutput(OutputBase):
         delimiter = options.get('delimiter', '\t')
         rank = options.get('rank', 0)
         nchain = options.get('parallel', 1)
-        return cls(filename, rank, nchain, delimiter=delimiter)
+        lock = utils.boolean_string(options.get('lock', True))
+        return cls(filename, rank, nchain, delimiter=delimiter, lock=lock)
 
     @classmethod
     def load_from_options(cls, options):
