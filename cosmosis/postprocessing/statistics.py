@@ -154,8 +154,8 @@ class ChainCovariance(object):
         if len(col_names)<2:
             return []
 
-
-        cols = [self.reduced_col(p) for p in col_names]
+        ps = self.posterior_sample()
+        cols = [self.reduced_col(p)[ps] for p in col_names]
         covmat = np.cov(cols)
 
         #For the proposal we just want the first 

@@ -94,6 +94,21 @@ class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
         self._weight_col = w
         return self._weight_col    
 
+    def posterior_sample(self):
+        """
+        Weighted chains are *not* drawn from the posterior distribution
+        but we do have the information we need to construct such a sample.
+
+        This function returns a boolean array with True where we should
+        use the sample at that index, and False where we should not.
+
+        """
+        w = self.weight_col()
+        w = w / w.max()
+        u = np.random.uniform(size=w.size)
+        return u<w
+
+
 class MultinestPostProcessorElement(PostProcessorElement):
     def reduced_col(self, name):
         #we only use the last n samples from a multinest output
