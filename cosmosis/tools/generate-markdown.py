@@ -102,18 +102,23 @@ for dirpath, dirnames, filenames in os.walk('.'):
 			info = ordered_load(open(filepath))
 			name = info['name']
 			version = info['version']
+			info['full_name'] = '{}--{}'.format(name,version)
 			info['page_name'] = '{}_{}'.format(name,version)
 			if dirpath.startswith('./'): dirpath=dirpath[2:]
 			info['dirname'] = dirpath
 			info['explanation'] = info['explanation'].strip().strip('"').replace("\n","\n\n")
-			outputs[category][module_name] = info
+			outputs[category][info['full_name']] = info
 
 
 f = open("wiki/default_modules.md","w")
 for cat in outputs:
 	f.write(u"## {}\n\n".format(cat))
 	for mod in outputs[cat]:
-		f.write(u"- [{} ({})](https://bitbucket.org/joezuntz/cosmosis/wiki/default_modules/{}.md)'%(mod,version,page_name)\n\n")
+		page_name = outputs[cat][mod]['page_name']
+		purpose = outputs[cat][mod]['purpose']
+		version = outputs[cat][mod]['version']
+		name = outputs[cat][mod]['name']
+		f.write(u"- [{} ({})](https://bitbucket.org/joezuntz/cosmosis/wiki/default_modules/{})  {}\n\n".format(name,version,page_name,purpose))
 f.close()
 
 
