@@ -89,10 +89,32 @@ class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
     def weight_col(self):
         if hasattr(self, "_weight_col"):
             return self._weight_col
-        w = MCMCPostProcessorElement.reduced_col(self, "weight").copy()
-        w/=w.max()
+        if self.source.has_col("weight"):
+            w = MCMCPostProcessorElement.reduced_col(self, "weight").copy()
+            w/=w.max()
+        elif self.source.has_col("log_weight"):
+            w = MCMCPostProcessorElement.reduced_col(self, "log_weight").copy()
+            w-=w.max()
+            w=np.exp(w)
+        else:
+            raise ValueError("No 'weight' or 'log_weight' column found in chain.")
         self._weight_col = w
         return self._weight_col    
+
+    def posterior_sample(self):
+        """
+        Weighted chains are *not* drawn from the posterior distribution
+        but we do have the information we need to construct such a sample.
+
+        This function returns a boolean array with True where we should
+        use the sample at that index, and False where we should not.
+
+        """
+        w = self.weight_col()
+        w = w / w.max()
+        u = np.random.uniform(size=w.size)
+        return u<w
+
 
 class MultinestPostProcessorElement(PostProcessorElement):
     def reduced_col(self, name):
