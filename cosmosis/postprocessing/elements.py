@@ -57,7 +57,7 @@ class MCMCPostProcessorElement(PostProcessorElement):
         thin = self.options.get("thin", 1)
 
         if 0.0<burn<1.0:
-            burn = len(col)*burn
+            burn = len(cols[0])*burn
         else:
             burn = int(burn)
         cols = [col[burn::thin] for col in cols]
