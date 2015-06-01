@@ -70,14 +70,14 @@ class MPIPool(object):
             self.function = function
             self.callback = callback
             F = _function_wrapper(function, callback)
-            requests = [self.comm.isend(F, dest=i)
+            requests = [self.comm.send(F, dest=i)
                         for i in range(1, self.size)]
-            self.MPI.Request.waitall(requests)
+            #self.MPI.Request.waitall(requests)
 
         # distribute tasks to workers
         requests = []
         for i in range(1, self.size):
-            req = self.comm.isend(tasks[i::self.size], dest=i)
+            req = self.comm.send(tasks[i::self.size], dest=i)
             requests.append(req)
 
         # process local work
