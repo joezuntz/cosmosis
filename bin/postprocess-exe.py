@@ -14,6 +14,7 @@ parser.add_argument("inifile", nargs="+")
 mcmc=parser.add_argument_group(title="MCMC", description="Options for MCMC-type samplers")
 mcmc.add_argument("--burn", default=0.0, type=float, help="Fraction or number of samples to burn at the start")
 mcmc.add_argument("--thin", default=1, type=int, help="Keep every n'th sampler in MCMC")
+mcmc.add_argument("--weights", action='store_true', help="Look for a weight column in a generic MCMC file")
 
 general=parser.add_argument_group(title="General", description="General options for controlling postprocessing")
 general.add_argument("-o","--outdir", default=".", help="Output directory for all generated files")
@@ -38,15 +39,18 @@ plots.add_argument("--extra", dest='extra', default="", help="Load extra post-pr
 plots.add_argument("--tweaks", dest='tweaks', default="", help="Load plot tweaks from this file.")
 plots.add_argument("--no-image", dest='image', default=True, action='store_false', help="Do not plot the image in  2D grids; just show the contours")
 
-def read_input(ini_filename, force_text):
+def read_input(ini_filename, force_text, weighted):
 	if ini_filename.endswith("txt") or force_text:
 		output_info = TextColumnOutput.load_from_options({"filename":ini_filename})
 		metadata=output_info[2][0]
 		sampler = metadata.get("sampler")
 		if sampler is None:
 			print "This is not a cosmosis output file."
-			print "So I will assume it in a generic MCMC file"
-			sampler = "metropolis"
+			print "So I will assume it is a generic MCMC file"
+			if weighted:
+				sampler = "weighted_metropolis"
+			else:
+				sampler = "metropolis"
 			ini = output_info
 		else:
 			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="text", filename=ini_filename)}
@@ -71,7 +75,7 @@ def main(args):
 	args = parser.parse_args(args)
 	ini_filename = args.inifile[0]
 
-	sampler, ini = read_input(ini_filename, args.text)
+	sampler, ini = read_input(ini_filename, args.text, args.weights)
 	processor_class = postprocessor_for_sampler(sampler)
 
 	#We do not know how to postprocess everything.
