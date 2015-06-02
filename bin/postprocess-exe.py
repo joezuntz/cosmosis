@@ -99,7 +99,7 @@ def main(args):
 
 	#Run it again for each subsequent file
 	for ini_filename in args.inifile[1:]:
-		sampler2, ini = read_input(ini_filename, args.text)
+		sampler2, ini = read_input(ini_filename, args.text, args.weights)
 		if sampler2!=sampler:
 			raise ValueError("Sorry - cannot currently process samples from two different samplers at once")
 		processor.load(ini)
