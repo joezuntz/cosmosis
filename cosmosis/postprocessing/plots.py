@@ -659,6 +659,10 @@ class ColorScatterPlotBase(Plots):
 class MCMCColorScatterPlot(MCMCPostProcessorElement, ColorScatterPlotBase):
     pass
 
+class WeightedMCMCColorScatterPlot(WeightedMCMCPostProcessorElement, ColorScatterPlotBase):
+    pass
+
+
 class MultinestColorScatterPlot(MultinestPostProcessorElement, ColorScatterPlotBase):
     pass
 
