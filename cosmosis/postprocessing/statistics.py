@@ -1,7 +1,7 @@
 #coding: utf-8
 from .elements import PostProcessorElement, MCMCPostProcessorElement, WeightedMCMCPostProcessorElement, MultinestPostProcessorElement
 import numpy as np
-from .utils import std_weight, mean_weight, median_weight
+from .utils import std_weight, mean_weight, median_weight, percentile_weight
 
 
 class Statistics(PostProcessorElement):
@@ -72,15 +72,37 @@ class ConstrainingStatistics(Statistics):
             best_file.write("%s        %g\n"%P)
         return best_filename
 
+    def report_file_l95(self):
+        #Generate the medians file
+        header = "#parameter low95\n"
+        limit_file, limit_filename, new_file = self.open_output("low95", header, self.source.name)
+        for P in zip(self.source.colnames, self.l95):
+            limit_file.write("%s   %e   %e\n" % P)
+        return limit_filename
+
+    def report_file_u95(self):
+        #Generate the medians file
+        header = "#parameter upper95\n"
+        limit_file, limit_filename, new_file = self.open_output("upper95", header, self.source.name)
+        for P in zip(self.source.colnames, self.u95):
+            limit_file.write("%s   %e   %e\n" % P)
+        return limit_filename
+
     @staticmethod
     def find_median(x, P):
         C = [0] + P.cumsum()
         return np.interp(C[-1]/2.0,C,x)
 
+    @staticmethod
+    def find_percentile(x, P, p):
+        C = [0] + P.cumsum()
+        return np.interp(C[-1]*p/100.0,C,x)
+
     def report_screen(self):
         self.report_screen_mean()
         self.report_screen_median()
         self.report_screen_mode()
+        self.report_screen_limits()
         #Print the same summary stats that go into the
         #files but to the screen instead, in a pretty format        
     def report_screen_mean(self):
@@ -103,6 +125,17 @@ class ConstrainingStatistics(Statistics):
             print '    %s = %g' % (name, val)
         print
 
+    def report_screen_limits(self):
+        #Mode
+        print "95% lower limits:"
+        for name, val in zip(self.source.colnames, self.l95):
+            print '    %s > %g' % (name, val)
+        print
+        print "95% upper limits:"
+        for name, val in zip(self.source.colnames, self.u95):
+            print '    %s < %g' % (name, val)
+        print
+
     @staticmethod
     def likelihood_ratio_warning(marge_like, name):
         #Check for an warn about a bad likelihood ratio,
@@ -122,19 +155,23 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
     def compute_basic_stats_col(self, col):
         data = self.reduced_col(col)
         n = len(data)
-        return n, data.mean(), data.std(), np.median(data)
+        return n, data.mean(), data.std(), np.median(data), np.percentile(data, 5.), np.percentile(data, 95.)
 
     def compute_basic_stats(self):
         self.mu = []
         self.sigma = []
         self.median = []
+        self.l95 = []
+        self.u95 = []
         self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         for col in self.source.colnames:
-            n, mu, sigma, median = self.compute_basic_stats_col(col)
+            n, mu, sigma, median, l95, u95 = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
             self.median.append(median)
+            self.l95.append(l95)
+            self.u95.append(u95)
         return n
 
     def run(self):
@@ -356,7 +393,8 @@ class WeightedStatistics(object):
         data = self.reduced_col(col)
         weight = self.weight_col()
         n = len(data)
-        return n, mean_weight(data,weight), std_weight(data,weight), median_weight(data, weight)
+        return (n, mean_weight(data,weight), std_weight(data,weight), 
+            median_weight(data, weight), percentile_weight(data, weight, 5.), percentile_weight(data, weight, 95.))
 
 class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, MetropolisHastingsStatistics):
     def run(self):
@@ -386,13 +424,17 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.mu = []
         self.sigma = []
         self.median = []
+        self.l95 = []
+        self.u95 = []
         self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         for col in self.source.colnames:
-            n, mu, sigma, median = self.compute_basic_stats_col(col)
+            n, mu, sigma, median, l95, u95 = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
             self.median.append(median)
+            self.l95.append(l95)
+            self.u95.append(u95)
         return n
 
     def run(self):
@@ -402,6 +444,7 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.report_screen()
         files = self.report_file()
         return files
+
 class MultinestCovariance(ChainCovariance, Statistics, MultinestPostProcessorElement):
     pass
 
