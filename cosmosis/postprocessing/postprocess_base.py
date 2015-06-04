@@ -6,6 +6,8 @@ import numpy as np
 import hashlib
 from cosmosis import output as output_module
 from ..runtime.config import Inifile
+import imp
+import os
 postprocessor_registry = {}
 
 
@@ -20,6 +22,7 @@ def blinding_value(name):
     g = f*1e-8
     #get value between -1 and 1
     return g*2-1
+
 
 
 class PostProcessMetaclass(abc.ABCMeta):
@@ -37,6 +40,7 @@ class PostProcessor(object):
         super(PostProcessor,self).__init__()
         self.options=options
         self.steps = []
+        self.derive_file = options.get("derive", "")
         self.load(ini)
         elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
         self.steps = [e(self, **options) for e in elements]
@@ -71,6 +75,30 @@ class PostProcessor(object):
                     d[:,c] += scale * blinding_value(col.upper())
                 print "Blinding additive value for %s ~ %f" % (col, scale)
 
+    def derive_extra_columns(self):
+        if not self.derive_file: return
+        name = os.path.splitext(os.path.split(self.derive_file)[1])[0]
+        module = imp.load_source(name, self.derive_file)
+        functions = [getattr(module,f) for f in dir(module) if f.startswith('derive_')]
+        print "Deriving new columns from these functions in {}:".format(self.derive_file)
+        for f in functions:
+            print "    - ", f.__name__
+            new_data = []
+            for d in self.data:
+                chain = SingleChainData(d,self.colnames)
+                col, code = f(chain)
+                #insert a new column into the chain, second from the end
+                d = np.insert(d, -2, col, axis=1)
+                #save the new chain
+                new_data.append(d)
+            self.colnames.insert(-2, code)
+            print "Added a new column called ", code
+            self.data = new_data
+
+
+
+
+
     def load(self, ini):
         for step in self.steps:
             step.reset()
@@ -94,6 +122,9 @@ class PostProcessor(object):
                     self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
                         output_module.input_from_options(output_options)
             #self.data = self.data[0].T
+            #derive any additional parameters
+            self.derive_extra_columns()
+            #set the column names
             self.colnames = [c.lower() for c in self.colnames]
             if self.options.get('blind_add',False):
                 self.blind_data(multiplicative=False)
@@ -150,3 +181,19 @@ class PostProcessor(object):
 
 
 
+class SingleChainData(object):
+    """
+    This helper object is to make it easier for users to write functions
+    that derive new parameters.
+    """
+    def __init__(self, data, colnames):
+        self.data = data
+        self.colnames = colnames
+
+    def __getitem__(self, index_or_name):
+        if isinstance(index_or_name, int):
+            index = index_or_name
+        else:
+            name = index_or_name
+            index = self.colnames.index(name)
+        return self.data[:,index]

@@ -26,6 +26,7 @@ general.add_argument("--blind-mul", action='store_true', help="Blind results by 
 
 inputs=parser.add_argument_group(title="Inputs", description="Options controlling the inputs to this script")
 inputs.add_argument("--text", action='store_true', help="Tell postprocess that its argument is a text file, regardless of its suffix")
+inputs.add_argument("--derive", default="", help="Read a python script with functions in that derive new columns from existing ones")
 
 plots=parser.add_argument_group(title="Plotting", description="Plotting options")
 plots.add_argument("--swap", action='store_true', help="Swap the ordering of the parameters in (x,y)")
