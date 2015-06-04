@@ -452,15 +452,22 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         x = self.reduced_col(name1)
         y = self.reduced_col(name2)
 
+
         if x.max()-x.min()==0 or y.max()-y.min()==0:
             return
         print "  (making %s vs %s)" % (name1, name2)
 
-        filename = self.filename("2D", name1, name2)
-        figure = self.figure(filename)
 
         #Interpolate using KDE
-        n, x_axis, y_axis, like = self.smooth_likelihood(x, y)
+        try:
+            n, x_axis, y_axis, like = self.smooth_likelihood(x, y)
+        except np.linalg.LinAlgError:
+            print "  -- these two parameters have singular covariance - probably a linear relation"
+            print "Not making a 2D plot of them"
+            return []
+
+        filename = self.filename("2D", name1, name2)
+        figure = self.figure(filename)
 
 
         #Choose levels at which to plot contours
