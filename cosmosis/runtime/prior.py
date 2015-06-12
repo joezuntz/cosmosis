@@ -6,8 +6,8 @@ class Prior(object):
     def __call__(self, p):
         raise NotImplementedError()
 
-    @staticmethod
-    def parse_prior(value):
+    @classmethod
+    def parse_prior(cls, value):
         prior_type, parameters = value.split(' ', 1)
         prior_type = prior_type.lower()
         try:
@@ -26,15 +26,15 @@ class Prior(object):
         except TypeError:
             raise ValueError("Unable to parse %s as prior" %
                              (value,))
-    @staticmethod
-    def load_priors(prior_files):
+    @classmethod
+    def load_priors(cls,prior_files):
         priors = {}
         for f in prior_files:
             ini = config.Inifile(f) 
             for option, value in ini:
                 if option in priors:
                     raise ValueError("Duplicate prior identified")
-                priors[option] = self.parse_prior(value)
+                priors[option] = cls.parse_prior(value)
 
         return priors
 
