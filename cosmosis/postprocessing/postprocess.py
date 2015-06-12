@@ -51,6 +51,17 @@ class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 		statistics.Citations,		
 		]
 
+
+class ImportanceProcessor(MetropolisHastingsProcessor):
+	sampler="importance"
+	elements=[
+		plots.WeightedMetropolisPlots1D,
+		plots.WeightedMetropolisPlots2D,
+		statistics.WeightedMetropolisStatistics,
+		# statistics.DunkleyTest,
+		statistics.Citations,		
+		]
+
 class GridProcessor(PostProcessor):
 	elements=[
 		plots.GridPlots1D,
