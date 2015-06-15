@@ -40,8 +40,13 @@ class PostProcessorElement(Loadable):
         self.options = {}
         self.options.update(options)
 
-    def reset(self):
-        pass
+    def get_output(self, name):
+        return self.source.outputs.get(name)
+
+    def set_output(self, name, value):
+        if name in self.source.outputs:
+            raise ValueError("Two different postprocessors tried to create the same named file - use get_output to re-open an existing file")
+        self.source.outputs[name] = value
 
     def run(self):
         print "I do not know how to produce some results for this kind of data"

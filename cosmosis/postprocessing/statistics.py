@@ -2,12 +2,11 @@
 from .elements import PostProcessorElement, MCMCPostProcessorElement, WeightedMCMCPostProcessorElement, MultinestPostProcessorElement
 import numpy as np
 from .utils import std_weight, mean_weight, median_weight, percentile_weight
-
+from .outputs import PostprocessText
 
 class Statistics(PostProcessorElement):
     def __init__(self, *args, **kwargs):
         super(Statistics, self).__init__(*args, **kwargs)
-        self.text_files = {}
 
     def run(self):
         print "I do not know how to generate statistics for this kind of data"
@@ -19,25 +18,21 @@ class Statistics(PostProcessorElement):
         if prefix: prefix+="_"        
         return "{0}/{1}{2}.{3}".format(output_dir, prefix, base, ftype)
 
-    def open_output(self, base, header="", section_name="", ftype='txt'):
+    def get_text_output(self, base, header="", section_name="", ftype='txt'):
         filename = self.filename(base, ftype)
-        if filename in self.text_files:
-            f = self.text_files[filename]
-            new_file = False
-        else:
+        f = self.get_output(filename)
+        if f is None:
             f = open(filename, 'w')
-            self.text_files[filename] = f
+            self.set_output(filename, PostprocessText(filename,f))
             new_file = True
             if header:
                 f.write(header+'\n')
+        else:
+            f=f.value
+            new_file = False
         if section_name:
             f.write("#%s\n"%section_name)
         return f, filename, new_file
-
-    def finalize(self):
-        for f in self.text_files.values():
-            f.close()
-
 
 class ConstrainingStatistics(Statistics):
 
@@ -53,7 +48,7 @@ class ConstrainingStatistics(Statistics):
     def report_file_mean(self):        
         #Generate the means file
         header = "#parameter mean std_dev"
-        marge_file, marge_filename, new_file = self.open_output("means", header, self.source.name)
+        marge_file, marge_filename, new_file = self.get_text_output("means", header, self.source.name)
         for P in zip(self.source.colnames, self.mu, self.sigma):
             marge_file.write("%s   %e   %e\n" % P)
         return marge_filename
@@ -61,7 +56,7 @@ class ConstrainingStatistics(Statistics):
     def report_file_median(self):
         #Generate the medians file
         header = "#parameter mean std_dev\n"
-        median_file, median_filename, new_file = self.open_output("medians", header, self.source.name)
+        median_file, median_filename, new_file = self.get_text_output("medians", header, self.source.name)
         for P in zip(self.source.colnames, self.median, self.sigma):
             median_file.write("%s   %e   %e\n" % P)
         return median_filename
@@ -69,7 +64,7 @@ class ConstrainingStatistics(Statistics):
     def report_file_mode(self):
         #Generate the mode file
         header = "#parameter value"
-        best_file, best_filename, new_file = self.open_output("best_fit", header, self.source.name)
+        best_file, best_filename, new_file = self.get_text_output("best_fit", header, self.source.name)
         for P in zip(self.source.colnames, self.source.get_row(self.best_fit_index)):
             best_file.write("%s        %g\n"%P)
         return best_filename
@@ -77,7 +72,7 @@ class ConstrainingStatistics(Statistics):
     def report_file_l95(self):
         #Generate the medians file
         header = "#parameter low95\n"
-        limit_file, limit_filename, new_file = self.open_output("low95", header, self.source.name)
+        limit_file, limit_filename, new_file = self.get_text_output("low95", header, self.source.name)
         for P in zip(self.source.colnames, self.l95):
             limit_file.write("%s     %g\n" % P)
         return limit_filename
@@ -85,7 +80,7 @@ class ConstrainingStatistics(Statistics):
     def report_file_u95(self):
         #Generate the medians file
         header = "#parameter upper95\n"
-        limit_file, limit_filename, new_file = self.open_output("upper95", header, self.source.name)
+        limit_file, limit_filename, new_file = self.get_text_output("upper95", header, self.source.name)
         for P in zip(self.source.colnames, self.u95):
             limit_file.write("%s     %g\n" % P)
         return limit_filename
@@ -205,20 +200,20 @@ class ChainCovariance(object):
 
         #Save the covariance matrix
         filename = self.filename("covmat")
-        f, filename, new_file = self.open_output("covmat")
+        f, filename, new_file = self.get_text_output("covmat")
         if new_file:
             f.write('#'+'    '.join(col_names)+'\n')
             np.savetxt(f, covmat)
         else:
-            print "NOT saving more than covariance matrix - just using first ini file"
+            print "NOT saving more than one covariance matrix - just using first ini file"
 
         #Save the proposal matrix
-        f, proposal_filename, new_file = self.open_output("proposal")
+        f, proposal_filename, new_file = self.get_text_output("proposal")
         if new_file:
             f.write('#'+'    '.join(col_names[:n])+'\n')
             np.savetxt(f, proposal)
         else:
-            print "NOT saving more than proposal matrix - just using first ini file"
+            print "NOT saving more than one proposal matrix - just using first ini file"
         return [filename, proposal_filename]
 
 class MetropolisHastingsCovariance(ChainCovariance, Statistics, MCMCPostProcessorElement):
@@ -228,11 +223,11 @@ class MetropolisHastingsCovariance(ChainCovariance, Statistics, MCMCPostProcesso
 
 class GridStatistics(ConstrainingStatistics):
     def set_data(self):
-        self.nsample = int(self.source.ini.get("grid", "nsample_dimension"))
+        self.nsample = int(self.source.sampler_option("nsample_dimension"))
         self.nrow = len(self.source)
         self.ncol = len(self.source.colnames)
 
-        extra = self.source.ini.get("pipeline", "extra_output","").replace('/','--').split()
+        extra = self.source.sampler_option("extra_output","").replace('/','--').split()
         self.grid_columns = [i for i in xrange(self.ncol) if (not self.source.colnames[i] in extra) and (self.source.colnames[i]!="like")]
         self.ndim = len(self.grid_columns)
         assert self.nrow == self.nsample**self.ndim
@@ -253,14 +248,16 @@ class GridStatistics(ConstrainingStatistics):
         self.mu = np.zeros(self.ncol-1)
         self.median = np.zeros(self.ncol-1)
         self.sigma = np.zeros(self.ncol-1)
+        self.l95 = np.zeros(self.ncol-1)
+        self.u95 = np.zeros(self.ncol-1)        
         like = self.source.get_col("like")
         self.best_fit_index = np.argmax(like)
         #Loop through colums
         for i, name in enumerate(self.source.colnames[:-1]):
             if i in self.grid_columns:
-                self.mu[i], self.median[i], self.sigma[i] = self.compute_grid_stats(i)
+                self.mu[i], self.median[i], self.sigma[i], self.l95[i], self.u95[i] = self.compute_grid_stats(i)
             else:
-                self.mu[i], self.median[i], self.sigma[i] = self.compute_derived_stats(i)
+                self.mu[i], self.median[i], self.sigma[i], self.l95[i], self.u95[i] = self.compute_derived_stats(i)
 
 
 
@@ -284,7 +281,9 @@ class GridStatistics(ConstrainingStatistics):
         mu = (vals*marge_like).sum()
         sigma2 = ((vals-mu)**2*marge_like).sum()
         median = self.find_median(vals, marge_like)
-        return mu, median, sigma2**0.5
+        l95 = self.find_percentile(vals, marge_like, 5.0)
+        u95 = self.find_percentile(vals, marge_like, 95.0)
+        return mu, median, sigma2**0.5, l95, u95
 
     def compute_derived_stats(self, i):
         #This is a bit simpler - just need to 
@@ -296,7 +295,9 @@ class GridStatistics(ConstrainingStatistics):
         mu = (col*like).sum()
         sigma2 = ((col-mu)**2*like).sum()
         median = self.find_median(col, like)
-        return mu, median, sigma2**0.5
+        l95 = self.find_percentile(col, like, 5.0)
+        u95 = self.find_percentile(col, like, 95.0)        
+        return mu, median, sigma2**0.5, l95, u95
 
 
 
@@ -342,7 +343,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
             print "The power spectra for this chain suggests good convergence."
         print
         header = '#'+'    '.join(params)
-        f, filename, new_file = self.open_output("dunkley", header, self.source.name)
+        f, filename, new_file = self.get_text_output("dunkley", header, self.source.name)
         f.write("\n")
         f.write('    '.join(str(js) for js in jstar))
         f.write("\n")
@@ -413,7 +414,7 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
 
         #Now save to file
         header = '#logz    logz_sigma'
-        f, filename, new_file  = self.open_output("evidence", header, self.source.name)
+        f, filename, new_file  = self.get_text_output("evidence", header, self.source.name)
         f.write('%e    %e\n'%(logz,logz_sigma))
 
         #Include evidence in list of created files
@@ -458,7 +459,7 @@ class Citations(Statistics):
         print 
         message = "#You should cite these papers in any publication based on this pipeline."
         print message
-        f, filename, new_file = self.open_output("citations", message, self.source.name)
+        f, filename, new_file = self.get_text_output("citations", message, self.source.name)
         for comment_set in self.source.comments:
             for comment in comment_set:
                 comment = comment.strip()

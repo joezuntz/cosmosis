@@ -71,10 +71,20 @@ class GridProcessor(PostProcessor):
 		]
 	sampler="grid"
 
+
+
 class TestProcessor(PostProcessor):
 	elements = [plots.TestPlots]
 	sampler="test"
 	cosmosis_standard_output=False
+
+	def load(self, ini):
+		if isinstance(ini, str) and os.path.isdir(ini):			
+			self._sampler_options['save_dir'] = ini
+		else:
+			for key,val in ini.items("test"):
+				self.sampler_options[key]=str(val)
+
 
 
 class MultinestProcessor(PostProcessor):

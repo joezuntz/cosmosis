@@ -30,7 +30,10 @@ inputs.add_argument("--derive", default="", help="Read a python script with func
 
 plots=parser.add_argument_group(title="Plotting", description="Plotting options")
 plots.add_argument("--swap", action='store_true', help="Swap the ordering of the parameters in (x,y)")
+plots.add_argument("--only", type=str, dest='prefix_only', help="Only make 2D plots where both parameter names start with this")
+plots.add_argument("--either", type=str, dest='prefix_either', help="Only make 2D plots where one of the parameter names starts with this.")
 plots.add_argument("--no-plots", action='store_true', help="Do not make any default plots")
+plots.add_argument("--no-alpha", dest='alpha', action='store_false', help="No alpha effect - shaded contours will not be visible through other ones")
 plots.add_argument("-f", "--file-type", default="png", help="Filename suffix for plots")
 plots.add_argument("--no-smooth", dest='smooth', default=True, action='store_false', help="Do not smooth grid plot joint constraints")
 plots.add_argument("--n-kde", default=100, type=int, help="Number of KDE smoothing points per dimension to use for MCMC 2D curves. Reduce to speed up, but can make plots look worse.")
@@ -74,42 +77,41 @@ def main(args):
 	#Read the command line arguments and load the
 	#ini file that created the run
 	args = parser.parse_args(args)
-	ini_filename = args.inifile[0]
-
-	sampler, ini = read_input(ini_filename, args.text, args.weights)
-	processor_class = postprocessor_for_sampler(sampler)
-
-	#We do not know how to postprocess everything.
-	if processor_class is None:
-		print "I do not know how to postprocess output from the %s sampler"%sampler
-		return
 
 	#Make the directory for the outputs to go in.
 	mkdir(args.outdir)
+	outputs = {}
+	for i,ini_filename in enumerate(args.inifile):
+		sampler, ini = read_input(ini_filename, args.text, args.weights)
+		processor_class = postprocessor_for_sampler(sampler)
 
-	#Create and run the postprocessor
-	processor = processor_class(ini, **vars(args))
-	if args.extra:
-		processor.load_extra_steps(args.extra)
-	try:
+		#We do not know how to postprocess everything.
+		if processor_class is None:
+			print "I do not know how to postprocess output from the %s sampler"%sampler
+			sampler = None
+			continue
+
+		#Create and run the postprocessor
+		processor = processor_class(ini, i, **vars(args))
+
+		#Inherit any plots from the previous postprocessor
+		#so we can make plots with multiple datasets on
+		processor.outputs.update(outputs)
+
+		#We can load extra plots to make from a python
+		#script here
+		if args.extra:
+			processor.load_extra_steps(args.extra)
+
+		#Run the postprocessor and make the outputs for this chain
 		processor.run()
-	except:
-		import traceback
-		print "There was an error with one of the postprocessing steps:"
-		traceback.print_exc()
 
-	#Run it again for each subsequent file
-	for ini_filename in args.inifile[1:]:
-		sampler2, ini = read_input(ini_filename, args.text, args.weights)
-		if sampler2!=sampler:
-			raise ValueError("Sorry - cannot currently process samples from two different samplers at once")
-		processor.load(ini)
-		try:
-			processor.run()
-		except:
-			import traceback
-			print "There was an error with one of the postprocessing steps:"
-			traceback.print_exc()
+		#Save the outputs ready for the next post-processor in case
+		#they want to add to it (e.g. two constriants on the same axes)
+		outputs = processor.outputs
+
+	if sampler is None:
+		return
 
 	#Run any tweaks that the user specified
 	if args.tweaks:
@@ -117,9 +119,7 @@ def main(args):
 		for tweak in tweaks:
 			processor.apply_tweaks(tweak)
 
-	#At some point we might run the processor on multiple chains
-	#in that case we would call run more than once
-	#and then finalize at the end
+	#Save all the image files and close the text files
 	processor.finalize()
 
 if __name__=="__main__":
