@@ -9,7 +9,8 @@ INI_SECTION = "importance"
 
 
 def task(p):
-    return importance_pipeline.posterior(p)
+    r = importance_pipeline.posterior(p)
+    return r
 
 
 class ImportanceSampler(ParallelSampler):
@@ -60,9 +61,8 @@ class ImportanceSampler(ParallelSampler):
                 #No parameter should be varied in the old chain
                 #but listed as fixed here
                 if (section,name) in self.pipeline.fixed_params:
-                    raise ValueError("A parameter %s that was varied in the old chain "
-                        "is listed as fixed in the new one. Please set parameter limits on it."%code)
-                if (section,name) in self.pipeline.varied_params:
+                    print "WARNING: %s varied in old chain now fixed.  I will fix it <--------- Read this warning." % name
+                elif (section,name) in self.pipeline.varied_params:
                     #Record the values of this parameter for later importance
                     #sampling
                     print "Found column in both pipelines:", code
@@ -78,6 +78,9 @@ class ImportanceSampler(ParallelSampler):
             else:
                 print "Found non-parameter column:", code
                 self.original_extras[code] = col
+                if code=="weight":
+                    code="old_weight"
+                    print "Renaming weight -> old_weight"
                 self.output.add_column(code, float)
 
         #Now finally add our actual two sampler outputs, old_like and like
@@ -92,7 +95,10 @@ class ImportanceSampler(ParallelSampler):
         #If a parameter is not listed we use the starting value
         reordered_cols = []
         for p in self.pipeline.varied_params:
-            i = self.varied_params.index(p)
+            try:
+                i = self.varied_params.index(p)
+            except ValueError:
+                i=-1
             if i>=0:
                 col = self.samples[i]
             else:
@@ -121,6 +127,7 @@ class ImportanceSampler(ParallelSampler):
             #We already (may) have some extra values from the pipeline
             #as derived parameters.  Add to those any parameters used in the
             #old pipeline but not the new one
+            extra = list(extra)
             for col in self.original_extras.values():
                 extra.append(col[start+i])
             #and then the old and new likelihoods
@@ -128,7 +135,7 @@ class ImportanceSampler(ParallelSampler):
             if self.add_to_likelihood:
                 new_like += old_like
             weight = new_like-old_like
-            extra += [old_like,weight,new_like]
+            extra = list(extra) + [old_like,weight,new_like]
             #and save results
             self.output.parameters(sample, extra)
         #Update the current index
