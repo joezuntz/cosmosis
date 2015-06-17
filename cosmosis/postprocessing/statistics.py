@@ -46,7 +46,9 @@ class ConstrainingStatistics(Statistics):
         return [
             self.report_file_mean(),
             self.report_file_median(),
-            self.report_file_mode()
+            self.report_file_mode(),
+            self.report_file_l95(),
+            self.report_file_u95(),
         ]
     def report_file_mean(self):        
         #Generate the means file
@@ -77,7 +79,7 @@ class ConstrainingStatistics(Statistics):
         header = "#parameter low95\n"
         limit_file, limit_filename, new_file = self.open_output("low95", header, self.source.name)
         for P in zip(self.source.colnames, self.l95):
-            limit_file.write("%s   %e   %e\n" % P)
+            limit_file.write("%s     %g\n" % P)
         return limit_filename
 
     def report_file_u95(self):
@@ -85,7 +87,7 @@ class ConstrainingStatistics(Statistics):
         header = "#parameter upper95\n"
         limit_file, limit_filename, new_file = self.open_output("upper95", header, self.source.name)
         for P in zip(self.source.colnames, self.u95):
-            limit_file.write("%s   %e   %e\n" % P)
+            limit_file.write("%s     %g\n" % P)
         return limit_filename
 
     @staticmethod

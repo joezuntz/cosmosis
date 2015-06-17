@@ -393,6 +393,7 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
         if x.max()-x.min()==0: return
 
         n, x_axis, like = self.smooth_likelihood(x)
+        like/=like.max()
 
         #Choose colors
         possible_colors = ['b','g','r','m','y']
@@ -510,7 +511,15 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         filenames = []
         print "(Making 2D plots using KDE; this takes a while but is really cool)"
         for name1,name2 in self.parameter_pairs():
-                filename = self.make_2d_plot(name1, name2)
+                try:
+                    filename = self.make_2d_plot(name1, name2)
+                except KeyboardInterrupt:
+                    raise
+                except: #any other error we just continue
+                    import traceback
+                    print "Failed to make plot of {} vs {}.  Here is the error context:".format(name1,name2)
+                    filename=None
+                    print(traceback.format_exc())
                 if filename:
                     filenames.append(filename)
         return filenames

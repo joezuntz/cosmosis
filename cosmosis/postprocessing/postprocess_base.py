@@ -159,7 +159,15 @@ class PostProcessor(object):
     def run(self):
         files = []
         for e in self.steps:
-            files += e.run()
+            try:
+                files += e.run()
+            except KeyboardInterrupt:
+                raise
+            except:
+                import traceback
+                print "Failed in one of the postprocessing steps: ", e
+                print "Here is the error stack:"
+                print(traceback.format_exc())
         for f in files:
             print "File: ", f
     def finalize(self):
