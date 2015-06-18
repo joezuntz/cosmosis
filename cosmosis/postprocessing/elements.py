@@ -63,7 +63,9 @@ class MCMCPostProcessorElement(PostProcessorElement):
         return self.source.posterior_sample()
 
 class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
-    pass
+    def weight_col(self):
+        return self.source.weight_col()
 
-class MultinestPostProcessorElement(PostProcessorElement):
-    pass
+class MultinestPostProcessorElement(MCMCPostProcessorElement):
+    def weight_col(self):
+        return self.source.weight_col()

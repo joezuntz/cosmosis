@@ -161,7 +161,7 @@ class MultinestProcessor(WeightedMetropolisProcessor):
 		statistics.Citations,
 		]
 	sampler="multinest"
-	def reduced_col(self, name):
+	def reduced_col(self, name, stacked=True):
 		#we only use the last n samples from a multinest output
 		#file.  And omit zero-weighted samples.
 		n = int(self.final_metadata[0]["nsample"])
