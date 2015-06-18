@@ -81,21 +81,21 @@ class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 		if hasattr(self, "_weight_col"):
 			return self._weight_col
 		if self.has_col("weight"):
-			w = MCMCPostProcessorElement.reduced_col(self, "weight").copy()
+			w = MetropolisHastingsProcessor.reduced_col(self, "weight").copy()
 			w/=w.max()
 		elif self.has_col("log_weight"):
-			w = MCMCPostProcessorElement.reduced_col(self, "log_weight").copy()
+			w = MetropolisHastingsProcessor.reduced_col(self, "log_weight").copy()
 			w-=w.max()
 			w=np.exp(w)
 		else:
 			raise ValueError("No 'weight' or 'log_weight' column found in chain.")
 		if self.has_col("old_weight"):
-			old_w = MCMCPostProcessorElement.reduced_col(self, "old_weight").copy()
+			old_w = MetropolisHastingsProcessor.reduced_col(self, "old_weight").copy()
 			old_w/=old_w.max()
 			w*=old_w
 			print "Including old_weight in weight"
 		elif self.has_col("old_log_weight"):
-			old_logw = MCMCPostProcessorElement.reduced_col(self, "old_log_weight").copy()
+			old_logw = MetropolisHastingsProcessor.reduced_col(self, "old_log_weight").copy()
 			old_w-=old_w.max()
 			w*=np.exp(old_w)
 			print "Including old_log_weight in weight"
