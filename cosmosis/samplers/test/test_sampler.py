@@ -34,6 +34,8 @@ class TestSampler(Sampler):
             sys.stderr.write("But the only ones calculated in the pipeline were:\n")
             sys.stderr.write(", ".join(found_likelihoods)+"\n")
             sys.stderr.write("\n")
+            if self.fatal_errors:
+                raise
         except Exception as e:
             if self.fatal_errors:
                 raise
@@ -58,6 +60,11 @@ class TestSampler(Sampler):
             if self.fatal_errors:
                 raise
             print "Could not save output."
+
+        if data is None and self.fatal_errors:
+            raise RuntimeError("Pipeline failed at some stage")
+
+
         self.converged = True
 
     def is_converged(self):
