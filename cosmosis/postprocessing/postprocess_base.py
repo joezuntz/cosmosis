@@ -36,14 +36,17 @@ class PostProcessor(object):
     __metaclass__=PostProcessMetaclass
     sampler=None
     cosmosis_standard_output=True
-    def __init__(self, ini, **options):
+    def __init__(self, ini, index, **options):
         super(PostProcessor,self).__init__()
         self.options=options
+        self.sampler_options={}
         self.steps = []
+        self.index = index
         self.derive_file = options.get("derive", "")
         self.load(ini)
         elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
         self.steps = [e(self, **options) for e in elements]
+        self.outputs = {} #outputs can be anything, but for now matplotlib figures and open text files
 
     def load_extra_steps(self, filename):
         extra = elements.PostProcessorElement.instances_from_file(filename, self, **self.options)
@@ -95,44 +98,58 @@ class PostProcessor(object):
             print "Added a new column called ", code
             self.data = new_data
 
+    def load_tuple(self, inputs):
+        self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs
+        self.name = "Data"
+        for chain in self.metadata:
+            for key,val in self.metadata:
+                self.sampler_options[key] = val
 
+    def load_dict(self, inputs):
+        output_options=inputs["output"]
+        filename = output_options['filename']
+        self.name = filename
+        sampler = inputs['sampler']
+        for key,val in inputs[sampler].items():
+            self.sampler_options[key]=str(val)
+        self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs['data']
 
+    def load_ini(self, inputs):
+        output_options = dict(inputs.items('output'))
+        filename = output_options['filename']
+        self.name = filename
+        sampler = inputs.get("runtime", "sampler")
+        for key,val in inputs.items(sampler):
+            self.sampler_options[key]=str(val)        
+        self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
+            output_module.input_from_options(output_options)
 
+    def sampler_option(self, key, default=None):
+        return self.sampler_options.get(key, default)
+
+    def load_chain(self, ini):
+        if isinstance(ini, tuple):
+            self.load_tuple(ini)
+        elif isinstance(ini, dict):
+            self.load_dict(ini)
+        else:
+            self.load_ini(ini)
+
+        #derive any additional parameters
+        self.derive_extra_columns()
+
+        #set the column names
+        self.colnames = [c.lower() for c in self.colnames]
+        if self.options.get('blind_add',False):
+            self.blind_data(multiplicative=False)
+        if self.options.get('blind_mul',False):
+            self.blind_data(multiplicative=True)
+        self.data_stacked = np.concatenate(self.data).T
 
     def load(self, ini):
-        for step in self.steps:
-            step.reset()
-        filename = "Unknown"
         if self.cosmosis_standard_output:
-            if isinstance(ini, tuple):
-                self.colnames, self.data, self.metadata, self.comments, self.final_metadata = ini
-            else:
-                if isinstance(ini, dict):
-                    output_options=ini["output"]
-                    filename = output_options['filename']
-                    sampler = ini['sampler']
-                    sampler_options = {}
-                    for key,val in ini[sampler].items():
-                        sampler_options[(sampler,key)]=str(val)
-                    self.colnames, self.data, self.metadata, self.comments, self.final_metadata = ini['data']
-                    ini = Inifile(None, override=sampler_options)
-                else:
-                    output_options = dict(ini.items('output'))
-                    filename = output_options['filename']
-                    self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
-                        output_module.input_from_options(output_options)
-            #self.data = self.data[0].T
-            #derive any additional parameters
-            self.derive_extra_columns()
-            #set the column names
-            self.colnames = [c.lower() for c in self.colnames]
-            if self.options.get('blind_add',False):
-                self.blind_data(multiplicative=False)
-            if self.options.get('blind_mul',False):
-                self.blind_data(multiplicative=True)
-            self.data_stacked = np.concatenate(self.data).T
-        self.ini = ini
-        self.name = filename
+            self.load_chain(ini)
+        
 
     def __len__(self):
         return self.data_stacked.shape[1]
@@ -168,11 +185,12 @@ class PostProcessor(object):
                 print "Failed in one of the postprocessing steps: ", e
                 print "Here is the error stack:"
                 print(traceback.format_exc())
-        for f in files:
-            print "File: ", f
+
     def finalize(self):
-        for e in self.steps:
-            e.finalize()
+        print "Finalizing:"
+        for f in self.outputs.values():
+            print "Output: ", f.name
+            f.finalize()
 
     def apply_tweaks(self, tweaks):
         if tweaks.filename==plots.Tweaks.filename:
