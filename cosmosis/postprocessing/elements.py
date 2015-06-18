@@ -57,114 +57,13 @@ class PostProcessorElement(Loadable):
 
 class MCMCPostProcessorElement(PostProcessorElement):
     def reduced_col(self, name, stacked=True):
-        cols = self.source.get_col(name, stacked=False)
-        burn = self.options.get("burn", 0)
-        thin = self.options.get("thin", 1)
-
-        if 0.0<burn<1.0:
-            burn = len(cols[0])*burn
-        else:
-            burn = int(burn)
-        cols = [col[burn::thin] for col in cols]
-        if stacked:
-            return np.concatenate(cols)
-        else:
-            return cols
+        return self.source.reduced_col(name, stacked=stacked)
 
     def posterior_sample(self):
-        """
-        A posterior sample of MCMC is just all the samples.
-
-        Return an array of Trues with the same length as the chain
-
-        """
-        n = self.reduced_col(self.source.colnames[0]).size
-        return np.ones(n, dtype=bool)
+        return self.source.posterior_sample()
 
 class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
-    def reduced_col(self, name, stacked=True):
-        col = MCMCPostProcessorElement.reduced_col(self, name, stacked=stacked)
-        return col
-
-    def reset(self):
-        super(WeightedMCMCPostProcessorElement, self).reset()
-        if hasattr(self, "_weight_col"):
-            del self._weight_col
-        
-    def weight_col(self):
-        if hasattr(self, "_weight_col"):
-            return self._weight_col
-        if self.source.has_col("weight"):
-            w = MCMCPostProcessorElement.reduced_col(self, "weight").copy()
-            w/=w.max()
-        elif self.source.has_col("log_weight"):
-            w = MCMCPostProcessorElement.reduced_col(self, "log_weight").copy()
-            w-=w.max()
-            w=np.exp(w)
-        else:
-            raise ValueError("No 'weight' or 'log_weight' column found in chain.")
-        if self.source.has_col("old_weight"):
-            old_w = MCMCPostProcessorElement.reduced_col(self, "old_weight").copy()
-            old_w/=old_w.max()
-            w*=old_w
-            print "Including old_weight in weight"
-        elif self.source.has_col("old_log_weight"):
-            old_logw = MCMCPostProcessorElement.reduced_col(self, "old_log_weight").copy()
-            old_w-=old_w.max()
-            w*=np.exp(old_w)
-            print "Including old_log_weight in weight"
-        self._weight_col = w
-        return self._weight_col    
-
-    def posterior_sample(self):
-        """
-        Weighted chains are *not* drawn from the posterior distribution
-        but we do have the information we need to construct such a sample.
-
-        This function returns a boolean array with True where we should
-        use the sample at that index, and False where we should not.
-
-        """
-        w = self.weight_col()
-        w = w / w.max()
-        u = np.random.uniform(size=w.size)
-        return u<w
-
+    pass
 
 class MultinestPostProcessorElement(PostProcessorElement):
-    def reduced_col(self, name):
-        #we only use the last n samples from a multinest output
-        #file.  And omit zero-weighted samples.
-        n = int(self.source.final_metadata[0]["nsample"])
-        col = self.source.get_col(name)
-        w = self.source.get_col("weight")[-n:]
-        return col[-n:][w>0]
-
-    def reset(self):
-        super(MultinestPostProcessorElement, self).reset()
-        if hasattr(self, "_weight_col"):
-            del self._weight_col
-        
-    def weight_col(self):
-        if hasattr(self, "_weight_col"):
-            return self._weight_col
-        n = int(self.source.final_metadata[0]["nsample"])
-        w = self.source.get_col("weight")[-n:]
-        w = w[w>0].copy()
-        self._weight_col = w
-        return self._weight_col
-
-    def posterior_sample(self):
-        """
-        Multinest chains are *not* drawn from the posterior distribution
-        but we do have the information we need to construct such a sample.
-
-        This function returns a boolean array with True where we should
-        use the sample at that index, and False where we should not.
-
-        """
-        w = self.weight_col()
-        w = w / w.max()
-        u = np.random.uniform(size=w.size)
-        return u<w
-
+    pass
