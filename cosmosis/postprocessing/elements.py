@@ -103,6 +103,16 @@ class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
             w=np.exp(w)
         else:
             raise ValueError("No 'weight' or 'log_weight' column found in chain.")
+        if self.source.has_col("old_weight"):
+            old_w = MCMCPostProcessorElement.reduced_col(self, "old_weight").copy()
+            old_w/=old_w.max()
+            w*=old_w
+            print "Including old_weight in weight"
+        elif self.source.has_col("old_log_weight"):
+            old_logw = MCMCPostProcessorElement.reduced_col(self, "old_log_weight").copy()
+            old_w-=old_w.max()
+            w*=np.exp(old_w)
+            print "Including old_log_weight in weight"
         self._weight_col = w
         return self._weight_col    
 

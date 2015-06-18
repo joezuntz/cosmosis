@@ -57,7 +57,7 @@ class PostProcessor(object):
     def blind_data(self,multiplicative):
         #blind self.data
         for c,col in enumerate(self.colnames):
-            if col.lower() in ['like', 'weight']: continue
+            if col.lower() in ['like', 'weight', 'log_weight', 'old_weight', 'old_log_weight']: continue
             #get col mean to get us a rough scale to work with
             if multiplicative:
                 #use upper here so it is different from non-multiplicative

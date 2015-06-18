@@ -672,7 +672,7 @@ class ColorScatterPlotBase(Plots):
         #We get these functions because we inherit
         #from plots.MetropolisHastingsPlots
         x = self.reduced_col(self.x_column)
-        y = 100*self.reduced_col(self.y_column)
+        y = self.reduced_col(self.y_column)
         c = self.reduced_col(self.color_column)
 
         # Multinest chains do not contain equally 
