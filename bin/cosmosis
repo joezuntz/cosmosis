@@ -103,6 +103,12 @@ def main(args, pool=None):
         values_ini.write(comment_wrapper)
         output.comment("END_OF_VALUES_INI")
 
+        output.comment("START_OF_PRIORS_INI")
+        for priors_file in pipeline.priors_files:
+            prior_ini=Inifile(priors_file)
+            prior_ini.write(comment_wrapper)
+        output.comment("END_OF_PRIORS_INI")
+
 
     # Run the sampler until convergence
     # which really means "finished" here - 
