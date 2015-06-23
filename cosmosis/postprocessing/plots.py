@@ -275,6 +275,9 @@ class GridPlots1D(GridPlots):
 
 class GridPlots2D(GridPlots):
     def run(self):
+        if self.options.get("no_2d", False):
+            print "Not making any 2D plots because you said --no-2d"
+            return []
         filenames=[]
         nv = self.source.metadata[0]['n_varied']
         varied_params = self.source.colnames[:nv]
@@ -544,6 +547,9 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
 
     def run(self):
+        if self.options.get("no_2d", "False"):
+            print "Not making any 2D plots because you said --no-2d"
+            return []
         filenames = []
         print "(Making 2D plots using KDE; this takes a while but is really cool)"
         for name1,name2 in self.parameter_pairs():
