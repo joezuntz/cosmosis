@@ -189,7 +189,7 @@ class PostProcessor(object):
     def finalize(self):
         print "Finalizing:"
         for f in self.outputs.values():
-            print "Output: ", f.name
+            print "Output: ", f.filename
             f.finalize()
 
     def apply_tweaks(self, tweaks):

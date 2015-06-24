@@ -43,6 +43,14 @@ class PostProcessorElement(Loadable):
     def get_output(self, name):
         return self.source.outputs.get(name)
 
+    def filename(self, ftype, base, *bases):
+        if bases:
+            base = base + "_" + ("_".join(bases))
+        output_dir = self.options.get("outdir", ".")
+        prefix=self.options.get("prefix","")
+        if prefix: prefix+="_"
+        return "{0}/{1}{2}.{3}".format(output_dir, prefix, base, ftype)
+
     def set_output(self, name, value):
         if name in self.source.outputs:
             raise ValueError("Two different postprocessors tried to create the same named file - use get_output to re-open an existing file")

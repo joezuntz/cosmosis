@@ -64,46 +64,28 @@ class Plots(PostProcessorElement):
         return l
 
     def filename(self, base, *bases):
-        if bases:
-            base = base + "_" + ("_".join(bases))
-        output_dir = self.options.get("outdir", ".")
-        prefix=self.options.get("prefix","")
-        if prefix: prefix+="_"
-        ftype=self.options.get("file_type", "png")
-        return "{0}/{1}{2}.{3}".format(output_dir, prefix, base, ftype)
+        ftype = self.options.get("file_type", "png")
+        filename = super(Plots, self).filename(ftype, base, *bases)
+        return filename
 
-    def figure(self, name):
+    def figure(self, *names):
         #we want to be able to plot multiple chains on the same
         #figure at some point.  So when we make figures we should
         #call this function
+        name = "_".join(names)
+        filename = self.filename(*names)
         fig = self.get_output(name)
         if fig is None:
             fig = pylab.figure()
-            self.set_output(name, PostprocessPlot(name,fig))
+            self.set_output(name, PostprocessPlot(name,filename,fig))
         else:
             fig = fig.value
-        return fig
+        return fig, filename
 
     def run(self):
         print "I do not know how to generate plots for this kind of data"
         return []
 
-    def tweak(self, tweaks):
-        if tweaks.filename==Tweaks._all_filenames:
-            filenames = self.figures.keys()
-        elif isinstance(tweaks.filename, list):
-                filenames = tweaks.filename
-        else:
-            filenames = [tweaks.filename]
-
-        for filename in filenames:
-            if tweaks.filename!=Tweaks._all_filenames:
-                filename = self.filename(filename)
-            fig = self.figures.get(filename)
-            if fig is None:
-                continue
-            pylab.figure(fig.number)
-            tweaks.run()
 
     def line_color(self):
         possible_colors = ['b','g','r','m','y']
@@ -229,7 +211,7 @@ class GridPlots1D(GridPlots):
         dx = vals1[1]-vals1[0]
 
         #Set up the figure
-        fig = self.figure(filename)
+        fig,filename = self.figure(name1)
         pylab.figure(fig.number)
 
         #Plot the likelihood
@@ -327,8 +309,7 @@ class GridPlots2D(GridPlots):
         do_fill =  self.options.get("fill", True)
 
         #Create the figure
-        filename = self.filename("2D", name1, name2)
-        fig = self.figure(filename)
+        fig,filename = self.figure("2D", name1, name2)
         pylab.figure(fig.number)
 
         #Decide whether to do a smooth or block plot
@@ -426,9 +407,8 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
 
     def make_1d_plot(self, name):
         x = self.reduced_col(name)
-        filename = self.filename(name)
         print " - 1D plot ", name
-        figure = self.figure(filename)
+        figure,filename = self.figure(name)
         if x.max()-x.min()==0: return
 
         n, x_axis, like = self.smooth_likelihood(x)
@@ -506,8 +486,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
             print "Not making a 2D plot of them"
             return []
 
-        filename = self.filename("2D", name1, name2)
-        figure = self.figure(filename)
+        figure,filename = self.figure("2D", name1, name2)
 
 
         #Choose levels at which to plot contours
@@ -582,8 +561,7 @@ class TestPlots(Plots):
                 fig = p.figure
                 p.figure=fig
                 p.plot()
-                self.set_output(cls.filename, PostprocessPlot(filename,fig))
-                self.figures[filename] = fig
+                self.set_output(cls.filename, PostprocessPlot(p.filename,p.outfile,fig))
                 filenames.append(filename)
             except IOError as err:
                 if fig is not None:
@@ -701,8 +679,7 @@ class ColorScatterPlotBase(Plots):
         #after by cosmosis.
         #Though you can also use your own filenames,
         #saving, etc, in which case do not use these functions
-        filename = self.filename(self.scatter_filename)
-        figure = self.figure(filename)
+        figure, filename = self.figure(self.scatter_filename)
 
         #Do the actual plotting.
         #By default the saving will be handled later.

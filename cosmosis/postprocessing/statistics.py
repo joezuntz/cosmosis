@@ -11,19 +11,18 @@ class Statistics(PostProcessorElement):
     def run(self):
         print "I do not know how to generate statistics for this kind of data"
         return []
+ 
+    def filename(self, base):
+        filename = super(Statistics, self).filename("txt", base)
+        return filename
 
-    def filename(self, base, ftype='txt'):
-        output_dir = self.options.get("outdir", "./")
-        prefix=self.options.get("prefix","")
-        if prefix: prefix+="_"        
-        return "{0}/{1}{2}.{3}".format(output_dir, prefix, base, ftype)
 
-    def get_text_output(self, base, header="", section_name="", ftype='txt'):
-        filename = self.filename(base, ftype)
+    def get_text_output(self, base, header="", section_name=""):
+        filename = self.filename(base)
         f = self.get_output(filename)
         if f is None:
             f = open(filename, 'w')
-            self.set_output(filename, PostprocessText(filename,f))
+            self.set_output(filename, PostprocessText(base,filename,f))
             new_file = True
             if header:
                 f.write(header+'\n')
@@ -199,7 +198,6 @@ class ChainCovariance(object):
         proposal = covmat[:n,:n]
 
         #Save the covariance matrix
-        filename = self.filename("covmat")
         f, filename, new_file = self.get_text_output("covmat")
         if new_file:
             f.write('#'+'    '.join(col_names)+'\n')
