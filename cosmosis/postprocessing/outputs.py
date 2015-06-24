@@ -14,6 +14,12 @@ class PostprocessPlot(PostprocessProduct):
         pylab.savefig(self.name)
         pylab.close()
 
+    def tweak(self, tweak):
+        print "Tweaking", self.name
+        pylab.figure(self.value.number)
+        tweak.run()
+
+
 class PostprocessText(PostprocessProduct):
     def finalize(self):
         self.value.close()

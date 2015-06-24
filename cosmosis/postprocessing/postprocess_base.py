@@ -201,9 +201,15 @@ class PostProcessor(object):
             print "You can use also use a list for more than one plot,"
             print "or put '%s' to apply to all plots."%plots.Tweaks._all_filenames
             return
-        for step in self.steps:
-            if isinstance(step, plots.Plots):
-                step.tweak(tweaks)
+        elif tweaks.filename==tweaks._all_filenames:
+            filenames = [o.name for o in self.outputs if isinstance(o, plots.Plots)]
+        elif isinstance(tweaks.filename, list):
+                filenames = tweaks.filename
+        else:
+            filenames = [tweaks.filename]
+        for output in self.outputs.values():
+            if output.name in filenames:
+                output.tweak(tweaks)
 
 
 

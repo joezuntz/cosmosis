@@ -575,7 +575,7 @@ class TestPlots(Plots):
                 fig = p.figure
                 p.figure=fig
                 p.plot()
-                self.set_output(fig, PostprocessPlot(filename,fig))
+                self.set_output(cls.filename, PostprocessPlot(filename,fig))
                 self.figures[filename] = fig
                 filenames.append(filename)
             except IOError as err:
