@@ -259,6 +259,7 @@ class LikelihoodPipeline(Pipeline):
         self.values_filename=values_file
         priors_files = self.options.get(PIPELINE_INI_SECTION,
                                         "priors", "").split()
+        self.priors_files = priors_files
 
         self.parameters = parameter.Parameter.load_parameters(values_file,
                                                               priors_files,

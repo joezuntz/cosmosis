@@ -275,6 +275,9 @@ class GridPlots1D(GridPlots):
 
 class GridPlots2D(GridPlots):
     def run(self):
+        if self.options.get("no_2d", False):
+            print "Not making any 2D plots because you said --no-2d"
+            return []
         filenames=[]
         nv = self.source.metadata[0]['n_varied']
         varied_params = self.source.colnames[:nv]
@@ -424,6 +427,7 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
     def make_1d_plot(self, name):
         x = self.reduced_col(name)
         filename = self.filename(name)
+        print " - 1D plot ", name
         figure = self.figure(filename)
         if x.max()-x.min()==0: return
 
@@ -543,6 +547,9 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
 
     def run(self):
+        if self.options.get("no_2d", "False"):
+            print "Not making any 2D plots because you said --no-2d"
+            return []
         filenames = []
         print "(Making 2D plots using KDE; this takes a while but is really cool)"
         for name1,name2 in self.parameter_pairs():
@@ -605,15 +612,16 @@ class WeightedPlots1D(object):
 
 
 class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_columns = ["like", "weight"]
+    excluded_columns = ["like", "weight", "log_weight", "old_log_weight", "old_weight", "old_like"]
 
 
 class WeightedMetropolisPlots1D(WeightedPlots1D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_columns = ["like", "weight"]
+    excluded_columns = ["like", "weight", "log_weight", "old_log_weight", "old_weight", "old_like"]
 
 
 
 class WeightedPlots2D(object):
+    excluded_columns = ["like", "weight", "log_weight", "old_log_weight", "old_weight", "old_like"]
     def smooth_likelihood(self, x, y):
         n = self.options.get("n_kde", 100)
         fill = self.options.get("fill", True)
@@ -647,11 +655,11 @@ class WeightedPlots2D(object):
         return level1, level2, like.sum()
 
 class WeightedMetropolisPlots2D(WeightedPlots2D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_columns = ["like", "weight"]
+    excluded_columns = ["like", "weight", "log_weight", "old_log_weight", "old_weight", "old_like"]
     pass
 
 class MultinestPlots2D(WeightedPlots2D, MultinestPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_columns = ["like", "weight"]
+    excluded_columns = ["like", "weight", "log_weight", "old_log_weight", "old_weight", "old_like"]
     pass
 
 class ColorScatterPlotBase(Plots):
