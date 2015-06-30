@@ -213,6 +213,9 @@ class MatterPowerPlot(Plot):
 		z = self.load_file(section, "z")
 		p = self.load_file(section, p_name)
 		if (p<0).all(): p*=-1
+		z = np.atleast_1d(z)
+		kh = np.atleast_1d(kh)
+		p = np.atleast_2d(p)
 		nk = len(kh)
 		nz = len(z)
 		if p.shape==(nz,nk):
