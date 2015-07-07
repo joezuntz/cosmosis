@@ -64,7 +64,7 @@ class Plot(object):
 			prefix += "_"
 		#We have an output directory, a prefix, base filename (which is overridden by subclasses)
 		#And a suffix (file type)
-		self.filename = "{0}/{1}{2}.{3}".format(outdir, prefix, self.filename, suffix)
+		self.outfile = "{0}/{1}{2}.{3}".format(outdir, prefix, self.filename, suffix)
 		#All the data will be in subclasses of this
 		self.dirname = dirname
 		self.quiet=quiet
@@ -116,8 +116,8 @@ class Plot(object):
 	#Need not be over-ridden
 	def save(self):
 		pylab.figure(self.figure.number)
-		if not self.quiet: print "Saving ", self.filename
-		pylab.savefig(self.filename)
+		if not self.quiet: print "Saving ", self.outfile
+		pylab.savefig(self.outfile)
 
 	#Need not be overridden. Called by the main function
 	@classmethod
@@ -213,6 +213,9 @@ class MatterPowerPlot(Plot):
 		z = self.load_file(section, "z")
 		p = self.load_file(section, p_name)
 		if (p<0).all(): p*=-1
+		z = np.atleast_1d(z)
+		kh = np.atleast_1d(kh)
+		p = np.atleast_2d(p)
 		nk = len(kh)
 		nz = len(z)
 		if p.shape==(nz,nk):

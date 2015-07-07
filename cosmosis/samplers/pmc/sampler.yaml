@@ -1,0 +1,37 @@
+name: "pmc"
+version: "1.0"
+parallel: embarrassing
+purpose: "Adaptive Importance Sampling"
+url: "https://bitbucket.org/joezuntz/cosmosis"
+attribution: ["CosmoSIS Team"]
+cite:
+    - "MNRAS 405.4 2381-2390 (2010)"
+
+explanation: >
+    Population Monte-Carlo uses importance sampling with an initial 
+    distribution that is gradually adapted as more samples are taken and their
+    likelihood found.
+
+    At each iteration some specified number of samples are drawn from a mixed
+    Gaussian distribution. Their posteriors are then evaluated and importance
+    weights calculated.  This approximate distribution is then used to update
+    the Gaussian mixture model so that it more closely mirrors the underlying
+    distribution.
+
+    Components are dropped if they are found not to be necessary.
+
+    This is a python re-implementation of the CosmoPMC alogorithm in the 
+    cited paper.
+    
+
+installation: >
+    No special installation required; everything is packaged with CosmoSIS
+
+# List of configuration options for this sampler
+params:
+    iterations: (integer; default=30) Number of iterations (importance updates) of PMC
+    components: (integer; default=5) Number of components in the Gaussian mixture
+    samples_per_iteration: (integer; default=1000) Number of samples per iteration of PMC
+    final_samples: (integer; default=5000) Samples to take after the updating of the mixture is complete
+    student: (boolean; default=F) Do not use this.  It is a not yet functional attempt to use a Student t mixture.
+    nu: (float; default=2.0) Do not use this.  It is the nu parameter for the non-function Student t mode.

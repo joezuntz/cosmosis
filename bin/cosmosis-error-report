@@ -1,0 +1,194 @@
+#!/usr/bin/env python
+import tempfile
+import os
+import argparse
+import sys
+import time
+import webbrowser
+import subprocess
+
+cosmosis_dir = os.environ.get("COSMOSIS_SRC_DIR")
+working_dir = os.getcwd()
+
+if cosmosis_dir is None:
+	sys.stderr.write("\nPlease set COSMOSIS_SRC_DIR (usually using source config/setup-cosmosis) before using this script\n\n")
+	sys.exit(1)
+
+usage="""
+
+This program can be used to help report a problem running CosmoSIS.
+
+It makes a text file listing:
+ - the files in the CosmoSIS directory and subdirectories (not the file contents)
+ - any changes you have made to CosmoSIS files
+ - all environment variables 
+ - the ini files you are running on
+ - the standard output of the run
+Please be sure you are happy with these files being uploaded to the internet before
+creating the issue at the end of this process.
+
+
+You run thie program with an ini file that is giving you an error.  If you normally run:
+cosmosis filename.ini
+
+Then instead run:
+%(prog)s filename.ini
+
+Or you can run:
+%(prog)s --help for more options
+
+A limitation: you cannot currently pass extra arguments to this script like you can with cosmosis - sorry.
+ 
+"""
+
+parser = argparse.ArgumentParser(usage=usage)
+parser.add_argument("ini", help="The ini file you are trying to run with")
+parser.add_argument("--mpi", type=int, default=0, help="Run under MPI with this many processes (you do *NOT* need to use mpirun - this script will do that for you)")
+parser.add_argument("--no-web", action='store_true', help="Do not open a web browser to file an issue at the end, for example if you are running remotely on a cluster")
+parser.add_argument("--no-zip", action='store_true', help="Do not zip up the output at the end, in case you want to look at it first")
+args = parser.parse_args()
+
+
+#Hack to just import cosmosis config parser and not the rest of it
+sys.path.append(cosmosis_dir+"/cosmosis/runtime")
+import config
+
+
+
+#create text file for output
+output = tempfile.NamedTemporaryFile(prefix='cosmosis-error-report.', suffix='.txt',
+	dir='.', delete=False)
+
+
+print "Saving environment variables"
+
+output.write("COSMOSIS_ERROR_BEGIN_ENVARS\n")
+for key, val in os.environ.items():
+	output.write("%s = %s\n" % (key,val))
+
+
+
+print "Listing CosmoSIS directory"
+
+output.write("COSMOSIS_ERROR_BEGIN_DIRLIST\n")
+cmd = "find %s | grep -v '/ups/' |  grep -v '/conda/' | grep -v '/.git/'" % os.environ['COSMOSIS_SRC_DIR']
+output.write(os.popen(cmd).read())
+
+
+
+#Git status and diff for cosmosis and csl
+print "Getting git information for cosmosis and standard-library"
+
+os.chdir(os.environ['COSMOSIS_SRC_DIR'])
+output.write("COSMOSIS_ERROR_BEGIN_GITREV_MAIN\n")
+output.write(os.popen("git rev-parse HEAD").read())
+output.write("COSMOSIS_ERROR_BEGIN_GITSTAT_MAIN\n")
+output.write(os.popen("git status").read())
+output.write("COSMOSIS_ERROR_BEGIN_GITDIFF_MAIN\n")
+output.write(os.popen("git diff").read())
+
+os.chdir("cosmosis-standard-library")
+output.write("COSMOSIS_ERROR_BEGIN_GITREV_CSL\n")
+output.write(os.popen("git rev-parse HEAD").read())
+output.write("COSMOSIS_ERROR_BEGIN_GITSTAT_CSL\n")
+output.write(os.popen("git status").read())
+output.write("COSMOSIS_ERROR_BEGIN_GITDIFF_CSL\n")
+output.write(os.popen("git diff").read())
+
+os.chdir(working_dir)
+
+
+print "Listing ini files"
+if not os.path.isfile(args.ini):
+	if os.path.isdir(args.ini):
+		print
+		print "Your ini file %s is a directory, not a file."%args.ini
+	else:
+		print
+		print "I could not find the ini file %s" % args.ini
+	print " +++ This may be the cause of your problem +++"
+	print
+else:
+	output.write("COSMOSIS_ERROR_BEGIN_INI\n")
+	output.write(open(args.ini).read()+"\n")
+	output.write("\n")
+
+
+	#find the values file
+	try:
+		ini_content = config.Inifile(args.ini)
+	except Exception as error:
+		print
+		print "I could not parse %s as a proper ini file"
+		print "The error was:"
+		print error
+		print "+++ This may be the cause of your problem +++"
+		print
+	else:
+		values_file = ini_content.get("pipeline", "values", default="")
+		if values_file == "":
+			print
+			print "I could not find an entry 'values' in the 'pipeline' section of your ini file"
+			print "+++ This may be the cause of your problem +++"
+			print
+		elif os.path.isdir(values_file):
+			print
+			print "Your values file %s is a directory, not a file" % values_file
+			print "+++ This may be the cause of your problem +++"
+			print
+		elif not os.path.exists(values_file):
+			print
+			print "I could not find the 'values' file %s" % values_file
+			print "+++ This may be the cause of your problem +++"
+			print
+		else:
+			output.write("COSMOSIS_ERROR_BEGIN_VALUES\n")
+			output.write(open(values_file).read()+"\n")
+			output.write("\n")
+
+
+if args.mpi:
+	cmd = "mpirun -n %d cosmosis --mpi %s"%(args.mpi, args.ini)
+else:
+	cmd = "cosmosis %s"%args.ini
+print "Running CosmoSIS command:"
+print "    ", cmd
+output.write("COSMOSIS_ERROR_BEGIN_CMD\n")
+output.write(cmd + '\n')
+
+output.write("COSMOSIS_ERROR_BEGIN_OUTPUT\n")
+job = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
+	stderr=subprocess.STDOUT, shell=True)
+output.write(job.communicate()[0])
+output.write("\n")
+status = job.wait()
+if status:
+	print "CosmoSIS reported an error."
+else:
+	print "CosmoSIS at least thinks that it ran okay."
+
+
+output.close()
+if args.no_zip:
+	filename = output.name
+else:
+	print "Creating a gzip of all this output"
+	os.system("gzip %s"%output.name)
+	filename = output.name + ".gz"	
+
+print
+print "Your error report is now in:"
+print "   ", filename
+if args.no_web:
+	print "When you are ready, please go to:"
+	print "https://bitbucket.org/joezuntz/cosmosis/issues/new"
+	print "and create an issue, attaching this file."
+	if args.no_zip:
+		print "Though you might want to gzip it first"
+	print "If you have a problem with the resulting output file then please attach that too"
+else:
+	print "In 10 seconds your web browser will open a page where you can report your problem"
+	print "Please write a brief title and description, and then attach this file"
+	print "If you have a problem with the resulting output file then please attach that too"
+	time.sleep(10)
+	webbrowser.open("https://bitbucket.org/joezuntz/cosmosis/issues/new")

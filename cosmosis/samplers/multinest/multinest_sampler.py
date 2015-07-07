@@ -187,6 +187,7 @@ class MultinestSampler(ParallelSampler):
             importance = row[self.npar+1]
             self.output.parameters(params, extra_vals, like, importance)
         self.output.final("nsample", n)
+        self.output.flush()
 
     def is_converged(self):
         return self.converged

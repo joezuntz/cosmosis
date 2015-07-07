@@ -307,18 +307,24 @@ class DataBlock(object):
 		method = self._method_for_type(T, method_type)
 		if method: 
 			return method
+
 		if hasattr(value,'__len__'):
+			#let numpy work out what type this should be.
 			array = np.array(value)
-			method = {
-				(1,'i'):(self.get_int_array_1d,self.put_int_array_1d,self.replace_int_array_1d),
-				#These are not implemented yet
-				# (2,'i'):(self.get_int_array_2d,self.put_int_array_1d,self.replace_int_array_1d),
-				(1,'f'):(self.get_double_array_1d,self.put_double_array_1d,self.replace_double_array_1d),
-				(2,'i'):(self.get_int_array_nd,self.put_int_array_nd,self.replace_int_array_nd),
-				(2,'f'):(self.get_double_array_nd,self.put_double_array_nd,self.replace_double_array_nd),
-				# (1,'c'):(self.get_complex_array_1d,self.put_complex_array_1d,self.replace_complex_array_1d),
-				# (2,'c'):(self.get_complex_array_2d,self.put_complex_array_1d,self.replace_complex_array_1d),
-			}.get((array.ndim,array.dtype.kind))
+			kind = array.dtype.kind
+			ndim = array.ndim
+			if ndim==1:
+				#1D arrays have their own specific methods,
+				#for integer and float
+				if kind=='i':
+					method = (self.get_int_array_1d,self.put_int_array_1d,self.replace_int_array_1d)
+				elif kind=='f':
+					method = (self.get_double_array_1d,self.put_double_array_1d,self.replace_double_array_1d)
+			#otherwise we just use the generic n-d arrays
+			elif kind=='i':
+				method = (self.get_int_array_nd,self.put_int_array_nd,self.replace_int_array_nd)
+			elif kind=='f':
+				method = (self.get_double_array_nd,self.put_double_array_nd,self.replace_double_array_nd)
 			if method:
 				return method[method_type]
 		raise ValueError("I do not know how to handle this type %r %r"%(value,type(value)))
@@ -481,6 +487,10 @@ class DataBlock(object):
 			for name, value in vector_outputs:
 				vector_outfile = os.path.join(dirname,section,name+'.txt')
 				header = "%s\n"%name
+				if value.ndim>2:
+					header += "shape = %s\n"%str(value.shape)
+					print "Flattening %s--%s when saving; shape info in header" % (section,name)
+					value = value.flatten()
 				if name in meta:
 					for key,val in meta[name].items():
 						header+='%s = %s\n' % (key,val)
@@ -531,6 +541,10 @@ class DataBlock(object):
 			for name, value in vector_outputs:
 				vector_outfile = os.path.join(dirname,section,name+'.txt')
 				header = "%s\n"%name
+				if value.ndim>2:
+					header += "shape = %s\n"%str(value.shape)
+					print "Flattening %s--%s when saving; shape info in header" % (section,name)
+					value = value.flatten()
 				if name in meta:
 					for key,val in meta[name].items():
 						header+='%s = %s\n' % (key,val)

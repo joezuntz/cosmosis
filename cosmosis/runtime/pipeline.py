@@ -259,6 +259,7 @@ class LikelihoodPipeline(Pipeline):
         self.values_filename=values_file
         priors_files = self.options.get(PIPELINE_INI_SECTION,
                                         "priors", "").split()
+        self.priors_files = priors_files
 
         self.parameters = parameter.Parameter.load_parameters(values_file,
                                                               priors_files,
@@ -336,11 +337,15 @@ class LikelihoodPipeline(Pipeline):
         return c
 
 
-    def start_vector(self):
-        return np.array([param.start for
+    def start_vector(self, all_params=False):
+        if all_params:
+            return np.array([param.start for
+                 param in self.parameters])
+        else:            
+            return np.array([param.start for
                          param in self.varied_params])
 
-    def run_parameters(self, p, check_ranges=False):
+    def run_parameters(self, p, check_ranges=False, all_params=False):
         if check_ranges:
             if self.is_out_of_range(p):
                 return None
@@ -350,13 +355,17 @@ class LikelihoodPipeline(Pipeline):
         else:
             data = block.DataBlock()
 
-        # add varied parameters
-        for param, x in zip(self.varied_params, p):
-            data[param.section, param.name] = x
+        if all_params:
+            for param, x in zip(self.parameters, p):
+                data[param.section, param.name] = x
+        else:
+            # add varied parameters
+            for param, x in zip(self.varied_params, p):
+                data[param.section, param.name] = x
 
-        # add fixed parameters
-        for param in self.fixed_params:
-            data[param.section, param.name] = param.start
+            # add fixed parameters
+            for param in self.fixed_params:
+                data[param.section, param.name] = param.start
 
         if self.run(data):
             return data
@@ -380,12 +389,16 @@ class LikelihoodPipeline(Pipeline):
         ini.close()
 
 
-    def prior(self, p):
+    def prior(self, p, all_params=False):
+        if all_params:
+            params = self.parameters
+        else:
+            params = self.varied_params
         return sum([param.evaluate_prior(x) for param, x in
-                    zip(self.varied_params, p)])
+                    zip(params, p)])
 
-    def posterior(self, p, return_data=False):
-        prior = self.prior(p)
+    def posterior(self, p, return_data=False, all_params=False):
+        prior = self.prior(p, all_params=all_params)
         if prior == -np.inf:
             if not self.quiet:
                 sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
@@ -393,17 +406,17 @@ class LikelihoodPipeline(Pipeline):
                 return prior, np.repeat(np.nan, self.number_extra), None
             return prior, np.repeat(np.nan, self.number_extra)
         if return_data:
-            like, extra, data = self.likelihood(p, return_data=True)
+            like, extra, data = self.likelihood(p, return_data=True, all_params=all_params)
             return prior + like, extra, data
         else:
-            like, extra = self.likelihood(p)
+            like, extra = self.likelihood(p, all_params=all_params)
             return prior + like, extra
         
-    def likelihood(self, p, return_data=False):
+    def likelihood(self, p, return_data=False, all_params=False):
         #Set the parameters by name from the parameter vector
         #If one is out of range then return -infinity as the log-likelihood
         #i.e. likelihood is zero.  Or if something else goes wrong do the same
-        data = self.run_parameters(p)
+        data = self.run_parameters(p, all_params=all_params)
         if data is None:
             if return_data:
                 return -np.inf, np.repeat(np.nan, self.number_extra), data

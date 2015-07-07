@@ -1,0 +1,44 @@
+name: "emcee"
+version: "2.1.0"
+parallel: parallel
+purpose: "Ensemble walker sampling"
+url: "http://dan.iel.fm/emcee/"
+attribution: ["Dan Foreman-Mackey and contributors"]
+cite:
+    - "PASP, 125, 925, 306-312"
+
+explanation: >
+    The emcee sampler is a form of Monte-Carlo Markov Chain that uses
+    an ensemble of 'walkers' that explore the parameter space. 
+    Each walker chooses another walker at random and proposes along the
+    line connecting the two of them using the Metropolis acceptance rule.
+    The proposal scale is given by the separation of the two walkers.
+
+    It is parallel, so multiple processes can be used to speed up the 
+    running. It is also affine invariant, so that no covariance matrix or other 
+    tuning is required for the proposal.
+
+    The burn-in behavior of emcee can sometimes be poor; it is much better
+    to start the chain as near to the maximum posterior as possible.  The 
+    maxlike or similar samplers can help you find this.
+
+    The total number of samples taken is walkers*samples.
+    
+
+installation: >
+    emcee is included in the cosmosis bootstrap, but if you are installing
+    manually you can get emcee using the command:
+
+    pip install emcee  #to install centrally, may require sudo
+    
+    pip install emcee --user #to install just for you
+    
+
+# List of configuration options for this sampler
+params:
+    walkers: (integer) number of walkers in the space
+    samples: (integer) number of jumps to attempt per walker
+    nsteps: (integer) number of sample steps taken in between writing output
+    random_start: (bool; default=N) whether to start the walkers at random points in the prior instead of near the start.  Usually a bad idea
+    start_points: (string; default='') a file containing starting points for the walkers. If not specified walkers are initialized randomly from the prior distribution.
+

@@ -1,0 +1,21 @@
+name: "list"
+version: "1.0"
+parallel: embarrassing
+purpose: "Re-run existing chain samples"
+url: "https://bitbucket.org/joezuntz/cosmosis"
+attribution: ["CosmoSIS Team"]
+cite: []
+explanation: >
+    This is perhaps the second simplest sampler - it simply takes all
+    its samples from a list in a file and runs them all with the new pipeline.
+
+    This could probably be replaced with an importance sampler, and may be merged
+    into it in future.
+
+
+installation: >
+    No special installation required; everything is packaged with CosmoSIS
+
+params:
+    filename: (string) cosmosis-format chain of input samples
+    save: "(string; default='') if present the base-name to save the cosmology output from each sample"
