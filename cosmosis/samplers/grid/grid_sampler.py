@@ -12,6 +12,7 @@ def task(p):
         results[2].save_to_file(grid_sampler.save_name+"_%d"%i, clobber=True)
     return (results[0], results[1])
 
+LARGE_JOB_SIZE = 1000000
 
 
 
@@ -27,6 +28,7 @@ class GridSampler(ParallelSampler):
         self.nsample = self.read_ini("nsample_dimension", int, 1)
         self.save_name = self.read_ini("save", str, "")
         self.nstep = self.read_ini("nstep", int, -1)
+        self.allow_large = self.read_ini("allow_large", bool, False)
         self.sample_points = None
         self.ndone = 0
 
@@ -47,6 +49,21 @@ class GridSampler(ParallelSampler):
         #Also Generate the complete collection of parameter sets to run over.
         #This doesn't actually keep them all in memory, it is just the conceptual
         #outer product
+        total_samples = self.nsample**len(self.pipeline.varied_params)
+        print
+        print "Total number of grid samples: ", total_samples
+
+        if total_samples>LARGE_JOB_SIZE:
+            print "That is a very large number of samples."
+            if self.allow_large:
+                print "But you set allow_large=T so I will continue"
+            else:
+                print "This is suspicously large so I am going to stop"
+                print "If you really want to do this set allow_large=T in the"
+                print "[grid] section of the ini file."
+                raise ValueError("Suspicously large number of grid points %d ( = n_samp ^ n_dim = %d ^ %d); set allow_large=T in [grid] section to permit this."%(total_samples,self.nsample,len(self.pipeline.varied_params)))
+        print
+        
         self.sample_points = itertools.product(*[np.linspace(*param.limits,
                                                        num=self.nsample)
                                            for param
