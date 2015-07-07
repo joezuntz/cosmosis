@@ -1,7 +1,10 @@
 import numpy as np
 
 class MCMC(object):
-	def __init__(self, start,posterior, covariance, quiet=False):
+	def __init__(self, start, posterior, covariance, subsets=None, quiet=False):
+		"""
+
+		"""
 		#Set up basic variables
 		self.posterior = posterior
 		self.p = np.array(start)
@@ -13,16 +16,47 @@ class MCMC(object):
 
 		#Set up the covariance and initial
 		#proposal axes
-		self.covariance = covariance
+		covariance = covariance
 		self.cholesky = np.linalg.cholesky(covariance)
-		self.rotation = np.identity(self.ndim)
-		self.proposal_axes = np.dot(self.cholesky, self.rotation)
+		rotation = np.identity(self.ndim)
+		self.proposal_axes = np.dot(self.cholesky, rotation)
+
+		#If there are sub-spaces defined that split the space 
+		#into fast and slow parameters, then find the subsets here.
+		#Each entry in the input parameter "subsets" should be the pair
+		#(indices,oversampling)
+		
+		if subsets:
+			self.nsubsets = len(subsets)
+			self.subset_axes = []
+			self.subset_cholesky = []
+			self.subset_iterations = []
+			self.subset_oversampling = []
+			self.subsets = []
+			self.current_subset_index = 0
+			for s,oversampling in subsets:
+				chol = self.submatrix(self.cholesky, s)
+				axes = np.dot(chol, np.identity(len(s)))
+				self.subset_cholesky.append(chol)
+				self.subset_axes.append(axes)
+				self.subset_iterations.append(0)
+				self.subset_oversampling.append(oversampling)
+				self.subsets.append(s)
+
 
 		#Set up instance variables storing samples, etc.
 		self.samples = []
 		self.iterations = 0
 		self.accepted = 0
 		self.proposal_scale = 2.4
+
+	@staticmethod
+	def submatrix(M, x):
+		"""If x is an array of integer row/col numbers and M a matrix,
+		extract the submatrix which is the all x'th rows and cols.
+		i.e. A = submatrix(M,x) => A_ij = M_{x_i}{x_j}
+		"""
+		return M[np.ix_(x,x)]
 
 	def sample(self, n):
 		samples = []
@@ -52,16 +86,23 @@ class MCMC(object):
 	def randomize_rotation(self):
 		#After CosmoMC, we randomly rotate our proposal axes
 		#to avoid doubling back on ourselves
-		self.rotation = random_rotation_matrix(self.ndim)
+		rotation = random_rotation_matrix(self.ndim)
 		#All our proposals are done along the axes of our covariance
 		#matrix
-		self.proposal_axes = np.dot(self.cholesky, self.rotation)
+		self.proposal_axes = np.dot(self.cholesky, rotation)
 
 	def tune(self):
 		#Not yet implemented!
 		pass
 
 	def propose(self):
+		#Different method if we are using subsets
+		if self.subsets:
+			return self.propose_subset()
+		else:
+			return self.propose_vanilla()
+
+	def propose_vanilla(self):
 		#Once we have cycled through our axes, re-randomize them
 		i = self.iterations%self.ndim
 		if i==0:
@@ -69,6 +110,41 @@ class MCMC(object):
 		#otherwise, propose along our defined axes
 		return self.p + proposal_distance(self.ndim) * self.proposal_scale \
 				* self.proposal_axes[:,i]
+
+
+	def propose_subset(self):
+		#
+		subset_index = self.current_subset_index
+		n = len(self.subsets[subset_index])
+		q = self.propose_subset_index(subset_index)
+		self.subset_iterations[subset_index] += 1
+
+		#if we have done one sample in each axis in the subset then 
+		#randomize its ordering
+		i_s = self.subset_iterations[subset_index]%n
+		if i_s==0:
+			self.randomize_rotation_subset(subset_index)
+
+		#If we have sufficiently oversampled this subset move on to the
+		#next subset
+		if self.subset_iterations[subset_index]%self.subset_oversampling[subset_index]==0:
+			self.current_subset_index = (self.current_subset_index+1)%self.nsubsets
+
+		return q
+
+	def propose_subset_index(self, subset_index):
+		s = self.subsets[subset_index]
+		i_s = self.subset_iterations[subset_index]%len(s)
+		axes = self.subset_axes[subset_index]
+		q = self.p.copy()
+		q[s] += proposal_distance(len(s)) * self.proposal_scale * axes[:,i_s]
+		return q
+
+	def randomize_rotation_subset(self, subset_index):
+		s = self.subsets[subset_index]
+		rotation = random_rotation_matrix(len(s))
+		cholesky = self.subset_cholesky[subset_index]
+		self.subset_axes[subset_index] = np.dot(cholesky, rotation)
 
 def proposal_distance(ndim):
 	# See http://cosmologist.info/notes/CosmoMC.pdf
