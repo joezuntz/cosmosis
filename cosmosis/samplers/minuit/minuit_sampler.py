@@ -15,6 +15,7 @@ loglike_type = ct.CFUNCTYPE(
 libname=os.path.join(os.path.split(__file__)[0],"minuit_wrapper.so")
 
 class MinuitSampler(Sampler):
+    needs_output = False
     libminuit = None
     
     def config(self):
