@@ -222,7 +222,8 @@ class Pipeline(object):
                     sys.stdout.flush()
                     sys.stderr.write("Because you set debug=True I printed a log of "
                                      "all access to data printed above.\n"
-                                     "Look for the word 'FAIL'\n\n")
+                                     "Look for the word 'FAIL' \n")
+                    sys.stderr.write("Though the error message could also be somewhere above that.\n\n")
                 if not self.quiet:
                     sys.stderr.write("Error running pipeline (%d)- "
                                      "hopefully printed above here.\n"%status)
