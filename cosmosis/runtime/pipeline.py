@@ -36,7 +36,9 @@ class Pipeline(object):
             self.options = config.Inifile(arg)
 
         #This will be set later
-        self.root_directory = self.options.get("runtime", "root")
+        self.root_directory = self.options.get("runtime", "root", "cosmosis_none_signifier")
+        if self.root_directory=="cosmosis_none_signifier":
+            self.root_directory=None
 
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
