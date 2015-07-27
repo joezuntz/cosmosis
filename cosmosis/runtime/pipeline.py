@@ -36,7 +36,7 @@ class Pipeline(object):
             self.options = config.Inifile(arg)
 
         #This will be set later
-        self.root_directory = None
+        self.root_directory = self.options.get("runtime", "root")
 
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
@@ -47,9 +47,6 @@ class Pipeline(object):
         # initialize modules
         self.modules = []
         if load and PIPELINE_INI_SECTION in self.options.sections():
-            rootpath = self.options.get(PIPELINE_INI_SECTION,
-                                        "root",
-                                        os.curdir)
             module_list = self.options.get(PIPELINE_INI_SECTION,
                                            "modules", "").split()
 
@@ -72,7 +69,7 @@ class Pipeline(object):
                                                   setup_function,
                                                   exec_function,
                                                   cleanup_function,
-                                                  rootpath))
+                                                  self.root_directory))
             self.shortcut_module=0
             self.shortcut_data=None
             if shortcut is not None:
