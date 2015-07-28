@@ -11,10 +11,10 @@ FC = gfortran
 MPIFC = mpif90
 FFLAGS += -O3 -fPIC -ffree-line-length-none
 
-ifeq ($(LAPACK_LIB),)
+ifeq ($(LAPACK_LINK),)
 LAPACKLIB = -llapack
 else
-LAPACKLIB = -L$(LAPACK_LIB) -llapack -lblas
+LAPACKLIB = ${LAPACK_LINK}
 endif
 
 NESTLIBDIR = ./
