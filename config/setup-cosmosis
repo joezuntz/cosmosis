@@ -136,7 +136,7 @@ then
 setup -B lapack v3_4_2 -q +e5:+prof
 fi
 
-export LAPACK_LINK=-L${LAPACK_LIB} -llapack -lblas
+export LAPACK_LINK="-L${LAPACK_LIB} -llapack -lblas"
 
 fi
 
