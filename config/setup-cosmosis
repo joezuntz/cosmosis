@@ -125,6 +125,7 @@ fi
 if [ "$flavor" == "Darwin64bit" ]
 then
 export LAPACK_LIB=.
+export LAPACK_LINK=-framework veclib
 else
 
 setup -B lapack v3_5_0 -q +e7:+prof 2> /dev/null
@@ -134,6 +135,8 @@ if [[ $status != 0 ]]
 then
 setup -B lapack v3_4_2 -q +e5:+prof
 fi
+
+export LAPACK_LINK=-L${LAPACK_LIB} -llapack -lblas
 
 fi
 
