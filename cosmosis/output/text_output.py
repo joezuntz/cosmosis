@@ -32,7 +32,14 @@ class TextColumnOutput(OutputBase):
             try:
                 self.lock_file(self._file)
             except IOError:
-                error_msg = "Another CosmoSIS process was trying to use the same output file (%s). This probably means you either left out the --mpi flag when using mpirun or have two CosmoSIS runs trying to use the same filename." % self._filename
+                error_msg = """
+Another CosmoSIS process was trying to use the same output file (%s). 
+This means one of three things:
+1) you were trying to use MPI but left out the --mpi flag
+2) you have another CosmoSIS run going trying to use the same filename
+3) your file system cannot cope with file locks properly.  
+In the last case you can set lock=F in the [output] section to disable this feature.
+""" % self._filename
                 raise IOError(error_msg)
 
         #also used to store comments:
