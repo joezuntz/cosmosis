@@ -4,6 +4,7 @@ from cosmosis.postprocessing.plots import Tweaks
 from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.utils import mkdir
 from cosmosis.output.text_output import TextColumnOutput
+from cosmosis.output.fits_output import FitsOutput
 import sys
 import argparse
 import os
@@ -59,6 +60,21 @@ def read_input(ini_filename, force_text, weighted):
 			ini = output_info
 		else:
 			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="text", filename=ini_filename)}
+	elif ini_filename.endswith("fits"):
+		output_info = FitsOutput.load_from_options({"filename":ini_filename})
+		metadata=output_info[2][0]
+		sampler = metadata.get("sampler")
+		if sampler is None:
+			print "This is not a cosmosis output file."
+			print "So I will assume it is a generic MCMC file"
+			if weighted:
+				sampler = "weighted_metropolis"
+			else:
+				sampler = "metropolis"
+			ini = output_info
+		else:
+			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="fits", filename=ini_filename)}
+
 	elif os.path.isdir(ini_filename):
 		ini = Inifile(None)
 		ini.add_section("runtime")

@@ -125,6 +125,7 @@ fi
 if [ "$flavor" == "Darwin64bit" ]
 then
 export LAPACK_LIB=.
+export LAPACK_LINK="-framework veclib"
 else
 
 setup -B lapack v3_5_0 -q +e7:+prof 2> /dev/null
@@ -134,6 +135,8 @@ if [[ $status != 0 ]]
 then
 setup -B lapack v3_4_2 -q +e5:+prof
 fi
+
+export LAPACK_LINK="-L${LAPACK_LIB} -llapack -lblas"
 
 fi
 
@@ -164,6 +167,15 @@ else
       setup -B $mpich_qualified_version
   fi
 fi
+
+export CLIK_PATH=${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/plc-2.0
+export PATH=${PATH}:${CLIK_PATH}/bin
+export PYTHONPATH=${PYTHONPATH}:${CLIK_PATH}/lib/python2.7/site-packages
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CLIK_PATH}/lib
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${CLIK_PATH}/lib
+export CLIK_DATA=${CLIK_PATH}/share/clik
+export CLIK_PLUGIN=rel2015
+
 
 function git-show-top-level {
     local __toplevel=`git rev-parse --show-toplevel 2> /dev/null`

@@ -4,17 +4,37 @@ import numpy as np
 import os
 from glob import glob
 from collections import OrderedDict
+try:
+    import fitsio
+except ImportError:
+    fitsio = None
 
 comment_indicator = "_cosmosis_comment_indicator_"
+final_metadata_indicator = "FINALMETA"
+unreserve_indicator = "UNRES"
+reserved_keys = [
+    "XTENSION",
+    "BITPIX",
+    "NAXIS",
+    "NAXIS1",
+    "NAXIS2",
+    "PCOUNT",
+    "GCOUNT",
+    "TFIELDS",
+    "TTYPE1",
+    "COMMENT",
+]
 
+def check_fitsio():
+    if fitsio is None:
+        raise RuntimeError("You need to have the fitsio library installed to output FITS files. Try running: pip install  --install-option=\"--use-system-fitsio\" git+git://github.com/joezuntz/fitsio")
 
-class TextColumnOutput(OutputBase):
-    FILE_EXTENSION = ".txt"
-    _aliases = ["text", "txt"]
+class FitsOutput(OutputBase):
+    FILE_EXTENSION = ".fits"
+    _aliases = ["fits"]
 
-    def __init__(self, filename, rank=0, nchain=1, delimiter='\t', lock=True):
-        super(TextColumnOutput, self).__init__()
-        self.delimiter = delimiter
+    def __init__(self, filename, rank=0, nchain=1, clobber=True):
+        super(FitsOutput, self).__init__()
 
         #If filename already ends in .txt then remove it for a moment
         if filename.endswith(self.FILE_EXTENSION):
@@ -26,21 +46,10 @@ class TextColumnOutput(OutputBase):
         else:
             self._filename = filename + self.FILE_EXTENSION
 
-        self._file = open(self._filename, "w")
+        check_fitsio()
 
-        if lock:
-            try:
-                self.lock_file(self._file)
-            except IOError:
-                error_msg = """
-Another CosmoSIS process was trying to use the same output file (%s). 
-This means one of three things:
-1) you were trying to use MPI but left out the --mpi flag
-2) you have another CosmoSIS run going trying to use the same filename
-3) your file system cannot cope with file locks properly.  
-In the last case you can set lock=F in the [output] section to disable this feature.
-""" % self._filename
-                raise IOError(error_msg)
+        self._fits = fitsio.FITS(self._filename, "rw", clobber=clobber)
+        self._hdu = None
 
         #also used to store comments:
         self._metadata = OrderedDict()
@@ -49,34 +58,40 @@ In the last case you can set lock=F in the [output] section to disable this feat
     def _close(self):
         self._flush_metadata(self._final_metadata)
         self._final_metadata={}
-        self._file.close()
+        self._fits.close()
 
     def _flush_metadata(self, metadata):
+
         for (key,(value,comment)) in metadata.items():
             if key.startswith(comment_indicator):
-                self._file.write("## %s\n"%value.strip())
+                self._hdu.write_comment(value)
             elif comment:
-                self._file.write('#{k}={v} #{c}\n'.format(k=key,v=value,c=comment))
+                self._hdu.write_key(key, value, comment)
             else:
-                self._file.write('#{k}={v}\n'.format(k=key,v=value,c=comment))
+                self._hdu.write_key(key, value)
 
 
     def _begun_sampling(self, params):
         #write the name line
-        name_line = '#'+self.delimiter.join(c[0] for c in self.columns) + '\n'
-        self._file.write(name_line)
-        #now write any metadata.
-        #text mode does not support comments
+        self._fits.create_table_hdu(data=params, names=[c[0] for c in self.columns])
+        self._hdu = self._fits[-1]
+        self._dtype = self._hdu.get_rec_dtype()[0]
         self._flush_metadata(self._metadata)
         self._metadata={}
+
+    @staticmethod
+    def is_reserved_fits_keyword(key):
+        for k in reserved_keys:
+            if key.upper().startswith(k):
+                return True
+        return False
 
     def _write_metadata(self, key, value, comment=''):
         #We save the metadata until we get the first 
         #parameters since up till then the columns can
         #be changed
-        #In the text mode we cannot write more metadata
-        #after sampling has begun (because it goes at the top).
-        #What should we do?
+        if self.is_reserved_fits_keyword(key):
+            key=unreserve_indicator + key
         self._metadata[key]= (value, comment)
 
     def _write_comment(self, comment):
@@ -86,15 +101,16 @@ In the last case you can set lock=F in the [output] section to disable this feat
                        "_%d" % (len(self._metadata))] = (comment,None)
 
     def _write_parameters(self, params):
-        line = self.delimiter.join(str(x) for x in params) + '\n'
-        self._file.write(line)
+        row = np.core.records.fromarrays(params, dtype=self._dtype)
+        row=np.atleast_1d(row)
+        self._hdu.append(row)
 
     def _write_final(self, key, value, comment=''):
         #I suppose we can put this at the end - why not?
-        self._final_metadata[key]= (value, comment)
+        if self.is_reserved_fits_keyword(key):
+            key=unreserve_indicator + key
+        self._final_metadata[key]= (value, final_metadata_indicator+comment)
 
-    def _flush(self):
-        self._file.flush()
 
     @classmethod
     def from_options(cls, options):
@@ -104,13 +120,13 @@ In the last case you can set lock=F in the [output] section to disable this feat
         delimiter = options.get('delimiter', '\t')
         rank = options.get('rank', 0)
         nchain = options.get('parallel', 1)
-        lock = utils.boolean_string(options.get('lock', True))
-        return cls(filename, rank, nchain, delimiter=delimiter, lock=lock)
+        clobber = utils.boolean_string(options.get('clobber', True))
+        return cls(filename, rank, nchain, clobber=clobber)
 
     @classmethod
     def load_from_options(cls, options):
+        check_fitsio()
         filename = options['filename']
-        delimiter = options.get('delimiter', None)
 
         cut = False
         if filename.endswith(cls.FILE_EXTENSION):
@@ -127,7 +143,6 @@ In the last case you can set lock=F in the [output] section to disable this feat
                 raise RuntimeError("No datafiles found starting with %s!"%filename)
 
         #Read the metadata
-        started_data = False
         metadata = []
         final_metadata = []
         data = []
@@ -135,43 +150,36 @@ In the last case you can set lock=F in the [output] section to disable this feat
         column_names = None
 
         for datafile in datafiles:
+
             print 'LOADING CHAIN FROM FILE: ', datafile
             chain = []
             chain_metadata = {}
             chain_final_metadata = {}
             chain_comments = []
-            for i,line in enumerate(open(datafile)):
-                line = line.strip()
-                if not line: continue
-                if line.startswith('#'):
-                    #remove the first #
-                    #if there is another then this is a comment,
-                    #not metadata
-                    line=line[1:]
-                    if i == 0:
-                        column_names = line.split()
-                    elif line.startswith('#'):
-                        comment = line[1:]
-                        chain_comments.append(comment)
-                    else:
-                        #parse form '#key=value #comment'
-                        if line.count('#') == 0:
-                            key_val = line.strip()
-                            comment = ''
-                        else:
-                            key_val, comment = line.split('#', 1)
-                        key,val = key_val.split('=',1)
-                        val = utils.parse_value(val)
-                        if started_data:
-                            chain_final_metadata[key] = val
-                        else:
-                            chain_metadata[key] = val
+
+            f = fitsio.FITS(datafile, "r")
+            hdu = f[1]
+            chain = f[1].read()
+            #convert to unstructured format
+            chain = chain.view((chain.dtype[0], len(chain.dtype.names)))
+
+            column_names = hdu.get_colnames()
+
+            hdr = hdu.read_header()
+            chain_comments = [r['comment'] for r in hdr.records() if r['name']=="COMMENT"]
+            for r in hdr.records():
+                key = r['name']
+                if key=='COMMENT':
+                    continue
+                if key.startswith(unreserve_indicator):
+                    key = key[len(unreserve_indicator):]
+                value = r['value']
+                key=key.lower()
+                if r['comment'].startswith(final_metadata_indicator):
+                    chain_final_metadata[key] = value
                 else:
-                    started_data = True
-                    words = line.split(delimiter)
-                    vals = [float(word) for word in words]
-                    chain.append(vals)
-            
+                    chain_metadata[key] = value
+
             data.append(np.array(chain))
             metadata.append(chain_metadata)
             final_metadata.append(chain_final_metadata)
