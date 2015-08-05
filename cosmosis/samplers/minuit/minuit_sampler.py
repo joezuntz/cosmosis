@@ -1,4 +1,4 @@
-from .. import Sampler
+from .. import ParallelSampler
 import numpy as np
 import ctypes as ct
 import os
@@ -12,10 +12,22 @@ loglike_type = ct.CFUNCTYPE(
     ct.POINTER(ct.c_double),  #parameter cube
 )
 
+class MinuitOptionsStruct(ct.Structure):
+    _fields_ = [
+        ("max_evals", ct.c_int),
+        ("strategy", ct.c_int),
+        ("algorithm", ct.c_int),
+        ("save_cov", ct.c_char_p),
+        ("tolerance", ct.c_double),
+        ("width_estimate", ct.c_double),
+        ("do_master_output", ct.c_int),
+    ]
+
 libname=os.path.join(os.path.split(__file__)[0],"minuit_wrapper.so")
 
-class MinuitSampler(Sampler):
+class MinuitSampler(ParallelSampler):
     needs_output = False
+    needs_parallel_output = False
     libminuit = None
     
     def config(self):
@@ -24,19 +36,52 @@ class MinuitSampler(Sampler):
             MinuitSampler.libminuit = ct.cdll.LoadLibrary(libname)
         self.maxiter = self.read_ini("maxiter", int, 1000)
         self.save_dir = self.read_ini("save_dir", str, "")
+        self.save_cov = self.read_ini("save_cov", str, "")
         self.verbose = self.read_ini("verbose", bool, False)
+
+        #Minuit options
+        self.strategy = self.read_ini("strategy", str, "medium").lower()
+        self.algorithm = self.read_ini("algorithm", str, "migrad").lower()
+        fisher = self.read_ini("fisher", str, "")
+        self.width_estimate = self.read_ini("width_estimate", float, 0.1)
+        self.tolerance = self.read_ini("tolerance", float, 0.01)
+
+        self.strategy = {
+            "fast":0,
+            "medium":1,
+            "safe":2,
+            "0":0,
+            "1":1,
+            "2":2,
+        }.get(self.strategy)
+        if self.strategy is None:
+            raise ValueError("Minuit 'strategy' parameter must be one of fast, medium, safe (default=medium)")
+
+        self.algorithm = {
+            "migrad":0,
+            "fallback":1,
+            "combined":1,
+            "simplex":2,
+            # "scan":3,
+        }.get(self.algorithm)
+        if self.algorithm is None:
+            raise ValueError("Minuit 'algorithm' parameter must be one of migrad, fallback, simplex (default=migrad)")
+
+        self.do_fisher = int(bool(fisher))
+        self.fisher_file = fisher
+
         self._run = MinuitSampler.libminuit.cosmosis_minuit2_wrapper
         self._run.restype = ct.c_int
-        self._run.argtypes = [ct.c_int, ct.POINTER(ct.c_double), loglike_type, ct.c_uint]
+        vec = ct.POINTER(ct.c_double)
+        #self._run.argtypes = [ct.c_int, vec, vec, vec, loglike_type]
         self.ndim = len(self.pipeline.varied_params)
 
-    def execute(self):
         cube_type = ct.c_double*self.ndim
 
         @loglike_type
         def wrapped_likelihood(cube_p):
-            cube_vector = np.frombuffer(cube_type.from_address(ct.addressof(cube_p.contents)))
-            vector = self.pipeline.denormalize_vector(cube_vector)
+            vector = np.frombuffer(cube_type.from_address(ct.addressof(cube_p.contents)))
+            # vector = self.pipeline.denormalize_vector(cube_vector)
             try:
                 like, extra = self.pipeline.likelihood(vector)
             except KeyboardInterrupt:
@@ -45,28 +90,21 @@ class MinuitSampler(Sampler):
                 print like, "    ".join(str(v) for v in vector)
             return -like
 
-        param_names = [str(p) for p in self.pipeline.varied_params]
-        param_names_array = (ct.c_char_p * len(param_names))()
-        param_names_array[:] = param_names
+        self.wrapped_likelihood = wrapped_likelihood
 
 
-        param_vector = self.pipeline.normalize_vector(self.pipeline.start_vector())
-        status = self._run(self.ndim, 
-            param_vector.ctypes.data_as(ct.POINTER(ct.c_double)), 
-            wrapped_likelihood, 
-            self.maxiter,
-            param_names_array
-            )
-
-        #Run the pipeline one last time ourselves, so we can save the 
-        #likelihood and cosmology
-        max_like = self.pipeline.denormalize_vector(param_vector)
-        like, _, data = self.pipeline.likelihood(max_like, return_data=True)
-
-        print "The values above (which are printed from within MINUIT) refer to normalized parameters"
-        print "(in the range 0-1).  The actual parameter values are:"
+    def execute(self):
+        
+        param_vector, param_names, like, data, status = self.sample()
         section = None
-        for name, value in zip(param_names, max_like):
+
+        if self.pool is not None:
+            print
+            print "Note that the # of function calls printed above is not the total count for all cores, just for one core."
+            print
+
+
+        for name, value in zip(param_names, param_vector):
             sec,name=name.split('--')
             if section!=sec:
                 print
@@ -85,6 +123,45 @@ class MinuitSampler(Sampler):
             data.save_to_directory(self.save_dir, clobber=True)
 
         self.converged = True
+
+    def sample(self):
+
+        param_names = [str(p) for p in self.pipeline.varied_params]
+        param_names_array = (ct.c_char_p * len(param_names))()
+        param_names_array[:] = param_names
+
+        master = 1 if self.pool is None or self.pool.is_master() else 0
+
+
+        param_vector = self.pipeline.start_vector()
+        param_max = self.pipeline.max_vector()
+        param_min = self.pipeline.min_vector()
+
+        options = MinuitOptionsStruct(
+            max_evals=self.maxiter, strategy=self.strategy, 
+            algorithm=self.algorithm, save_cov=self.save_cov, 
+            tolerance=self.tolerance, width_estimate=self.width_estimate,
+            do_master_output = master
+            )
+
+        status = self._run(self.ndim, 
+            param_vector.ctypes.data_as(ct.POINTER(ct.c_double)), 
+            param_min.ctypes.data_as(ct.POINTER(ct.c_double)), 
+            param_max.ctypes.data_as(ct.POINTER(ct.c_double)), 
+            self.wrapped_likelihood, 
+            param_names_array,
+            options
+            )
+
+        #Run the pipeline one last time ourselves, so we can save the 
+        #likelihood and cosmology
+        like, _, data = self.pipeline.likelihood(param_vector, return_data=True)
+
+        return param_vector, param_names, like, data, status
+
+    def worker(self):
+        self.sample()
+
 
     def is_converged(self):
         return self.converged
