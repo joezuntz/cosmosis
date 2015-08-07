@@ -8,17 +8,20 @@ global pipeline
 
 def posterior(p):
     # PMC code needs posterior not log posterior
-    return pipeline.posterior(p)
+    post, extra = pipeline.posterior(p)
+    return post, extra
+
 
 class PMCSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("like",float), ("weight",float)]
+    sampler_outputs = [("component", int), ("like",float), ("log_weight",float)]
 
     def config(self):
         global pipeline
         pipeline = self.pipeline
         self.n_iterations = self.read_ini("iterations", int, default=30)
         self.n_components = self.read_ini("components", int, default=5)
+        self.grace_period = self.read_ini("grace_period", int, default=3)
         self.n_samples = self.read_ini("samples_per_iteration", int, 
             default=1000)
         self.final_samples = self.read_ini("final_samples", int, 
@@ -47,7 +50,7 @@ class PMCSampler(ParallelSampler):
         #Sampler object itself.
         quiet = self.pipeline.quiet
         self.sampler = pmc.PopulationMonteCarlo(posterior, self.n_components, 
-            start, covmat, quiet=quiet, student=student, nu=nu)
+            start, covmat, quiet=quiet, student=student, nu=nu, pool=self.pool)
 
         self.interrupted = False
         self.iterations = 0
@@ -60,9 +63,10 @@ class PMCSampler(ParallelSampler):
         else:
             n = self.n_samples
             update=True
+        do_kill = self.iterations>=self.grace_period
         #Run the MCMC  sampler.
         try:
-            results = self.sampler.sample(n,update)
+            results = self.sampler.sample(n,update, do_kill)
             #returns samples, like, extra, weights
         except KeyboardInterrupt:
             self.interrupted=True
@@ -71,8 +75,8 @@ class PMCSampler(ParallelSampler):
         self.iterations += 1
         self.samples += n
 
-        for (vector, like, extra, weight) in zip(*results):
-            self.output.parameters(vector, extra, (like,weight))
+        for (vector, like, extra, component, weight) in zip(*results):
+            self.output.parameters(vector, extra, (component, like,weight))
 
         print "Done %d iterations, %d samples" % (self.iterations, self.samples)
 
@@ -84,6 +88,8 @@ class PMCSampler(ParallelSampler):
             return True
         if self.iterations >= self.n_iterations+1:
             print "Full number of samples generated; sampling complete"
+            self.output.final("nsample", self.final_samples)
+
             return True
         return False
 
@@ -91,6 +97,9 @@ class PMCSampler(ParallelSampler):
 
     def load_covariance_matrix(self):
         covmat_filename = self.read_ini("covmat", str, "").strip()
+
+        #No covariance specified - just use 1% of the range of the parameter.
+        # This is the std. dev. here and is squared below.
         if covmat_filename == "":
             covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
         elif not os.path.exists(covmat_filename):
