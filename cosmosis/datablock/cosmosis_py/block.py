@@ -692,3 +692,34 @@ class DataBlock(object):
 		# 	status = lib.c_datablock_put_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
 		# if status!=0:
 		# 	raise BlockError.exception_for_status(status, section, ','.join([name_x, name_y, name_z]))
+
+
+class SectionOptions(object):
+	"""
+	The SectionOptions object wraps is a handy short-cut to let you
+	look up objects in a DataBlock object, but looking specifically at
+	the special section in an ini file that refers to "the section that 
+	defines the current module"
+
+	"""
+	def __init__(self, block):
+		self.block=block
+
+
+
+def _make_getter(cls, name):
+	if name=='__getitem__':
+		def getter(self, key):
+			return self.block[option_section, key]
+	else:
+		def getter(self, key, default=None):
+			return getattr(self.block, name)(option_section, key, default=default)
+	return getter
+
+
+
+
+for name in dir(DataBlock):
+	if name.startswith('get') or name=='__getitem__':
+		setattr(SectionOptions, name, _make_getter(SectionOptions, name))
+
