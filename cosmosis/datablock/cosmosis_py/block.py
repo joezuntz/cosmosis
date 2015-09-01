@@ -705,6 +705,10 @@ class SectionOptions(object):
 	def __init__(self, block):
 		self.block=block
 
+	def has_value(self, name):
+		has = self.block.has_value(option_section, name)
+		return bool(has)
+
 
 
 def _make_getter(cls, name):
