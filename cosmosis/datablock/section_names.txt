@@ -4,6 +4,7 @@
 
 #likelihoods
 likelihoods
+fisher
 
 #input parameters
 cosmological_parameters
