@@ -6,6 +6,10 @@ import numpy as np
 from cosmosis.datablock import names, SectionOptions
 import traceback 
 
+
+MISSING = "if_you_see_this_there_was_a_mistake_creating_a_gaussian_likelihood"
+
+
 class GaussianLikelihood(object):
 	__metaclass__=abc.ABCMeta
 	"""
@@ -14,11 +18,11 @@ class GaussianLikelihood(object):
 	Subclasses must override build_data and build_covariance,
 	e.g. to load from file.
 	"""
-	x_section = "missing"
-	x_name    = "missing"
-	y_section = "missing"
-	y_name    = "missing"
-	like_name = "missing"
+	x_section = MISSING
+	x_name    = MISSING
+	y_section = MISSING
+	y_name    = MISSING
+	like_name = MISSING
 
 	def __init__(self, options):
 		self.options=options
@@ -76,10 +80,9 @@ class GaussianLikelihood(object):
 
 	def do_likelihood(self, block):
 		#get data x by interpolation
-		x = self.block_theory_points(block)
+		x = self.extract_theory_points(block)
 		mu = self.data_y
 
-		print self.inv_cov
 		#gaussian likelihood
 		d = x-mu
 		like = -0.5*np.einsum('i,ij,j', d, self.inv_cov, d)
@@ -107,6 +110,7 @@ class GaussianLikelihood(object):
 			#otherwise just use an empty existing vector
 			v = x
 			M = np.atleast_2d(self.inv_cov)
+			C = np.atleast_2d(self.cov)
 
 		#apend the new theory points and save the result
 		block[names.data_vector, 'vector'] = v
@@ -116,7 +120,7 @@ class GaussianLikelihood(object):
 
 
 
-	def block_theory_points(self, block):
+	def extract_theory_points(self, block):
 		"Extract relevant theory from block and get theory at data x values"
 		theory_x = block[self.x_section, self.x_name]
 		theory_y = block[self.y_section, self.y_name]
@@ -158,43 +162,44 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
 	A Gaussian likelihood whos input is a single calculated value
 	not a vector
 	"""
-	name = "missing"
-	section = "missing"
-	like_name = "missing"	
+	name = MISSING
+	section = MISSING
+	like_name = MISSING
 	mean = None
 	sigma = None
 	def __init__(self, options):
 		self.options=options
 
 		#First try getting the value from the class itself
-		mean, sigma = self.build_data(options)
+		mean, sigma = self.build_data()
 
 		if options.has_value("mean"):
 			mean = options["mean"]
 		if options.has_value("sigma"):
 			sigma = options["sigma"]
-		print mean, sigma
+
 		if sigma is None or mean is None:
 			raise ValueError("Need to specify Gaussian mean/sigma for '{0}' \
 				either in class definition, build_data method, or in the ini \
 				file".format(self.name))
 		if options.has_value("like_name"):
 			self.like_name = options["like_name"]
+		print 'Likelihood "{0}" will be Gaussian {1} +/- {2} '.format(self.like_name, self.mean, self.sigma)
 		self.data_y = np.array([mean])
 		self.cov = np.array([[sigma**2]])
 		self.inv_cov = np.array([[sigma**-2]])
 
-	def build_data(self, options):
+	def build_data(self):
 		"""Sub-classes can over-ride this if they wish, to generate 
 		the data point in a more complex way"""
 		return self.mean, self.sigma
 
-	def build_covariance(self, options):
+	def build_covariance(self):
 		"""This method is only defined here to satisfy the superclass requirements. 
 		There is no point over-riding it"""
-		raise RuntimeError("Internal cosmosis error in Gaussian Likelihood")
+		raise RuntimeError("Internal cosmosis error in SingleValueGaussianLikelihood")
 
-	def block_theory_points(self, block):
+	def extract_theory_points(self, block):
 		"Extract relevant theory from block and get theory at data x values"
 		return np.atleast_1d(block[self.section, self.name])
 
