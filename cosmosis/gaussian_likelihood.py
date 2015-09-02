@@ -91,22 +91,27 @@ class GaussianLikelihood(object):
 		#here as the "fisher vector" - the vector of observables we want the derivatives
 		#of later, and inverse cov mat which also goes into the fisher matrix.
 		#If there is an existing Fisher vector, append to it.
-		if block.has_value(names.fisher, 'vector'):
-			v = block[names.fisher, 'vector']
+		if block.has_value(names.data_vector, 'vector'):
+			v = block[names.data_vector, 'vector']
 			v = np.concatenate((v, x))
 
-			#and the same for the inverse covmat
-			M = block[names.fisher, 'inv_cov']
+			#concatenate the covariance as block diagonals
+			C = block[names.data_vector, 'covariance']
+			C = scipy.linalg.block_diag(C, np.atleast_2d(self.cov))
+
+			#and the same for the inverse covariance
+			M = block[names.data_vector, 'inv_covariance']
 			M = scipy.linalg.block_diag(M, np.atleast_2d(self.inv_cov))
+
 		else:
 			#otherwise just use an empty existing vector
 			v = x
 			M = np.atleast_2d(self.inv_cov)
 
 		#apend the new theory points and save the result
-		
-		block[names.fisher, 'vector'] = v
-		block[names.fisher, 'inv_cov'] = M
+		block[names.data_vector, 'vector'] = v
+		block[names.data_vector, 'covariance'] = C
+		block[names.data_vector, 'inverse_covariance'] = M
 
 
 
