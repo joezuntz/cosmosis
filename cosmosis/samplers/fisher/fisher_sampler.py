@@ -1,5 +1,5 @@
 from .. import ParallelSampler
-from .fisher import compute_fisher_matrix
+from . import fisher
 from ...datablock import BlockError
 import numpy as np
 
