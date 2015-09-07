@@ -203,12 +203,44 @@ class PMCPostProcessor(WeightedMetropolisProcessor):
 		#statistics.DunkleyTest,
 		statistics.Citations,		
 	]
+	def reduced_col(self, name, stacked=True):
+		#we only use the last n samples from a multinest output
+		#file.  And omit zero-weighted samples.
+		n = int(self.final_metadata[0]["nsample"])
+		col = self.get_col(name)
+		w = self.get_col("log_weight")[-n:]
+		return col[-n:][np.isfinite(w)]
+		
+	def weight_col(self):
+		if hasattr(self, "_weight_col"):
+			return self._weight_col
+		n = int(self.final_metadata[0]["nsample"])
+		w = self.get_col("log_weight")[-n:]
+		w = w[np.isfinite(w)].copy()
+		self._weight_col = np.exp(w)
+		return self._weight_col
+
+	def posterior_sample(self):
+		"""
+		PMC chains are *not* drawn from the posterior distribution - they have weights.
+		We do have the information we need to construct such a sample.
+
+		This function returns a boolean array with True where we should
+		use the sample at that index, and False where we should not.
+
+		"""
+		w = self.weight_col()
+		w = w / w.max()
+		u = np.random.uniform(size=w.size)
+		return u<w
+
 
 class SnakeProcessor(PostProcessor):
 	sampler='snake'
 	elements = [
 		plots.GridPlots1D,
 		plots.SnakePlots2D,
+		statistics.Citations,		
 	]
 
 class FisherProcessor(PostProcessor):

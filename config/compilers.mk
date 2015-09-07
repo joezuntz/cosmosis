@@ -7,7 +7,7 @@ CC=gcc
 FC=gfortran
 
 ifeq (1,$(COSMOSIS_DEBUG))
-COMMON_FLAGS=-O0 -g -fPIC
+COMMON_FLAGS=-O0 -g -fPIC -fsanitize=address -fno-omit-frame-pointer
 else
 COMMON_FLAGS=-O3 -g -fPIC
 endif
@@ -21,6 +21,9 @@ LDFLAGS=$(USER_LDFLAGS) -L${COSMOSIS_SRC_DIR}/cosmosis/datablock
 PYTHON=python
 MAKEFLAGS += --print-directory
 
+ifeq (1,$(COSMOSIS_DEBUG))
+LDFLAGS+=-fsanitize=address 
+endif
 
 ifeq (1,${COSMOSIS_OMP})
 COMMON_FLAGS+= -fopenmp

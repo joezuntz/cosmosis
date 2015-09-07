@@ -41,8 +41,9 @@ fgas_parameters
 shear_calibration
 supernova_params
 
-# galaxy bias
+# galaxies
 bias_field
+galaxy_luminosity_function
 
 #background quantities
 distances
