@@ -242,3 +242,9 @@ class SnakeProcessor(PostProcessor):
 		plots.SnakePlots2D,
 		statistics.Citations,		
 	]
+
+class FisherProcessor(PostProcessor):
+	sampler = 'fisher'
+	elements = [
+		plots.CovarianceMatrixEllipse
+	]

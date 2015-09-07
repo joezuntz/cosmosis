@@ -12,4 +12,5 @@ from multinest import multinest_sampler
 from pmc import pmc_sampler
 from snake import snake_sampler
 from kombine import kombine_sampler
+from fisher import fisher_sampler
 from .list import list_sampler
