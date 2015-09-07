@@ -323,7 +323,7 @@ class LikelihoodPipeline(Pipeline):
                 c[i,j] /= (ri*rj)
         return c
 
-    def denormalize_matrix(self, c):
+    def denormalize_matrix(self, c, inverse=False):
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
@@ -333,7 +333,10 @@ class LikelihoodPipeline(Pipeline):
             for j in xrange(n):
                 pj = self.varied_params[j]
                 rj = pj.limits[1] - pj.limits[0]
-                c[i,j] *= (ri*rj)
+                if inverse:
+                    c[i,j] /= (ri*rj)
+                else:
+                    c[i,j] *= (ri*rj)
         return c
 
 

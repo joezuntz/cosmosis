@@ -70,6 +70,7 @@ class FisherSampler(ParallelSampler):
             self.step_size, self.tolerance, self.maxiter, pool=self.pool)
 
         fisher_matrix = fisher_calc.compute_fisher_matrix()
+        fisher_matrix = self.pipeline.denormalize_matrix(fisher_matrix,inverse=True)
 
         self.converged = True
 
