@@ -25,15 +25,17 @@ def compute_fisher_vector(p):
     #since if the pipeline finishes it must have a fisher vector if it
     #has been acceptably designed.
     try:
-        data['fisher', 'vector']
+        vector = data['data_vector', 'vector']
+        inv_cov = data['data_vector', 'inv_covariance']
     except BlockError:
-        raise ValueError("The pipeline you write for the Fisher sampler should save a vector 'data' in a section called 'fisher'")
+        raise ValueError("The pipeline you write for the Fisher sampler should save a vector 'vector' and inverse covmat 'inv_covariance' in a section called 'fisher'")
 
     #Might be only length-one, conceivably, so convert to a vector
     vector = np.atleast_1d(vector)
+    inv_cov = np.atleast_2d(inv_cov)
 
     #Return numpy vector
-    return vector
+    return vector, inv_cov
 
 class SingleProcessPool(object):
     def map(self, function, tasks):
