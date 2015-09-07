@@ -210,3 +210,9 @@ class SnakeProcessor(PostProcessor):
 		plots.GridPlots1D,
 		plots.SnakePlots2D,
 	]
+
+class FisherProcessor(PostProcessor):
+	sampler = 'fisher'
+	elements = [
+		plots.CovarianceMatrixEllipse
+	]

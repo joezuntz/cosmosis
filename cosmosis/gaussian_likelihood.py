@@ -28,7 +28,7 @@ class GaussianLikelihood(object):
 		self.options=options
 		self.data_x, self.data_y = self.build_data()
 		self.cov = self.build_covariance()
-		self.inv_cov = np.linalg.inv(self.cov)
+		self.inv_cov = self.build_inverse_covariance()
 		self.kind = self.kwargs.get("kind", "cubic")
 
 		#Allow over-riding where the inputs come from in 
@@ -61,13 +61,25 @@ class GaussianLikelihood(object):
 	@abc.abstractmethod
 	def build_covariance(self):
 		"""
-		Override the build_data method to read or generate 
+		Override the build_covariance method to read or generate 
 		the observed covariance
 		"""
 		#using info in self.options,
 		#like filenames etc,
 		#build covariance
 		pass
+
+	def build_inverse_covariance(self):
+		"""
+		Override the build_inverse_covariance method to change
+		how the inverse is generated from the covariance.
+
+		When the covariance is generated from a suite of simulations,
+		for example, the simple inverse is not the best estimate.
+
+		"""
+		return np.linalg.inv(self.cov)
+
 
 	def cleanup(self):
 		"""

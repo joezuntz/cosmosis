@@ -31,20 +31,16 @@ len(start_vector) will give you the number of parameters we are varying, which i
 '''
 
 class Fisher(object):
-  def __init__(self,
-               compute_vector, inv_covmat, step_size, ell_arr
-               tolerance, maxiter,
-               pool=None):
+  def __init__(self, compute_vector, start_vector, step_size, tolerance, maxiter, pool=None):
     
-    self.inverse_covmat = inv_covmat
     self.compute_vector = compute_vector
     self.maxiter = maxiter
     self.step_size = step_size
-    self.ell_arr = ell_arr
-    self.start_params = start_params
-    self.current_params = start_params
+    self.start_params = start_vector
+    self.current_params = start_vector
     self.nparams = start_vector.shape[0]
     self.iterations = 0
+    self.pool = pool
 
   def converged(self):
     crit = (abs(self.new_onesigma - self.old_onesigma).max() < self.threshold)
@@ -62,10 +58,8 @@ class Fisher(object):
       self.iterations+=1
       self.old_onesigma = self.new_onesigma
       self.current_params = self.choose_new_params(self.new_Fmatrix)
-      #self.current_cl = self.pool.map(self.compute_vector,
-      #                                 self.current_params)
 
-      self.new_Fmatrix = compute_fisher_matrix()
+      self.new_Fmatrix = self.compute_fisher_matrix()
 
       self.new_onesigma = compute_one_sigma(self.new_Fmatrix)
 
@@ -78,35 +72,57 @@ class Fisher(object):
         print "Done %d, max allowed %d" % (self.iterations, self.maxiter)
         return None
 
-  def compute_fisher_matrix():
+  def compute_fisher_matrix(self):
+    derivatives = []
+    for param_index in xrange(self.nparams):
+      derivative, inv_cov = self.compute_five_point_stencil_deriv(param_index)
+      derivatives.append(derivative)
+    derivatives = np.array(derivatives)
+    fisher_matrix = np.einsum("il,lk,jk->ij", derivatives, inv_cov, derivatives)
+    return fisher_matrix
 
-    dCl = compute_five_point_stencil_deriv()
-
-    delta_ell = np.diff(self.ell_arr)
-    delta_ell = np.concatenate([[delta_ell[0]], delta_ell])
-    Fmatrix = (2.*ell_arr+1.)*delta_ell*dCl[0]*self.inverse_covmat*dCl[1]
-    print 'ToDo: choose the axis!'
-    pdb.set_trace()
-    return Fmatrix
-
-  def compute_five_point_stencil_deriv():
+  def compute_five_point_stencil_deriv(self, param_index):
     # ToDo: would be nicer to compute the different steps as a pool too,
     # but this would require a pool within a pool?
-    Cl_plustwo = self.pool.map(self.compute_vector,
-                               self.current_params + 2*self.step_size)
-    Cl_plusone = self.pool.map(self.compute_vector,
-                               self.current_params + 1*self.step_size)
-    Cl_minustwo = self.pool.map(self.compute_vector,
-                                self.current_params - 2*self.step_size)
-    Cl_minusone = self.pool.map(self.compute_vector,
-                                self.current_params - 1*self.step_size)
+    print "Computing gradient of parameter ", param_index
+    delta = np.zeros(self.nparams)
+    delta[param_index] = 1.0
+    points = [self.current_params + x*delta for x in 
+      [2*self.step_size, 
+       1*self.step_size, 
+      -1*self.step_size, 
+      -2*self.step_size]
+    ]
 
-    deriv = (-Cl_plustwo + 8*Cl_plusone
-             - 8*Cl_minusone + Cl_minustwo)/(12*self.step_size)
+    if self.pool is None:
+      results = map(self.compute_vector, points)
+    else:
+      results = self.pool.map(self.compute_vector, points)
 
-    return deriv
+    obs = [r[0] for r in results]
+    inv_cov = results[0][1]
+
+    deriv = (-obs[0] + 8*obs[1] - 8*obs[2] + obs[3])/(12*self.step_size)
+    print "Derivative = ", deriv
+    return deriv, inv_cov
 
   def compute_one_sigma(Fmatrix):
     sigma = np.sqrt(np.linalg.inv(Fmatrix))
 
     return sigma
+
+def test():
+  def theory_prediction(x):
+    #same number of data points as parameters here
+    theory = 2*x + 2
+    inv_cov = np.diag(np.ones_like(x)**-1)
+    return theory, inv_cov
+
+  best_fit_params = np.array([0.1, 1.0, 2.0, 4.0])
+  fisher_calculator = Fisher(theory_prediction, best_fit_params, 0.01, 0.0, 1)
+  F = fisher_calculator.compute_fisher_matrix()
+  print F
+  return F
+
+if __name__ == '__main__':
+  test()
