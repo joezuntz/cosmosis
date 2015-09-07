@@ -1,5 +1,7 @@
 from .. import Sampler
 from .fisher import compute_fisher_matrix
+from ...datablock import BlockError
+
 import numpy as np
 
 def compute_fisher_vector(p):
