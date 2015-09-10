@@ -1,4 +1,6 @@
-MPI = $(shell which mpif90 2> /dev/null)
+include ../../../../config/compilers.mk
+
+MPI = $(shell which $(MPIFC) 2> /dev/null)
 
 TARGETS=libnest3.so
 ifneq ($(MPI),)
@@ -7,8 +9,6 @@ endif
 
 all: $(TARGETS)
 
-FC = gfortran
-MPIFC = mpif90
 FFLAGS += -O3 -fPIC -ffree-line-length-none
 
 ifeq ($(LAPACK_LINK),)
