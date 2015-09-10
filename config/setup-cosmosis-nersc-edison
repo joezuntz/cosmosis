@@ -1,0 +1,61 @@
+#This whole system uses Ted Kisner's hpcp set of modules
+source /project/projectdirs/cmb/modules/hpcports_NERSC.sh
+
+#We have to be in shared mode because we use python
+hpcports shared_gnu
+
+#Load all ther dependencies
+module load cfitsio-hpcp
+module load astropy-hpcp
+module load scons-hpcp
+module load blas-hpcp
+module load gsl-hpcp
+module load scipy-hpcp
+module load psycopg2-hpcp
+module load mpi4py-hpcp
+module load matplotlib-hpcp
+
+
+#Set the CosmoSIS source dir based on the directory this file is in.
+if [ -z "$COSMOSIS_SRC_DIR" ]
+then
+  cosmosis_dir=$( (builtin cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
+  cosmosis_dir=${cosmosis_dir%/config}
+  export COSMOSIS_SRC_DIR="$cosmosis_dir"
+fi
+
+
+#Set various flags
+export COSMOSIS_MPI=1
+export COSMOSIS_NEW_COMPILERS=1
+
+#Set the compilers to the ones supplied by the system.
+#We also tell the compilers.mk dile which is included by the Makefile
+#that we are specifying compilers manually.
+export COSMOSIS_ALT_COMPILERS=1
+export CC=cc
+export CXX=CC
+export FC=ftn
+export MPIFC=ftn
+
+#Add paths to cosmosis
+export PATH=$COSMOSIS_SRC_DIR/bin:$COSMOSIS_SRC_DIR/python/bin:$PATH
+export PYTHONPATH=$COSMOSIS_SRC_DIR:$COSMOSIS_SRC_DIR/python/lib/python2.7/site-packages:$PYTHONPATH
+
+
+#Add dependency paths used by the module makefiles.
+export GSL_INC=$gsl_PREFIX/include
+export GSL_LIB="$gsl_PREFIX/lib -lpthread"
+
+export FFTW_INCLUDE_DIR=$fftw_PREFIX/include
+export FFTW_LIBRARY=$fftw_PREFIX/lib
+
+export CFITSIO_LIB=$cfitsio_PREFIX/lib
+export CFITSIO_INC=$cfitsio_PREFIX/include
+
+export LAPACK_LINK="/opt/cray/libsci/13.0.1/GNU/49/sandybridge/lib/libsci_gnu_49.a"
+
+#Library paths for dynamic loading
+export DYLD_LIBRARY_PATH=${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/:/opt/cray/libsci/13.0.1/GNU/49/sandybridge/lib:${DYLD_LIBRARY_PATH}
+
+export LD_LIBRARY_PATH=${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-1.0/lib/:/opt/cray/libsci/13.0.1/GNU/49/sandybridge/lib:${LD_LIBRARY_PATH}
