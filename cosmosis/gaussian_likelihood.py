@@ -1,4 +1,3 @@
-import abc
 import scipy.interpolate
 import scipy.integrate
 import scipy.linalg
@@ -11,7 +10,6 @@ MISSING = "if_you_see_this_there_was_a_mistake_creating_a_gaussian_likelihood"
 
 
 class GaussianLikelihood(object):
-	__metaclass__=abc.ABCMeta
 	"""
 	Gaussian likelihood with a fixed covariance.  
 	
@@ -24,11 +22,16 @@ class GaussianLikelihood(object):
 	y_name    = MISSING
 	like_name = MISSING
 
+	#Set this to False to load the covariance at 
+	#each cosmology instead of once at the start
+	constant_covariance = True
+
 	def __init__(self, options):
 		self.options=options
 		self.data_x, self.data_y = self.build_data()
-		self.cov = self.build_covariance()
-		self.inv_cov = self.build_inverse_covariance()
+		if self.constant_covariance:
+			self.cov = self.build_covariance()
+			self.inv_cov = self.build_inverse_covariance()
 		self.kind = self.kwargs.get("kind", "cubic")
 
 		#Allow over-riding where the inputs come from in 
@@ -46,28 +49,32 @@ class GaussianLikelihood(object):
 
 
 
-	@abc.abstractmethod
 	def build_data(self):
 		"""
 		Override the build_data method to read or generate 
 		the observed data vector to be used in the likelihood
 		"""
+		raise RuntimeError("Your Gaussian covariance code needs to "
+			"over-ride the build_data method so it knows how to "
+			"load the observed data")
 		#using info in self.options,
 		#like filenames etc,
 		#build x to which we must interpolate
 		#return x, y
-		pass
 	
-	@abc.abstractmethod
 	def build_covariance(self):
 		"""
 		Override the build_covariance method to read or generate 
 		the observed covariance
 		"""
+		raise RuntimeError("Your Gaussian covariance code needs to "
+			"over-ride the build_covariance method so it knows how to "
+			"load the data covariance (or set constant_covariance=F and "
+			"over-ride the extract_covariance method)")
+
 		#using info in self.options,
 		#like filenames etc,
 		#build covariance
-		pass
 
 	def build_inverse_covariance(self):
 		"""
@@ -89,11 +96,37 @@ class GaussianLikelihood(object):
 		"""
 		pass
 	
+	def extract_covariance(self, block):
+		"""
+		Override this and set constant_covariance=False
+		to enable a cosmology-dependent covariance.
+
+		Load the covariance from the block here.
+		"""
+		raise RuntimeError("You need to implement the method "
+			"'extract_covariance' if you set constant_covariance=True "
+			"in a gaussian likelihood")
+
+	def extract_inverse_covariance(self, block):
+		"""
+		Override this and set constant_covariance=False
+		to enable a cosmology-dependent inverse
+		covariance matrix.
+
+		By default the inverse is just directly calculated from
+		the covariance, but you might have a different method.
+		"""
+		return np.linalg.inv(self.cov)
+
 
 	def do_likelihood(self, block):
 		#get data x by interpolation
 		x = self.extract_theory_points(block)
 		mu = self.data_y
+
+		if not self.constant_covariance:
+			self.cov = self.extract_covariance(block)
+			self.inv_cov = self.extract_inverse_covariance(block)
 
 		#gaussian likelihood
 		d = x-mu
