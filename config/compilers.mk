@@ -5,6 +5,7 @@ endif
 CXX=g++
 CC=gcc
 FC=gfortran
+MPIFC=mpif90
 
 ifeq (1,$(COSMOSIS_DEBUG))
 COMMON_FLAGS=-O0 -g -fPIC -fsanitize=address -fno-omit-frame-pointer
