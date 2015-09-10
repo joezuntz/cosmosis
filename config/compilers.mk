@@ -2,9 +2,18 @@ ifeq (,$(COSMOSIS_SRC_DIR))
 $(error "You must source config/setup-cosmosis before building.")
 endif
 
+ifeq (1,$(COSMOSIS_ALT_COMPILERS))
+#Assume compilers already defined
+CXX=CC
+CC=cc
+FC=ftn
+MPIFC=ftn
+else
 CXX=g++
 CC=gcc
 FC=gfortran
+MPIFC=mpif90
+endif
 
 ifeq (1,$(COSMOSIS_DEBUG))
 COMMON_FLAGS=-O0 -g -fPIC -fsanitize=address -fno-omit-frame-pointer
