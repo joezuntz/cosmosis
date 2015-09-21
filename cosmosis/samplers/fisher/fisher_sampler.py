@@ -2,6 +2,7 @@ from .. import ParallelSampler
 from . import fisher
 from ...datablock import BlockError
 import numpy as np
+import scipy.linalg
 
 def compute_fisher_vector(p):
     # use normalized parameters - fisherPipeline is a global
@@ -24,18 +25,21 @@ def compute_fisher_vector(p):
     #Get out the fisher vector.  Failing on this is definitely an error
     #since if the pipeline finishes it must have a fisher vector if it
     #has been acceptably designed.
-    try:
-        vector = data['data_vector', 'vector']
-        inv_cov = data['data_vector', 'inv_covariance']
-    except BlockError:
-        raise ValueError("The pipeline you write for the Fisher sampler should save a vector 'vector' and inverse covmat 'inv_covariance' in a section called 'fisher'")
+    v = []
+    M = []
+    for like_name in fisherPipeline.likelihood_names:
+        v.append(data["data_vector", like_name + "_vector"])
+        M.append(data["data_vector", like_name + "_inverse_covariance"])
+
+    v = np.concatenate(v)
+    M = scipy.linalg.block_diag(*M)
 
     #Might be only length-one, conceivably, so convert to a vector
-    vector = np.atleast_1d(vector)
-    inv_cov = np.atleast_2d(inv_cov)
+    v = np.atleast_1d(v)
+    M = np.atleast_2d(M)
 
     #Return numpy vector
-    return vector, inv_cov
+    return v, M
 
 class SingleProcessPool(object):
     def map(self, function, tasks):
