@@ -12,7 +12,7 @@ def abc_model(p):
     if data is None:
         return None
     try:
-        model = data['abc', 'abc_model']
+        model = data[names.data_vector, 'simulation']
     except BlockError:
         raise ValueError("The module in the AB pipeline should save a model with the same dimensions as the data") 
     return model

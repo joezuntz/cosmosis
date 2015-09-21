@@ -10,10 +10,16 @@ def abc_model(p):
     data = abc_pipeline.run_parameters(p)
     if data is None:
         return None
-    try:
-        model = data['abc', 'abc_model']
-    except BlockError:
-        raise ValueError("The module in the AB pipeline should save a model with the same dimensions as the data") 
+    #collect the models for each data set we want to use
+    model = []
+    for like_name in abc_pipeline.likelihood_names:
+        #Look in the standard place for the model
+        try:
+            model.append(data['data_vector', like_name + '_simulation'])
+        #Raise an error in the even of failure - this is a systematic problem
+        except BlockError:
+            raise ValueError("The module in the ABC pipeline should save a model (i.e. a simulation) with the same dimensions as the data, called NAME_simulation.")
+    model = np.concatenate(model)
     return model
 
 

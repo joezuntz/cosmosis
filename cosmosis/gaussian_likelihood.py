@@ -135,14 +135,23 @@ class GaussianLikelihood(object):
 		#Now save the resulting likelihood
 		block[names.likelihoods, self.like_name+"_LIKE"] = like
 
-		#And also the predicted data points, which we refer to
-		#here as the "fisher vector" - the vector of observables we want the derivatives
-		#of later, and inverse cov mat which also goes into the fisher matrix.
-		#If there is an existing Fisher vector, append to it.
+		#And also the predicted data points - the vector of observables 
+		# that in a fisher approch we want the derivatives of.
+		#and inverse cov mat which also goes into the fisher matrix.
 		block[names.data_vector, self.like_name + "_vector"] = np.atleast_1d(x)
 		block[names.data_vector, self.like_name + "_covariance"] = np.atleast_2d(C)
 		block[names.data_vector, self.like_name + "_inverse_covariance"] = np.atleast_2d(M)
 
+		#Also save a simulation of the data - the mean with added noise
+		#these can be used among other places by the ABC sampler.
+		sim = self.simulate_data_vector(x)
+		block[names.data_vector, self.like_name + "_simulation"] = sim
+
+	def simulate_data_vector(self, x):
+		"Simulate a data vector by adding a realization of the covariance to the mean"
+		#generate a vector of normal deviates
+		r = np.random.randn(x.size)
+		return x + np.dot(self.cov, r)
 
 
 	def extract_theory_points(self, block):
