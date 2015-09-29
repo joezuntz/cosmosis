@@ -348,6 +348,23 @@ class LikelihoodPipeline(Pipeline):
             return np.array([param.start for
                          param in self.varied_params])
 
+    def min_vector(self, all_params=False):
+        if all_params:
+            return np.array([param.limits[0] for
+                 param in self.parameters])
+        else:
+            return np.array([param.limits[0] for
+                         param in self.varied_params])
+
+    def max_vector(self, all_params=False):
+        if all_params:
+            return np.array([param.limits[1] for
+                 param in self.parameters])
+        else:
+            return np.array([param.limits[1] for
+                         param in self.varied_params])
+
+
     def run_parameters(self, p, check_ranges=False, all_params=False):
         if check_ranges:
             if self.is_out_of_range(p):
