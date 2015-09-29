@@ -632,11 +632,14 @@ class DataBlock(object):
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, False)
 
 	def get_grid(self, section, name_x, name_y, name_z):
+		name_x = name_x.lower()
+		name_y = name_y.lower()
+		name_z = name_z.lower()
 		x = self[section, name_x]
 		y = self[section, name_y]
 		z = self[section, name_z]
 		sentinel_key = "_cosmosis_order_%s"%name_z
-		sentinel_value = self[section, sentinel_key]
+		sentinel_value = self[section, sentinel_key].lower()
 
 		if sentinel_value== "%s_cosmosis_order_%s" % (name_x, name_y):
 			assert z.shape==(x.size, y.size)
@@ -660,7 +663,7 @@ class DataBlock(object):
 
 		sentinel_key = "_cosmosis_order_%s"%name_z
 		sentinel_value = "%s_cosmosis_order_%s" % (name_x, name_y)
-		self[section, sentinel_key] = sentinel_value
+		self[section, sentinel_key] = sentinel_value.lower()
 
 		# x = np.array(x, dtype=np.double)
 		# y = np.array(y, dtype=np.double)
