@@ -138,7 +138,8 @@ class GaussianLikelihood(object):
         #And also the predicted data points - the vector of observables 
         # that in a fisher approch we want the derivatives of.
         #and inverse cov mat which also goes into the fisher matrix.
-        block[names.data_vector, self.like_name + "_vector"] = np.atleast_1d(x)
+        block[names.data_vector, self.like_name + "_theory"] = np.atleast_1d(x)
+        block[names.data_vector, self.like_name + "_data"] = np.atleast_1d(mu)
         block[names.data_vector, self.like_name + "_covariance"] = np.atleast_2d(C)
         block[names.data_vector, self.like_name + "_inverse_covariance"] = np.atleast_2d(M)
 

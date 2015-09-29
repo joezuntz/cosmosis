@@ -1,10 +1,7 @@
 from .. import ParallelSampler
-try:
-    import abcpmc
-except ImportError:
-    raise ValueError("To use ABC PMC you need to install it with pip install abcpmc")
 import numpy as np
 from ...runtime import prior
+import scipy.linalg
 
 def abc_model(p):
     data = abc_pipeline.run_parameters(p)
@@ -28,6 +25,11 @@ class ABCSampler(ParallelSampler):
     sampler_outputs = [("weight", float),("distance",float)]
 
     def config(self):
+        try:
+            import abcpmc
+        except ImportError:
+            raise ValueError("To use ABC PMC you need to install it with pip install abcpmc")
+        
         global abc_pipeline
         abc_pipeline = self.pipeline
 
@@ -54,13 +56,14 @@ class ABCSampler(ParallelSampler):
         print "\nRunning ABC PMC"
         print "with %d particles, %s prior, %s threshold, %d iterations over (%f,%f), %s kernal \n" % (self.npart,self.set_prior,self.threshold,self.niter,self.epimax,self.epimin,self.part_prop)
 
+
+        #Initial positions for all of the parameters
+        self.p0 = np.array([param.start for param in self.pipeline.varied_params])
+
+
         #Data file is read for use in dist() for each step
         #parameter covariance used in the prior   
-        if self.run_multigauss:
-            self.sigma,self.data = self.generate_data(5000,0.25,1.)
-        else:
-            self.data = self.load_data()
-            self.sigma = self.load_covariance_matrix()
+        self.data, self.sigma = self.load_data()
         
         #At the moment the same prior (with variable hyperparameters) is
         # used for all parameters  - would be nice to change this to be more flexible 
@@ -69,7 +72,8 @@ class ABCSampler(ParallelSampler):
         for i,pi in enumerate(self.pipeline.varied_params):
             self.pmin[i] = pi.limits[0]
             self.pmax[i] = pi.limits[1]
-        self.p0 = np.array([param.start for param in self.pipeline.varied_params])
+
+
         if self.set_prior == 'uniform':
             self.prior = abcpmc.TophatPrior(self.pmin,self.pmax)
         else:
@@ -116,40 +120,24 @@ class ABCSampler(ParallelSampler):
     def dist(self,x, y):
         return np.sum(np.abs(np.mean(x, axis=0) - np.mean(y, axis=0)))
 
-
-    def load_covariance_matrix(self):
-        covmat_filename = self.read_ini("covmat", str, "").strip()
-        if covmat_filename == "":
-            covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
-        elif not os.path.exists(covmat_filename):
-            raise ValueError(
-            "Covariance matrix %s not found" % covmat_filename)
-        else:
-            covmat = np.loadtxt(covmat_filename)
-
-        if covmat.ndim == 0:
-            covmat = covmat.reshape((1, 1))
-        elif covmat.ndim == 1:
-            covmat = np.diag(covmat ** 2)
-
-        nparams = len(self.pipeline.varied_params)
-        if covmat.shape != (nparams, nparams):
-            raise ValueError("The covariance matrix was shape (%d x %d), "
-                    "but there are %d varied parameters." %
-                    (covmat.shape[0], covmat.shape[1], nparams))
-        return covmat
-
     def load_data(self):
-        data_filename = self.read_ini("datafile", str, "").strip()
-        if not os.path.exists(data_filename):
-            raise ValueError("Data file %s not found" % data_filename)
-        else:
-            self.data = np.loadtxt(data_filename)
+        #Load the data by running the pipeline once
+        print "Doing and initial ABC run of the pipeline, just to get the data vector from all the likelihood modules."
+        print "This is a slight waste of time (sorry) but the most general way of doing things."
 
-    def generate_data(self,size,std,Max):
-        sigma = np.eye(self.ngauss) * std
-        means = Max*np.random.random_sample((self.ngauss,))
-        if self.run_multigauss: print "True means: " ,means
-        np.savetxt("abc_multigauss_means.txt",np.vstack(means))
-        data = np.random.multivariate_normal(means, sigma, size)
-        return sigma,data
+        block = self.pipeline.run_parameters(self.p0)
+        if block is None:
+            raise ValueError("I had an error running the pipeline at the central starting values in the values file")
+
+        data = []
+        covs = []
+        for like_name in self.pipeline.likelihood_names:
+            data.append(data["data_vector", like_name + "_data"])
+            covs.append(data["data_vector", like_name + "_covariance"])
+
+        data = np.concatenate(data)
+        covs = scipy.linalg.block_diag(*covs)
+
+
+        #Save the data vector
+        return  data, covs

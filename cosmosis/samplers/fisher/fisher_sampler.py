@@ -28,7 +28,7 @@ def compute_fisher_vector(p):
     v = []
     M = []
     for like_name in fisherPipeline.likelihood_names:
-        v.append(data["data_vector", like_name + "_vector"])
+        v.append(data["data_vector", like_name + "_theory"])
         M.append(data["data_vector", like_name + "_inverse_covariance"])
 
     v = np.concatenate(v)
