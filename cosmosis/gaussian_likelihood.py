@@ -140,8 +140,8 @@ class GaussianLikelihood(object):
         #and inverse cov mat which also goes into the fisher matrix.
         block[names.data_vector, self.like_name + "_theory"] = np.atleast_1d(x)
         block[names.data_vector, self.like_name + "_data"] = np.atleast_1d(mu)
-        block[names.data_vector, self.like_name + "_covariance"] = np.atleast_2d(C)
-        block[names.data_vector, self.like_name + "_inverse_covariance"] = np.atleast_2d(M)
+        block[names.data_vector, self.like_name + "_covariance"] = np.atleast_2d(self.cov)
+        block[names.data_vector, self.like_name + "_inverse_covariance"] = np.atleast_2d(self.inv_cov)
 
         #Also save a simulation of the data - the mean with added noise
         #these can be used among other places by the ABC sampler.
@@ -245,9 +245,8 @@ class WindowedGaussianLikelihood(GaussianLikelihood):
         super(WindowedGaussianLikelihood, self).__init__(options)
         self.windows = self.build_windows()
 
-    @abc.abstractmethod
     def build_windows(self):
-        pass
+        raise RuntimeError("When you set up a new windowed Gaussian likelihood you need to write the build_windows method")
 
     def generate_theory_points(self, theory_x, theory_y):
         "Generate theory predicted data points using window function"
