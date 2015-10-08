@@ -4,10 +4,6 @@ endif
 
 ifeq (1,$(COSMOSIS_ALT_COMPILERS))
 #Assume compilers already defined
-CXX=CC
-CC=cc
-FC=ftn
-MPIFC=ftn
 else
 CXX=g++
 CC=gcc
