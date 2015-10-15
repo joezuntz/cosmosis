@@ -39,12 +39,13 @@ class MinuitSampler(ParallelSampler):
         self.save_cov = self.read_ini("save_cov", str, "")
         self.output_ini = self.read_ini("output_ini", str, "")
         self.verbose = self.read_ini("verbose", bool, False)
+        self.iterations = 0
 
         #Minuit options
         self.strategy = self.read_ini("strategy", str, "medium").lower()
         self.algorithm = self.read_ini("algorithm", str, "migrad").lower()
         fisher = self.read_ini("fisher", str, "")
-        self.width_estimate = self.read_ini("width_estimate", float, 0.1)
+        self.width_estimate = self.read_ini("width_estimate", float, 0.05)
         self.tolerance = self.read_ini("tolerance", float, 0.01)
 
         strategy = {
@@ -76,7 +77,6 @@ class MinuitSampler(ParallelSampler):
         self._run = MinuitSampler.libminuit.cosmosis_minuit2_wrapper
         self._run.restype = ct.c_int
         vec = ct.POINTER(ct.c_double)
-        #self._run.argtypes = [ct.c_int, vec, vec, vec, loglike_type]
         self.ndim = len(self.pipeline.varied_params)
 
         cube_type = ct.c_double*self.ndim
@@ -84,13 +84,13 @@ class MinuitSampler(ParallelSampler):
         @loglike_type
         def wrapped_likelihood(cube_p):
             vector = np.frombuffer(cube_type.from_address(ct.addressof(cube_p.contents)))
-            # vector = self.pipeline.denormalize_vector(cube_vector)
             try:
                 like, extra = self.pipeline.posterior(vector)
             except KeyboardInterrupt:
                 sys.exit(1)
+            self.iterations += 1
             if self.verbose:
-                print like, "    ".join(str(v) for v in vector)
+                print self.iterations, like, "   ",  "    ".join(str(v) for v in vector)
             return -like
 
         self.wrapped_likelihood = wrapped_likelihood

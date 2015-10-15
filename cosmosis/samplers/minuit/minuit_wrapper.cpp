@@ -102,14 +102,13 @@ int cosmosis_minuit2_wrapper(
 	MnUserParameters upar;
 	for (int i=0; i<nparam; i++){
 		// Parameter width estimate - one tenth of the width.
-		double width = 0.1*(upper[i]-lower[i]);
+		double width = options.width_estimate*(upper[i]-lower[i]);
 		// Add the parameter, it's starting point, scale, min, and max.
 		upar.Add(param_names[i], start[i], width, lower[i], upper[i]);
 	}
 
 	if (options.do_master_output){
-		std::cout <<  std::endl;
-		std::cout <<  std::endl;
+		std::cout <<  std::endl <<  std::endl;
 	}
 
 	// Describe to the user what our strategy is - just output here, no logic.
@@ -140,11 +139,13 @@ int cosmosis_minuit2_wrapper(
 	{
 		case MIGRAD_ALGORITHM:
 			minimizer = new MnMigrad(func, upar, options.strategy);
-			if (options.do_master_output) std::cout << "Using MIGRAD algorithm" << std::endl;
+			if (options.do_master_output) std::cout << "Using MIGRAD algorithm" 
+				<< std::endl;
 			break;
 		case SIMPLEX_ALGORITHM:
 			minimizer = new MnSimplex(func, upar, options.strategy);
-			if (options.do_master_output) std::cout << "Using SIMPLEX algorithm" << std::endl;
+			if (options.do_master_output) std::cout << "Using SIMPLEX algorithm" 
+				<< std::endl;
 			break;
 		case FALLBACK_ALGORITHM:
 			minimizer = new MnMinimize(func, upar, options.strategy);
@@ -164,10 +165,13 @@ int cosmosis_minuit2_wrapper(
 		std::cout <<  std::endl;
 	}
 	// Run the minimization
+	std::cout << "Tolerance = " << options.tolerance << std::endl;
+	std::cout << "Max evals = " << options.max_evals << std::endl;
 	FunctionMinimum min = (*minimizer)(options.max_evals, options.tolerance);
 
 	// Print out the convergence information
-	if (options.do_master_output) std::cout << std::endl << "MINUIT convergence information:" << min;
+	if (options.do_master_output) std::cout << std::endl << 
+		"MINUIT convergence information:" << min;
 
 	// Return the results back to the calling function
 	// by overwriting the start vector
