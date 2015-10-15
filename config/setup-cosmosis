@@ -153,6 +153,11 @@ fi
 if [ -d "$SETUPS_DIR/minuit2/v5_28_0" ]
 then
 	setup -B minuit2 v5_28_0 -q +e5:+prof
+else
+  if [ -d "$SETUPS_DIR/minuit2/v5_34_14" ]
+  then
+    setup -B minuit2 v5_34_14 -q +e7:+prof
+  fi
 fi
 
 #if [ "$flavor" = "Darwin64bit" ]
