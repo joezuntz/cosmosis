@@ -130,8 +130,6 @@ int cosmosis_minuit2_wrapper(
 
 	}
 
-	if (options.do_master_output)std::cout << "Using tolerance value: " << options.tolerance <<  std::endl;
-
 
 	// Decide which minimizer to use, and tell the user
 	MnApplication * minimizer;
@@ -160,13 +158,14 @@ int cosmosis_minuit2_wrapper(
 			fprintf(stderr, "Please open an issue with cosmosis to report this.\n");
 			exit(1);
 	}
+	
 	if (options.do_master_output){
 		std::cout <<  std::endl;
 		std::cout <<  std::endl;
 	}
 	// Run the minimization
 	std::cout << "Tolerance = " << options.tolerance << std::endl;
-	std::cout << "Max evals = " << options.max_evals << std::endl;
+	std::cout << "Evaluations remaining = " << options.max_evals << std::endl;
 	FunctionMinimum min = (*minimizer)(options.max_evals, options.tolerance);
 
 	// Print out the convergence information
@@ -194,11 +193,13 @@ int cosmosis_minuit2_wrapper(
 		}
 	}
 
+
+	int status = min.IsValid() ? 0 : minimizer->NumOfCalls();
+
 	// Clean up
 	delete minimizer;
 
 
-	int status = min.IsValid() ? 0 : 1;
 	return status;
 }
 

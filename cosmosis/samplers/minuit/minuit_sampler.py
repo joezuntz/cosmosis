@@ -47,6 +47,8 @@ class MinuitSampler(ParallelSampler):
         fisher = self.read_ini("fisher", str, "")
         self.width_estimate = self.read_ini("width_estimate", float, 0.05)
         self.tolerance = self.read_ini("tolerance", float, 0.01)
+        self.neval = 0
+        self.param_vector = self.pipeline.start_vector()  #initial value
 
         strategy = {
             "fast":0,
@@ -97,8 +99,35 @@ class MinuitSampler(ParallelSampler):
 
 
     def execute(self):
-        
         param_vector, param_names, like, data, status = self.sample()
+
+        #update the current parameters
+        self.param_vector = param_vector.copy()
+
+
+        if status == 0:
+            print 
+            print "Minuit suceeeded this iteration so we will stop now."
+            self.save_results(status, param_vector, param_names, like, data)
+            self.converged = True
+        else:
+            self.neval += status
+
+
+        if (self.neval > self.maxiter) and (status>0):
+            print
+            print "Reached max number of evalations Stopping now."
+            print "Never converged but saving the best we did."
+            print
+            self.save_results(status, param_vector, param_names, like, data)
+        else:
+            print
+            print "Minuit did not converge this iteration; running again"
+            print "until we run out of iterations."
+            print
+
+
+    def save_results(self, status, param_vector, param_names, like, data):
         section = None
 
         if self.pool is not None:
@@ -125,7 +154,7 @@ class MinuitSampler(ParallelSampler):
             print
 
         if self.save_dir:
-            print "Saving best-fit results to ", self.save_dir
+            print "Saving best-fit model cosmology to ", self.save_dir
             data.save_to_directory(self.save_dir, clobber=True)
 
         self.converged = True
@@ -137,14 +166,15 @@ class MinuitSampler(ParallelSampler):
         param_names_array[:] = param_names
 
         master = 1 if self.pool is None or self.pool.is_master() else 0
-
-
-        param_vector = self.pipeline.start_vector()
+        
         param_max = self.pipeline.max_vector()
         param_min = self.pipeline.min_vector()
 
+        param_vector = self.param_vector.copy()
+
         options = MinuitOptionsStruct(
-            max_evals=self.maxiter, strategy=self.strategy, 
+            #allow for more loops
+            max_evals=self.maxiter-self.neval, strategy=self.strategy, 
             algorithm=self.algorithm, save_cov=self.save_cov, 
             tolerance=self.tolerance, width_estimate=self.width_estimate,
             do_master_output = master
@@ -162,7 +192,6 @@ class MinuitSampler(ParallelSampler):
         #Run the pipeline one last time ourselves, so we can save the 
         #likelihood and cosmology
         like, _, data = self.pipeline.likelihood(param_vector, return_data=True)
-
         return param_vector, param_names, like, data, status
 
     def worker(self):
