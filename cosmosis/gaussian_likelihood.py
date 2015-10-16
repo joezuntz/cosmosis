@@ -32,7 +32,7 @@ class GaussianLikelihood(object):
         if self.constant_covariance:
             self.cov = self.build_covariance()
             self.inv_cov = self.build_inverse_covariance()
-        self.kind = self.kwargs.get("kind", "cubic")
+        self.kind = self.options.get_string("kind", "cubic")
 
         #Allow over-riding where the inputs come from in 
         #the options section
@@ -247,6 +247,9 @@ class WindowedGaussianLikelihood(GaussianLikelihood):
         self.windows = self.build_windows()
 
     def build_windows(self):
+        #This method should return a list of pairs of window_x, window_y:
+        # [(x_1, w_1), (x_2, w_2), (x_3, w_3), ...]
+        # There should be one window per data point.
         raise RuntimeError("When you set up a new windowed Gaussian likelihood you need to write the build_windows method")
 
     def generate_theory_points(self, theory_x, theory_y):
