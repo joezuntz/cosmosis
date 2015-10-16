@@ -178,7 +178,10 @@ int cosmosis_minuit2_wrapper(
 		start[i] = min.UserState().Value(i);
 	}
 
-	if (options.do_master_output){
+	int status = min.IsValid() ? 0 : minimizer->NumOfCalls();
+
+
+	if ((status==0) && options.do_master_output){
 		if (options.save_cov && strlen(options.save_cov)){
 			if (min.HasCovariance()){
 				MnUserCovariance cov = min.UserState().Covariance();
@@ -194,7 +197,6 @@ int cosmosis_minuit2_wrapper(
 	}
 
 
-	int status = min.IsValid() ? 0 : minimizer->NumOfCalls();
 
 	// Clean up
 	delete minimizer;

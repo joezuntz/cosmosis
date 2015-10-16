@@ -101,35 +101,38 @@ class MinuitSampler(ParallelSampler):
 
 
     def execute(self):
+        #Run an iteration of minuit
         param_vector, param_names, like, data, status = self.sample()
 
         #update the current parameters
         self.param_vector = param_vector.copy()
-
+        self.neval += status
 
         if status == 0:
             print 
-            print "Minuit suceeeded this iteration so we will stop now."
-            self.save_results(status, param_vector, param_names, like, data)
+            print "SUCCESS: Minuit has converged!"
+            self.save_results(param_vector, param_names, like, data)
             self.converged = True
-        else:
-            self.neval += status
+            print
+        elif self.neval > self.maxiter:
+            print
+            print "MINUIT has failed to converge properly in the max number of iterations.  Sorry."
+            print "Saving the best fitting parameters of the ones we trid, though beware: these are probably not the best-fit"
+            print
+            self.save_results(param_vector, param_names, like, data)
+            #we actually just use self.converged to indicate that the 
+            #sampler should stop now
+            self.converged = True
 
-
-        if (self.neval > self.maxiter) and (status>0):
-            print
-            print "Reached max number of evalations Stopping now."
-            print "Never converged but saving the best we did."
-            print
-            self.save_results(status, param_vector, param_names, like, data)
         else:
             print
-            print "Minuit did not converge this iteration; running again"
+            print "Minuit did not converge this run; trying again"
             print "until we run out of iterations."
             print
+            
 
 
-    def save_results(self, status, param_vector, param_names, like, data):
+    def save_results(self, param_vector, param_names, like, data):
         section = None
 
         if self.pool is not None:
@@ -150,10 +153,6 @@ class MinuitSampler(ParallelSampler):
             print "%s = %g" % (name,value)
         print
         print "Likelihood = ", like
-        if status:
-            print "MINUIT reports that it failed to converge properly.  Sorry."
-            print "status = ", status
-            print
 
         if self.save_dir:
             print "Saving best-fit model cosmology to ", self.save_dir
