@@ -367,6 +367,20 @@ class GrowthPlot(Plot):
 		pylab.legend(loc='center right')
 
 
+class LuminositySlopePlot(Plot):
+	filename='galaxy_luminosity_slope'
+	def plot(self):
+		super(LuminositySlopePlot,self).plot()
+		section = "galaxy_luminosity_function"
+		z = self.load_file(section, "z")
+		alpha = self.load_file(section, "alpha")
+		pylab.plot(z, alpha)
+		pylab.grid()
+		pylab.xlabel("Redshift z")
+		pylab.ylabel(r"Luminosity Function Slope $\alpha$")
+
+
+
 def main(args):
 	utils.mkdir(args.output_dir)
 	for cls in plot_list:
