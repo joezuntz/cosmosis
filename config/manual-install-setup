@@ -8,23 +8,23 @@
 export COSMOSIS_SRC_DIR=/path/to/cosmosis
 
 #The gnu science library
-export GSL_INC=/path/to/gsl.h
-export GSL_LIB=/path/to/libgsl.a
+export GSL_INC=/path/to/gsl/include
+export GSL_LIB=/path/to/gs/lib
 
 #The cfitsio FITS library
-export CFITSIO_INC=/path/to/fitsio.h
-export CFITSIO_LIB=/path/to/libcfitsio.a
+export CFITSIO_INC=/path/to/cfitsio/include
+export CFITSIO_LIB=/path/to/cfitsio/lib
 
 #The lapack linear algebra package
-#On a mac just put a '.' instead of this path
-export LAPACK_LIB=/path/to/lapack
+#On a mac this should just say "-framework Accelerate" or "-framework veclib" if that doesn't work
+export LAPACK_LINK=-L/path/to/lapack/lib -llapack -lblas
 
 
 #You may need to add :${DYLD_LIBRARY_PATH} to the end of this
-export DYLD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/
+export DYLD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-1.0/lib/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/plc-2.0/lib/
 
 #You may need to add :${LD_LIBRARY_PATH} to the end of this
-export LD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-1.0/lib/
+export LD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-1.0/lib/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/plc-2.0/lib/
 
 
 export PYTHONPATH=${COSMOSIS_SRC_DIR}:${PYTHONPATH}
