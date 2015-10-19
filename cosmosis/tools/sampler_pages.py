@@ -74,11 +74,12 @@ def generate_sampler_wiki(info):
 	for pname,description in list(info['params'].items()):
 		try:
 			dtype, default, rest = parse_parameter_description(description)
+			parameter_lines.append("{}|{}|{}|{}".format(pname, dtype, rest, default))
 		except (IndexError, ValueError):
 			print "ERROR: Could not parse in {0}".format(name)
 			print description
 			continue
-		parameter_lines.append("{}|{}|{}|{}".format(pname, dtype, rest, default))
+		
 	parameter_lines = '\n'.join(parameter_lines)
 	info['name'] = name.capitalize()
 	markdown = page_template.format( 
