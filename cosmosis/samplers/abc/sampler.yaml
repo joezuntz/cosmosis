@@ -32,12 +32,12 @@ installation: >
 # List of configuration options for this sampler
 params:
     npart: (integer) number of particles
-    threshold: (string; default = LinearEps) Various different threshold implementations,options =  LinearEps, ConstEps, ExpEps
+    threshold: "(string; default = LinearEps) Various different threshold implementations, options =  LinearEps, ConstEps, ExpEps"
     epimax: (double; default = 5.0) epsilon at t=0
     epimin: (double; default = 1.0) epsilon at t=T
-    niter: (integer; default = 2) T – number of iterations
-    particle_prop: (string; default = weighted_cov) Particle proposal kernal, options = weighted_cov, KNN, OLCM
+    niter: (integer; default = 2) T - number of iterations
+    particle_prop: "(string; default = weighted_cov) Particle proposal kernal, options = weighted_cov, KNN, OLCM"
     num_nn: (integer; default = 10) number of neighbours if using particle_prop = KNN
-    set_prior: (string; default = Gaussian) prior, options = Gaussian, uniform
+    set_prior: "(string; default = Gaussian) prior, options = Gaussian, uniform"
     run_multigauss: (boolean; default = F) generate multigaussian data
     ngauss: (int; default = 4) dimension of multigaussian if run_multigauss
