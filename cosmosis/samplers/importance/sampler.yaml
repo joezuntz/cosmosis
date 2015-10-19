@@ -23,5 +23,5 @@ installation: >
 
 params:
     input_filename: (string) cosmosis-format chain of input samples
-    nstap: (integer; default=128) number of samples to do between saving output
+    nstep: (integer; default=128) number of samples to do between saving output
     add_to_likelihood: (bool; default=N) include the old likelihood in the old likelihood; i.e. P'=P*P_new
