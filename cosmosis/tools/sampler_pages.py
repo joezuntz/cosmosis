@@ -7,7 +7,7 @@ from collections import OrderedDict
 #Generate the specific page for each sampler.
 
 def name_for_sampler_page(name):
-	return "{0}_sampler".format(name)
+	return name
 
 page_template = u"""
 # The {name} sampler
