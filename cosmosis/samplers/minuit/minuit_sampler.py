@@ -46,9 +46,9 @@ class MinuitSampler(ParallelSampler):
         #Minuit options
         self.strategy = self.read_ini("strategy", str, "medium").lower()
         self.algorithm = self.read_ini("algorithm", str, "migrad").lower()
-        fisher = self.read_ini("fisher", str, "")
+
         self.width_estimate = self.read_ini("width_estimate", float, 0.05)
-        self.tolerance = self.read_ini("tolerance", float, 0.01)
+        self.tolerance = self.read_ini("tolerance", float, 50.0)
         self.neval = 0
         self.param_vector = self.pipeline.start_vector()  #initial value
 
@@ -75,8 +75,6 @@ class MinuitSampler(ParallelSampler):
             raise ValueError("Minuit 'algorithm' parameter must be one of migrad, fallback, simplex (default=migrad) not '%s'"%strategy)
         self.algorithm = algorithm
 
-        self.do_fisher = int(bool(fisher))
-        self.fisher_file = fisher
 
         self._run = MinuitSampler.libminuit.cosmosis_minuit2_wrapper
         self._run.restype = ct.c_int
