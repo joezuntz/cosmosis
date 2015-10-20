@@ -15,6 +15,10 @@ export GSL_LIB=/path/to/libgsl.a
 export CFITSIO_INC=/path/to/fitsio.h
 export CFITSIO_LIB=/path/to/libcfitsio.a
 
+export FFTW_LIBRARY=/path/to/fftw/lib
+export FFTW_INC_DIR=/path/to/fftw/include
+
+
 #The lapack linear algebra package
 #On a mac just put a '.' instead of this path
 export LAPACK_LIB=/path/to/lapack
