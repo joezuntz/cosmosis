@@ -15,6 +15,10 @@ export GSL_LIB=/path/to/gs/lib
 export CFITSIO_INC=/path/to/cfitsio/include
 export CFITSIO_LIB=/path/to/cfitsio/lib
 
+export FFTW_LIBRARY=/path/to/fftw/lib
+export FFTW_INC_DIR=/path/to/fftw/include
+
+
 #The lapack linear algebra package
 #On a mac this should just say "-framework Accelerate" or "-framework veclib" if that doesn't work
 export LAPACK_LINK=-L/path/to/lapack/lib -llapack -lblas
