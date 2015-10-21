@@ -1,4 +1,8 @@
-export COSMOSIS_SRC_DIR=/home/jaz/cosmosis
+# This setup script is suitable for Ubuntu 14 machines
+# where the dependencies have been installed with apt-get
+# You may need to change the COSMOSIS_SRC_DIR to match the path you installed on.
+
+export COSMOSIS_SRC_DIR=$HOME/cosmosis
 
 #The gnu science library
 export GSL_INC=/usr/include
