@@ -102,7 +102,7 @@ class PostProcessor(object):
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs
         self.name = "Data"
         for chain in self.metadata:
-            for key,val in chain:
+            for key,val in chain.items():
                 self.sampler_options[key] = val
 
     def load_dict(self, inputs):
