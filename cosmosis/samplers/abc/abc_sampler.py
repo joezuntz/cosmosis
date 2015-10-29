@@ -74,11 +74,12 @@ class ABCSampler(ParallelSampler):
             self.pmax[i] = pi.limits[1]
 
 
-        if self.set_prior == 'uniform':
+        if self.set_prior.lower() == 'uniform':
             self.prior = abcpmc.TophatPrior(self.pmin,self.pmax)
-        else:
+        elif self.set_prior.lower() == 'gaussian':
             self.prior = abcpmc.GaussianPrior(self.p0, self.sigma*2) 
-
+        else:
+            raise ValueError("Please set the ABC option 'set_prior' to either 'uniform' or 'gaussian'. At the moment only 'uniform' works in the general case.")
         #create sampler
         self.sampler = abcpmc.Sampler(N=self.npart, Y=self.data, postfn=abc_model, dist=self.dist)
 
@@ -132,12 +133,11 @@ class ABCSampler(ParallelSampler):
         data = []
         covs = []
         for like_name in self.pipeline.likelihood_names:
-            data.append(data["data_vector", like_name + "_data"])
-            covs.append(data["data_vector", like_name + "_covariance"])
+            data.append(block["data_vector", like_name + "_data"])
+            covs.append(block["data_vector", like_name + "_covariance"])
 
         data = np.concatenate(data)
         covs = scipy.linalg.block_diag(*covs)
-
 
         #Save the data vector
         return  data, covs
