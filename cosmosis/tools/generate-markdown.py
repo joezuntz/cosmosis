@@ -30,7 +30,7 @@ page_template = u"""
 
 **Name**: {name}
 
-**Directory**: {dirname}
+**File**: {filepath}
 
 **Version**: {version}
 
@@ -123,6 +123,7 @@ f.close()
 
 
 def make_list(l):
+	if l is None: return ""
 	if isinstance(l, basestring):
 		return u"- "+l
 	else:
@@ -151,6 +152,7 @@ def make_page(info):
 		input_lines = input_lines,
 		output_lines = output_lines,
 		parameter_lines=parameter_lines,
+		filepath=info['dirname'] + "/" + info['interface'],
 		**info)
 	open("wiki/default_modules/{}.md".format(info['page_name']),"w").write(markdown.encode("utf-8"))
 
