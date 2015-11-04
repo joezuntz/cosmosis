@@ -29,6 +29,8 @@ explanation: >
     the parameters p, which we do not currently calculate here, as it is usually fixed in 
     cosmology. We plan to implement this shortly, however.
 
+    The CosmoSIS fisher sampler is calculated around the central value provided in the
+    values file; no optimization is done before running.
 
     Unlike most other CosmoSIS samplers which depend only likelihood of a parameter set,
     the fisher sampler requires the predicted observables from a pipeline too.  They are
