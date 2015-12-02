@@ -69,7 +69,7 @@ class GaussianLikelihood(object):
         """
         raise RuntimeError("Your Gaussian covariance code needs to "
             "over-ride the build_covariance method so it knows how to "
-            "load the data covariance (or set constant_covariance=F and "
+            "load the data covariance (or set constant_covariance=False and "
             "over-ride the extract_covariance method)")
 
         #using info in self.options,
@@ -104,7 +104,7 @@ class GaussianLikelihood(object):
         Load the covariance from the block here.
         """
         raise RuntimeError("You need to implement the method "
-            "'extract_covariance' if you set constant_covariance=True "
+            "'extract_covariance' if you set constant_covariance=False "
             "in a gaussian likelihood")
 
     def extract_inverse_covariance(self, block):
@@ -164,7 +164,7 @@ class GaussianLikelihood(object):
 
     def generate_theory_points(self, theory_x, theory_y):
         "Generate theory predicted data points by interpolation into the theory"
-        f = scipy.interpolate.interp(theory_x, theory_y, kind=self.kind)
+        f = scipy.interpolate.interp1d(theory_x, theory_y, kind=self.kind)
         return np.atleast_1d(f(self.data_x))
 
     @classmethod
