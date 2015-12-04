@@ -66,7 +66,7 @@ class PopulationMonteCarlo(object):
 			count = np.sum(C==i)
 			if count<self.kill_count:
 				self.kill[i] = True
-				print "Component %d less than kill count (%d < %d)" % (i, count, kill_count)
+				print "Component %d less than kill count (%d < %d)" % (i, count, self.kill_count)
 		x = np.array([self.components[c].sample() for c in C])
 		return C, x
 
