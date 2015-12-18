@@ -14,6 +14,18 @@ import os
 import sys
 
 default_latex_file = os.path.join(os.path.split(__file__)[0], "latex.ini")
+legend_locations = {
+"BEST": 0,
+"UR": 1,
+"UL": 2,
+"LL": 3,
+"LR": 4,
+"R": 5,
+"CL": 6,
+"CR": 7,
+"LC": 8,
+"UP": 8,
+"C": 10}
 
 class Plots(PostProcessorElement):
     excluded_columns = []
@@ -26,6 +38,15 @@ class Plots(PostProcessorElement):
         self.plot_set = self.source.index
         if self.source.cosmosis_standard_output and not self.no_latex:
             self.load_latex(latex_file)
+
+    def finalize(self):
+        super(Plots, self).finalize()
+        legend = self.options.get("legend", False)
+        if legend:
+            legend_loc = legend_locations[self.options.get("legend_loc", "best").upper()]
+            for fig in self.figures.values():
+                pylab.figure(fig.number)
+                pylab.legend(loc=legend_loc)
 
     def load_latex(self, latex_file):
         latex_names = {}
@@ -80,6 +101,7 @@ class Plots(PostProcessorElement):
             self.set_output(name, PostprocessPlot(name,filename,fig))
         else:
             fig = fig.value
+        self.figures[name] = fig
         return fig, filename
 
     def run(self):
@@ -88,7 +110,7 @@ class Plots(PostProcessorElement):
 
 
     def line_color(self):
-        possible_colors = ['b','g','r','m','y']
+        possible_colors = ['b','g','r', 'k', 'c' 'm','y']
         col = possible_colors[self.plot_set%len(possible_colors)]
         return col
 
@@ -215,7 +237,7 @@ class GridPlots1D(GridPlots):
         pylab.figure(fig.number)
 
         #Plot the likelihood
-        pylab.plot(vals1, np.exp(like), linewidth=3)
+        pylab.plot(vals1, np.exp(like), linewidth=3, label=self.source.label)
 
         #Find the levels of the 68% and 95% contours
         X, L = self.find_edges(np.exp(like), 0.68, 0.95, vals1)
@@ -421,7 +443,7 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
         #Make the plot
         pylab.figure(figure.number)
         keywords = self.keywords_1d()
-        pylab.plot(x_axis, like, color+'-', **keywords)
+        pylab.plot(x_axis, like, color+'-', label=self.source.label,  **keywords)
         pylab.xlabel(self.latex(name, dollar=True))
 
         return filename
@@ -513,7 +535,8 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
             pylab.contourf(x_axis, y_axis, like.T, [level1,level0], colors=[dark], alpha=0.25)
         else:
             color = self.line_color()
-            pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors=color)
+            cs = pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors=color)
+            cs.collections[0].set_label(self.source.label)
         if plot_points:
             pylab.plot(x, y, ',')
 
@@ -556,12 +579,19 @@ class TestPlots(Plots):
         for cls in cosmology_theory_plots.plot_list:
             fig = None
             try:
+                #may return None
+                figure = self.get_output(cls.filename)
+                if figure is None:
+                    print "New plot", cls.filename
+                else:
+                    print "Old plot", cls.filename
                 p=cls(dirname, output_dir, prefix, ftype, figure=None)
                 filename=p.filename
                 fig = p.figure
                 p.figure=fig
                 p.plot()
-                self.set_output(cls.filename, PostprocessPlot(p.filename,p.outfile,fig))
+                if figure is None:
+                    self.set_output(cls.filename, PostprocessPlot(p.filename,p.outfile,fig))
                 filenames.append(filename)
             except IOError as err:
                 if fig is not None:
@@ -721,6 +751,33 @@ class MultinestColorScatterPlot(MultinestPostProcessorElement, ColorScatterPlotB
     pass
 
 
+
+class CovarianceMatrixGaussians(Plots):
+    def run(self):
+        filenames = []
+        Sigma = np.linalg.inv(self.source.data[0]).diagonal()**0.5
+        Mu = [float(self.source.metadata[0]['mu_{0}'.format(i)]) for i in xrange(Sigma.size)]
+
+        for name, mu, sigma in zip(self.source.colnames, Mu, Sigma):
+            filename = self.plot_1d(name, mu, sigma)
+            filenames.append(filename)
+        return filenames
+
+    def plot_1d(self, name, mu, sigma):
+        xmin = mu - 4*sigma
+        xmax = mu + 4*sigma
+        sigma2 = sigma**2
+        x = np.linspace(xmin, xmax, 200)
+        p = np.exp(-0.5 * (x-mu)**2 / sigma2) / np.sqrt(2*np.pi*sigma2)
+        figure,filename = self.figure(name)
+        pylab.figure(figure.number)
+        pylab.plot(x, p, label=self.source.label)
+        pylab.xlabel(self.latex(name))
+        pylab.ylabel("Posterior")
+        return filename
+
+
+
 class CovarianceMatrixEllipse(Plots):
 
     def run(self):
@@ -753,7 +810,7 @@ class CovarianceMatrixEllipse(Plots):
 
         #Plot the 1 sigma and 2 sigma ellipses
         self.plot_cov_ellipse(covmat, pos, nstd=1, facecolor=None, 
-            edgecolor=self.line_color(), linewidth=2, fill=False)
+            edgecolor=self.line_color(), linewidth=2, fill=False, label=self.source.label)
         self.plot_cov_ellipse(covmat, pos, nstd=2, facecolor=None, 
             edgecolor=self.line_color(), linewidth=2, fill=False)
 
@@ -828,7 +885,7 @@ class CovarianceMatrixEllipse(Plots):
         width, height = 2 * nstd * np.sqrt(vals)
         ellip = Ellipse(xy=pos, width=width, height=height, angle=theta, **kwargs)
 
-        pylab.gca().add_artist(ellip)
+        pylab.gca().add_patch(ellip)
         return ellip
 
 

@@ -36,12 +36,13 @@ class PostProcessor(object):
     __metaclass__=PostProcessMetaclass
     sampler=None
     cosmosis_standard_output=True
-    def __init__(self, ini, index, **options):
+    def __init__(self, ini, label, index, **options):
         super(PostProcessor,self).__init__()
         self.options=options
         self.sampler_options={}
         self.steps = []
         self.index = index
+        self.label = label
         self.derive_file = options.get("derive", "")
         self.load(ini)
         elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
@@ -188,6 +189,8 @@ class PostProcessor(object):
 
     def finalize(self):
         print "Finalizing:"
+        for e in self.steps:
+            e.finalize()
         for f in self.outputs.values():
             print "Output: ", f.filename
             f.finalize()
