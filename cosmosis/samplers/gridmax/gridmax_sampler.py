@@ -10,7 +10,7 @@ def task(p):
 
 
 class GridMaxSampler(ParallelSampler):
-    sampler_outputs = [("like", float)]
+    sampler_outputs = [("post", float)]
 
     def config(self):
         global pipeline

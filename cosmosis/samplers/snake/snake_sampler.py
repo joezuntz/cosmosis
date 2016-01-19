@@ -13,7 +13,7 @@ def posterior(p_in):
 
 
 class SnakeSampler(ParallelSampler):
-    sampler_outputs = [("like", float)]
+    sampler_outputs = [("post", float)]
     parallel_output = False
 
     def config(self):
@@ -43,7 +43,7 @@ class SnakeSampler(ParallelSampler):
     def is_converged(self):
         if self.snake.converged():
             print "Snake has converged!"
-            print "Best like = %f    Best surface point = %f" %(self.snake.best_like_ever, self.snake.best_fit_like)
+            print "Best post = %f    Best surface point = %f" %(self.snake.best_like_ever, self.snake.best_fit_like)
             return True
         if self.snake.iterations > self.maxiter:
             print "Run out of iterations."
