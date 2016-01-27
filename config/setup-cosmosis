@@ -90,11 +90,12 @@ setup -B cosmosis_ups ${COSMOSIS_UPS_VERS}  2> /dev/null
 if [ $? -ne 0 ]
 then
   echo "It looks like you may just have updated CosmoSIS to a new version."
-  echo "This new version would like new dependencies."
+  echo "This new version requires new versions of some dependencies."
   echo "In a new terminal please run these commands one after the other:"
   echo "  source ups/setups"
   echo "  ./config/pull-new-cosmosis-dependencies"
-  echo "In a new terminal you should then be able to source config/setup-cosmosis"
+  echo "They will take some time to download, but then"
+  echo "in a new terminal you should then be able to source config/setup-cosmosis"
   return 1
 fi
 
