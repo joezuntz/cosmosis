@@ -47,7 +47,8 @@ then
 else
   setups_dir="${UPS_DIR}/../../.."
   source "${setups_dir}/setups"  || \
-    die "The setup of the UPS system from ${setups_dir} failed. Try unsetting PRODUCTS and UPS_DIR and re-installing CosmoSIS"
+    echo "The setup of the UPS system from ${setups_dir} failed. Try unsetting PRODUCTS and UPS_DIR and re-installing CosmoSIS"
+    return 1
   PRODUCTS="${product_db}:${PRODUCTS}"
 fi
 
@@ -94,7 +95,7 @@ then
   echo "  source ups/setups"
   echo "  ./config/pull-new-cosmosis-dependencies"
   echo "In a new terminal you should then be able to source config/setup-cosmosis"
-  die ""
+  return 1
 fi
 
 
