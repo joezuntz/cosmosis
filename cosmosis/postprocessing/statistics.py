@@ -450,6 +450,45 @@ class MultinestCovariance(ChainCovariance, Statistics, MultinestPostProcessorEle
     pass
 
 
+class CovarianceMatrix1D(Statistics):
+    def run(self):
+        params = self.source.colnames
+        Sigma = np.linalg.inv(self.source.data[0]).diagonal()**0.5
+        Mu = [float(self.source.metadata[0]['mu_{0}'.format(i)]) for i in xrange(Sigma.size)]        
+        header = '#'+'    '.join(params)
+        f, filename, new_file = self.get_text_output("means", header, self.source.name)
+
+        for P in zip(self.source.colnames, Mu, Sigma):
+            f.write("%s   %e   %e\n" % P)
+
+        print
+        print "Marginalized mean, std-dev:"
+        for P in zip(self.source.colnames, Mu, Sigma):
+            print '    %s = %g ± %g' % P
+        print
+
+        return [filename]
+
+class CovarianceMatrixEllipseAreas(Statistics):
+    def run(self):
+        params = self.source.colnames
+        header = '#param1  param2  area figure_of_merit'
+        f, filename, new_file = self.get_text_output("ellipse_areas", header, self.source.name)
+
+        covmat_estimate = np.linalg.inv(self.source.data[0])
+        for i,p1 in enumerate(params[:]):
+            for j,p2 in enumerate(params[:]):
+                if j>=i: continue
+                #Get the 2x2 sub-matrix
+                C = covmat_estimate[:,[i,j]][[i,j],:]
+                area = np.pi * np.linalg.det(C)
+                fom = 1.0/area
+                f.write("{0}  {1}  {2}  {3}\n".format(p1, p2, area, fom))
+
+        return [filename]
+
+
+
 class Citations(Statistics):
     #This isn't really a statistic but it uses all the same
     #mechanisms
