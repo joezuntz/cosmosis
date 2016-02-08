@@ -96,6 +96,10 @@ then
   echo "  ./config/pull-new-cosmosis-dependencies"
   echo "They will take some time to download, but then"
   echo "in a new terminal you should then be able to source config/setup-cosmosis"
+  echo
+  echo "If you do not want to do this now you can go back to the older version"
+  echo "by typing: git checkout v1.3"
+  echo "in both the main and cosmosis-standard-library directories."
   return 1
 fi
 
