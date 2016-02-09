@@ -149,12 +149,18 @@ class GaussianLikelihood(object):
 
         #gaussian likelihood
         d = x-mu
-        like = -0.5*np.einsum('i,ij,j', d, self.inv_cov, d)
+        chi2 = np.einsum('i,ij,j', d, self.inv_cov, d)
+        like = -0.5*chi2
+
+        #It can be useful to save the chi^2 as well as the likelihood,
+        #especially when the covariance is non-constant.
+        block[names.data_vector, self.like_name+"_CHI2"] = chi2
 
         #if the covariance is a function of parameters then we must 
         #account for this in the likelihood.
         if not self.constant_covariance:
             log_det = self.extract_covariance_log_determinant(block)
+            block[names.data_vector, self.like_name+"_LOG_DET"] = log_det
             like -= 0.5 * log_det
 
         #Now save the resulting likelihood
