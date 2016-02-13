@@ -140,7 +140,7 @@ class Plots(PostProcessorElement):
 
 
 class GridPlots(Plots):
-    excluded_columns=["post"]
+    excluded_columns=["post","like"]
     def __init__(self, *args, **kwargs):
         super(GridPlots, self).__init__(*args, **kwargs)
         self.nsample_dimension = self.source.metadata[0]['nsample_dimension']
@@ -172,7 +172,8 @@ class GridPlots1D(GridPlots):
     def plot_1d(self, name1):
         filename = self.filename(name1)
         cols1 = self.source.get_col(name1)
-        like = self.source.get_col("post")
+        try: like = self.source.get_col("post")
+        except: like = self.source.get_col("like")
         vals1 = np.unique(cols1)
         n1 = len(vals1)
         like_sum = np.zeros(n1)
@@ -276,7 +277,8 @@ class GridPlots2D(GridPlots):
         # Load the columns
         cols1 = self.source.get_col(name1)
         cols2 = self.source.get_col(name2)
-        like = self.source.get_col("post")
+        try: like = self.source.get_col("post")
+        except: like = self.source.get_col("like")
         vals1 = np.unique(cols1)
         vals2 = np.unique(cols2)
 
@@ -359,7 +361,8 @@ class SnakePlots2D(GridPlots2D):
         # Load the columns
         cols1 = self.source.get_col(name1)
         cols2 = self.source.get_col(name2)
-        like = self.source.get_col("post")
+        try: like = self.source.get_col("post")
+        except: like = self.source.get_col("like")
         vals1 = np.unique(cols1)
         vals2 = np.unique(cols2)
         dx1 = np.min(np.diff(vals1))
@@ -392,7 +395,7 @@ class SnakePlots2D(GridPlots2D):
 
 
 class MetropolisHastingsPlots(Plots, MCMCPostProcessorElement):
-    excluded_columns = ["post"]
+    excluded_columns = ["like","post"]
 
 
 class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
@@ -592,16 +595,16 @@ class WeightedPlots1D(object):
 
 
 class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_columns = ["post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
 
 
 class WeightedMetropolisPlots1D(WeightedPlots1D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_columns = ["post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
 
 
 
 class WeightedPlots2D(object):
-    excluded_columns = ["post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
     def smooth_likelihood(self, x, y):
         n = self.options.get("n_kde", 100)
         fill = self.options.get("fill", True)
@@ -635,11 +638,11 @@ class WeightedPlots2D(object):
         return level1, level2, like.sum()
 
 class WeightedMetropolisPlots2D(WeightedPlots2D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_columns = ["post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
     pass
 
 class MultinestPlots2D(WeightedPlots2D, MultinestPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_columns = ["post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
     pass
 
 
