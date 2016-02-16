@@ -230,7 +230,9 @@ class GridStatistics(ConstrainingStatistics):
         self.ndim = len(self.grid_columns)
         assert self.nrow == self.nsample**self.ndim
         self.shape = np.repeat(self.nsample, self.ndim)
-        self.like = np.exp(self.source.get_col("like")).reshape(self.shape)
+        like = self.source.get_col("like")
+        like -= like.max()
+        self.like = np.exp(like).reshape(self.shape)
         grid_names = [self.source.colnames[i] for i in xrange(self.ncol) if i in self.grid_columns]
         self.grid = [np.unique(self.source.get_col(name)) for name in grid_names]
 
