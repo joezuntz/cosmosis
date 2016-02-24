@@ -22,6 +22,10 @@ class EmceeSampler(ParallelSampler):
             self.nwalkers = self.read_ini("walkers", int, 2)
             self.samples = self.read_ini("samples", int, 1000)
             self.nsteps = self.read_ini("nsteps", int, 100)
+
+            assert self.nsteps>0, "You specified nsteps<=0 in the ini file - please set a positive integer"
+            assert self.samples>0, "You specified samples<=0 in the ini file - please set a positive integer"
+
             random_start = self.read_ini("random_start", bool, False)
             start_file = self.read_ini("start_points", str, "")
             self.ndim = len(self.pipeline.varied_params)
