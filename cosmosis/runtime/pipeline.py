@@ -266,10 +266,7 @@ class LikelihoodPipeline(Pipeline):
                                                               override,
                                                               )
 
-        self.varied_params = [param for param in self.parameters
-                              if param.is_varied()]
-        self.fixed_params = [param for param in self.parameters
-                             if param.is_fixed()]
+        self.reset_fixed_varied_parameters()
 
         #We want to save some parameter results from the run for further output
         extra_saves = self.options.get(PIPELINE_INI_SECTION,
@@ -287,6 +284,29 @@ class LikelihoodPipeline(Pipeline):
 
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
+
+    def reset_fixed_varied_parameters(self):
+        self.varied_params = [param for param in self.parameters
+                              if param.is_varied()]
+        self.fixed_params = [param for param in self.parameters
+                             if param.is_fixed()]     
+
+    def parameter_index(self, section, name):
+        i = self.parameters.index((section, name))
+        if i==-1:
+            raise ValueError("Could not find index of parameter %s in section %s"%(name, section))
+        return i
+
+    def set_varied(self, section, name, lower, upper):
+        i = self.parameter_index(section, name)
+        self.parameters[i].limits = (lower,upper)
+        self.reset_fixed_varied_parameters()
+
+    def set_fixed(self, section, name, value):
+        i = self.parameter_index(section, name)
+        self.parameters[i].limits = (value, value)
+        self.reset_fixed_varied_parameters()
+
 
     def output_names(self):
         param_names = [str(p) for p in self.varied_params]
