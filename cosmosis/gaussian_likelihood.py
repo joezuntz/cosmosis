@@ -213,6 +213,7 @@ class GaussianLikelihood(object):
         def execute(block, config):
             likelihoodCalculator = config
             likelihoodCalculator.do_likelihood(block)
+            return 0
 
         def cleanup(config):
             likelihoodCalculator = config
