@@ -159,7 +159,9 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.median = []
         self.l95 = []
         self.u95 = []
-        self.best_fit_index = self.source.get_col("like").argmax()
+        try:self.best_fit_index = self.source.get_col("post").argmax()
+        except:self.best_fit_index = self.source.get_col("like").argmax()
+        
         n = 0
         for col in self.source.colnames:
             n, mu, sigma, median, l95, u95 = self.compute_basic_stats_col(col)
@@ -182,7 +184,7 @@ class ChainCovariance(object):
     def run(self):
         #Determine the parameters to use
 
-        col_names = [p for p in self.source.colnames if p.lower() not in ["like", "importance", "weight"]]
+        col_names = [p for p in self.source.colnames if p.lower() not in ["like","post", "importance", "weight"]]
 
         if len(col_names)<2:
             return []
@@ -226,13 +228,18 @@ class GridStatistics(ConstrainingStatistics):
         self.ncol = len(self.source.colnames)
 
         extra = self.source.sampler_option("extra_output","").replace('/','--').split()
-        self.grid_columns = [i for i in xrange(self.ncol) if (not self.source.colnames[i] in extra) and (self.source.colnames[i]!="like")]
+        self.grid_columns = [i for i in xrange(self.ncol) if (not self.source.colnames[i] in extra) and (self.source.colnames[i]!="post") and (self.source.colnames[i]!="like")]
         self.ndim = len(self.grid_columns)
         assert self.nrow == self.nsample**self.ndim
         self.shape = np.repeat(self.nsample, self.ndim)
-        like = self.source.get_col("like")
+
+        try:
+            like = np.exp(self.source.get_col("post")).reshape(self.shape)
+        except:
+            like = np.exp(self.source.get_col("like")).reshape(self.shape)
         like -= like.max()
         self.like = np.exp(like).reshape(self.shape)
+
         grid_names = [self.source.colnames[i] for i in xrange(self.ncol) if i in self.grid_columns]
         self.grid = [np.unique(self.source.get_col(name)) for name in grid_names]
 
@@ -250,7 +257,8 @@ class GridStatistics(ConstrainingStatistics):
         self.sigma = np.zeros(self.ncol-1)
         self.l95 = np.zeros(self.ncol-1)
         self.u95 = np.zeros(self.ncol-1)        
-        like = self.source.get_col("like")
+        try:like = self.source.get_col("post")
+        except:like = self.source.get_col("like")
         self.best_fit_index = np.argmax(like)
         #Loop through colums
         for i, name in enumerate(self.source.colnames[:-1]):
@@ -290,7 +298,8 @@ class GridStatistics(ConstrainingStatistics):
         #sum over everything
         name = self.source.colnames[i]
         col = self.source.get_col(name)
-        like = self.source.get_col("like")
+        try:like = self.source.get_col("post")
+        except:like = self.source.get_col("like")
         like = like / like.sum()
         mu = (col*like).sum()
         sigma2 = ((col-mu)**2*like).sum()
@@ -429,7 +438,8 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.median = []
         self.l95 = []
         self.u95 = []
-        self.best_fit_index = self.source.get_col("like").argmax()
+        try:self.best_fit_index = self.source.get_col("post").argmax()
+        except:self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         for col in self.source.colnames:
             n, mu, sigma, median, l95, u95 = self.compute_basic_stats_col(col)

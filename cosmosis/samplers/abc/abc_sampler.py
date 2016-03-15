@@ -2,8 +2,14 @@ from .. import ParallelSampler
 import numpy as np
 from ...runtime import prior
 import scipy.linalg
+import types
 
 def abc_model(p):
+    #add check that omega_m >0
+   for i,pname in enumerate(abc_pipeline.varied_params):
+    if pname.name == 'omega_m' and p[i] <0:
+        return np.inf
+
     data = abc_pipeline.run_parameters(p)
     if data is None:
         return None
@@ -17,6 +23,7 @@ def abc_model(p):
         except BlockError:
             raise ValueError("The module in the ABC pipeline should save a model (i.e. a simulation) with the same dimensions as the data, called NAME_simulation.")
     model = np.concatenate(model)
+    
     return model
 
 
@@ -34,15 +41,21 @@ class ABCSampler(ParallelSampler):
         abc_pipeline = self.pipeline
 
         self.threshold = self.read_ini("threshold",str, 'LinearEps')
+        self.metric_kw = self.read_ini("metric",str, 'chi2') #mean, chi2 or other
+        if self.metric_kw =='other':
+            self.distance_func = self.read_ini("distance_func",str, None) #only for other metric, 
+            self.metric = self.distance_func[1:-1]
         self.epimax = self.read_ini('epimax', float,5.0)
         self.epimin = self.read_ini('epimin',float, 1.0)
         self.part_prop = self.read_ini("particle_prop",str,'weighted_cov')
-        self.set_prior = self.read_ini("set_prior",str,'Gaussian')
+        self.set_prior = self.read_ini("set_prior",str,'uniform')
+        self.param_cov = self.read_ini("param_cov_file",str,'None')
         self.knn = self.read_ini("num_nn",int, 10)
         self.npart = self.read_ini("npart",int,100)
         self.niter = self.read_ini("niter",int,2)
         self.ngauss = self.read_ini("ngauss",int,4)
         self.run_multigauss = self.read_ini("run_multigauss",bool,False)
+        self.diag_cov = self.read_ini("diag_cov",bool,False)
         self.ndim = len(self.pipeline.varied_params)
 
         #options for decreasing threshold
@@ -60,10 +73,9 @@ class ABCSampler(ParallelSampler):
         #Initial positions for all of the parameters
         self.p0 = np.array([param.start for param in self.pipeline.varied_params])
 
-
         #Data file is read for use in dist() for each step
         #parameter covariance used in the prior   
-        self.data, self.sigma = self.load_data()
+        self.data, self.cov, self.invcov = self.load_data()
         
         #At the moment the same prior (with variable hyperparameters) is
         # used for all parameters  - would be nice to change this to be more flexible 
@@ -77,7 +89,11 @@ class ABCSampler(ParallelSampler):
         if self.set_prior.lower() == 'uniform':
             self.prior = abcpmc.TophatPrior(self.pmin,self.pmax)
         elif self.set_prior.lower() == 'gaussian':
-            self.prior = abcpmc.GaussianPrior(self.p0, self.sigma*2) 
+            sigma2 = np.loadtxt(self.param_cov)
+            if len(np.atleast_2d(sigma2)[0][:]) != self.ndim:
+                raise ValueError("Cov matrix for Gaussian prior has %d columns for %d params" % len(np.atleast_2d(sigma2)[0][:]), self.ndim)
+            else:
+                self.prior = abcpmc.GaussianPrior(self.p0, np.atleast_2d(sigma2)) 
         else:
             raise ValueError("Please set the ABC option 'set_prior' to either 'uniform' or 'gaussian'. At the moment only 'uniform' works in the general case.")
         #create sampler
@@ -102,10 +118,6 @@ class ABCSampler(ParallelSampler):
         # generate outputs somehow by running log_probability_function
         outputs = []
         for output in self.sampler.sample(self.prior, self.eps):
-            if self.run_multigauss:
-                print("T: {0}, eps: {1:>.4f}, ratio: {2:>.4f}".format(output.t, output.eps, output.ratio))
-                for i, (mean, std) in enumerate(zip(np.mean(output.thetas, axis=0), np.std(output.thetas, axis=0))):
-                    print(u"    theta[{0}]: {1:>.4f} \u00B1 {2:>.4f}".format(i, mean,std))
             outputs.append(np.c_[output.thetas,output.ws,output.dists])
         for out in outputs:
             self.output_samples(out)
@@ -116,10 +128,17 @@ class ABCSampler(ParallelSampler):
     def is_converged(self):
         return  self.converged
 
-     #distance function: sum of abs mean differences
-        #Could add other distance functions here -EJ
     def dist(self,x, y):
-        return np.sum(np.abs(np.mean(x, axis=0) - np.mean(y, axis=0)))
+        if np.isinf(x).any():
+            return np.inf
+        if self.metric_kw == "chi2":
+            d  = x - y
+            return np.dot(d,np.dot(self.invcov,d))
+        elif self.metric_kw == "mean":
+            return np.sum(np.abs(np.mean(x, axis=0) - np.mean(y, axis=0)))
+        elif self.metric_kw == "other":
+            exec self.metric
+            return dist_result
 
     def load_data(self):
         #Load the data by running the pipeline once
@@ -132,12 +151,30 @@ class ABCSampler(ParallelSampler):
 
         data = []
         covs = []
+        invcovs = []
         for like_name in self.pipeline.likelihood_names:
             data.append(block["data_vector", like_name + "_data"])
             covs.append(block["data_vector", like_name + "_covariance"])
+<<<<<<< HEAD
+=======
+            invcovs.append(block["data_vector", like_name + "_inverse_covariance"])
+
+
+>>>>>>> abcsampler
 
         data = np.concatenate(data)
         covs = scipy.linalg.block_diag(*covs)
+        invcovs = scipy.linalg.block_diag(*invcovs)
+        
+        if self.diag_cov:
+            diag = np.diag(covs)
+            covs = np.diag(diag)
+            inv = 1./diag
+            invcovs = np.diag(inv)
 
+<<<<<<< HEAD
         #Save the data vector
         return  data, covs
+=======
+        return  data, covs,invcovs
+>>>>>>> abcsampler
