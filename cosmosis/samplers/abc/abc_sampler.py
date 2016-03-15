@@ -155,12 +155,7 @@ class ABCSampler(ParallelSampler):
         for like_name in self.pipeline.likelihood_names:
             data.append(block["data_vector", like_name + "_data"])
             covs.append(block["data_vector", like_name + "_covariance"])
-<<<<<<< HEAD
-=======
             invcovs.append(block["data_vector", like_name + "_inverse_covariance"])
-
-
->>>>>>> abcsampler
 
         data = np.concatenate(data)
         covs = scipy.linalg.block_diag(*covs)
@@ -172,9 +167,4 @@ class ABCSampler(ParallelSampler):
             inv = 1./diag
             invcovs = np.diag(inv)
 
-<<<<<<< HEAD
-        #Save the data vector
-        return  data, covs
-=======
         return  data, covs,invcovs
->>>>>>> abcsampler
