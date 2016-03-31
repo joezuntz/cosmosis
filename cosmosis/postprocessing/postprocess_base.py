@@ -205,7 +205,7 @@ class PostProcessor(object):
             print "or put '%s' to apply to all plots."%plots.Tweaks._all_filenames
             return
         elif tweaks.filename==tweaks._all_filenames:
-            filenames = [o.name for o in self.outputs if isinstance(o, plots.Plots)]
+            filenames = [o.name for o in self.outputs.values() if isinstance(o, plots.PostprocessPlot)]
         elif isinstance(tweaks.filename, list):
                 filenames = tweaks.filename
         else:
