@@ -21,7 +21,7 @@ export FFTW_INC_DIR=/path/to/fftw/include
 
 #The lapack linear algebra package
 #On a mac this should just say "-framework Accelerate" or "-framework veclib" if that doesn't work
-export LAPACK_LINK=-L/path/to/lapack/lib -llapack -lblas
+export LAPACK_LINK="-L/path/to/lapack/lib -llapack -lblas"
 
 
 #You may need to add :${DYLD_LIBRARY_PATH} to the end of this
