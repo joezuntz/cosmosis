@@ -26,7 +26,10 @@ explanation: >
 
 installation: >
     Requires the Minuit2 library. the auto-installer includes Minuit2, but if you are installing manually
-    you may need to download and install from your package manager or the URL above.
+    you may need to download and install from your package manager or the URL above. You will also need
+    to set the MINUIT2_INC and MINUIT2_LIB environment variables in your setup script to point to the directories
+    of the minuit2 headers and libraries respectively. (The minuit2 headers directory has two subdirectories,
+    called Minuit2 and Math. The MINUIT2_INC should point to the parent directory, not the subdir).
 
 
 params:
