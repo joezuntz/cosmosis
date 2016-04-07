@@ -114,6 +114,13 @@ class Pipeline(object):
                                  "debug",
                                  module.name]
 
+            #We let the user specify additional global sections that are
+            #visible to all modules
+            global_sections = self.options.get("runtime", "global", " ")
+            for global_section in global_sections.split():
+                relevant_sections.append(global_section)
+
+
             config_block = block.DataBlock()
 
             for (section, name), value in self.options:
