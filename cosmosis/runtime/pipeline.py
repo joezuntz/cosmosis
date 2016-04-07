@@ -145,7 +145,7 @@ class Pipeline(object):
         try:
             import pygraphviz as pgv
         except ImportError:
-            print "Cannot generate a graphical pipeline; please install the python package pydot (e.g. with pip install pydot)"
+            print "Cannot generate a graphical pipeline; please install the python package pygraphviz (e.g. with pip install pygraphviz)"
             return
         P = pgv.AGraph(directed=True)
         # P = pydot.Cluster(label="Pipeline", color='black',  style='dashed')
@@ -155,7 +155,7 @@ class Pipeline(object):
         P.add_node("Sampler", color='Pink', style='filled', group='pipeline',shape='octagon', fontname='Courier')
         for module in self.modules:
             # module_node = pydot.Node(module.name, color='Yellow', style='filled')
-            P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline')
+            P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline', shape='box')
         P.add_edge("Sampler", norm_name(self.modules[0].name), color='lightskyblue', style='bold', arrowhead='none')
         for i in xrange(len(self.modules)-1):
             P.add_edge(norm_name(self.modules[i].name),norm_name(self.modules[i+1].name), color='lightskyblue', style='bold', arrowhead='none')
