@@ -718,9 +718,13 @@ def _make_getter(cls, name):
 	if name=='__getitem__':
 		def getter(self, key):
 			return self.block[option_section, key]
+	elif "array" in name:
+		def getter(self, key):
+			return getattr(self.block, name)(option_section, key)
 	else:
 		def getter(self, key, default=None):
 			return getattr(self.block, name)(option_section, key, default=default)
+
 	return getter
 
 
