@@ -508,13 +508,16 @@ class Citations(Statistics):
         print 
         message = "#You should cite these papers in any publication based on this pipeline."
         print message
+        citations = set()
         f, filename, new_file = self.get_text_output("citations", message, self.source.name)
         for comment_set in self.source.comments:
             for comment in comment_set:
                 comment = comment.strip()
                 if comment.startswith("CITE"):
                     citation =comment[4:].strip()
-                    print "    ", citation
-                    f.write("%s\n"%citation)
+                    citations.add(citation)
+        for citation in citations:
+            print "    ", citation
+            f.write("%s\n"%citation)
         print
         return [filename]
