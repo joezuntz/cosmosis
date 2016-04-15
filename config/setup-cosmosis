@@ -2,6 +2,7 @@
 # environment for a development session.
 # Note: this currently only supports bash
 
+
 # Detect whether CosmoSIS is already set up; if so, do not repeat the
 # setup.
 cosmo_cmd=$(type cosmosis 2> /dev/null)
@@ -19,25 +20,42 @@ then
   export COSMOSIS_SRC_DIR="$cosmosis_dir"
 fi
 
-product_db=`cat $COSMOSIS_SRC_DIR/config/ups`
-if [ ! -f "$product_db/setups" ]
+if [ ! -z "${PRODUCTS}" ]
 then
-    echo "The directory $product_db does not appear to contain the UPS products."
+  echo "You have PRODUCTS defined to be ${PRODUCTS}"
+  echo "We will assume this is a valid UPS product search path"
+fi
+
+product_db=`cat $COSMOSIS_SRC_DIR/config/ups`
+if [ ! -f "${product_db}/.upsfiles/dbconfig" ]
+then
+    echo "The directory ${product_db} does not appear to contain the UPS products."
     return 1
 fi
 
-# initialize UPS
-source $product_db/setups
-if [ -z "$PRODUCTS" ]
+# Initialize UPS, if needed. If 'setup' is defined to be a shell
+# function, we have UPS already setup.
+if [ -z "${UPS_DIR}" ]
 then
+  echo "We are setting up UPS from $product_db"
+  source "${product_db}/setups"
+  if [ -z "${PRODUCTS}" ]
+  then
     echo "The setup of the UPS system has failed; please ask a local expert for assistance."
     return 1
+  fi
+else
+  setups_dir="${UPS_DIR}/../../.."
+  source "${setups_dir}/setups"  || \
+    echo "The setup of the UPS system from ${setups_dir} failed. Try unsetting PRODUCTS and UPS_DIR and re-installing CosmoSIS"
+    return 1
+  PRODUCTS="${product_db}:${PRODUCTS}"
 fi
 
 # Set the library path appropriate for our flavor.
 libdir=${COSMOSIS_SRC_DIR}/cosmosis/datablock
 flavor=$(ups flavor -1)
-if [ "$flavor" = "Darwin64bit" ]
+if [ "$flavor" == "Darwin64bit" ]
 then
     export DYLD_LIBRARY_PATH="${libdir}${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}"
 else
@@ -65,80 +83,27 @@ export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
 #fi
 
 # setup UPS packages
-# We do not use the Python UPS products on OS X.
+COSMOSIS_UPS_VERS=$(cat ${COSMOSIS_SRC_DIR}/config/cosmosis_ups_vers)
 
-setup -B gcc v4_9_2 2> /dev/null
-status=$?
+setup -B cosmosis_ups ${COSMOSIS_UPS_VERS}  2> /dev/null
 
-if [[ $status != 0 ]]
+if [ $? -ne 0 ]
 then
-setup -B gcc v4_8_2
+  echo "It looks like you may just have updated CosmoSIS to a new version."
+  echo "This new version requires new versions of some dependencies."
+  echo "In a new terminal please run these commands one after the other:"
+  echo "  source ups/setups"
+  echo "  ./config/pull-new-cosmosis-dependencies"
+  echo "They will take some time to download, but then"
+  echo "in a new terminal you should then be able to source config/setup-cosmosis"
+  echo
+  echo "If you do not want to do this now you can go back to the older version"
+  echo "by typing: git checkout v1.3"
+  echo "in both the main and cosmosis-standard-library directories."
+  return 1
 fi
 
 
-if [ "$flavor" != "Darwin64bit" ]
-then
-  setup -B scipy v0_14_0 -q +e7:+prof 2> /dev/null
-  status=$?
-
-  if [[ $status != 0 ]]
-  then
-    setup -B scipy v0_13_0b -q +e5:+prof
-  fi
-
-  setup -B pyfits v3_3 -q +e7:+prof 2> /dev/null
-  status=$?
-
-  if [[ $status != 0 ]]
-  then
-    setup -B pyfits v3_2a -q +e5:+prof
-  fi
-
-  setup -B pyyaml v3_11a 2> /dev/null
-  status=$?
-  if [[ $status != 0 ]]
-  then
-    setup -B pyyaml v3_11
-  fi
-
-fi
-
-setup -B gsl v1_16 -q +prof
-
-setup -B fftw v3_3_3 -q +prof 2> /dev/null
-status=$?
-
-if [[ $status != 0 ]]
-then
-setup -B fftw v3_3_4   -q +prof
-fi
-
-setup -B cfitsio v3_35_0 -q +prof 2> /dev/null
-status=$?
-
-if [[ $status != 0 ]]
-then
-setup -B cfitsio v3_37_0   -q +prof
-fi
-
-
-if [ "$flavor" == "Darwin64bit" ]
-then
-export LAPACK_LIB=.
-export LAPACK_LINK="-framework Accelerate"
-else
-
-setup -B lapack v3_5_0 -q +e7:+prof 2> /dev/null
-status=$?
-
-if [[ $status != 0 ]]
-then
-setup -B lapack v3_4_2 -q +e5:+prof
-fi
-
-export LAPACK_LINK="-L${LAPACK_LIB} -llapack -lblas"
-
-fi
 
 if [ -d "$SETUPS_DIR/planckdata/v1_1" ]
 then
@@ -149,38 +114,6 @@ if [ -d "$SETUPS_DIR/wmapdata/v5_00" ]
 then
 	setup -B wmapdata v5_00
 fi
-
-if [ -d "$SETUPS_DIR/minuit2/v5_28_0" ]
-then
-	setup -B minuit2 v5_28_0 -q +e5:+prof
-else
-  if [ -d "$SETUPS_DIR/minuit2/v5_34_14" ]
-  then
-    setup -B minuit2 v5_34_14 -q +e7:+prof
-  fi
-fi
-
-#if [ "$flavor" = "Darwin64bit" ]
-mpich_qualified_version="mpich v3_1 -q +e5:+prof"
-if ups exist $mpich_qualified_version
-then
-    setup -B $mpich_qualified_version
-else
-  mpich_qualified_version="mpich v3_1_2a -q +e7:+prof"
-  if ups exist $mpich_qualified_version
-  then
-      setup -B $mpich_qualified_version
-  fi
-fi
-
-export CLIK_PATH=${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/plc-2.0
-export PATH=${PATH}:${CLIK_PATH}/bin
-export PYTHONPATH=${PYTHONPATH}:${CLIK_PATH}/lib/python2.7/site-packages
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CLIK_PATH}/lib
-export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${CLIK_PATH}/lib
-export CLIK_DATA=${CLIK_PATH}/share/clik
-export CLIK_PLUGIN=rel2015
-
 
 function git-show-top-level {
     local __toplevel=`git rev-parse --show-toplevel 2> /dev/null`
@@ -214,3 +147,7 @@ echo "CosmoSIS initialized"
 echo
 
 set-git-prompt-repo-name
+
+
+#Additional setup. Should maybe be moved into UPS
+export LAPACK_LINK="-L${LAPACK_LIB} -llapack -lblas"
