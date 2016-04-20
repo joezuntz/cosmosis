@@ -138,6 +138,7 @@ class ConstrainingStatistics(Statistics):
         #which would indicate that the likelihood did not fall
         #off by the edges        
         if marge_like.min()==0: return
+
         like_ratio = marge_like.max() / marge_like.min()
         if like_ratio < 20:
             print
@@ -234,10 +235,12 @@ class GridStatistics(ConstrainingStatistics):
         self.shape = np.repeat(self.nsample, self.ndim)
 
         try:
-            like = np.exp(self.source.get_col("post")).reshape(self.shape)
+            like = self.source.get_col("post").reshape(self.shape).copy()
         except:
-            like = np.exp(self.source.get_col("like")).reshape(self.shape)
+            like = self.source.get_col("like").reshape(self.shape).copy()
+
         like -= like.max()
+
         self.like = np.exp(like).reshape(self.shape)
 
         grid_names = [self.source.colnames[i] for i in xrange(self.ncol) if i in self.grid_columns]
@@ -273,7 +276,6 @@ class GridStatistics(ConstrainingStatistics):
     def compute_grid_stats(self, i):
         name = self.source.colnames[i]
         col = self.source.get_col(name)
-
         #Sum the likelihood over all the axes other than this one
         #to get the marginalized likelihood
         marge_like = self.like.sum(tuple(j for j in xrange(self.ndim) if j!=i))
