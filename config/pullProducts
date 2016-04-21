@@ -1,0 +1,499 @@
+#!/bin/bash
+
+usage()
+{
+  cat 1>&2 <<EOF
+Usage: $(basename ${0}) [-h]
+       $(basename ${0}) <options> <product_topdir> <OS> <bundle-spec> <qual_set> <build-spec>
+
+Options:
+
+  -f    Force pull of tarball if it already exists
+  -h    This help.
+  -l    Use a local manifest.  This is for development, not for production.
+  -p    Only check for existing products in product_topdir
+  -V    Print version and exit
+
+Arguments:
+
+  product_topdir   Top directory for relocatable-UPS products area.
+  
+  OS               Supported os distributions: slf5, slf6, d13, d14, u14
+ 
+  bundle-spec      Bundle name and version, e.g., art-v1_12_04
+ 
+  qual_set         Some possible qualifier sets: 
+		   e6
+		   s6-e6
+		   e7
+		   s7-e7
+
+  build-spec       debug or prof.
+
+EOF
+}
+
+print_version()
+{
+  echo "$(basename ${0}) 1.02.01"
+}
+
+function pull_product()
+{
+   myprod=${1}
+   myver=${2}
+   mytar=${3}
+   if [ -z ${mytar} ]; then
+      echo "tarball unspecified for ${myprod}"
+      exit 1
+   fi
+   if [ -e ${working_dir}/${mytar} ]; then
+     if (( ${force:-0} )); then
+       echo "INFO: Tarball ${working_dir}/${mytar} exists and will be pulled again."
+     else
+       echo "INFO: Tarball ${working_dir}/${mytar} exists: use -f to pull again."
+       return 0
+     fi
+   fi
+   mydist=http://scisoft.fnal.gov/scisoft/packages/${myprod}/${myver}/${mytar}
+   echo "pull ${mytar}"
+   cd ${working_dir}
+   curl --fail --silent --location --insecure -O ${mydist}  || \
+      { cat 1>&2 <<EOF
+ERROR: pull of ${mydist} failed
+EOF
+        exit 1
+      }
+   if [ ! -e ${working_dir}/${mytar} ]; then
+     echo "ERROR: could not find ${working_dir}/${mytar}"
+     exit 1
+   fi
+   cd ${product_topdir}
+   tar xf ${working_dir}/${mytar} || exit 1
+   cd ${working_dir}
+   return 0
+}
+
+########################################################################
+# version_greater
+#
+# Compare two UPS version strings and return success if the first is
+# greater.
+function version_greater() {
+  perl -e 'use strict;
+$ARGV[0] =~ s&^\s*"([^"]+)"\s*$&${1}&;
+$ARGV[1] =~ s&^\s*"([^"]+)"\s*$&${1}&;
+my @v1 = ( $ARGV[0] =~ m&^v(\d+)(?:_(\d+)(?:_(\d+))?)?(.*)& );
+my @v2 = ( $ARGV[1] =~ m&^v(\d+)(?:_(\d+)(?:_(\d+))?)?(.*)& );
+my $result;
+if (defined $v1[0] and defined $v2[0] and $v1[0] == $v2[0]) {
+  if (defined $v1[1] and defined $v2[1] and $v1[1] == $v2[1]) {
+    if (defined $v1[2] and defined $v2[2] and $v1[2] == $v2[2]) {
+      $result = ($v1[3] and (!$v2[3] or $v1[3] gt $v2[3]))?1:0;
+    } else {
+      $result = (defined $v1[2] and (!defined $v2[2] or $v1[2] > $v2[2]))?1:0;
+    }
+  } else {
+    $result = (defined $v1[1] and (!defined $v2[1] or $v1[1] > $v2[1]))?1:0;
+  }
+} else {
+  $result = (defined $v1[0] and (!defined $v2[0] or $v1[0] > $v2[0]))?1:0
+}
+exit(($result == 1)? 0 : 1);
+' "$@"
+}
+
+## handle ups 
+function install_ups()
+{
+   line=`grep ups ${manifest}`
+   if [ ! "${line}" ]; then
+      echo "INFO: failed to find ups in manifest"
+      return 0
+   fi
+   words=($(echo $line | tr " " "\n"))
+   product=$(echo ${words[0]} | tr "\"" " ")
+   if [ ${product} != "ups" ]; then
+      echo "INFO: ups misidentified as ${product} in manifest"
+      return 0
+   fi
+   ups_version=$(echo ${words[1]} | tr "\"" " ")
+   tarball=$(echo ${words[2]} | tr "\"" " ")
+   mydist=http://scisoft.fnal.gov/scisoft/packages/${product}/${ups_version}/${tarball}
+   want_ups_install=0
+   if [ -d ${product_topdir}/ups ]; then
+      current_ups=`ls ${product_topdir}/ups | grep -v version | grep -v current | sort -r | head -n 1`
+        if version_greater ${ups_version} ${current_ups}; then
+          want_ups_install=1
+	fi
+   else
+      want_ups_install=1
+   fi
+   if (( ${want_ups_install:-0} )); then
+      echo "pull ups ${tarball}"
+      cd ${working_dir}
+      curl --fail --silent --location --insecure -O ${mydist}  || \
+	 { cat 1>&2 <<EOF
+ERROR: pull of ${mydist} failed
+EOF
+           exit 1
+         }
+      if [ ! -e ${working_dir}/${tarball} ]; then
+	echo "ERROR: could not find ${working_dir}/${tarball}"
+	exit 1
+      fi
+      cd ${product_topdir}
+      tar xf ${working_dir}/${tarball} || exit 1
+      cd ${working_dir}
+   fi
+   return 0
+}
+
+function setup_ups()
+{
+   if [ -e ${product_topdir}/setup ]
+   then
+     source ${product_topdir}/setup
+     return 0
+   else
+     echo "did not find ups in ${product_topdir}"
+   fi
+   return 1
+}
+
+function check_install()
+{
+   myprod=${1}
+   myver=${2}
+   mytar=${3}
+   if [ -z ${mytar} ]; then
+      echo "tarball unspecified for ${myprod}"
+      exit 1
+   fi
+   # parse the tarball 
+   ##shortname=`echo ${mytar} | sed -e 's%ups-upd%ups%' | sed -e 's%.tar.bz2%%'`
+   tar1=`echo ${mytar} | sed -e 's%ups-upd%ups%'`
+   shortname=`echo ${tar1%%.tar*}`
+   tarparts=($(echo $shortname | tr "-" "\n"))
+   ##echo "${mytar} has ${#tarparts[@]} parts"
+   myarch=$(echo ${tarparts[2]} | tr "\"" " ")
+   ##echo ${myarch}
+   if [ "${myarch}" = "noarch" ]
+   then
+     myqual=""
+     for (( i=3; i<${#tarparts[@]}; i++ ));
+     do
+       myqual=+$(echo ${tarparts[$i]} | tr "\"" " "):${myqual}
+     done
+     ##echo "noarch qualifier ${myqual}"
+     if [ -z ${myqual} ]
+     then
+      if ups exist ${myprod} ${myver} >/dev/null 2>&1; then
+         echo "INFO: ups product ${myprod} ${myver} already exists"
+         return 0
+      else
+         #echo "did not find ${myprod} ${myver}"
+         return 1
+      fi
+     else
+      if ups exist ${myprod} ${myver}  -q ${myqual} >/dev/null 2>&1; then
+         echo "INFO: ups product ${myprod} ${myver} -q ${myqual} already exists"
+         return 0
+      else
+         #echo "did not find ${myprod} ${myver} -q ${myqual}"
+         return 1
+      fi
+     fi
+   fi
+   myplat=$(echo ${tarparts[3]} | tr "\"" " ")
+   if [ "${myarch}" = "slf5" ] && [ "${myplat}" = "x86_64" ]
+   then
+     myflvr="-f Linux64bit+2.6-2.5"
+   elif [ "${myarch}" = "slf6" ] && [ "${myplat}" = "x86_64" ]
+   then
+     myflvr="-f Linux64bit+2.6-2.12"
+   elif  [ "${myarch}" = "d12" ] && [ "${myplat}" = "x86_64" ]
+   then
+     myflvr="-f Darwin+12"
+   elif  [ "${myarch}" = "d13" ] && [ "${myplat}" = "x86_64" ]
+   then
+     myflvr="-f Darwin64bit+13"
+   elif  [ "${myarch}" = "d14" ] && [ "${myplat}" = "x86_64" ]
+   then
+     myflvr="-f Darwin64bit+14"
+   fi
+   if [ ${#tarparts[@]} -lt 5 ]
+   then
+      if ups exist ${myprod} ${myver} ${myflvr} >/dev/null 2>&1; then
+         echo "INFO: ups product ${myprod} ${myver} ${myflvr} already exists"
+         return 0
+      else
+         #echo "did not find ${myprod} ${myver} ${myflvr}"
+         return 1
+      fi
+   fi
+   myqual=""
+   for (( i=4; i<${#tarparts[@]}; i++ ));
+   do
+     myqual=+$(echo ${tarparts[$i]} | tr "\"" " "):${myqual}
+   done
+   ##echo ${myqual}
+   if ups exist ${myprod} ${myver} -q ${myqual} ${myflvr} >/dev/null 2>&1; then
+      echo "INFO: ups product ${myprod} ${myver} -q ${myqual} ${myflvr} already exists"
+      return 0
+   else
+      #echo "did not find ${myprod} ${myver} -q ${myqual} ${myflvr}"
+      return 1
+   fi
+   # if you get here, something is wrong
+   return 1
+}
+
+get_manifest()
+{
+  local mname=${1}
+  if [ "${local_manifest}" = "true" ]
+  then
+    if [ ! -e ${mname} ]; then
+      echo "ERROR: local manifest requested, but could not find ${mname}"
+      exit 1
+    fi
+  else
+     local newlocation=http://scisoft.fnal.gov/scisoft/bundles/${bundle}/${bundle_version}/manifest
+     local oldlocation=http://scisoft.fnal.gov/scisoft/manifest/${bundle}/${bundle_version}
+     local alternate_manifest=${oldlocation}/${mname}
+     if [ "${install_os}" = "u14" ]
+     then
+        alternate_manifest=${newlocation}/${alternate_manifest_name}
+        echo "Ubunutu alternate: ${alternate_manifest}"
+     fi
+  curl --fail --silent --location --insecure -O ${newlocation}/${mname} || \
+  curl --fail --silent --location --insecure -O ${alternate_manifest} || \
+      { cat 1>&2 <<EOF
+ERROR: pull of ${mname} failed
+       Please check the spelling and try again
+EOF
+        exit 1
+      }
+  fi
+}
+
+parse_manifest()
+{
+   cat ${working_dir}/${manifest} | while read line
+   do
+     ##echo "parsing $line"
+     words=($(echo $line | tr " " "\n"))
+     product=$(echo ${words[0]} | tr "\"" " ")
+     version=$(echo ${words[1]} | tr "\"" " ")
+     tarball=$(echo ${words[2]} | tr "\"" " ")
+     #echo "found: ${product} ${version} ${tarball}"
+     product_is_installed="true"
+     check_install ${product} ${version} ${tarball} || { product_is_installed="false"; }
+     if [ "${product_is_installed}" = "true" ]; then
+       if (( ${force:-0} )); then
+	 echo "INFO: found ${product} ${version} but will pull again"
+         pull_product ${product} ${version} ${tarball}
+       fi
+     else
+       pull_product ${product} ${version} ${tarball}
+     fi
+    done || exit $?
+}
+
+pull_buildcfg()
+{
+  cd ${working_dir}
+  local newbldlocation=http://scisoft.fnal.gov/scisoft/bundles/${bundle}/${bundle_version}/buildcfg
+  local oldbldlocation=http://scisoft.fnal.gov/scisoft/projects/${bundle}/${bundle_version}
+  local mybuildcfg=${bundle}-buildcfg-${bundle_dot_version}
+  local mybuildscript=""
+  case ${bundle} in
+    "art" ) mybuildscript=buildFW-${bundle_version} ;;
+    "larsoft" ) mybuildscript=buildLAr-${bundle_version} ;;
+    *) mybuildscript=buildFW-${bundle_version}
+  esac
+  if [ "${local_manifest}" = "true" ] && [ -e ${mybuildcfg} ]
+  then
+      echo "found local buildcfg script ${mybuildcfg}"
+  else
+  curl --fail --silent --location --insecure -O ${newbldlocation}/${mybuildcfg}  || \
+  curl --fail --silent --location --insecure -O ${oldbldlocation}/${mybuildscript}  || \
+      { cat 1>&2 <<EOF
+ERROR: pull of ${mybuildcfg} or ${mybuildscript} failed
+EOF
+        exit 1
+      }
+  fi
+  if [ -e ${mybuildcfg} ]; then chmod +x ${mybuildcfg}; fi
+  if [ -e ${mybuildscript} ]; then chmod +x ${mybuildscript}; fi
+}
+
+install_source()
+{
+  cd ${working_dir}
+  pull_buildcfg
+  manifest=${bundle}-${bundle_dot_version}-source_MANIFEST.txt  
+  get_manifest ${manifest}
+  if [ ! -e ${working_dir}/${manifest} ]; then
+    echo "ERROR: could not find ${working_dir}/${manifest}"
+    exit 1
+  fi
+  parse_manifest
+  cd ${working_dir}
+  curl --fail --silent --location --insecure \
+       -O http://scisoft.fnal.gov/scisoft/bundles/tools/buildFW  || \
+      { cat 1>&2 <<EOF
+ERROR: pull of buildFW failed
+EOF
+        exit 1
+      }
+  chmod +x buildFW
+}
+
+########################################################################
+# Main body.
+
+# Global variables.
+current_os=$(uname)
+[[ "${current_os}" == Darwin ]] && (( darwin = 1 ))
+
+
+logdir=$(/bin/pwd)
+private_product_check=false
+local_manifest=false
+
+while getopts :fhlpV OPT; do
+  case ${OPT} in
+    f)
+      (( force = 1 ))
+      ;;
+    h)
+      usage
+      exit 1
+      ;;
+    l)
+      local_manifest=true
+      ;;
+    p)
+      private_product_check=true
+      ;;
+    V)
+      print_version
+      exit 1
+      ;;
+    *)
+      usage
+      exit 1
+  esac
+done
+shift `expr $OPTIND - 1`
+OPTIND=1
+
+print_version
+
+if (( $# != 5 )) && (( $# != 3 )); then
+  echo "ERROR: Expected 3 or 5 non-option arguments; received $#." 1>&2
+  usage
+  exit 1
+fi
+
+product_topdir="${1}"
+
+[[ -n "$product_topdir" ]] && \
+  [[ -d "${product_topdir}" ]] && \
+  [[ -w "${product_topdir}" ]] || \
+  { echo "ERROR: Could not write to specified product directory \"${product_topdir}\"." 1>&2; exit 1; }
+
+install_os="${2}"
+bundle_spec="${3}"
+qual_set="${4}"
+build_type="${5}"
+
+working_dir=$(/bin/pwd)
+
+if (( $(echo ${bundle_spec} | grep '\-' | wc -l) > 0 )); then
+  bundle=`echo ${bundle_spec} | cut -f1 -d"-"`
+  bundle_ver=`echo ${bundle_spec} | cut -f2 -d"-"`
+else
+  echo "ERROR: bundle spec ${bundle_spec} is not fully specified"
+  usage
+  exit 1
+fi
+
+if (( $(echo ${bundle_ver} | grep _ | wc -l) > 0 )); then
+  bundle_version=${bundle_ver}
+  bundle_dot_version=`echo ${bundle_ver} | sed -e 's/_/./g' | sed -e 's/^v//'`
+else
+  bundle_version=v`echo ${bundle_ver} | sed -e 's/\./_/g'`
+  bundle_dot_version=${bundle_ver}
+fi
+
+echo "looking for ${bundle} ${bundle_dot_version} ${bundle_version} ${install_os} ${qual_set} ${build_type}"
+
+case ${install_os} in
+  slf5) manifest_os="Linux64bit+2.6-2.5" ;;
+  slf6) manifest_os="Linux64bit+2.6-2.12" ;;    
+  d12)  manifest_os="Darwin64bit+12";;
+  d13)  manifest_os="Darwin64bit+13";;    
+  d14)  manifest_os="Darwin64bit+14";;    
+  u14)  manifest_os="Linux64bit+3.13-2.19";;    
+  source)
+     manifest_os=${install_os}
+     install_source
+     exit 0 
+  ;;
+  *)
+    echo "ERROR: unrecognized OS ${install_os}"
+    usage
+    exit 1
+esac
+
+case ${build_type} in
+  debug) ;;
+  opt) ;;    
+  prof) ;;
+  *)
+    echo "ERROR: unrecognized build type ${build_type}"
+    usage
+    exit 1
+esac
+
+# next download the manifest
+
+manifest=${bundle}-${bundle_dot_version}-${manifest_os}-${qual_set}-${build_type}_MANIFEST.txt  
+if [ "${install_os}" = "u14" ]
+then
+   alternate_manifest_name=${bundle}-${bundle_dot_version}-Linux64bit+3.19-2.19-${qual_set}-${build_type}_MANIFEST.txt  
+fi
+get_manifest ${manifest}
+
+if [ ! -e ${working_dir}/${manifest} ]; then
+  if [ -e ${working_dir}/${alternate_manifest_name} ]; then
+    manifest=${alternate_manifest_name}
+  else
+    echo "ERROR: could not find ${working_dir}/${manifest}"
+    exit 1
+  fi
+fi
+
+# Even if ups is installed elsewhere, we want to install it in this product directory
+install_ups
+# want to use ups exist at this point
+setup_ups 
+
+# reset $PRODUCTS if desired
+if [ "${private_product_check}" = "true" ]
+then
+  export PRODUCTS=${product_topdir}
+fi
+echo
+echo "INFO: ups will check these product directories:"
+echo "     ${PRODUCTS}"
+echo "INFO: products will be installed in ${product_topdir}"
+echo
+
+# now process the manifest
+parse_manifest
+
+exit $?
