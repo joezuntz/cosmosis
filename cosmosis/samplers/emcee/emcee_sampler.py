@@ -84,6 +84,7 @@ class EmceeSampler(ParallelSampler):
         self.blob0 = extra_info
         self.num_samples += self.nsteps
         self.output.log_info("Done %d iterations", self.num_samples)
+        self.output.final("mean_acceptance_fraction", self.ensemble.acceptance_fraction.mean())
 
     def is_converged(self):
         return self.num_samples >= self.samples
