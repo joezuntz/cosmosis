@@ -36,12 +36,13 @@ class PostProcessor(object):
     __metaclass__=PostProcessMetaclass
     sampler=None
     cosmosis_standard_output=True
-    def __init__(self, ini, index, **options):
+    def __init__(self, ini, label, index, **options):
         super(PostProcessor,self).__init__()
         self.options=options
         self.sampler_options={}
         self.steps = []
         self.index = index
+        self.label = label
         self.derive_file = options.get("derive", "")
         self.load(ini)
         elements = [el for el in self.elements if (not issubclass(el, plots.Plots) or (not options.get("no_plots")))]
@@ -57,7 +58,7 @@ class PostProcessor(object):
     def blind_data(self,multiplicative):
         #blind self.data
         for c,col in enumerate(self.colnames):
-            if col.lower() in ['like', 'weight', 'log_weight', 'old_weight', 'old_log_weight']: continue
+            if col.lower() in ['like','post', 'weight', 'log_weight', 'old_weight', 'old_log_weight']: continue
             #get col mean to get us a rough scale to work with
             if multiplicative:
                 #use upper here so it is different from non-multiplicative
@@ -102,7 +103,7 @@ class PostProcessor(object):
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs
         self.name = "Data"
         for chain in self.metadata:
-            for key,val in chain:
+            for key,val in chain.items():
                 self.sampler_options[key] = val
 
     def load_dict(self, inputs):
@@ -188,6 +189,8 @@ class PostProcessor(object):
 
     def finalize(self):
         print "Finalizing:"
+        for e in self.steps:
+            e.finalize()
         for f in self.outputs.values():
             print "Output: ", f.filename
             f.finalize()
@@ -202,7 +205,7 @@ class PostProcessor(object):
             print "or put '%s' to apply to all plots."%plots.Tweaks._all_filenames
             return
         elif tweaks.filename==tweaks._all_filenames:
-            filenames = [o.name for o in self.outputs if isinstance(o, plots.Plots)]
+            filenames = [o.name for o in self.outputs.values() if isinstance(o, plots.PostprocessPlot)]
         elif isinstance(tweaks.filename, list):
                 filenames = tweaks.filename
         else:

@@ -34,11 +34,11 @@ class ImportanceSampler(ParallelSampler):
     def load_samples(self, filename):
         options = {"filename":filename}
         col_names, cols, metadata, comments, final_metadata = self.output.__class__.load_from_options(options)
-        # pull out the "like" column first
+        # pull out the "post" column first
         col_names = [name.lower() for name in col_names]
-        likelihood_index = col_names.index('like')
+        likelihood_index = col_names.index('post')
         if likelihood_index<0:
-            raise ValueError("I could not find a 'like' column in the chain %s"%filename)
+            raise ValueError("I could not find a 'post' column in the chain %s"%filename)
         self.original_likelihoods = cols[0].T[likelihood_index]
 
         #We split the parameters into three groups:
@@ -53,7 +53,7 @@ class ImportanceSampler(ParallelSampler):
         print "Have %d samples from old chain." % self.number_samples
         for code,col in zip(col_names, cols[0].T):
             #we have already handled the likelihood
-            if code=='like':continue
+            if code=='post':continue
             #parse the header names in to (section,name)
             bits = code.split("--")
             if len(bits)==2:
@@ -86,9 +86,9 @@ class ImportanceSampler(ParallelSampler):
         #Now finally add our actual two sampler outputs, old_like and like
         #P is the original likelihood in the old chain we have samples from
         #P' is the new likelihood.
-        self.output.add_column("old_like", float) #This is the old likelihood, log(P)
+        self.output.add_column("old_post", float) #This is the old likelihood, log(P)
         self.output.add_column("log_weight", float) #This is the log-weight, the ratio of the likelihoods
-        self.output.add_column("like", float) #This is the new likelihood, log(P')
+        self.output.add_column("post", float) #This is the new likelihood, log(P')
 
 
         #Now we need to reorder the list to match the order our pipeline is expecting

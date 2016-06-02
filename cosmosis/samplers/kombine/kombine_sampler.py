@@ -8,7 +8,7 @@ def log_probability_function(p):
 
 class KombineSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("like", float)]
+    sampler_outputs = [("post", float)]
 
     def config(self):
         global pipeline

@@ -44,10 +44,10 @@ test:
 	@echo "Alas, MultiNest has no tests"
 
 libnest3_mpi.so: $(NSOBJECTS_MPI)
-	$(MPIFC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)
+	$(MPIFC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB) $(LDFLAGS)
 	
 libnest3.so: $(NSOBJECTS) 
-	$(FC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)
+	$(FC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)  $(LDFLAGS)
 
 obj_detect:
 	make -C example_obj_detect

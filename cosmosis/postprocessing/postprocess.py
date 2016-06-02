@@ -246,5 +246,8 @@ class SnakeProcessor(PostProcessor):
 class FisherProcessor(PostProcessor):
 	sampler = 'fisher'
 	elements = [
-		plots.CovarianceMatrixEllipse
+		plots.CovarianceMatrixEllipse,
+		plots.CovarianceMatrixGaussians,
+		statistics.CovarianceMatrix1D,
+		statistics.CovarianceMatrixEllipseAreas,
 	]

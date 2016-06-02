@@ -30,6 +30,8 @@ inputs.add_argument("--text", action='store_true', help="Tell postprocess that i
 inputs.add_argument("--derive", default="", help="Read a python script with functions in that derive new columns from existing ones")
 
 plots=parser.add_argument_group(title="Plotting", description="Plotting options")
+plots.add_argument("--legend", action='store_true', help="Add a legend to the plot")
+plots.add_argument("--legend-loc", default='best', help="The location of the legend: best, UR, UL, LL, LR, R, CL, CR, LC, UC, C (use quotes for the ones with two words.)")
 plots.add_argument("--swap", action='store_true', help="Swap the ordering of the parameters in (x,y)")
 plots.add_argument("--only", type=str, dest='prefix_only', help="Only make 2D plots where both parameter names start with this")
 plots.add_argument("--either", type=str, dest='prefix_either', help="Only make 2D plots where one of the parameter names starts with this.")
@@ -109,7 +111,7 @@ def main(args):
 			continue
 
 		#Create and run the postprocessor
-		processor = processor_class(ini, i, **vars(args))
+		processor = processor_class(ini, ini_filename, i, **vars(args))
 
 		#Inherit any plots from the previous postprocessor
 		#so we can make plots with multiple datasets on

@@ -18,7 +18,7 @@ def task(p):
 
 class ListSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("like", float)]
+    sampler_outputs = [("post", float)]
 
     def config(self):
         global list_sampler

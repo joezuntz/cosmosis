@@ -114,6 +114,13 @@ class Pipeline(object):
                                  "debug",
                                  module.name]
 
+            #We let the user specify additional global sections that are
+            #visible to all modules
+            global_sections = self.options.get("runtime", "global", " ")
+            for global_section in global_sections.split():
+                relevant_sections.append(global_section)
+
+
             config_block = block.DataBlock()
 
             for (section, name), value in self.options:
@@ -145,7 +152,7 @@ class Pipeline(object):
         try:
             import pygraphviz as pgv
         except ImportError:
-            print "Cannot generate a graphical pipeline; please install the python package pydot (e.g. with pip install pydot)"
+            print "Cannot generate a graphical pipeline; please install the python package pygraphviz (e.g. with pip install pygraphviz)"
             return
         P = pgv.AGraph(directed=True)
         # P = pydot.Cluster(label="Pipeline", color='black',  style='dashed')
@@ -155,7 +162,7 @@ class Pipeline(object):
         P.add_node("Sampler", color='Pink', style='filled', group='pipeline',shape='octagon', fontname='Courier')
         for module in self.modules:
             # module_node = pydot.Node(module.name, color='Yellow', style='filled')
-            P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline')
+            P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline', shape='box')
         P.add_edge("Sampler", norm_name(self.modules[0].name), color='lightskyblue', style='bold', arrowhead='none')
         for i in xrange(len(self.modules)-1):
             P.add_edge(norm_name(self.modules[i].name),norm_name(self.modules[i+1].name), color='lightskyblue', style='bold', arrowhead='none')
@@ -266,10 +273,7 @@ class LikelihoodPipeline(Pipeline):
                                                               override,
                                                               )
 
-        self.varied_params = [param for param in self.parameters
-                              if param.is_varied()]
-        self.fixed_params = [param for param in self.parameters
-                             if param.is_fixed()]
+        self.reset_fixed_varied_parameters()
 
         #We want to save some parameter results from the run for further output
         extra_saves = self.options.get(PIPELINE_INI_SECTION,
@@ -287,6 +291,29 @@ class LikelihoodPipeline(Pipeline):
 
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
+
+    def reset_fixed_varied_parameters(self):
+        self.varied_params = [param for param in self.parameters
+                              if param.is_varied()]
+        self.fixed_params = [param for param in self.parameters
+                             if param.is_fixed()]     
+
+    def parameter_index(self, section, name):
+        i = self.parameters.index((section, name))
+        if i==-1:
+            raise ValueError("Could not find index of parameter %s in section %s"%(name, section))
+        return i
+
+    def set_varied(self, section, name, lower, upper):
+        i = self.parameter_index(section, name)
+        self.parameters[i].limits = (lower,upper)
+        self.reset_fixed_varied_parameters()
+
+    def set_fixed(self, section, name, value):
+        i = self.parameter_index(section, name)
+        self.parameters[i].limits = (value, value)
+        self.reset_fixed_varied_parameters()
+
 
     def output_names(self):
         param_names = [str(p) for p in self.varied_params]

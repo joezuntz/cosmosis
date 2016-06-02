@@ -1,6 +1,5 @@
 import scipy.interpolate
 import scipy.integrate
-import scipy.linalg
 import numpy as np
 from cosmosis.datablock import names, SectionOptions
 import traceback 
@@ -69,7 +68,7 @@ class GaussianLikelihood(object):
         """
         raise RuntimeError("Your Gaussian covariance code needs to "
             "over-ride the build_covariance method so it knows how to "
-            "load the data covariance (or set constant_covariance=F and "
+            "load the data covariance (or set constant_covariance=False and "
             "over-ride the extract_covariance method)")
 
         #using info in self.options,
@@ -104,7 +103,7 @@ class GaussianLikelihood(object):
         Load the covariance from the block here.
         """
         raise RuntimeError("You need to implement the method "
-            "'extract_covariance' if you set constant_covariance=True "
+            "'extract_covariance' if you set constant_covariance=False "
             "in a gaussian likelihood")
 
     def extract_inverse_covariance(self, block):
@@ -118,19 +117,51 @@ class GaussianLikelihood(object):
         """
         return np.linalg.inv(self.cov)
 
+    def extract_covariance_log_determinant(self, block):
+        """
+        If you are using a varying covariance we have to account
+        for the dependence of the covariance matrix on parameters
+        in the likelihood.
+
+        Override this method if you have a faster way to get |C|
+        rather than just taking the determinant of directly (e.g.
+        if you know it is diagonal or block-diagonal).
+
+        Since we know that we must have the inverse covariance,
+        whereas the covariance itself is optional, we use the former
+        in the default implementation.
+        """
+        sign, log_inv_det = np.linalg.slogdet(self.inv_cov)
+        log_det = -log_inv_det
+        return log_det
+
 
     def do_likelihood(self, block):
         #get data x by interpolation
         x = np.atleast_1d(self.extract_theory_points(block))
         mu = np.atleast_1d(self.data_y)
 
+        #If covariance is a function of parameters, compute the 
+        #new one now.
         if not self.constant_covariance:
             self.cov = np.atleast_2d(self.extract_covariance(block))
             self.inv_cov = np.atleast_2d(self.extract_inverse_covariance(block))
 
         #gaussian likelihood
         d = x-mu
-        like = -0.5*np.einsum('i,ij,j', d, self.inv_cov, d)
+        chi2 = np.einsum('i,ij,j', d, self.inv_cov, d)
+        like = -0.5*chi2
+
+        #It can be useful to save the chi^2 as well as the likelihood,
+        #especially when the covariance is non-constant.
+        block[names.data_vector, self.like_name+"_CHI2"] = chi2
+
+        #if the covariance is a function of parameters then we must 
+        #account for this in the likelihood.
+        if not self.constant_covariance:
+            log_det = self.extract_covariance_log_determinant(block)
+            block[names.data_vector, self.like_name+"_LOG_DET"] = log_det
+            like -= 0.5 * log_det
 
         #Now save the resulting likelihood
         block[names.likelihoods, self.like_name+"_LIKE"] = like
@@ -140,13 +171,17 @@ class GaussianLikelihood(object):
         #and inverse cov mat which also goes into the fisher matrix.
         block[names.data_vector, self.like_name + "_theory"] = x
         block[names.data_vector, self.like_name + "_data"] = mu
-        block[names.data_vector, self.like_name + "_covariance"] = self.cov
         block[names.data_vector, self.like_name + "_inverse_covariance"] = self.inv_cov
 
-        #Also save a simulation of the data - the mean with added noise
-        #these can be used among other places by the ABC sampler.
-        sim = self.simulate_data_vector(x)
-        block[names.data_vector, self.like_name + "_simulation"] = sim
+        #We might just be calculating the inverse cov and ignoring the covmat.
+        #in that case we do not try to save it
+        if self.cov is not None:
+            block[names.data_vector, self.like_name + "_covariance"] = self.cov
+            #Also save a simulation of the data - the mean with added noise
+            #these can be used among other places by the ABC sampler.
+            #This also requires the cov mat.
+            sim = self.simulate_data_vector(x)
+            block[names.data_vector, self.like_name + "_simulation"] = sim
 
     def simulate_data_vector(self, x):
         "Simulate a data vector by adding a realization of the covariance to the mean"
@@ -164,7 +199,7 @@ class GaussianLikelihood(object):
 
     def generate_theory_points(self, theory_x, theory_y):
         "Generate theory predicted data points by interpolation into the theory"
-        f = scipy.interpolate.interp(theory_x, theory_y, kind=self.kind)
+        f = scipy.interpolate.interp1d(theory_x, theory_y, kind=self.kind)
         return np.atleast_1d(f(self.data_x))
 
     @classmethod
@@ -177,13 +212,8 @@ class GaussianLikelihood(object):
 
         def execute(block, config):
             likelihoodCalculator = config
-            try:
-                likelihoodCalculator.do_likelihood(block)
-                return 0
-            except Exception as error:
-                print "Error getting likelihood:"
-                print traceback.format_exc()
-                return 1
+            likelihoodCalculator.do_likelihood(block)
+            return 0
 
         def cleanup(config):
             likelihoodCalculator = config

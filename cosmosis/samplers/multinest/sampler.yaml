@@ -37,6 +37,11 @@ explanation: >
     and if it is too large the sampling will take a long time.  A few hundred seems
     to be reasonable for typical cosmology problems.
 
+    One odd feature of the multinest output is that it doesn't save any results until it has
+    done a complete run through the parameter space.  It then starts again on a second run, 
+    and sometimes a third depending on the parameters.  So don't worry if you don't see any
+    lines in the output file for a while.
+
 installation: >
     No special installation required; everything is packaged with CosmoSIS
 
