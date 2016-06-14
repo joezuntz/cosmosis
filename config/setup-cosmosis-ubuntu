@@ -12,9 +12,9 @@ export GSL_LIB=/usr/lib
 export CFITSIO_INC=/usr/include
 export CFITSIO_LIB=/usr/lib/x86_64-linux-gnu
 
+#The fftw3 Fourier transform library
 export FFTW_LIBRARY=/usr/lib
-export FFTW_INC_DIR=/usr/include
-
+export FFTW_INCLUDE_DIR=/usr/include
 
 #The lapack linear algebra package
 #On a mac just put a '.' instead of this path
