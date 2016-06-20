@@ -59,6 +59,13 @@ class FisherSampler(ParallelSampler):
         self.tolerance = self.read_ini("tolerance", float, 0.01)
         self.maxiter = self.read_ini("maxiter", int, 10)
 
+        if self.output:
+            for p in self.pipeline.extra_saves:
+                name = '%s--%s'%p
+                print "NOTE: You set extra_output to include parameter %s in the parameter file" % name
+                print "      But the Fisher Sampler cannot do that, so this will be ignored."
+                self.output.del_column(name)
+
         self.converged = False
 
     def compute_prior_matrix(self):
