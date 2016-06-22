@@ -58,6 +58,7 @@ class FisherSampler(ParallelSampler):
         self.step_size = self.read_ini("step_size", float, 0.01)
         self.tolerance = self.read_ini("tolerance", float, 0.01)
         self.maxiter = self.read_ini("maxiter", int, 10)
+        self.use_numdifftools = self.read_ini("use_numdifftools", bool, False)
 
         if self.output:
             for p in self.pipeline.extra_saves:
@@ -100,7 +101,11 @@ class FisherSampler(ParallelSampler):
 
         #calculate the fisher matrix.
         #right now just a single step
-        fisher_calc = fisher.Fisher(compute_fisher_vector, start_vector, 
+        if self.use_numdifftools:
+            fisher_class = fisher.NumDiffToolsFisher
+        else:
+            fisher_class = fisher.Fisher
+        fisher_calc = fisher_class(compute_fisher_vector, start_vector, 
             self.step_size, self.tolerance, self.maxiter, pool=self.pool)
 
         fisher_matrix = fisher_calc.compute_fisher_matrix()
