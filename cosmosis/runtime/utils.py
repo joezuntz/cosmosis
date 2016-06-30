@@ -11,6 +11,8 @@ everythingIsNan = EverythingIsNan()
 
 class ParseExtraParameters(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
+        if getattr(args, self.dest, self.default) is not None:
+            parser.error(option_string + " appears several times")
         result = {}
         for arg in values:
             section, param_value = arg.split('.',1)
