@@ -3,6 +3,7 @@ from . import fisher
 from ...datablock import BlockError
 import numpy as np
 import scipy.linalg
+from ...runtime import prior
 
 def compute_fisher_vector(p):
     # use normalized parameters - fisherPipeline is a global
@@ -60,6 +61,28 @@ class FisherSampler(ParallelSampler):
 
         self.converged = False
 
+    def compute_prior_matrix(self):
+        #We include the priors as an additional matrix term
+        #This is just added to the fisher matrix
+        n = len(self.pipeline.varied_params)
+        P = np.zeros((n,n))
+        for i, param in enumerate(self.pipeline.varied_params):
+            if isinstance(param.prior, prior.GaussianPrior):
+                print "Applying additional prior sigma = {0} to {1}".format(param.prior.sigma2**0.5, param)
+                print "This will be assumed to be centered at the parameter center regardless of what the ini file says"
+                print 
+                P[i,i] = 1./param.prior.sigma2
+            elif isinstance(param.prior, prior.ExponentialPrior):
+                print "There is an exponential prior applied to parameter {0}".format(param)
+                print "This is *not* accounted for in the Fisher matrix"
+                print
+            #uniform prior should have no effect on the fisher matrix.
+            #at least up until the assumptions of the FM are violated anyway
+        return P
+
+
+
+
     def execute(self):
         #Load the starting point and covariance matrix
         #in the normalized space
@@ -75,6 +98,9 @@ class FisherSampler(ParallelSampler):
 
         fisher_matrix = fisher_calc.compute_fisher_matrix()
         fisher_matrix = self.pipeline.denormalize_matrix(fisher_matrix,inverse=True)
+
+        P = self.compute_prior_matrix()
+        fisher_matrix += P
 
         self.converged = True
 

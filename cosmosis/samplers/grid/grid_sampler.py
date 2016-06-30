@@ -18,7 +18,7 @@ LARGE_JOB_SIZE = 1000000
 
 class GridSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("like", float)]
+    sampler_outputs = [("post", float)]
 
     def config(self):
         global grid_sampler

@@ -14,7 +14,7 @@ def posterior(p):
 
 class PMCSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("component", int), ("like",float), ("log_weight",float)]
+    sampler_outputs = [("component", int), ("post",float), ("log_weight",float)]
 
     def config(self):
         global pipeline

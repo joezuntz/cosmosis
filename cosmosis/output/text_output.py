@@ -171,7 +171,26 @@ In the last case you can set lock=F in the [output] section to disable this feat
                     words = line.split(delimiter)
                     vals = [float(word) for word in words]
                     chain.append(vals)
-            
+            ncol = len(column_names)
+            line_lengths = np.array([len(row) for row in chain])
+            #strip off the last line if it is incompletely written as often
+            #the chain is interrupted
+            if line_lengths[-1]!=ncol:
+                print "Skipping last line of chain as it seems to have been cut off"
+                print "This could conceivably cause problems for some samplers, though"
+                print "not the ones like metropolis and emcee where it is most likely to happen."
+                print "If any more lines have the wrong length then this will raise an error."
+                print
+                print "You should probably check the final lines of the other files for errors"
+                print "that are harder to detect, like values being truncated."
+                print
+                chain = chain[:-1]
+                line_lengths = line_lengths[:-1]
+            #if any more are the wrong length then something has gone wrong:
+            if np.any(line_lengths!=ncol):
+                raise ValueError("Your chain file is corrupted somehow: not all the lines have {} columns".format(ncol))
+
+
             data.append(np.array(chain))
             metadata.append(chain_metadata)
             final_metadata.append(chain_final_metadata)

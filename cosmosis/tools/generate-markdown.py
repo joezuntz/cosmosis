@@ -30,7 +30,7 @@ page_template = u"""
 
 **Name**: {name}
 
-**Directory**: {dirname}
+**File**: {filepath}
 
 **Version**: {version}
 
@@ -106,7 +106,7 @@ for dirpath, dirnames, filenames in os.walk('.'):
 			info['page_name'] = '{}_{}'.format(name,version)
 			if dirpath.startswith('./'): dirpath=dirpath[2:]
 			info['dirname'] = dirpath
-			info['explanation'] = info['explanation'].strip().strip('"').replace("\n","\n\n")
+			info['explanation'] = info['explanation'].strip().strip('"').replace("\n", "  \n")#.replace("\n","\n\n")
 			outputs[category][info['full_name']] = info
 
 
@@ -123,6 +123,7 @@ f.close()
 
 
 def make_list(l):
+	if l is None: return ""
 	if isinstance(l, basestring):
 		return u"- "+l
 	else:
@@ -151,6 +152,7 @@ def make_page(info):
 		input_lines = input_lines,
 		output_lines = output_lines,
 		parameter_lines=parameter_lines,
+		filepath=info['dirname'] + "/" + info['interface'],
 		**info)
 	open("wiki/default_modules/{}.md".format(info['page_name']),"w").write(markdown.encode("utf-8"))
 

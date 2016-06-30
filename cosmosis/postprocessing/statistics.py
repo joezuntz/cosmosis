@@ -138,6 +138,7 @@ class ConstrainingStatistics(Statistics):
         #which would indicate that the likelihood did not fall
         #off by the edges        
         if marge_like.min()==0: return
+
         like_ratio = marge_like.max() / marge_like.min()
         if like_ratio < 20:
             print
@@ -159,7 +160,9 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.median = []
         self.l95 = []
         self.u95 = []
-        self.best_fit_index = self.source.get_col("like").argmax()
+        try:self.best_fit_index = self.source.get_col("post").argmax()
+        except:self.best_fit_index = self.source.get_col("like").argmax()
+        
         n = 0
         for col in self.source.colnames:
             n, mu, sigma, median, l95, u95 = self.compute_basic_stats_col(col)
@@ -182,7 +185,7 @@ class ChainCovariance(object):
     def run(self):
         #Determine the parameters to use
 
-        col_names = [p for p in self.source.colnames if p.lower() not in ["like", "importance", "weight"]]
+        col_names = [p for p in self.source.colnames if p.lower() not in ["like","post", "importance", "weight"]]
 
         if len(col_names)<2:
             return []
@@ -226,11 +229,20 @@ class GridStatistics(ConstrainingStatistics):
         self.ncol = len(self.source.colnames)
 
         extra = self.source.sampler_option("extra_output","").replace('/','--').split()
-        self.grid_columns = [i for i in xrange(self.ncol) if (not self.source.colnames[i] in extra) and (self.source.colnames[i]!="like")]
+        self.grid_columns = [i for i in xrange(self.ncol) if (not self.source.colnames[i] in extra) and (self.source.colnames[i]!="post") and (self.source.colnames[i]!="like")]
         self.ndim = len(self.grid_columns)
         assert self.nrow == self.nsample**self.ndim
         self.shape = np.repeat(self.nsample, self.ndim)
-        self.like = np.exp(self.source.get_col("like")).reshape(self.shape)
+
+        try:
+            like = self.source.get_col("post").reshape(self.shape).copy()
+        except:
+            like = self.source.get_col("like").reshape(self.shape).copy()
+
+        like -= like.max()
+
+        self.like = np.exp(like).reshape(self.shape)
+
         grid_names = [self.source.colnames[i] for i in xrange(self.ncol) if i in self.grid_columns]
         self.grid = [np.unique(self.source.get_col(name)) for name in grid_names]
 
@@ -248,7 +260,8 @@ class GridStatistics(ConstrainingStatistics):
         self.sigma = np.zeros(self.ncol-1)
         self.l95 = np.zeros(self.ncol-1)
         self.u95 = np.zeros(self.ncol-1)        
-        like = self.source.get_col("like")
+        try:like = self.source.get_col("post")
+        except:like = self.source.get_col("like")
         self.best_fit_index = np.argmax(like)
         #Loop through colums
         for i, name in enumerate(self.source.colnames[:-1]):
@@ -263,7 +276,6 @@ class GridStatistics(ConstrainingStatistics):
     def compute_grid_stats(self, i):
         name = self.source.colnames[i]
         col = self.source.get_col(name)
-
         #Sum the likelihood over all the axes other than this one
         #to get the marginalized likelihood
         marge_like = self.like.sum(tuple(j for j in xrange(self.ndim) if j!=i))
@@ -288,7 +300,8 @@ class GridStatistics(ConstrainingStatistics):
         #sum over everything
         name = self.source.colnames[i]
         col = self.source.get_col(name)
-        like = self.source.get_col("like")
+        try:like = self.source.get_col("post")
+        except:like = self.source.get_col("like")
         like = like / like.sum()
         mu = (col*like).sum()
         sigma2 = ((col-mu)**2*like).sum()
@@ -427,7 +440,8 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.median = []
         self.l95 = []
         self.u95 = []
-        self.best_fit_index = self.source.get_col("like").argmax()
+        try:self.best_fit_index = self.source.get_col("post").argmax()
+        except:self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         for col in self.source.colnames:
             n, mu, sigma, median, l95, u95 = self.compute_basic_stats_col(col)
@@ -450,6 +464,45 @@ class MultinestCovariance(ChainCovariance, Statistics, MultinestPostProcessorEle
     pass
 
 
+class CovarianceMatrix1D(Statistics):
+    def run(self):
+        params = self.source.colnames
+        Sigma = np.linalg.inv(self.source.data[0]).diagonal()**0.5
+        Mu = [float(self.source.metadata[0]['mu_{0}'.format(i)]) for i in xrange(Sigma.size)]        
+        header = '#'+'    '.join(params)
+        f, filename, new_file = self.get_text_output("means", header, self.source.name)
+
+        for P in zip(self.source.colnames, Mu, Sigma):
+            f.write("%s   %e   %e\n" % P)
+
+        print
+        print "Marginalized mean, std-dev:"
+        for P in zip(self.source.colnames, Mu, Sigma):
+            print '    %s = %g ± %g' % P
+        print
+
+        return [filename]
+
+class CovarianceMatrixEllipseAreas(Statistics):
+    def run(self):
+        params = self.source.colnames
+        header = '#param1  param2  area figure_of_merit'
+        f, filename, new_file = self.get_text_output("ellipse_areas", header, self.source.name)
+
+        covmat_estimate = np.linalg.inv(self.source.data[0])
+        for i,p1 in enumerate(params[:]):
+            for j,p2 in enumerate(params[:]):
+                if j>=i: continue
+                #Get the 2x2 sub-matrix
+                C = covmat_estimate[:,[i,j]][[i,j],:]
+                area = np.pi * np.linalg.det(C)
+                fom = 1.0/area
+                f.write("{0}  {1}  {2}  {3}\n".format(p1, p2, area, fom))
+
+        return [filename]
+
+
+
 class Citations(Statistics):
     #This isn't really a statistic but it uses all the same
     #mechanisms
@@ -457,13 +510,16 @@ class Citations(Statistics):
         print 
         message = "#You should cite these papers in any publication based on this pipeline."
         print message
+        citations = set()
         f, filename, new_file = self.get_text_output("citations", message, self.source.name)
         for comment_set in self.source.comments:
             for comment in comment_set:
                 comment = comment.strip()
                 if comment.startswith("CITE"):
                     citation =comment[4:].strip()
-                    print "    ", citation
-                    f.write("%s\n"%citation)
+                    citations.add(citation)
+        for citation in citations:
+            print "    ", citation
+            f.write("%s\n"%citation)
         print
         return [filename]

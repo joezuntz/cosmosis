@@ -91,6 +91,12 @@ class Fisher(object):
             derivative, inv_cov = self.five_point_stencil_deriv(results_p)
             derivatives.append(derivative)
         derivatives = np.array(derivatives)
+
+        if not np.allclose(inv_cov, inv_cov.T):
+            print "WARNING: The inverse covariance matrix produced by your pipeline"
+            print "         is not symmetric. This probably indicates a mistake somewhere."
+            print "         If you are only using cosmosis-standard-library likelihoods please "
+            print "         open an issue about this on the cosmosis site."
         fisher_matrix = np.einsum("il,lk,jk->ij", derivatives, inv_cov, derivatives)
         return fisher_matrix
 
