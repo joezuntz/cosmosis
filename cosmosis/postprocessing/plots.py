@@ -596,7 +596,8 @@ class TestPlots(Plots):
                 p.figure=fig
                 p.plot()
                 if figure is None:
-                    self.set_output(cls.filename, PostprocessPlot(p.filename,p.outfile,fig))
+                    self.set_output(cls.filename,
+                                     PostprocessPlot(p.filename,p.outfile,fig))
                 filenames.append(filename)
             except IOError as err:
                 if fig is not None:
