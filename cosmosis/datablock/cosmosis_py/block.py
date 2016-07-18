@@ -1,7 +1,7 @@
 import ctypes as ct
 from . import lib
 from . import errors
-from . import types
+from . import dbt_types as types
 from .errors import BlockError
 import numpy as np
 import os
