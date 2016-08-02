@@ -51,6 +51,11 @@ def main(args, pool=None):
 
     number_samplers = len(sampler_classes)
 
+    #To start with we do not have any estimates of 
+    #anything the samplers might give us like centers
+    #or covariances. 
+    distribution_hints = {}
+
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.
     for sampler_number, (sampler_class, sample_method) in enumerate(
@@ -159,6 +164,13 @@ def main(args, pool=None):
                 if output: output.flush()
         else:
             sampler.worker()
+
+        # The sampler has now finished, and may or may not have some 
+        # estimated values that the next sampler (if any) can use.
+        # I couldn't think of any other possibly pieces of information
+        # that samplers are likely to want to pass on. If it does
+        # turn out that there are any we should refactor 
+        distribution_hints = sampler.estimate_distribution_hints()
 
         if output:
             output.close()

@@ -55,23 +55,19 @@ class Sampler(object):
             self.output.metadata(option, str(val))
         return val
 
-    def estimate_center(self):
-        """ Override to report that the sampler can estimate a central value        
-        for the next sampler to use. """
-        return None
+    def estimate_distribution_hints(self):
+        """ Override to report that the sampler can estimate hints
+        as to the distribution, like a starting point and a covariance matrix.
 
-    def estimate_covariance(self):
-        """ Override to report that the sampler can estimate a central value
-        for the next sampler to use. """
-        return None
+        Return a dictionary with keys for estimates:
+            start
+            cov
+            function - an function returning an estimate of the distro itself??
+        cannot think of any others now.
 
-    def use_center(self, center):
-        """Override to use a central value from a previous sampler or file"""
-        pass
+        """
+        return {}
 
-    def use_covariance(self, covariance):
-        """Override to use the covariance from a previous sampler or file"""
-        pass
 
 
     def config(self):
