@@ -4,7 +4,27 @@ import numpy as np
 pipeline = None
 def log_probability_function(p):
     global pipeline
+    print p
     return pipeline.posterior(p)
+
+
+
+def sample_ball(p0, std, size=1):
+    """
+    Produce a ball of walkers around an initial parameter value.
+
+    :param p0: The initial parameter value.
+    :param std: The axis-aligned standard deviation.
+    :param size: The number of samples to produce.
+
+    Function liberated from emcee utils module.
+    http://dan.iel.fm/emcee/current/
+
+    """
+    assert(len(p0) == len(std))
+    return np.vstack([p0 + std * np.random.normal(size=len(p0))
+                      for i in range(size)])
+
 
 class KombineSampler(ParallelSampler):
     parallel_output = False
@@ -41,13 +61,13 @@ class KombineSampler(ParallelSampler):
             if start_file:
                 self.p0 = self.load_start(start_file)
                 self.output.log_info("Loaded starting position from %s", start_file)
-            elif random_start
+            elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in xrange(self.nwalkers)]
             else:
                 center_norm = self.pipeline.normalize_vector(self.pipeline.start_vector())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
-                p0_norm = self.emcee.utils.sample_ball(center_norm, sigma_norm, size=self.nwalkers)
+                p0_norm = sample_ball(center_norm, sigma_norm, size=self.nwalkers)
                 self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
 
             #Finally we can create the sampler
