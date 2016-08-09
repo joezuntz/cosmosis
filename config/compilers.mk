@@ -2,7 +2,7 @@ ifeq (,$(COSMOSIS_SRC_DIR))
 $(error "You must source config/setup-cosmosis before building.")
 endif
 
-ifeq (1,$(COSMOSIS_ALT_COMPILERS))
+ifeq (1,${COSMOSIS_ALT_COMPILERS})
 #Assume compilers already defined
 else
 CXX=g++
