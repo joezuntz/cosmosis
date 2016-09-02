@@ -7,7 +7,7 @@
 ## whatever your path to cosmosis is both in the "--volume" line
 ## just below and the MY_COSMOSIS_DIR=... line below that.
 ## Then build the code for shifter using the command
-## config/make-cori
+## config/cori-make
 ## and following the instructions before submitting this with
 ## sbatch examples/cori-shifter-submit-example.sub
 
