@@ -160,8 +160,8 @@ if __name__=="__main__":
 #    parser.add_argument("--parallel",action='store_true',help="Run in multiprocess parallel mode.")
 #    parser.add_argument("--debug", action='store_true', default=False, help="Print additional debugging information")
 #    parser.add_argument("-t", "--timing", action='store_true', default=False, help='Time each module in the pipeline')
-    parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Over-ride parameters in inifile, with format section.name=value")
-    parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Over-ride variables in values file, with format section.name=value")
+    parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
+    parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
     args = parser.parse_args(sys.argv[1:])
 
     # initialize parallel workers
