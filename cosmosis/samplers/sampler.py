@@ -19,6 +19,7 @@ class Sampler(object):
         self.pipeline = pipeline
         self.output = output
         self.attribution = PipelineAttribution(self.pipeline.modules)
+        self.distribution_hints = {}
         self.name = self.__class__.__name__[:-len("Sampler")].lower()
         if self.output:
             for p in pipeline.output_names():
@@ -54,20 +55,6 @@ class Sampler(object):
         if self.output:
             self.output.metadata(option, str(val))
         return val
-
-    def estimate_distribution_hints(self):
-        """ Override to report that the sampler can estimate hints
-        as to the distribution, like a starting point and a covariance matrix.
-
-        Return a dictionary with keys for estimates:
-            start
-            cov
-            function - an function returning an estimate of the distro itself??
-        cannot think of any others now.
-
-        """
-        return {}
-
 
 
     def config(self):

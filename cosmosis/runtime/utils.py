@@ -36,3 +36,22 @@ def mkdir(path):
         else:
             #Some other kind of error making directory
             raise
+
+def symmetrized_matrix(U):
+    M = U.copy()
+    inds = np.triu_indices_from(M,k=1)
+    M[(inds[1], inds[0])] = M[inds]
+    return M
+
+
+def symmetric_positive_definite_inverse(M):
+    import scipy.linalg
+    U,status = scipy.linalg.lapack.dpotrf(M)
+    if status != 0:
+        raise ValueError("Non-symmetric positive definite matrix")
+    M,status = scipy.linalg.lapack.dpotri(U)
+    if status != 0:
+        raise ValueError("Error in Cholesky factorization")
+    M = symmetrized_matrix(M)
+    return M
+

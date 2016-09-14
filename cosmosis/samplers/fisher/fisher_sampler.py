@@ -3,7 +3,7 @@ from . import fisher
 from ...datablock import BlockError
 import numpy as np
 import scipy.linalg
-from ...runtime import prior
+from ...runtime import prior,utils
 
 def compute_fisher_vector(p):
     # use normalized parameters - fisherPipeline is a global
@@ -119,6 +119,9 @@ class FisherSampler(ParallelSampler):
         if self.converged:
             for row in fisher_matrix:
                 self.output.parameters(row)
+
+        covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
+        self.distribution_hints['covariance_matrix'] = covariance_matrix
 
     def is_converged(self):
         return self.converged

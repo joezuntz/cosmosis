@@ -41,6 +41,16 @@ class EmceeSampler(ParallelSampler):
             elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in xrange(self.nwalkers)]
+            elif "covariance_matrix" in self.distribution_hints:
+                center = self.pipeline.start_vector()
+                p0 = self.emcee.utils.sample_ellipsoid(center, self.distribution_hints['covariance_matrix'], size=self.nwalkers)
+                self.p0 = []
+                for row in p0:
+                    row = self.pipeline.denormalize_vector(self.pipeline.normalize_vector(row).clip(0.0001, 0.9999))
+                    self.p0.append(row)
+                print len(self.p0)
+                for p in self.p0:
+                    print self.p0
             else:
                 center_norm = self.pipeline.normalize_vector(self.pipeline.start_vector())
                 sigma_norm=np.repeat(1e-3, center_norm.size)

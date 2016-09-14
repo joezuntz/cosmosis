@@ -125,6 +125,7 @@ def main(args, pool=None):
         #Set up the sampler - for example loading
         #any resources it needs or checking the ini file
         #for additional parameters
+        sampler.distribution_hints.update(distribution_hints)
         sampler.config()
 
         #If there is an output file, save the ini information to
@@ -165,12 +166,7 @@ def main(args, pool=None):
         else:
             sampler.worker()
 
-        # The sampler has now finished, and may or may not have some 
-        # estimated values that the next sampler (if any) can use.
-        # I couldn't think of any other possibly pieces of information
-        # that samplers are likely to want to pass on. If it does
-        # turn out that there are any we should refactor 
-        distribution_hints = sampler.estimate_distribution_hints()
+        distribution_hints.update(sampler.distribution_hints)
 
         if output:
             output.close()

@@ -73,8 +73,10 @@ class Parameter(object):
         else:
             return (p - self.limits[0]) / (self.limits[1] - self.limits[0])
 
-    def denormalize(self, p):
+    def denormalize(self, p, raise_exception=True):
         if 0.0 <= p <= 1.0:
+            return p*(self.limits[1]-self.limits[0]) + self.limits[0]
+        elif not raise_exception:
             return p*(self.limits[1]-self.limits[0]) + self.limits[0]
         else:
             raise ValueError("parameter value not normalized")
