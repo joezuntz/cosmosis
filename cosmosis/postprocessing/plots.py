@@ -112,7 +112,7 @@ class Plots(PostProcessorElement):
 
 
     def line_color(self):
-        possible_colors = ['b','g','r', 'k', 'c' 'm','y']
+        possible_colors = ['b','g','r', 'k', 'c', 'm','y']
         col = possible_colors[self.plot_set%len(possible_colors)]
         return col
 
