@@ -23,7 +23,7 @@ def posterior(p, fast):
 
 class MetropolisSampler(ParallelSampler):
     parallel_output = True
-    sampler_outputs = [("like", float)]
+    sampler_outputs = [("post", float)]
 
     def config(self):
         global pipeline

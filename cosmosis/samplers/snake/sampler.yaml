@@ -1,0 +1,37 @@
+#This is a template for sampler description files
+name: "snake"
+version: "1.0"
+parallel: parallel
+purpose: "Intelligent Grid exploration"
+url: "https://bitbucket.org/joezuntz/cosmosis"
+attribution: [CosmoSIS Team]
+cite: ["ApJ 777 172 (2013)"]
+
+
+explanation: >
+    Snake is a more intelligent version of the grid sampler that avoids
+    taking large number of samples with a low likelihood, which the naive
+    grid sampler nearly always does.
+
+    It does ultimately have the same bad behaviour as you go to a higher
+    number of dimensions, though you can push it higher than with the straight
+    grid.
+
+    The Snake sampler maintains a list of samples on the interior and surface
+    of the parameter combinations it has explored.  This allows it to first move
+    gradually towards the maximum likelihood and then gradually diffuse outwards
+    from that point in all the different dimensions.
+
+    Snake outputs can be postprocessed in exactly the same way as grid samples,
+    with missing entries assumed to have zero posterior.
+
+
+
+installation: >
+    No special installation required; everything is packaged with CosmoSIS
+
+# List of configuration options for this sampler
+params:
+    threshold: (float; default=4.0) Termination for difference betwen max-like and highest surface likelihood
+    nsample_dimension: (integer; default=10) Number of grid points per dimension
+    maxiter: (integer; default=100000) Maximum number of samples to take

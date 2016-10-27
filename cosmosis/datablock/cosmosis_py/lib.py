@@ -1,5 +1,5 @@
 import ctypes as ct
-from . import types
+from . import dbt_types
 
 
 dll = ct.cdll.LoadLibrary("libcosmosis.so")

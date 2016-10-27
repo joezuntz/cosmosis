@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+# Exit with an error message.
+function die()
+{
+  echo "$1"
+  exit 1
+}
+
+
+# Do platform detection. An unknown platform causes immediate failure.
+function get_platform()
+{
+  platform="unknown"
+  macos="no"
+  case $(uname -s) in
+    Darwin) 
+      darwin_version=$(sw_vers -productVersion)
+      if [[ "$darwin_version" =~ ^10.9.* ]]
+      then
+        platform="d13"
+        macos="yes"
+      elif [[ "$darwin_version" =~ ^10.10.* ]]
+      then
+        platform="d14"
+        macos="yes"
+      else
+          die "Sorry - we can not recognize your Darwin version. See the cosmosis wiki for supported systems."
+      fi
+      ;;
+    Linux)
+        plat_id=$(lsb_release -si)
+        plat_release=$(lsb_release -sr)
+        if grep -sqi "release 6" /etc/redhat-release
+        then
+          platform="slf6"
+        elif [ "${plat_id}" == "Ubuntu" ] && [ "${plat_release}" == "14.04" ]
+        then
+          platform="u14"
+        fi
+        ;;
+  esac
+
+  if [ "unknown" == "$platform" ]
+  then
+    die "Sorry - we do not support your OS [$platform].  See the cosmosis wiki for supported systems"
+  fi
+  echo ${platform}
+}
+
+
+arg_values=($(sed -e 's/ -q/ /g' -e 's/:/ /g' config/cosmosis_ups_vers))
+platform=$(get_platform)
+./config/pullProducts "$PWD/ups" "$platform" cosmosis_ups-"${arg_values[0]}" \
+                 "${arg_values[@]:1}"

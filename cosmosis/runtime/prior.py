@@ -6,34 +6,36 @@ class Prior(object):
     def __call__(self, p):
         raise NotImplementedError()
 
-    @staticmethod
-    def load_priors(prior_files):
+    @classmethod
+    def parse_prior(cls, value):
+        prior_type, parameters = value.split(' ', 1)
+        prior_type = prior_type.lower()
+        try:
+            parameters = [float(p) for p in parameters.split()]
+
+            if prior_type.startswith("uni"):
+                return UniformPrior(*parameters)
+            elif prior_type.startswith("gau") or \
+                    prior_type.startswith("nor"):
+                return GaussianPrior(*parameters)
+            elif prior_type.startswith("exp"):
+                return ExponentialPrior(*parameters)
+            else:
+                raise ValueError("Unable to parse %s as prior" %
+                                 (value,))
+        except TypeError:
+            raise ValueError("Unable to parse %s as prior" %
+                             (value,))
+    @classmethod
+    def load_priors(cls,prior_files):
         priors = {}
         for f in prior_files:
             ini = config.Inifile(f) 
             for option, value in ini:
                 if option in priors:
                     raise ValueError("Duplicate prior identified")
+                priors[option] = cls.parse_prior(value)
 
-                prior_type, parameters = value.split(' ', 1)
-                prior_type = prior_type.lower()
-
-                try:
-                    parameters = [float(p) for p in parameters.split()]
-
-                    if prior_type.startswith("uni"):
-                        priors[option] = UniformPrior(*parameters)
-                    elif prior_type.startswith("gau") or \
-                            prior_type.startswith("nor"):
-                        priors[option] = GaussianPrior(*parameters)
-                    elif prior_type.startswith("exp"):
-                        priors[option] = ExponentialPrior(*parameters)
-                    else:
-                        raise ValueError("Unable to parse %s as prior" %
-                                         (value,))
-                except TypeError:
-                    raise ValueError("Unable to parse %s as prior" %
-                                     (value,))
         return priors
 
 

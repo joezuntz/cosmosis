@@ -4,8 +4,14 @@
 #include "datablock_status.h"
 #include "datablock_types.h"
 #include "section_names.h"
-#include <complex.h>
+
+#ifdef __cplusplus
+#include <complex> 
+#include <cstdbool>
+#else
+#include <complex.h> 
 #include <stdbool.h>
+#endif
 
 #define OPTION_SECTION "module_options"
 

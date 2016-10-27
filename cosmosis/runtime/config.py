@@ -13,7 +13,13 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
         %include filename.ini
         This is assumed to end a section, and the last section
         in the included file is assumed to end as well
+
+        Note that the caller of the read() method may set a no_expand_includes
+        attribute on this object, to cause any %include lines to *not* actually
+        be actioned (they will be regarded as comments, but still delineate
+        sections).
     """
+
     def _read(self, fp, fpname):
         """Parse a sectioned setup file.
 
@@ -64,18 +70,18 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
                     optname = None
                 # no section header in the file?
                 elif line.lower().startswith('%include'):
-                    include_statement, filename = line.split()
-                    filename = filename.strip('"')
-                    filename = filename.strip("'")
-                    sys.stdout.write("Reading included ini file: %s\n" %
-                                     (filename,))
-                    if not os.path.exists(filename):
-                        # TODO: remove direct sys.stderr writes
-                        sys.stderr.write("Tried to include non-existent "
-                                         "ini file: %s\n" % (filename,))
-                        raise IOError("Tried to include non-existent "
-                                      "ini file: %s\n" % (filename,))
-                    self.read(filename)
+                    if  not  getattr (self, 'no_expand_includes', False):
+                        include_statement, filename = line.split()
+                        filename = filename.strip('"').strip("'")
+                        sys.stdout.write("Reading included ini file: `"
+                                                           + filename + "'\n")
+                        if not os.path.exists(filename):
+                            # TODO: remove direct sys.stderr writes
+                            sys.stderr.write("Tried to include non-existent "
+                                             "ini file: `" + filename + "'\n")
+                            raise IOError("Tried to include non-existent "
+                                          "ini file: `" + filename + "'\n")
+                        self.read(filename)
                     cursect = None
                 elif cursect is None:
                     raise ConfigParser.MissingSectionHeaderError(fpname,

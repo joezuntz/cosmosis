@@ -1,0 +1,66 @@
+name: "multinest"
+version: "3.7"
+parallel: parallel
+purpose: "Nested sampling"
+url: "https://ccpforge.cse.rl.ac.uk/gf/project/multinest/"
+attribution: ["Farhan Feroz", "Mike Hobson"]
+cite:
+    - "arXiv:0809.3437"
+    - "arXiv:0704.3704"
+    - "arXiv:1306.2144"
+
+explanation: >
+    Nested sampling is a method designed to calculate the Bayesian Evidence
+    of a distribution, for use in comparing multiple models to see which fit
+    the data better.
+
+    The evidence is the integral of the likelihood over the prior; it is
+    equivalent to the probability of the model given the data (marginalizing over
+    the specific parameter values):
+    B = P(D|M) = \int P(D|Mp) P(p|M) dp
+
+    Nested sampling is an efficient method for evaluating this integral using
+    members of an ensemble of live points and steadily replacing the lowest likelihood point with a new one 
+    from a gradually shrinking proposal so and evaluating the integral in horizontal
+    slices.
+
+    Multinest is a particularly sophisticated implementation of this which can cope 
+    with multi-modal distributions using a k-means clustering algorithm and a proposal
+    made from a collection of ellipsoids.
+
+    The output from multinest is not a set of posterior samples, but rather a set
+    of weighted samples - when making histograms or parameter estimates these must
+    be included.
+
+    The primary mulitnest parameter is the number of live points in the ensemble.
+    If this number is too small you will get too few posterior samples in the result,
+    and if it is too large the sampling will take a long time.  A few hundred seems
+    to be reasonable for typical cosmology problems.
+
+    One odd feature of the multinest output is that it doesn't save any results until it has
+    done a complete run through the parameter space.  It then starts again on a second run, 
+    and sometimes a third depending on the parameters.  So don't worry if you don't see any
+    lines in the output file for a while.
+
+installation: >
+    No special installation required; everything is packaged with CosmoSIS
+
+# List of configuration options for this sampler
+params:
+    max_iterations: (integer) Maximum number of samples to take
+    live_points: (integer) Number of live points in the ensemble
+    feedback: (bool; default=T) Print out progression information from multinest
+    multinest_outfile_root: "(str; default='') In addition to CosmoSIS output, save a collection of multinest output files"
+    resume: "(bool; default=F) If you previously set multinest_outfile_root you can restart an interrupted chain with this setting"
+    update_interval: "(integer; default=200) Frequency of printed output from inside multinest"
+    random_seed: "(integer; default=-1) Seed to use for random proposal; -1 to generate from current time.  Allows re-running chains exactly"
+    ins: "(boolean; default=True) Use Importance Nested Sampling (INS) mode - see papers for more info"
+    constant_efficiency: "(bool; default=N) Constant efficiency mode - see papers"
+    efficiency: "(float; default=0.1) Target efficiency for INS - see papers"
+    log_zero: "(float; default=-1e5) Log-probabilities lower than this value are considered to be -infinity"
+    tolerance: "(float; default=0.1) Target error on evidence"
+    mode_separation: "(bool; default=N) Optimize for multi-modal or other odd likelihoods - split into different proposal modes"
+    max_modes: "(integer; default=100) If multi-modal, maximum number of allowed modes"
+    cluster_dimensions: "(integer; default=-1) Look for multiple modes only on the first dimensions"
+    mode_ztolerance: "(float; default=0.5) If multi-modal, get separate stats for modes with this evidence difference"
+

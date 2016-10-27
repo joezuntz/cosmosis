@@ -68,11 +68,9 @@ CosmoSIS usually uses BitBucket:
     "/path/to/my/repo" is "%s"
 
 
-Three final notes:
+Two final notes:
  - When you run git commands for this new repo, make sure 
-   you are in the new directory
- - I have modified modules/Makefile; please do not commit
-   changes to this file to the cosmosis core.
+   you are in the new directory. Your prompt should change to its name.
  - If you add more modules to this repository then 
    add any Fortran/C/C++ ones to the SUBDIRS list in %s
 

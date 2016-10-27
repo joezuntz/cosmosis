@@ -108,8 +108,7 @@ class NestPlot(plots.Plots, plots.MultinestPostProcessorElement):
         x = np.arange(weight.size)
 
         #Choose a filename and make a figure for your plot.
-        filename = self.filename("nest_weight")
-        figure = self.figure(filename)
+        figure, filename = self.figure("nest_weight")
 
         #Do the plotting, and set the limits and labels
         pylab.plot(x, weight/weight.max())

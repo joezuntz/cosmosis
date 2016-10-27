@@ -1,4 +1,6 @@
-MPI = $(shell which mpif90 2> /dev/null)
+include ../../../../config/compilers.mk
+
+MPI = $(shell which $(MPIFC) 2> /dev/null)
 
 TARGETS=libnest3.so
 ifneq ($(MPI),)
@@ -7,14 +9,12 @@ endif
 
 all: $(TARGETS)
 
-FC = gfortran
-MPIFC = mpif90
 FFLAGS += -O3 -fPIC -ffree-line-length-none
 
-ifeq ($(LAPACK_LIB),)
+ifeq ($(LAPACK_LINK),)
 LAPACKLIB = -llapack
 else
-LAPACKLIB = -L$(LAPACK_LIB) -llapack -lblas
+LAPACKLIB = ${LAPACK_LINK}
 endif
 
 NESTLIBDIR = ./
@@ -44,10 +44,10 @@ test:
 	@echo "Alas, MultiNest has no tests"
 
 libnest3_mpi.so: $(NSOBJECTS_MPI)
-	$(MPIFC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)
+	$(MPIFC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB) $(LDFLAGS)
 	
 libnest3.so: $(NSOBJECTS) 
-	$(FC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)
+	$(FC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)  $(LDFLAGS)
 
 obj_detect:
 	make -C example_obj_detect

@@ -24,35 +24,35 @@ class PopulationMonteCarlo(object):
 		"""
 		self.posterior = posterior
 		mu = np.random.multivariate_normal(start, sigma, size=n)
+
 		if student:
 			self.components = [StudentsTComponent(1.0/n, m, sigma, nu) for m in mu]	
 		else:
-			self.components = [GasussianComponent(1.0/n, m, sigma) for m in mu]	
+			self.components = [GaussianComponent(1.0/n, m, sigma) for m in mu]	
 		self.pool = pool
 		self.quiet=quiet #not currently used
 
-	def sample(self, n, update=True):
+	def sample(self, n, update=True, do_kill=True):
 		"Draw a sample from the Gaussian mixture and update the mixture"
 		self.kill_count = n*1./len(self.components)/50.
-		self.kill_alpha = 1.0/len(self.components)/100.
 		self.kill = [False for c in self.components]
 		#draw sample from current mixture
-		x = self.draw(n)
+		component_index, x = self.draw(n)
 
 		#calculate likelihoods
 		if self.pool is None:
 			samples = map(self.posterior, x)
 		else:
-			samples = pool.map(self.posterior, x)
+			samples = self.pool.map(self.posterior, x)
 
 		post = np.array([s[0] for s in samples])
 		extra = [s[1] for s in samples]
 		post[np.isnan(post)] = -np.inf
 
 		#update components
-		weights = self.update_components(x, np.exp(post), update)
+		log_weights = self.update_components(x, post, update, do_kill)
 
-		return x, post, extra, weights
+		return x, post, extra, component_index, log_weights
 
 	def draw(self, n):
 		"Draw a sample from the Gaussian mixture"
@@ -63,23 +63,35 @@ class PopulationMonteCarlo(object):
 		N = np.arange(len(self.components))
 		C = np.random.choice(N, size=n, replace=True, p=A)
 		for i in N:
-			if np.sum(C==i)<self.kill_count:
+			count = np.sum(C==i)
+			if count<self.kill_count:
 				self.kill[i] = True
-
+				print "Component %d less than kill count (%d < %d)" % (i, count, self.kill_count)
 		x = np.array([self.components[c].sample() for c in C])
-		return x
+		return C, x
 
-	def update_components(self, x, post, update):
+	def update_components(self, x, log_post, update, do_kill):
 		"Equations 13-16 of arxiv.org 0903.0837v1"
 
 		#x #n_sample*n_dim
+		log_Aphi = np.array([np.log(m.alpha) + m.log_phi(x) for m in self.components]) #n-component * n_sample
 		Aphi = np.array([m.alpha*m.phi(x) for m in self.components]) #n-component * n_sample
+		post = np.exp(log_post)
 		w = post/Aphi.sum(0) #n_sample
+		logw = log_post - np.log(Aphi.sum(0))
+
 
 		if not update:
-			return w
+			return logw
 
 		w_norm = w/w.sum()  #n_sample
+
+		logw_norm = np.log(w_norm)
+		entropy =  -(w_norm*logw_norm).sum()
+		perplexity = np.exp(entropy) / len(x)
+		print "Perplexity = ", perplexity
+
+
 		Aphi[np.isnan(Aphi)] = 0.0
 		w_norm[np.isnan(w_norm)] = 0.0
 		A = [m.alpha for m in self.components]
@@ -91,18 +103,19 @@ class PopulationMonteCarlo(object):
 
 		for d,(m,rho_d) in enumerate(zip(self.components, rho)):
 			try:
-				m.update(w_norm, x, rho_d, self.kill_alpha)
+				m.update(w_norm, x, rho_d)
 			except np.linalg.LinAlgError as error:
-				print "Removing component", d, error.message
+				print "Component not fitting the data very well", d, error.message
 				self.kill[d] = True
 
-		self.components = [c for c,kill in zip(self.components,self.kill) if not kill]
+		if do_kill:
+			self.components = [c for c,kill in zip(self.components,self.kill) if not kill]
+		print "%d components remain" % len(self.components)
+		return logw
 
-		return w
 
 
-
-class GasussianComponent(object):
+class GaussianComponent(object):
 	"""
 	A single Gaussian component of the mixture model.
 
@@ -118,14 +131,16 @@ class GasussianComponent(object):
 		self.sigma = sigma
 		self.sigma_inv = np.linalg.inv(self.sigma)
 		self.A = (2*pi)**(-ndim/2.0) * np.linalg.det(self.sigma)**-0.5
+		self.logA = np.log(self.A)
 
-	def update(self, w_norm, x, rho_d, kill_alpha):
+	def update(self, w_norm, x, rho_d):
 		"Update the parameters according to the samples and rho values"
 		alpha = dot(w_norm, rho_d)  #scalar
-		if not alpha>kill_alpha:
+		if not alpha>0:
 			raise np.linalg.LinAlgError("alpha = %f"%alpha)
 		mu = einsum('i,ij,i->j',w_norm, x, rho_d) / alpha  #scalar
 		delta = x-mu  #n_sample * n_dim
+		print "Updating to mu = ", mu
 		sigma = einsum('i,ij,ik,i->jk',w_norm, delta, delta, rho_d) / alpha  #n_dim * n_dim
 		self.set(alpha, mu, sigma)
 
@@ -135,6 +150,13 @@ class GasussianComponent(object):
 		chi2 = einsum('ij,jk,ik->i',d,self.sigma_inv,d)
 		#result size n_sample
 		return self.A * exp(-0.5*chi2)
+
+	def log_phi(self, x):
+		"Evaluate the log distribution"
+		d = (x-self.mu) #n_sample * n_dim
+		chi2 = einsum('ij,jk,ik->i',d,self.sigma_inv,d)
+		return self.logA - 0.5*chi2
+
 
 	def sample(self):
 		"Draw a sample from the distribution"
@@ -168,10 +190,10 @@ class StudentsTComponent(object):
 		self.sigma_inv = np.linalg.inv(self.sigma)
 		self.A = gamma((nu+p)/2.)/gamma(nu/2.) / (pi*nu)**(p/2.) * np.linalg.det(self.sigma)**-0.5
 
-	def update(self, w_norm, x, rho_d, kill_alpha):
+	def update(self, w_norm, x, rho_d):
 		"Update the parameters according to the samples and rho values"
 		alpha = dot(w_norm, rho_d)  #scalar
-		if not alpha>kill_alpha:
+		if not alpha>0:
 			raise np.linalg.LinAlgError("alpha = %f"%alpha)
 		nu=self.nu
 		p=self.ndim

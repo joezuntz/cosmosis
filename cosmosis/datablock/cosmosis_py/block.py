@@ -1,7 +1,7 @@
 import ctypes as ct
 from . import lib
 from . import errors
-from . import types
+from . import dbt_types as types
 from .errors import BlockError
 import numpy as np
 import os
@@ -307,18 +307,24 @@ class DataBlock(object):
 		method = self._method_for_type(T, method_type)
 		if method: 
 			return method
+
 		if hasattr(value,'__len__'):
+			#let numpy work out what type this should be.
 			array = np.array(value)
-			method = {
-				(1,'i'):(self.get_int_array_1d,self.put_int_array_1d,self.replace_int_array_1d),
-				#These are not implemented yet
-				# (2,'i'):(self.get_int_array_2d,self.put_int_array_1d,self.replace_int_array_1d),
-				(1,'f'):(self.get_double_array_1d,self.put_double_array_1d,self.replace_double_array_1d),
-				(2,'i'):(self.get_int_array_nd,self.put_int_array_nd,self.replace_int_array_nd),
-				(2,'f'):(self.get_double_array_nd,self.put_double_array_nd,self.replace_double_array_nd),
-				# (1,'c'):(self.get_complex_array_1d,self.put_complex_array_1d,self.replace_complex_array_1d),
-				# (2,'c'):(self.get_complex_array_2d,self.put_complex_array_1d,self.replace_complex_array_1d),
-			}.get((array.ndim,array.dtype.kind))
+			kind = array.dtype.kind
+			ndim = array.ndim
+			if ndim==1:
+				#1D arrays have their own specific methods,
+				#for integer and float
+				if kind=='i':
+					method = (self.get_int_array_1d,self.put_int_array_1d,self.replace_int_array_1d)
+				elif kind=='f':
+					method = (self.get_double_array_1d,self.put_double_array_1d,self.replace_double_array_1d)
+			#otherwise we just use the generic n-d arrays
+			elif kind=='i':
+				method = (self.get_int_array_nd,self.put_int_array_nd,self.replace_int_array_nd)
+			elif kind=='f':
+				method = (self.get_double_array_nd,self.put_double_array_nd,self.replace_double_array_nd)
 			if method:
 				return method[method_type]
 		raise ValueError("I do not know how to handle this type %r %r"%(value,type(value)))
@@ -481,6 +487,10 @@ class DataBlock(object):
 			for name, value in vector_outputs:
 				vector_outfile = os.path.join(dirname,section,name+'.txt')
 				header = "%s\n"%name
+				if value.ndim>2:
+					header += "shape = %s\n"%str(value.shape)
+					print "Flattening %s--%s when saving; shape info in header" % (section,name)
+					value = value.flatten()
 				if name in meta:
 					for key,val in meta[name].items():
 						header+='%s = %s\n' % (key,val)
@@ -531,6 +541,10 @@ class DataBlock(object):
 			for name, value in vector_outputs:
 				vector_outfile = os.path.join(dirname,section,name+'.txt')
 				header = "%s\n"%name
+				if value.ndim>2:
+					header += "shape = %s\n"%str(value.shape)
+					print "Flattening %s--%s when saving; shape info in header" % (section,name)
+					value = value.flatten()
 				if name in meta:
 					for key,val in meta[name].items():
 						header+='%s = %s\n' % (key,val)
@@ -643,11 +657,14 @@ class DataBlock(object):
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, False)
 
 	def get_grid(self, section, name_x, name_y, name_z):
+		name_x = name_x.lower()
+		name_y = name_y.lower()
+		name_z = name_z.lower()
 		x = self[section, name_x]
 		y = self[section, name_y]
 		z = self[section, name_z]
 		sentinel_key = "_cosmosis_order_%s"%name_z
-		sentinel_value = self[section, sentinel_key]
+		sentinel_value = self[section, sentinel_key].lower()
 
 		if sentinel_value== "%s_cosmosis_order_%s" % (name_x, name_y):
 			assert z.shape==(x.size, y.size)
@@ -671,7 +688,7 @@ class DataBlock(object):
 
 		sentinel_key = "_cosmosis_order_%s"%name_z
 		sentinel_value = "%s_cosmosis_order_%s" % (name_x, name_y)
-		self[section, sentinel_key] = sentinel_value
+		self[section, sentinel_key] = sentinel_value.lower()
 
 		# x = np.array(x, dtype=np.double)
 		# y = np.array(y, dtype=np.double)
@@ -703,3 +720,42 @@ class DataBlock(object):
 		# 	status = lib.c_datablock_put_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
 		# if status!=0:
 		# 	raise BlockError.exception_for_status(status, section, ','.join([name_x, name_y, name_z]))
+
+
+class SectionOptions(object):
+	"""
+	The SectionOptions object wraps is a handy short-cut to let you
+	look up objects in a DataBlock object, but looking specifically at
+	the special section in an ini file that refers to "the section that 
+	defines the current module"
+
+	"""
+	def __init__(self, block):
+		self.block=block
+
+	def has_value(self, name):
+		has = self.block.has_value(option_section, name)
+		return bool(has)
+
+
+
+def _make_getter(cls, name):
+	if name=='__getitem__':
+		def getter(self, key):
+			return self.block[option_section, key]
+	elif "array" in name:
+		def getter(self, key):
+			return getattr(self.block, name)(option_section, key)
+	else:
+		def getter(self, key, default=None):
+			return getattr(self.block, name)(option_section, key, default=default)
+
+	return getter
+
+
+
+
+for name in dir(DataBlock):
+	if name.startswith('get') or name=='__getitem__':
+		setattr(SectionOptions, name, _make_getter(SectionOptions, name))
+

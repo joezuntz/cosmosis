@@ -36,7 +36,9 @@ class Pipeline(object):
             self.options = config.Inifile(arg)
 
         #This will be set later
-        self.root_directory = None
+        self.root_directory = self.options.get("runtime", "root", "cosmosis_none_signifier")
+        if self.root_directory=="cosmosis_none_signifier":
+            self.root_directory=None
 
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
@@ -47,9 +49,6 @@ class Pipeline(object):
         # initialize modules
         self.modules = []
         if load and PIPELINE_INI_SECTION in self.options.sections():
-            rootpath = self.options.get(PIPELINE_INI_SECTION,
-                                        "root",
-                                        os.curdir)
             module_list = self.options.get(PIPELINE_INI_SECTION,
                                            "modules", "").split()
 
@@ -72,7 +71,7 @@ class Pipeline(object):
                                                   setup_function,
                                                   exec_function,
                                                   cleanup_function,
-                                                  rootpath))
+                                                  self.root_directory))
             self.shortcut_module=0
             self.shortcut_data=None
             if shortcut is not None:
@@ -115,6 +114,13 @@ class Pipeline(object):
                                  "debug",
                                  module.name]
 
+            #We let the user specify additional global sections that are
+            #visible to all modules
+            global_sections = self.options.get("runtime", "global", " ")
+            for global_section in global_sections.split():
+                relevant_sections.append(global_section)
+
+
             config_block = block.DataBlock()
 
             for (section, name), value in self.options:
@@ -146,7 +152,7 @@ class Pipeline(object):
         try:
             import pygraphviz as pgv
         except ImportError:
-            print "Cannot generate a graphical pipeline; please install the python package pydot (e.g. with pip install pydot)"
+            print "Cannot generate a graphical pipeline; please install the python package pygraphviz (e.g. with pip install pygraphviz)"
             return
         P = pgv.AGraph(directed=True)
         # P = pydot.Cluster(label="Pipeline", color='black',  style='dashed')
@@ -156,7 +162,7 @@ class Pipeline(object):
         P.add_node("Sampler", color='Pink', style='filled', group='pipeline',shape='octagon', fontname='Courier')
         for module in self.modules:
             # module_node = pydot.Node(module.name, color='Yellow', style='filled')
-            P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline')
+            P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline', shape='box')
         P.add_edge("Sampler", norm_name(self.modules[0].name), color='lightskyblue', style='bold', arrowhead='none')
         for i in xrange(len(self.modules)-1):
             P.add_edge(norm_name(self.modules[i].name),norm_name(self.modules[i+1].name), color='lightskyblue', style='bold', arrowhead='none')
@@ -224,7 +230,8 @@ class Pipeline(object):
                     sys.stdout.flush()
                     sys.stderr.write("Because you set debug=True I printed a log of "
                                      "all access to data printed above.\n"
-                                     "Look for the word 'FAIL'\n\n")
+                                     "Look for the word 'FAIL' \n")
+                    sys.stderr.write("Though the error message could also be somewhere above that.\n\n")
                 if not self.quiet:
                     sys.stderr.write("Error running pipeline (%d)- "
                                      "hopefully printed above here.\n"%status)
@@ -265,16 +272,14 @@ class LikelihoodPipeline(Pipeline):
         self.values_filename=values_file
         priors_files = self.options.get(PIPELINE_INI_SECTION,
                                         "priors", "").split()
+        self.priors_files = priors_files
 
         self.parameters = parameter.Parameter.load_parameters(values_file,
                                                               priors_files,
                                                               override,
                                                               )
 
-        self.varied_params = [param for param in self.parameters
-                              if param.is_varied()]
-        self.fixed_params = [param for param in self.parameters
-                             if param.is_fixed()]
+        self.reset_fixed_varied_parameters()
 
         #We want to save some parameter results from the run for further output
         extra_saves = self.options.get(PIPELINE_INI_SECTION,
@@ -292,6 +297,29 @@ class LikelihoodPipeline(Pipeline):
 
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
+
+    def reset_fixed_varied_parameters(self):
+        self.varied_params = [param for param in self.parameters
+                              if param.is_varied()]
+        self.fixed_params = [param for param in self.parameters
+                             if param.is_fixed()]     
+
+    def parameter_index(self, section, name):
+        i = self.parameters.index((section, name))
+        if i==-1:
+            raise ValueError("Could not find index of parameter %s in section %s"%(name, section))
+        return i
+
+    def set_varied(self, section, name, lower, upper):
+        i = self.parameter_index(section, name)
+        self.parameters[i].limits = (lower,upper)
+        self.reset_fixed_varied_parameters()
+
+    def set_fixed(self, section, name, value):
+        i = self.parameter_index(section, name)
+        self.parameters[i].limits = (value, value)
+        self.reset_fixed_varied_parameters()
+
 
     def output_names(self):
         param_names = [str(p) for p in self.varied_params]
@@ -328,7 +356,7 @@ class LikelihoodPipeline(Pipeline):
                 c[i,j] /= (ri*rj)
         return c
 
-    def denormalize_matrix(self, c):
+    def denormalize_matrix(self, c, inverse=False):
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
@@ -338,15 +366,39 @@ class LikelihoodPipeline(Pipeline):
             for j in xrange(n):
                 pj = self.varied_params[j]
                 rj = pj.limits[1] - pj.limits[0]
-                c[i,j] *= (ri*rj)
+                if inverse:
+                    c[i,j] /= (ri*rj)
+                else:
+                    c[i,j] *= (ri*rj)
         return c
 
 
-    def start_vector(self):
-        return np.array([param.start for
+    def start_vector(self, all_params=False):
+        if all_params:
+            return np.array([param.start for
+                 param in self.parameters])
+        else:            
+            return np.array([param.start for
                          param in self.varied_params])
 
-    def run_parameters(self, p, check_ranges=False):
+    def min_vector(self, all_params=False):
+        if all_params:
+            return np.array([param.limits[0] for
+                 param in self.parameters])
+        else:
+            return np.array([param.limits[0] for
+                         param in self.varied_params])
+
+    def max_vector(self, all_params=False):
+        if all_params:
+            return np.array([param.limits[1] for
+                 param in self.parameters])
+        else:
+            return np.array([param.limits[1] for
+                         param in self.varied_params])
+
+
+    def run_parameters(self, p, check_ranges=False, all_params=False):
         if check_ranges:
             if self.is_out_of_range(p):
                 return None
@@ -356,13 +408,17 @@ class LikelihoodPipeline(Pipeline):
         else:
             data = block.DataBlock()
 
-        # add varied parameters
-        for param, x in zip(self.varied_params, p):
-            data[param.section, param.name] = x
+        if all_params:
+            for param, x in zip(self.parameters, p):
+                data[param.section, param.name] = x
+        else:
+            # add varied parameters
+            for param, x in zip(self.varied_params, p):
+                data[param.section, param.name] = x
 
-        # add fixed parameters
-        for param in self.fixed_params:
-            data[param.section, param.name] = param.start
+            # add fixed parameters
+            for param in self.fixed_params:
+                data[param.section, param.name] = param.start
 
         if self.run(data):
             return data
@@ -386,12 +442,16 @@ class LikelihoodPipeline(Pipeline):
         ini.close()
 
 
-    def prior(self, p):
+    def prior(self, p, all_params=False):
+        if all_params:
+            params = self.parameters
+        else:
+            params = self.varied_params
         return sum([param.evaluate_prior(x) for param, x in
-                    zip(self.varied_params, p)])
+                    zip(params, p)])
 
-    def posterior(self, p, return_data=False):
-        prior = self.prior(p)
+    def posterior(self, p, return_data=False, all_params=False):
+        prior = self.prior(p, all_params=all_params)
         if prior == -np.inf:
             if not self.quiet:
                 sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
@@ -399,17 +459,17 @@ class LikelihoodPipeline(Pipeline):
                 return prior, np.repeat(np.nan, self.number_extra), None
             return prior, np.repeat(np.nan, self.number_extra)
         if return_data:
-            like, extra, data = self.likelihood(p, return_data=True)
+            like, extra, data = self.likelihood(p, return_data=True, all_params=all_params)
             return prior + like, extra, data
         else:
-            like, extra = self.likelihood(p)
+            like, extra = self.likelihood(p, all_params=all_params)
             return prior + like, extra
         
-    def likelihood(self, p, return_data=False):
+    def likelihood(self, p, return_data=False, all_params=False):
         #Set the parameters by name from the parameter vector
         #If one is out of range then return -infinity as the log-likelihood
         #i.e. likelihood is zero.  Or if something else goes wrong do the same
-        data = self.run_parameters(p)
+        data = self.run_parameters(p, all_params=all_params)
         if data is None:
             if return_data:
                 return -np.inf, np.repeat(np.nan, self.number_extra), data
@@ -427,6 +487,11 @@ class LikelihoodPipeline(Pipeline):
                 raise MissingLikelihoodError(likelihood_name, data)
 
         like = sum(likelihoods)
+
+        # DM: Issue #181: Zuntz: replace NaN's with -inf's in posteriors and
+        #                 likelihoods.
+        if np.isnan (like):
+            like = -np.inf
 
         if not self.quiet and self.likelihood_names:
             sys.stdout.write("Likelihood %e\n" % (like,))
