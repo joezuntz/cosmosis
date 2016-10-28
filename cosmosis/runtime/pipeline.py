@@ -550,13 +550,16 @@ class LikelihoodPipeline(Pipeline):
         #We are going to need to go through the log and figure out the latter of
         #these
         first_use = block.get_first_parameter_use(self.varied_params)
-        first_use_count = [len(f) for f in first_use]
+        first_use_count = [len(f) for f in first_use.values()]
         if sum(first_use_count)!=len(self.varied_params):
             raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline")
         print
-        print "Number of parameters first used in each module:"
-        for m, n in zip(self.modules, first_use_count):
-            print "   ", m.name, n
+        print "Parameters first used in each module:"
+        for f, n in zip(first_use.items(), first_use_count):
+            name, params = f
+            print "{} - {} parameters:".format(name, n)
+            for p in params:
+                print "     ", p
 
         # Now we have a count of the number of parameters and amount of 
         # time used before each module in the pipeline
@@ -566,8 +569,8 @@ class LikelihoodPipeline(Pipeline):
         fast_slow_split = self._choose_fast_slow_split(first_use_count, timings)
         slow_modules = fast_slow_split
         fast_modules = len(self.modules) - slow_modules
-        slow_params = sum(first_use[:fast_slow_split], [])
-        fast_params = sum(first_use[fast_slow_split:], [])
+        slow_params = sum(first_use.values()[:fast_slow_split], [])
+        fast_params = sum(first_use.values()[fast_slow_split:], [])
         print
         print "Analyzed pipeline and decided: "
         print "   Slow modules (%d):" % slow_modules
