@@ -594,10 +594,10 @@ module cosmosis_wrappers
 
     function c_string_to_fortran(c_str, max_len) result(f_str)
         use iso_c_binding
+        integer :: max_len
         character(max_len) :: f_str
         character, pointer, dimension(:) :: p_str
         type(c_ptr) :: c_str
-        integer :: max_len
         integer(c_size_t) :: n, shpe(1)
         integer(c_size_t) :: i
 
