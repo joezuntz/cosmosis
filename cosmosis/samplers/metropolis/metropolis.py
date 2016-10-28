@@ -1,7 +1,7 @@
 import numpy as np
 
 class MCMC(object):
-	def __init__(self, start, posterior, covariance, subsets=None, quiet=False):
+	def __init__(self, start, posterior, covariance, quiet=False):
 		"""
 
 		"""
@@ -21,11 +21,22 @@ class MCMC(object):
 		rotation = np.identity(self.ndim)
 		self.proposal_axes = np.dot(self.cholesky, rotation)
 
+		self.last_subset_index = 0
+
+
+
+		#Set up instance variables storing samples, etc.
+		self.samples = []
+		self.iterations = 0
+		self.accepted = 0
+		self.proposal_scale = 2.4
+
+	def set_subsets(self, subsets):
 		#If there are sub-spaces defined that split the space 
 		#into fast and slow parameters, then find the subsets here.
 		#Each entry in the input parameter "subsets" should be the pair
 		#(indices,oversampling)
-		
+		self.subsets = subsets
 		if subsets:
 			self.nsubsets = len(subsets)
 			self.subset_axes = []
@@ -43,12 +54,6 @@ class MCMC(object):
 				self.subset_oversampling.append(oversampling)
 				self.subsets.append(s)
 
-
-		#Set up instance variables storing samples, etc.
-		self.samples = []
-		self.iterations = 0
-		self.accepted = 0
-		self.proposal_scale = 2.4
 
 	@staticmethod
 	def submatrix(M, x):
@@ -70,7 +75,9 @@ class MCMC(object):
 			q = self.propose()
 			if not self.quiet:
 				print "  ".join(str(x) for x in q)
-			Lq = self.posterior(q, fast=False)
+			#assume two proposal subsets for now
+			fast = self.last_subset_index==1
+			Lq = self.posterior(q, fast=fast)
 			if not self.quiet:
 				print
 			#acceptance test
@@ -116,6 +123,7 @@ class MCMC(object):
 		#
 		subset_index = self.current_subset_index
 		n = len(self.subsets[subset_index])
+		print "Proposing in parameter subset {}: {}".format(subset_index, self.subsets[subset_index])
 		q = self.propose_subset_index(subset_index)
 		self.subset_iterations[subset_index] += 1
 
@@ -125,6 +133,7 @@ class MCMC(object):
 		if i_s==0:
 			self.randomize_rotation_subset(subset_index)
 
+		self.last_subset_index = subset_index
 		#If we have sufficiently oversampled this subset move on to the
 		#next subset
 		if self.subset_iterations[subset_index]%self.subset_oversampling[subset_index]==0:

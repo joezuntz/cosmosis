@@ -12,6 +12,7 @@ class TestSampler(Sampler):
         self.fatal_errors = self.read_ini("fatal_errors", bool, False)
         self.save_dir = self.read_ini("save_dir", str, "")
         self.graph = self.read_ini("graph", str, "")
+        self.analyze_fast_slow = self.read_ini("analyze_fast_slow", bool, False)
 
     def execute(self):
         # load initial parameter values
@@ -43,6 +44,14 @@ class TestSampler(Sampler):
         if not self.pipeline.likelihood_names:
             print "(No likelihoods required in ini file)"
             print
+
+        if self.analyze_fast_slow:
+            print
+            print
+            self.pipeline.fast_slow_analysis()
+            print
+            print
+
 
         if self.graph:
             self.pipeline.make_graph(data, self.graph)

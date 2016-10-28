@@ -16,8 +16,12 @@ def posterior(p, fast):
     #any shortcut information
     #and then cache the datablock part-way through (done in pipeline)
     #if fast is True, then take the shortcut
-    if not fast:
+    if fast:
+        print "Fast subspace"
+    else:
+        print "Slow subspace"
         pipeline.shortcut_data = None
+
     return pipeline.posterior(p)
 
 
@@ -32,8 +36,9 @@ class MetropolisSampler(ParallelSampler):
         random_start = self.read_ini("random_start", bool, default=False)
         self.Rconverge = self.read_ini("Rconverge", float, -1.0)
         self.fast_slow = self.read_ini("fast_slow", bool, False)
+        self.oversampling = self.read_ini("oversampling", int, 5)
         self.n = self.read_ini("nsteps", int, default=100)
-        self.fast_slow_split = None #work out later
+        self.split = None #work out later
         if self.Rconverge==-1.0:
             self.Rconverge=None
         self.interrupted = False
@@ -64,8 +69,19 @@ class MetropolisSampler(ParallelSampler):
     def execute(self):
         #Run the MCMC  sampler.
 
-        if self.fast_slow and self.fast_slow_split is None:
-            self.split, self.slow, self.fast = self.pipeline.fast_slow_analysis()
+        if self.fast_slow and (self.split is None):
+            self.split, slow, fast = self.pipeline.fast_slow_analysis()
+            self.pipeline.shortcut_module = self.split
+            slow_indices = [i
+                for i,p in enumerate(self.pipeline.varied_params)
+                if (p.section,p.name) in slow
+            ]
+            fast_indices = [i
+                for i,p in enumerate(self.pipeline.varied_params)
+                if (p.section,p.name) in fast
+            ]
+            subsets = [(slow_indices,1), (fast_indices,self.oversampling)]
+            self.sampler.set_subsets(subsets)
 
         try:
             samples = self.sampler.sample(self.n)
