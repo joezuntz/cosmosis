@@ -6,7 +6,7 @@ echo 'pip install  --prefix=$COSMOSIS_SRC_DIR/usr/ emcee'
 #This whole system uses Ted Kisner's hpcp set of modules
 source /project/projectdirs/cmb/modules/hpcports_NERSC.sh
 
-hpcports shared_gnu
+hpcports gnu
 module load gcc
 module load lapack-hpcp
 module load cfitsio-hpcp
