@@ -18,6 +18,7 @@ def posterior(p):
 class MetropolisSampler(ParallelSampler):
     parallel_output = True
     sampler_outputs = [("post", float)]
+    understands_fast_subspaces = True
 
     def config(self):
         global pipeline
@@ -57,16 +58,9 @@ class MetropolisSampler(ParallelSampler):
 
     def execute(self):
         #Run the MCMC  sampler.
-        if self.pipeline.fast_slow:
-            slow_indices = [i
-                for i,p in enumerate(self.pipeline.varied_params)
-                if (p.section,p.name) in self.pipeline.fast_slow.slow_params
-            ]
-            fast_indices = [i
-                for i,p in enumerate(self.pipeline.varied_params)
-                if (p.section,p.name) in self.pipeline.fast_slow.fast_params
-            ]
-            subsets = [(slow_indices,1), (fast_indices,self.oversampling)]
+        if self.pipeline.do_fast_slow:
+            subsets = [(self.pipeline.slow_param_indices,1), 
+                        (self.pipeline.fast_param_indices,self.oversampling)]
             self.sampler.set_subsets(subsets)
 
         try:

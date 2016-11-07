@@ -86,6 +86,15 @@ def main(args, pool=None):
     #for additional parameters
     sampler.config()
 
+    # Some samplers understand that parameter spaces can be partitioned
+    # into fast and slow sub-spaces.  For the moment we assume that only
+    # the master process needs this information, though this may change.
+    # And that if a sampler needs parallel output (currently just metropolis)
+    # then all the processes need it too.
+    if (pool is None or pool.is_master() or sampler_class.parallel_output) \
+    and sampler_class.understands_fast_subspaces:
+        pipeline.setup_fast_subspaces()
+
     #If there is an output file, save the ini information to
     #it as well.  We do it here since it's nicer to have it
     #after the sampler options that get written in sampler.config

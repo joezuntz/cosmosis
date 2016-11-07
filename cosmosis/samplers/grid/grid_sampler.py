@@ -19,6 +19,7 @@ LARGE_JOB_SIZE = 1000000
 class GridSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("post", float)]
+    understands_fast_subspaces = True
 
     def config(self):
         global grid_sampler
@@ -64,10 +65,21 @@ class GridSampler(ParallelSampler):
                 raise ValueError("Suspicously large number of grid points %d ( = n_samp ^ n_dim = %d ^ %d); set allow_large=T in [grid] section to permit this."%(total_samples,self.nsample,len(self.pipeline.varied_params)))
         print
         
+        # If our pipeline allows it we arrange it so that the
+        # fast parameters change fastest in the sequence.
+        # This is still not optimal for the multiprocessing case
+        if self.pipeline.do_fast_slow:
+            param_order = self.pipeline.slow_params + self.pipeline.fast_params
+        else:
+            param_order = self.pipeline.varied_params
+
+        # This little bit of python and numpy wizardry generates
+        # an iterator that generates the sequence of grid points
+        # which is an outer product of the linearly spaced sample
+        # points in each dimension.
         self.sample_points = itertools.product(*[np.linspace(*param.limits,
                                                        num=self.nsample)
-                                           for param
-                                           in self.pipeline.varied_params])
+                                            for param in param_order])
 
 
 

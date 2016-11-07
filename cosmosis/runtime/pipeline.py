@@ -40,7 +40,13 @@ class LimitedSizeDict(collections.OrderedDict):
                 self.popitem(last=False)
 
 
-class FastSlow(object):
+class SlowSubspaceCache(object):
+    """
+    This tool analyzes pipelines to determine which of their parameters
+    are fast and which are slow, and then caches the results of new sets
+    of slow parameters so that if only fast parameters have changed the 
+    pipeline can be much faster.
+    """
     def __init__(self, cache_size_limit=3):
         self.current_hash = np.nan
         self.analyzed = False
@@ -210,11 +216,7 @@ class Pipeline(object):
         self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
 
         self.do_fast_slow = self.options.getboolean(PIPELINE_INI_SECTION, "fast_slow", False)
-        if self.do_fast_slow:
-            self.fast_slow = FastSlow()
-        else:
-            self.fast_slow = None
-
+        self.slow_subspace_cache = None #until set in method
         # initialize modules
         self.modules = []
         if load and PIPELINE_INI_SECTION in self.options.sections():
@@ -301,9 +303,23 @@ class Pipeline(object):
             for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
                 sys.stdout.write("%s %f\n" % (name, t2-t1))
 
-        #If requested, run the analysis to check for fast and slow params
-        if self.fast_slow:
-            self.fast_slow.analyze_pipeline(self)
+    def setup_fast_subspaces(self):
+        if self.do_fast_slow:
+            self.slow_subspace_cache = SlowSubspaceCache()
+            self.slow_subspace_cache.analyze_pipeline(self)
+            # This looks a bit weird but makes sure that self.fast_params
+            # and self.slow_params contain objects of type Parameter
+            # not just the (section,name) tuples.
+            self.fast_params = [p for p in self.varied_params 
+                if p in self.slow_subspace_cache.fast_params]
+            self.slow_params = [p for p in self.varied_params 
+                if p in self.slow_subspace_cache.slow_params]
+            self.fast_param_indices = [self.varied_params.index(p)
+                for p in self.fast_params]
+            self.slow_param_indices = [self.varied_params.index(p)
+                for p in self.slow_params]
+        else:
+            self.slow_subspace_cache = None
 
     def cleanup(self):
         for module in self.modules:
@@ -362,8 +378,8 @@ class Pipeline(object):
     def run(self, data_package):
         modules = self.modules
         timings = []
-        if self.fast_slow:
-            first_module = self.fast_slow.start_pipeline(data_package)
+        if self.slow_subspace_cache:
+            first_module = self.slow_subspace_cache.start_pipeline(data_package)
         else:
             first_module = 0
 
@@ -407,8 +423,8 @@ class Pipeline(object):
 
             # If we are using a fast/slow split (and we are not already running on a cached subset)
             # Then 
-            if self.fast_slow and first_module==0:
-                self.fast_slow.next_module_results(module_number, data_package)
+            if self.slow_subspace_cache and first_module==0:
+                self.slow_subspace_cache.next_module_results(module_number, data_package)
 
         if self.timing:
             self.timings = timings
@@ -421,7 +437,7 @@ class Pipeline(object):
         return True
 
     def clear_cache(self):
-        self.fast_slow.clear_cache()
+        self.slow_subspace_cache.clear_cache()
 
 
 

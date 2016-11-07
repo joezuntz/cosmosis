@@ -4,6 +4,8 @@ from cosmosis.runtime.attribution import PipelineAttribution
 class Sampler(object):
     needs_output = True
     sampler_outputs = []
+    understands_fast_subspaces = False
+
     class __metaclass__(type):
         def __init__(cls, name, b, d):
             type.__init__(cls, name, b, d)
