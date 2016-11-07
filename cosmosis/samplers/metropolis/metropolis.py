@@ -12,7 +12,7 @@ class MCMC(object):
 		self.quiet=quiet
 		#Run the pipeline for the first time, on the 
 		#starting point
-		self.Lp = self.posterior(self.p, fast=False)
+		self.Lp = self.posterior(self.p)
 
 		#Set up the covariance and initial
 		#proposal axes
@@ -30,6 +30,7 @@ class MCMC(object):
 		self.iterations = 0
 		self.accepted = 0
 		self.proposal_scale = 2.4
+		self.subsets = None
 
 	def set_subsets(self, subsets):
 		#If there are sub-spaces defined that split the space 
@@ -76,8 +77,7 @@ class MCMC(object):
 			if not self.quiet:
 				print "  ".join(str(x) for x in q)
 			#assume two proposal subsets for now
-			fast = self.last_subset_index==1
-			Lq = self.posterior(q, fast=fast)
+			Lq = self.posterior(q)
 			if not self.quiet:
 				print
 			#acceptance test

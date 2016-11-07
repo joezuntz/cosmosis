@@ -6,7 +6,7 @@ import numpy as np
 import time
 import collections
 import ConfigParser
-
+import warnings
 import utils
 import config
 import parameter
@@ -22,6 +22,171 @@ class MissingLikelihoodError(Exception):
     def __init__(self, message, data):
         super(MissingLikelihoodError, self).__init__(message)
         self.pipeline_data = data
+
+class LimitedSizeDict(collections.OrderedDict):
+    "From http://stackoverflow.com/questions/2437617/limiting-the-size-of-a-python-dictionary"
+    def __init__(self, *args, **kwds):
+        self.size_limit = kwds.pop("size_limit", None)
+        collections.OrderedDict.__init__(self, *args, **kwds)
+        self._check_size_limit()
+
+    def __setitem__(self, key, value):
+        collections.OrderedDict.__setitem__(self, key, value)
+        self._check_size_limit()
+
+    def _check_size_limit(self):
+        if self.size_limit is not None:
+            while len(self) > self.size_limit:
+                self.popitem(last=False)
+
+
+class FastSlow(object):
+    def __init__(self, cache_size_limit=3):
+        self.current_hash = np.nan
+        self.analyzed = False
+        self.cache = LimitedSizeDict(size_limit=cache_size_limit)
+
+    def clear_cache(self):
+        self.cache.clear()
+        self.current_hash = np.nan
+
+    def hash_slow_parameters(self, block):
+        """This is not a general block hash! 
+        It just looks at the slow parameters.
+        """
+        pairs = block.keys()
+        pairs.sort()
+        values = []
+        for section,name in pairs:
+            if (section,name) not in self.slow_params:
+                continue
+            value = block[section, name]
+            if not np.isscalar(value):
+                #non-scalar in the block - this must
+                #reflect some feature not coded yet
+                warnings.warn("Vector parameter(s) in the input means that fast-slow split will not work - this can be fixed - please open an issue if it affects you.  Or set fast_slow=F")
+                return np.nan # 
+            values.append(value)
+        values = tuple(values)
+        return hash(values)
+
+    def start_pipeline(self, initial_block):
+        # We may be in the process of analyzing the pipeline
+        # the first time.
+        if not self.analyzed:
+            return 0
+        #
+        new_hash = self.hash_slow_parameters(initial_block)
+        cached = self.cache.get(new_hash)
+        if cached is None:
+            self.current_hash = new_hash
+            first_module = 0
+        else:            
+            # Now we need to use the old cached results in the new block.
+            # We put everything from the old block into the new block,
+            # EXCEPT for the fast parameters themselves.
+            for section,name in cached.keys():
+                if (section,name) not in self.fast_params:
+                    initial_block[section,name] = cached[section,name]
+            first_module = self.split_index
+        return first_module
+
+    def next_module_results(self, module_index, block):
+        if not self.analyzed:
+            return
+
+        if module_index != self.split_index:
+            return
+
+        self.cache[self.current_hash] = block.clone()
+
+    def analyze_pipeline(self, pipeline):
+        """
+        Analyze the pipeline to determine how best to split it into two parts,
+        a slow beginning and a faster end, so that we can vary parameters
+
+        """
+
+        #Run the sampler twice first, once to make sure
+        #everything is initialized and once to do timing.
+        #Use the pipeline starting parameter since that is
+        #likely more typical than any random starting position
+        start = pipeline.start_vector()
+        print
+        print "Analyzing pipeline to determine fast and slow parameters (because fast_slow=T in [pipeline] section)"
+        print
+        print "Running pipeline once to make sure everything is initialized before timing."
+        print
+        pipeline.posterior(start)
+        print
+        print
+        print "Running the pipeline again to determine timings and fast-slow split"
+        print
+        #Run with timing but make sure to re-set back to the original setting
+        #of timing after it finishes
+        #This will also print out the timing, which is handy.
+        original_timing = pipeline.timing
+        pipeline.timing = True
+        #Also get the datablock since it contains a log
+        #of all the parameter accesses
+        _, _, block = pipeline.posterior(start, return_data=True)
+        pipeline.timing = original_timing
+        timings = pipeline.timings
+
+        #Now we have the datablock, which has the log in it, and the timing.
+        #The only information that can be of relevance is the fraction
+        #of the time pipeline before a given module, and the list of 
+        #parameters accessed before that module.
+        #We are going to need to go through the log and figure out the latter of
+        #these
+        first_use = block.get_first_parameter_use(pipeline.varied_params)
+        first_use_count = [len(f) for f in first_use.values()]
+        if sum(first_use_count)!=len(pipeline.varied_params):
+            raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline")
+        print
+        print "Parameters first used in each module:"
+        for f, n in zip(first_use.items(), first_use_count):
+            name, params = f
+            print "{} - {} parameters:".format(name, n)
+            for p in params:
+                print "     {}--{}".format(*p)
+
+        # Now we have a count of the number of parameters and amount of 
+        # time used before each module in the pipeline
+        # So we can divide up the parameters into fast and slow.
+        self.split_index = self._choose_fast_slow_split(first_use_count, timings)
+        self.slow_modules = self.split_index
+        self.fast_modules = len(pipeline.modules) - self.slow_modules
+        self.slow_params = sum(first_use.values()[:self.split_index], [])
+        self.fast_params = sum(first_use.values()[self.split_index:], [])
+
+        print
+        print "Based on this we have decided: "
+        print "   Slow modules ({}):".format(self.slow_modules)
+        for module in pipeline.modules[:self.split_index]:
+            print "        %s"% module.name
+        print "   Fast modules ({}):".format(self.fast_modules)
+        for module in pipeline.modules[self.split_index:]:
+            print "        {}".format(module.name)
+        print "   Slow parameters ({}):".format(len(self.slow_params))
+        for param in self.slow_params:
+            print "        {}--{}".format(*param)
+        print "   Fast parameters ({}):".format(len(self.fast_params))
+        for param in self.fast_params:
+            print "        {}--{}".format(*param)
+        self.analyzed = True
+
+    def _choose_fast_slow_split(self, slow_count, slow_time):
+        #some kind of algorithm to loop through the modules
+        #and work out the time saving if we did the fast/slow from there.
+        #at the moment just return the last module where there are any 
+        #parameters
+        n = len(slow_count)
+        for i in xrange(n-1,-1,-1):
+            if slow_count[i]:
+                return i
+        return 0
+
 
 class Pipeline(object):
     def __init__(self, arg=None, load=True):
@@ -43,8 +208,12 @@ class Pipeline(object):
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
         self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
-        shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", "")
-        if shortcut=="": shortcut=None
+
+        self.do_fast_slow = self.options.getboolean(PIPELINE_INI_SECTION, "fast_slow", False)
+        if self.do_fast_slow:
+            self.fast_slow = FastSlow()
+        else:
+            self.fast_slow = None
 
         # initialize modules
         self.modules = []
@@ -72,18 +241,6 @@ class Pipeline(object):
                                                   exec_function,
                                                   cleanup_function,
                                                   self.root_directory))
-            self.shortcut_module=0
-            self.shortcut_data=None
-            if shortcut is not None:
-                try:
-                    index = module_list.index(shortcut)
-                except ValueError:
-                    raise ValueError("You tried to set a shortcut in "
-                        "the pipeline but I do not know module %s"%shortcut)
-                if index == 0:
-                    print "You set a shortcut in the pipeline but it was the first module."
-                    print "It will make no difference."
-                self.shortcut_module = index
 
     def base_directory(self):
         if self.root_directory is None:
@@ -144,6 +301,10 @@ class Pipeline(object):
             for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
                 sys.stdout.write("%s %f\n" % (name, t2-t1))
 
+        #If requested, run the analysis to check for fast and slow params
+        if self.fast_slow:
+            self.fast_slow.analyze_pipeline(self)
+
     def cleanup(self):
         for module in self.modules:
             module.cleanup()
@@ -200,12 +361,15 @@ class Pipeline(object):
 
     def run(self, data_package):
         modules = self.modules
-        first = (self.shortcut_data is None)
         timings = []
-        if self.shortcut_module and not first:
-            modules = modules[self.shortcut_module:]
+        if self.fast_slow:
+            first_module = self.fast_slow.start_pipeline(data_package)
+        else:
+            first_module = 0
 
         for module_number, module in enumerate(modules):
+            if module_number<first_module:
+                continue
             if self.debug:
                 sys.stdout.write("Running %.20s ...\n" % module)
                 sys.stdout.flush()
@@ -241,9 +405,10 @@ class Pipeline(object):
                         sys.stderr.write("Setting debug=T in [pipeline] might help.\n")
                 return None
 
-            if self.shortcut_module and first and module_number==self.shortcut_module-1:
-                print "Saving shortcut data"
-                self.shortcut_data = data_package.clone()
+            # If we are using a fast/slow split (and we are not already running on a cached subset)
+            # Then 
+            if self.fast_slow and first_module==0:
+                self.fast_slow.next_module_results(module_number, data_package)
 
         if self.timing:
             self.timings = timings
@@ -255,6 +420,8 @@ class Pipeline(object):
         # return something
         return True
 
+    def clear_cache(self):
+        self.fast_slow.clear_cache()
 
 
 
@@ -403,10 +570,7 @@ class LikelihoodPipeline(Pipeline):
             if self.is_out_of_range(p):
                 return None
 
-        if self.shortcut_module and self.shortcut_data is not None:
-            data = self.shortcut_data.clone()
-        else:
-            data = block.DataBlock()
+        data = block.DataBlock()
 
         if all_params:
             for param, x in zip(self.parameters, p):
@@ -512,89 +676,3 @@ class LikelihoodPipeline(Pipeline):
         else:
             return like, extra_saves
 
-
-
-    def fast_slow_analysis(self):
-        """
-        Analyze the pipeline to determine how best to split it into two parts,
-        a slow beginning and a faster end, so that we can vary parameters
-
-        """
-        print
-        print "Doing fast slow splitting analysis"
-
-        #Run the sampler twice first, once to make sure
-        #everything is initialized and once to do timing.
-        #Use the pipeline starting parameter since that is
-        #likely more typical than any random starting position
-        start = self.start_vector()
-        print "Running pipeline once to make sure everything is initialized"
-        self.posterior(start)
-
-        print "Running again to time it"
-        #Run with timing but make sure to re-set back to the original setting
-        #of timing after it finishes
-        #This will also print out the timing, which is handy.
-        original_timing = self.timing
-        self.timing = True
-        #Also get the datablock since it contains a log
-        #of all the parameter accesses
-        _, _, block = self.posterior(start, return_data=True)
-        self.timing = original_timing
-        timings = self.timings
-
-        #Now we have the datablock, which has the log in it, and the timing.
-        #The only information that can be of relevance is the fraction
-        #of the time pipeline before a given module, and the list of 
-        #parameters accessed before that module.
-        #We are going to need to go through the log and figure out the latter of
-        #these
-        first_use = block.get_first_parameter_use(self.varied_params)
-        first_use_count = [len(f) for f in first_use.values()]
-        if sum(first_use_count)!=len(self.varied_params):
-            raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline")
-        print
-        print "Parameters first used in each module:"
-        for f, n in zip(first_use.items(), first_use_count):
-            name, params = f
-            print "{} - {} parameters:".format(name, n)
-            for p in params:
-                print "     ", p
-
-        # Now we have a count of the number of parameters and amount of 
-        # time used before each module in the pipeline
-        # So we use the algorithm we haven't written yet to decide where to put
-        # the split.  This might also conceivably involve the covariance
-        # matrix too.
-        fast_slow_split = self._choose_fast_slow_split(first_use_count, timings)
-        slow_modules = fast_slow_split
-        fast_modules = len(self.modules) - slow_modules
-        slow_params = sum(first_use.values()[:fast_slow_split], [])
-        fast_params = sum(first_use.values()[fast_slow_split:], [])
-        print
-        print "Analyzed pipeline and decided: "
-        print "   Slow modules (%d):" % slow_modules
-        for module in self.modules[:fast_slow_split]:
-            print "        %s"% module.name
-        print "   Fast modules (%d):" % fast_modules
-        for module in self.modules[fast_slow_split:]:
-            print "        %s"% module.name
-        print "   Slow parameters (%d):" % len(slow_params)
-        for param in slow_params:
-            print "        %s--%s"% param
-        print "   Fast parameters (%d):" % len(fast_params)
-        for param in fast_params:
-            print "        %s--%s"% param
-
-        return fast_slow_split, slow_params, fast_params
-
-    def _choose_fast_slow_split(self, slow_count, slow_time):
-        #some kind of algorithm to loop through the modules
-        #and work out the time saving if we did the fast/slow from there.
-        #at the moment just return the last module where there are any 
-        #parameters
-        n = len(slow_count)
-        for i in xrange(n-1,-1,-1):
-            if slow_count[i]:
-                return i
-        return 0
