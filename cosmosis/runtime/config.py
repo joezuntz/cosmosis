@@ -70,7 +70,7 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
                     optname = None
                 # no section header in the file?
                 elif line.lower().startswith('%include'):
-                    if  not  hasattr (self, 'no_expand_includes'):
+                    if  not  getattr (self, 'no_expand_includes', False):
                         include_statement, filename = line.split()
                         filename = filename.strip('"').strip("'")
                         sys.stdout.write("Reading included ini file: `"

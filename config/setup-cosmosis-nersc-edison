@@ -1,20 +1,26 @@
+echo "Do these steps also the first time you run this:"
+echo 'easy_install-2.7  --prefix=$COSMOSIS_SRC_DIR/usr/ pip'
+echo 'pip install  --prefix=$COSMOSIS_SRC_DIR/usr/ emcee'
+
+
 #This whole system uses Ted Kisner's hpcp set of modules
 source /project/projectdirs/cmb/modules/hpcports_NERSC.sh
 
-#We have to be in shared mode because we use python
-hpcports shared_gnu
-
-#Load all ther dependencies
+hpcports gnu
+module load gcc
+module load lapack-hpcp
 module load cfitsio-hpcp
-module load astropy-hpcp
-module load scons-hpcp
-module load blas-hpcp
+module load git-hpcp
 module load gsl-hpcp
+module load python-hpcp
+module load numpy-hpcp
 module load scipy-hpcp
-module load psycopg2-hpcp
-module load mpi4py-hpcp
 module load matplotlib-hpcp
-
+module load fftw-hpcp
+module load astropy-hpcp
+module load mpi4py-hpcp
+module load yaml-hpcp
+module load minuit2-hpcp
 
 #Set the CosmoSIS source dir based on the directory this file is in.
 if [ -z "$COSMOSIS_SRC_DIR" ]
@@ -24,6 +30,8 @@ then
   export COSMOSIS_SRC_DIR="$cosmosis_dir"
 fi
 
+
+export LAPACK_LINK=$lapack_LIBS_CC
 
 #Set various flags
 export COSMOSIS_MPI=1
@@ -39,23 +47,16 @@ export FC=ftn
 export MPIFC=ftn
 
 #Add paths to cosmosis
-export PATH=$COSMOSIS_SRC_DIR/bin:$COSMOSIS_SRC_DIR/python/bin:$PATH
-export PYTHONPATH=$COSMOSIS_SRC_DIR:$COSMOSIS_SRC_DIR/python/lib/python2.7/site-packages:$PYTHONPATH
-
+export PATH=$COSMOSIS_SRC_DIR/bin:$COSMOSIS_SRC_DIR/python/bin:$PATH:${COSMOSIS_SRC_DIR}/usr/bin
+export PYTHONPATH=$PYTHONPATH:$COSMOSIS_SRC_DIR:${COSMOSIS_SRC_DIR}/usr/lib/python2.7/site-packages
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-2.0/lib/
 
 #Add dependency paths used by the module makefiles.
 export GSL_INC=$gsl_PREFIX/include
-export GSL_LIB="$gsl_PREFIX/lib -lpthread"
-
+export GSL_LIB=$gsl_PREFIX/lib
 export FFTW_INCLUDE_DIR=$fftw_PREFIX/include
 export FFTW_LIBRARY=$fftw_PREFIX/lib
-
 export CFITSIO_LIB=$cfitsio_PREFIX/lib
 export CFITSIO_INC=$cfitsio_PREFIX/include
-
-export LAPACK_LINK="/opt/cray/libsci/13.0.1/GNU/49/sandybridge/lib/libsci_gnu_49.a"
-
-#Library paths for dynamic loading
-export DYLD_LIBRARY_PATH=${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/:/opt/cray/libsci/13.0.1/GNU/49/sandybridge/lib:${DYLD_LIBRARY_PATH}
-
-export LD_LIBRARY_PATH=${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-1.0/lib/:/opt/cray/libsci/13.0.1/GNU/49/sandybridge/lib:${LD_LIBRARY_PATH}
+export MINUIT2_LIB=${minuit2_PREFIX}/lib
+export MINUIT2_INC=${minuit2_PREFIX}/include
