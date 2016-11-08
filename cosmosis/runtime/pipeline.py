@@ -106,7 +106,7 @@ class SlowSubspaceCache(object):
 
         self.cache[self.current_hash] = block.clone()
 
-    def analyze_pipeline(self, pipeline):
+    def analyze_pipeline(self, pipeline, all_params=False):
         """
         Analyze the pipeline to determine how best to split it into two parts,
         a slow beginning and a faster end, so that we can vary parameters
@@ -145,9 +145,13 @@ class SlowSubspaceCache(object):
         #parameters accessed before that module.
         #We are going to need to go through the log and figure out the latter of
         #these
-        first_use = block.get_first_parameter_use(pipeline.varied_params)
+        if all_params:
+            params = pipeline.parameters
+        else:
+            params = pipeline.varied_params
+        first_use = block.get_first_parameter_use(params)
         first_use_count = [len(f) for f in first_use.values()]
-        if sum(first_use_count)!=len(pipeline.varied_params):
+        if sum(first_use_count)!=len(params):
             raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline")
         print
         print "Parameters first used in each module:"
@@ -180,6 +184,15 @@ class SlowSubspaceCache(object):
         print "   Fast parameters ({}):".format(len(self.fast_params))
         for param in self.fast_params:
             print "        {}--{}".format(*param)
+        print
+        full_time = sum(timings)
+        slow_time = sum(timings[:self.split_index])
+        fast_time = sum(timings[self.split_index:])
+        print "Time for full pipeline:  {:.2f}s".format(full_time)
+        print "Time for slow pipeline:  {:.2f}s".format(slow_time)
+        print "Time for fast pipeline:  {:.2f}s".format(fast_time)
+        print "Time saving: {:.1f}%".format(100*fast_time/full_time)
+        print
         self.analyzed = True
 
     def _choose_fast_slow_split(self, slow_count, slow_time):
@@ -303,20 +316,24 @@ class Pipeline(object):
             for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
                 sys.stdout.write("%s %f\n" % (name, t2-t1))
 
-    def setup_fast_subspaces(self):
+    def setup_fast_subspaces(self, all_params=False):
         if self.do_fast_slow:
             self.slow_subspace_cache = SlowSubspaceCache()
-            self.slow_subspace_cache.analyze_pipeline(self)
+            self.slow_subspace_cache.analyze_pipeline(self, all_params=all_params)
             # This looks a bit weird but makes sure that self.fast_params
             # and self.slow_params contain objects of type Parameter
             # not just the (section,name) tuples.
-            self.fast_params = [p for p in self.varied_params 
+            if all_params:
+                params = self.parameters
+            else:
+                params = self.varied_params
+            self.fast_params = [p for p in params 
                 if p in self.slow_subspace_cache.fast_params]
-            self.slow_params = [p for p in self.varied_params 
+            self.slow_params = [p for p in params 
                 if p in self.slow_subspace_cache.slow_params]
-            self.fast_param_indices = [self.varied_params.index(p)
+            self.fast_param_indices = [params.index(p)
                 for p in self.fast_params]
-            self.slow_param_indices = [self.varied_params.index(p)
+            self.slow_param_indices = [params.index(p)
                 for p in self.slow_params]
         else:
             self.slow_subspace_cache = None

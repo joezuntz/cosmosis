@@ -48,7 +48,8 @@ class TestSampler(Sampler):
         if self.analyze_fast_slow:
             print
             print
-            self.pipeline.fast_slow_analysis()
+            self.pipeline.do_fast_slow = True
+            self.pipeline.setup_fast_subspaces(all_params=True)
             print
             print
 
