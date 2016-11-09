@@ -4,7 +4,7 @@ import sys
 import argparse
 import os
 
-from cosmosis.runtime.config import Inifile
+from cosmosis.runtime.config import Inifile, CosmosisConfigurationError
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
 from cosmosis.runtime.utils import ParseExtraParameters
@@ -25,120 +25,9 @@ class ParseExtraParameters(argparse.Action):
             result[(section,param)] = value
         setattr(args, self.dest, result)
 
-def main(args, pool=None):
-    # load configuration 
-    ini = Inifile(args.inifile, override=args.params)
 
-    # create pipeline
-    pipeline = LikelihoodPipeline(ini, override=args.variables) 
-
-    # determine the type of sampling we want
-    sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")
-    if sample_method not in sampler_registry:
-        raise ValueError("Unknown sampler method %s" % (sample_method,))
-
-    #Get that sampler from the system
-    sampler_class = sampler_registry[sample_method]
-
-    if pool:
-        if not issubclass(sampler_class,ParallelSampler):
-            raise ValueError("Sampler does not support parallel execution!")
-
-    #Now that we have a sampler we know whether we will need an
-    #output file or not.  By default new samplers do need one.
-    if sampler_class.needs_output and \
-       (pool is None 
-        or pool.is_master() 
-        or sampler_class.parallel_output):
-
-        #create the output files and methods
-        try:
-            output_options = dict(ini.items('output'))
-        except ConfigParser.NoSectionError:
-            sys.stderr.write("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
-            sys.exit(1)
-        #Additionally we tell the output here if
-        #we are parallel or not
-        if (pool is not None) and sampler_class.parallel_output:
-            output_options['rank'] = pool.rank
-            output_options['parallel'] = pool.size
-
-        #Generate the output from a factory
-        output = output_module.output_from_options(output_options)
-        output.metadata("sampler", sample_method)
-    else:
-        #some samplers, like the test one, do not need an output
-        #file of the usual type.  In fact giving them one would be
-        #a bad idea, because they might over-write something important.
-        #so we just give them none.
-        output = None
-
-    #Initialize our sampler, with the class we got above.
-    #It needs an extra pool argument if it is a ParallelSampler.
-    #All the parallel samplers can also act serially too.
-    if pool:
-        sampler = sampler_class(ini, pipeline, output, pool)
-    else:
-        sampler = sampler_class(ini, pipeline, output)
- 
-    #Set up the sampler - for example loading
-    #any resources it needs or checking the ini file
-    #for additional parameters
-    sampler.config()
-
-    # Some samplers understand that parameter spaces can be partitioned
-    # into fast and slow sub-spaces.  For the moment we assume that only
-    # the master process needs this information, though this may change.
-    # And that if a sampler needs parallel output (currently just metropolis)
-    # then all the processes need it too.
-    if (pool is None or pool.is_master() or sampler_class.parallel_output) \
-    and sampler_class.understands_fast_subspaces:
-        pipeline.setup_fast_subspaces()
-
-    #If there is an output file, save the ini information to
-    #it as well.  We do it here since it's nicer to have it
-    #after the sampler options that get written in sampler.config
-    if output is not None:
-        #Create a buffer to store the output:
-        output.comment("START_OF_PARAMS_INI")
-        comment_wrapper = output.comment_file_wrapper()
-        ini.write(comment_wrapper)
-        output.comment("END_OF_PARAMS_INI")
-        #Do the same with the values file.
-        #Unfortunately that means reading it in again;
-        #if we ever refactor this bit we could eliminate that.
-        values_ini=Inifile(pipeline.values_filename)
-        output.comment("START_OF_VALUES_INI")
-        values_ini.write(comment_wrapper)
-        output.comment("END_OF_VALUES_INI")
-
-        output.comment("START_OF_PRIORS_INI")
-        for priors_file in pipeline.priors_files:
-            prior_ini=Inifile(priors_file)
-            prior_ini.write(comment_wrapper)
-        output.comment("END_OF_PRIORS_INI")
-
-
-    # Run the sampler until convergence
-    # which really means "finished" here - 
-    # a sampler can "converge" just by reaching the 
-    # limit of the number of samples it is allowed.
-    if not pool or pool.is_master():
-        while not sampler.is_converged():
-            sampler.execute()
-            #Flush any output. This is to stop
-            #a problem in some MPI cases where loads
-            #of output is built up before being written
-            if output: output.flush()
-    else:
-        sampler.worker()
-
-    if output:
-        output.close()
-
-    pipeline.cleanup()
-
-    if args.inifile=="demos/demo1.ini":
+def demo_1_special (args):
+    if "demo1.ini" in args.inifile:
         print
         print "Congratulations: you have just run cosmosis demo one!"
         if os.path.exists("./conda"):
@@ -162,22 +51,162 @@ def main(args, pool=None):
             print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
             print
 
-if __name__=="__main__":
-    parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
-    parser.add_argument("inifile", help="Input ini file of parameters")
-    parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
-#    parser.add_argument("--parallel",action='store_true',help="Run in multiprocess parallel mode.")
-#    parser.add_argument("--debug", action='store_true', default=False, help="Print additional debugging information")
-#    parser.add_argument("-t", "--timing", action='store_true', default=False, help='Time each module in the pipeline')
-    parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
-    parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
-    args = parser.parse_args(sys.argv[1:])
 
-    # initialize parallel workers
-    if args.mpi:
-        with mpi_pool.MPIPool() as pool:
-            main(args,pool)
-#    elif parallel:
-#        pool = ProcessPool()
+def demo_10_special (args):
+    if   "demo10.ini" in args.inifile   and   not os.getenv ("HALOFIT", ""):
+        print
+        print "Welcome to demo10!"
+        print
+        print "**PLEASE NOTE**:"
+        print
+        print "There are two flavours of this demo, selected through an "
+        print "environment variable called `HALOFIT'; this variable is not "
+        print "currently set, so we are giving it the value `halofit'."
+        print "Please see the wiki for more information: "
+        print "https://bitbucket.org/joezuntz/cosmosis/wiki/Demo10."
+
+        os.environ ["HALOFIT"] = "halofit"
+
+
+def main(args, pool=None):
+
+    # In case we need to hand-hold a naive demo-10 user.
+    demo_10_special (args)
+
+    # Load configuration.
+    ini = Inifile(args.inifile, override=args.params)
+
+    # Create pipeline.
+    pipeline = LikelihoodPipeline(ini, override=args.variables) 
+
+    # Determine the type of sampling we want.
+    sample_method = ini.get(RUNTIME_INI_SECTION, "sampler", "test")
+    if sample_method not in sampler_registry:
+        raise ValueError("Unknown sampler method %s" % (sample_method,))
+
+    #  Get that sampler from the system.
+    sampler_class = sampler_registry[sample_method]
+
+    if pool:
+        if not issubclass(sampler_class,ParallelSampler):
+            raise ValueError("Sampler does not support parallel execution!")
+
+    #  Now that we have a sampler we know whether we will need an output
+    #  file or not.  By default new samplers do need one.
+    if sampler_class.needs_output and \
+       (pool is None 
+        or pool.is_master() 
+        or sampler_class.parallel_output):
+
+        #  Create the output files and methods.
+        try:
+            output_options = dict(ini.items('output'))
+        except ConfigParser.NoSectionError:
+            sys.stderr.write("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
+            sys.exit(1)
+        #  Additionally we tell the output here if we are parallel or not.
+        if (pool is not None) and sampler_class.parallel_output:
+            output_options['rank'] = pool.rank
+            output_options['parallel'] = pool.size
+
+        #  Generate the output from a factory.
+        output = output_module.output_from_options(output_options)
+        output.metadata("sampler", sample_method)
     else:
-        main(args)
+        #  Some samplers, like the test one, do not need an output file of
+        #  the usual type.  In fact giving them one would be a bad idea,
+        #  because they might over-write something important.  so we just
+        #  give them none.
+        output = None
+
+    #  Initialize our sampler, with the class we got above.  It needs an
+    #  extra pool argument if it is a ParallelSampler.  All the parallel
+    #  samplers can also act serially too.
+    if pool:
+        sampler = sampler_class(ini, pipeline, output, pool)
+    else:
+        sampler = sampler_class(ini, pipeline, output)
+ 
+    #  Set up the sampler - for example loading any resources it needs or
+    #  checking the ini file for additional parameters.
+    sampler.config()
+
+    # Some samplers understand that parameter spaces can be partitioned
+    # into fast and slow sub-spaces.  For the moment we assume that only
+    # the master process needs this information, though this may change.
+    # And that if a sampler needs parallel output (currently just metropolis)
+    # then all the processes need it too.
+    if (pool is None or pool.is_master() or sampler_class.parallel_output) \
+    and sampler_class.understands_fast_subspaces:
+        pipeline.setup_fast_subspaces()
+
+    #  If there is an output file, save the ini information to it as well.
+    #  We do it here since it's nicer to have it after the sampler options
+    #  that get written in sampler.config.
+    if output is not None:
+        #  Create a buffer to store the output:
+        output.comment("START_OF_PARAMS_INI")
+        comment_wrapper = output.comment_file_wrapper()
+        ini.write(comment_wrapper)
+        output.comment("END_OF_PARAMS_INI")
+        #  Do the same with the values file.  Unfortunately that means
+        #  reading it in again; if we ever refactor this bit we could
+        #  eliminate that.
+        values_ini=Inifile(pipeline.values_filename)
+
+        output.comment("START_OF_VALUES_INI")
+        values_ini.write(comment_wrapper)
+        output.comment("END_OF_VALUES_INI")
+
+        output.comment("START_OF_PRIORS_INI")
+        for priors_file in pipeline.priors_files:
+            prior_ini=Inifile(priors_file)
+            prior_ini.write(comment_wrapper)
+        output.comment("END_OF_PRIORS_INI")
+
+
+    #  Run the sampler until convergence which really means "finished"
+    #  here - a sampler can "converge" just by reaching the limit of the
+    #  number of samples it is allowed.
+    if not pool or pool.is_master():
+        while not sampler.is_converged():
+            sampler.execute()
+            #  Flush any output. This is to stop a problem in some MPI
+            #  cases where loads of output is built up before being
+            #  written.
+            if output: output.flush()
+    else:
+        sampler.worker()
+
+    if output:
+        output.close()
+
+    pipeline.cleanup()
+
+    # Extra-special actions we take to mollycoddle a brand-new user!
+    demo_1_special (args)
+
+
+try:
+    if __name__=="__main__":
+        parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
+        parser.add_argument("inifile", help="Input ini file of parameters")
+        parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
+    #    parser.add_argument("--parallel",action='store_true',help="Run in multiprocess parallel mode.")
+    #    parser.add_argument("--debug", action='store_true', default=False, help="Print additional debugging information")
+    #    parser.add_argument("-t", "--timing", action='store_true', default=False, help='Time each module in the pipeline')
+        parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
+        parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
+        args = parser.parse_args(sys.argv[1:])
+
+        # initialize parallel workers
+        if args.mpi:
+            with mpi_pool.MPIPool() as pool:
+                main(args,pool)
+    #    elif parallel:
+    #        pool = ProcessPool()
+        else:
+            main(args)
+except CosmosisConfigurationError as e:
+    print e
+    sys.exit (1)
