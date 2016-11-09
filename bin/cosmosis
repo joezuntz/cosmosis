@@ -183,7 +183,7 @@ def main(args, pool=None):
 
     pipeline.cleanup()
 
-    # Extra-special actions we take to mollycoddle a brand-new user!
+    # Extra-special actions we take to help out a brand-new user!
     demo_1_special (args)
 
 
@@ -192,9 +192,6 @@ try:
         parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
         parser.add_argument("inifile", help="Input ini file of parameters")
         parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
-    #    parser.add_argument("--parallel",action='store_true',help="Run in multiprocess parallel mode.")
-    #    parser.add_argument("--debug", action='store_true', default=False, help="Print additional debugging information")
-    #    parser.add_argument("-t", "--timing", action='store_true', default=False, help='Time each module in the pipeline')
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
         args = parser.parse_args(sys.argv[1:])
@@ -203,8 +200,6 @@ try:
         if args.mpi:
             with mpi_pool.MPIPool() as pool:
                 main(args,pool)
-    #    elif parallel:
-    #        pool = ProcessPool()
         else:
             main(args)
 except CosmosisConfigurationError as e:
