@@ -482,6 +482,11 @@ class LikelihoodPipeline(Pipeline):
 
         like = sum(likelihoods)
 
+        # DM: Issue #181: Zuntz: replace NaN's with -inf's in posteriors and
+        #                 likelihoods.
+        if np.isnan (like):
+            like = -np.inf
+
         if not self.quiet and self.likelihood_names:
             sys.stdout.write("Likelihood %e\n" % (like,))
 

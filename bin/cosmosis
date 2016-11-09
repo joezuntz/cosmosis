@@ -4,7 +4,7 @@ import sys
 import argparse
 import os
 
-from cosmosis.runtime.config import Inifile
+from cosmosis.runtime.config import Inifile, CosmosisConfigurationError
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
 from cosmosis.runtime.utils import ParseExtraParameters
@@ -25,21 +25,68 @@ class ParseExtraParameters(argparse.Action):
             result[(section,param)] = value
         setattr(args, self.dest, result)
 
+
+def demo_1_special (args):
+    if "demo1.ini" in args.inifile:
+        print
+        print "Congratulations: you have just run cosmosis demo one!"
+        if os.path.exists("./conda"):
+            print 
+            print "You can make plots of the outputs of this using this command:"
+            print "  postprocess demos/demo1.ini -o plots -p demo1"
+            print
+            print "If you get a message about 'Abort Trap 6' then see the FAQ:"
+            print "https://bitbucket.org/joezuntz/cosmosis/wiki/FAQ"
+            print
+            print "Then you can try out the other demos..."
+            print "... and read the information about plotting their output and what they are doing online."
+            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
+        else:
+            print "You can make plots of the outputs of this using the command:"
+            print
+            print "postprocess demos/demo1.ini -o plots -p demo1"
+            print
+            print "Then you can try out the other demos..."
+            print "... and read the information about plotting their output and what they are doing online."
+            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
+            print
+
+
+def demo_10_special (args):
+    if   "demo10.ini" in args.inifile   and   not os.getenv ("HALOFIT", ""):
+        print
+        print "Welcome to demo10!"
+        print
+        print "**PLEASE NOTE**:"
+        print
+        print "There are two flavours of this demo, selected through an "
+        print "environment variable called `HALOFIT'; this variable is not "
+        print "currently set, so we are giving it the value `halofit'."
+        print "Please see the wiki for more information: "
+        print "https://bitbucket.org/joezuntz/cosmosis/wiki/Demo10."
+
+        os.environ ["HALOFIT"] = "halofit"
+
+
 def main(args, pool=None):
-    # load configuration 
+
+    # In case we need to hand-hold a naive demo-10 user.
+    demo_10_special (args)
+
+    # Load configuration.
     ini = Inifile(args.inifile, override=args.params)
 
-    # create pipeline
+    # Create pipeline.
     pipeline = LikelihoodPipeline(ini, override=args.variables) 
 
-    # determine the type(s) of sampling we want
+    # determine the type(s) of sampling we want.
     sample_methods = ini.get(RUNTIME_INI_SECTION, "sampler", "test").split()
 
     for sample_method in sample_methods:
         if sample_method not in sampler_registry:
             raise ValueError("Unknown sampler method %s" % (sample_method,))
 
-    #Get that sampler from the system
+    #Get that sampler from the system.
     sampler_classes = [sampler_registry[sample_method] for sample_method in sample_methods]
 
     if pool:
@@ -72,21 +119,21 @@ def main(args, pool=None):
             or pool.is_master() 
             or sampler_class.parallel_output):
 
-            #create the output files and methods
+            #create the output files and methods.
             try:
                 output_options = dict(ini.items('output'))
             except ConfigParser.NoSectionError:
                 sys.stderr.write("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
                 sys.exit(1)
             #Additionally we tell the output here if
-            #we are parallel or not
+            #we are parallel or not.
             if (pool is not None) and sampler_class.parallel_output:
                 output_options['rank'] = pool.rank
                 output_options['parallel'] = pool.size
 
             #Give different output filenames to the different sampling steps
             #Only change if this is not the last sampling step - the final
-            #one retains the name in the output file
+            #one retains the name in the output file.
             # Change, e.g. demo17.txt to demo17.fisher.txt
             if ("filename" in output_options) and (sampler_number<number_samplers-1):
                 filename = output_options['filename']
@@ -124,13 +171,13 @@ def main(args, pool=None):
          
         #Set up the sampler - for example loading
         #any resources it needs or checking the ini file
-        #for additional parameters
+        #for additional parameters.
         sampler.distribution_hints.update(distribution_hints)
         sampler.config()
 
         #If there is an output file, save the ini information to
         #it as well.  We do it here since it's nicer to have it
-        #after the sampler options that get written in sampler.config
+        #after the sampler options that get written in sampler.config.
         if output is not None:
             #Create a buffer to store the output:
             output.comment("START_OF_PARAMS_INI")
@@ -161,7 +208,7 @@ def main(args, pool=None):
                 sampler.execute()
                 #Flush any output. This is to stop
                 #a problem in some MPI cases where loads
-                #of output is built up before being written
+                #of output is built up before being written.
                 if output: output.flush()
         else:
             sampler.worker()
@@ -173,46 +220,25 @@ def main(args, pool=None):
 
     pipeline.cleanup()
 
-    if args.inifile=="demos/demo1.ini":
-        print
-        print "Congratulations: you have just run cosmosis demo one!"
-        if os.path.exists("./conda"):
-            print 
-            print "You can make plots of the outputs of this using this command:"
-            print "  postprocess demos/demo1.ini -o plots -p demo1"
-            print
-            print "If you get a message about 'Abort Trap 6' then see the FAQ:"
-            print "https://bitbucket.org/joezuntz/cosmosis/wiki/FAQ"
-            print
-            print "Then you can try out the other demos..."
-            print "... and read the information about plotting their output and what they are doing online."
-            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
+    # Extra-special actions we take to mollycoddle a brand-new user!
+    demo_1_special (args)
+
+
+try:
+    if __name__=="__main__":
+        parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
+        parser.add_argument("inifile", help="Input ini file of parameters")
+        parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
+        parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
+        parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
+        args = parser.parse_args(sys.argv[1:])
+
+        # initialize parallel workers
+        if args.mpi:
+            with mpi_pool.MPIPool() as pool:
+                main(args,pool)
         else:
-            print "You can make plots of the outputs of this using the command:"
-            print
-            print "postprocess demos/demo1.ini -o plots -p demo1"
-            print
-            print "Then you can try out the other demos..."
-            print "... and read the information about plotting their output and what they are doing online."
-            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
-            print
-
-if __name__=="__main__":
-    parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
-    parser.add_argument("inifile", help="Input ini file of parameters")
-    parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
-#    parser.add_argument("--parallel",action='store_true',help="Run in multiprocess parallel mode.")
-#    parser.add_argument("--debug", action='store_true', default=False, help="Print additional debugging information")
-#    parser.add_argument("-t", "--timing", action='store_true', default=False, help='Time each module in the pipeline')
-    parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Over-ride parameters in inifile, with format section.name=value")
-    parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Over-ride variables in values file, with format section.name=value")
-    args = parser.parse_args(sys.argv[1:])
-
-    # initialize parallel workers
-    if args.mpi:
-        with mpi_pool.MPIPool() as pool:
-            main(args,pool)
-#    elif parallel:
-#        pool = ProcessPool()
-    else:
-        main(args)
+            main(args)
+except CosmosisConfigurationError as e:
+    print e
+    sys.exit (1)

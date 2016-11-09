@@ -4,7 +4,6 @@ import numpy as np
 pipeline = None
 def log_probability_function(p):
     global pipeline
-    print p
     return pipeline.posterior(p)
 
 

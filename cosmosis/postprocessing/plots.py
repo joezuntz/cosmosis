@@ -112,7 +112,7 @@ class Plots(PostProcessorElement):
 
 
     def line_color(self):
-        possible_colors = ['b','g','r', 'k', 'c' 'm','y']
+        possible_colors = ['b','g','r', 'k', 'c', 'm','y']
         col = possible_colors[self.plot_set%len(possible_colors)]
         return col
 
@@ -362,14 +362,14 @@ class GridPlots2D(GridPlots):
         #three cases
         if do_image:
             colors = None #auto colors from the contourf
-            pylab.contour(like, levels = [level1, level2], extent=extent, linewidths=[3,1], colors=colors)
+            pylab.contour(like, levels = [level2, level1], extent=extent, linewidths=[1,3], colors=colors)
         elif do_fill:
             dark, light = self.shade_colors()
-            pylab.contourf(like, levels = [level2, level0], extent=extent, linewidths=[3,1], colors=[light])
-            pylab.contourf(like, levels = [level1, level0], extent=extent, linewidths=[3,1], colors=[dark])
+            pylab.contourf(like, levels = [level2, level0], extent=extent, linewidths=[1,3], colors=[light])
+            pylab.contourf(like, levels = [level1, level0], extent=extent, linewidths=[1,3], colors=[dark])
         else:
             colors = [self.line_color(), self.line_color()]
-            pylab.contour(like, levels = [level1, level2], extent=extent, linewidths=[3,1], colors=colors)
+            pylab.contour(like, levels = [level2, level1], extent=extent, linewidths=[1,3], colors=colors)
             
         pylab.xlabel(self.latex(name1))
         pylab.ylabel(self.latex(name2))

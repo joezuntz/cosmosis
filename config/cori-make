@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+import os
+import sys
+
+#Check we are actually on cori where this script might work
+host = os.environ.get("NERSC_HOST", "(not on NERSC)")
+if host != "cori":
+    sys.stderr.write("\nYou can only run this script from the NERSC machine 'cori'.\n")
+    sys.stderr.write("You are on: {}\n\n".format(host))
+    sys.exit(1)
+
+
+
+# Go to the config directory.
+env_name="COSMOSIS_SRC_DIR"
+parent_dir = os.path.abspath(os.path.join(os.path.split(__file__)[0], os.pardir))
+src_dir = os.environ.get(env_name, parent_dir)
+if not os.path.exists(os.path.join(src_dir, "config", "compilers.mk")):
+    sys.stderr.write("It looks like you moved this file from where you found it\nIt will not work if moved\n")
+    sys.stderr.write("Or maybe you set COSMOSIS_SRC_DIR wrongly\n.")
+    sys.exit(1)
+
+orig_dir=os.getcwd()
+config_dir=os.path.join(src_dir, "config")
+os.chdir(config_dir)
+
+
+# create the submission script from this template.
+template="""#!/bin/bash
+
+#SBATCH --image=docker:joezuntz/cosmosis-nersc:latest
+#SBATCH --volume=${COSMOSIS_SRC_DIR}:/cosmosis
+#SBATCH --job-name make_cosmosis_shifter
+#SBATCH --partition=debug
+#SBATCH --time=00:10:00
+#SBATCH --nodes=1
+#SBATCH --output=${COSMOSIS_SRC_DIR}/config/shifter-make.log
+
+cd ${COSMOSIS_SRC_DIR}/config
+shifter --image=docker:joezuntz/cosmosis-nersc --volume ${COSMOSIS_SRC_DIR}:/cosmosis ./make.sh
+"""
+
+sub_script = template.replace("${COSMOSIS_SRC_DIR}", src_dir)
+sub_file = os.path.abspath("./make.temp.sub")
+open(sub_file, "w").write(sub_script)
+
+
+# Ask the user to submit the newly created submission script
+log_file=os.path.abspath("./shifter-make.log")
+os.chdir(orig_dir)
+sub_path=os.path.relpath(sub_file)
+log_path=os.path.relpath(log_file)
+print("# To build run:")
+print("sbatch {}".format(sub_path))
+print("# output will go to {}".format(log_path))
