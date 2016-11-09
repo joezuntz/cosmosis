@@ -35,6 +35,21 @@ fi
 
 # Initialize UPS, if needed. If 'setup' is defined to be a shell
 # function, we have UPS already setup.
+
+# The way Canonical manages the kernel versions does not play well
+# with UPS. To handle this, on Ubuntu 14.04 machines we have to set an
+# environment variable that determines the result given by the 'ups
+# flavor' command.
+OS=$(uname -s)
+if [ $OS == "Linux" ]
+then
+  flv=$(lsb_release -r | cut -f2)
+  if [ $flv == "14.04" ]
+    then
+    export UPS_OVERRIDE="-H Linux64bit+3.19-2.19"
+  fi
+fi
+
 if [ -z "${UPS_DIR}" ]
 then
   echo "We are setting up UPS from $product_db"
