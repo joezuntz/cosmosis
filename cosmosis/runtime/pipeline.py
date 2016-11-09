@@ -191,7 +191,7 @@ class SlowSubspaceCache(object):
         print "Time for full pipeline:  {:.2f}s".format(full_time)
         print "Time for slow pipeline:  {:.2f}s".format(slow_time)
         print "Time for fast pipeline:  {:.2f}s".format(fast_time)
-        print "Time saving: {:.1f}%".format(100*fast_time/full_time)
+        print "Time saving: {:.2f}%".format(100-100*fast_time/full_time)
         print
         self.analyzed = True
 
