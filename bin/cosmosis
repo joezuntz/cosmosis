@@ -8,7 +8,7 @@ from cosmosis.runtime.config import Inifile, CosmosisConfigurationError
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
 from cosmosis.runtime.utils import ParseExtraParameters
-from cosmosis.samplers.sampler import sampler_registry, ParallelSampler
+from cosmosis.samplers.sampler import sampler_registry, ParallelSampler, Hints
 from cosmosis import output as output_module
 import ConfigParser
 
@@ -101,7 +101,7 @@ def main(args, pool=None):
     #To start with we do not have any estimates of 
     #anything the samplers might give us like centers
     #or covariances. 
-    distribution_hints = {}
+    distribution_hints = Hints()
 
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.

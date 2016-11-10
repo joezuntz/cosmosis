@@ -1,5 +1,6 @@
 sampler_registry = {}
 from cosmosis.runtime.attribution import PipelineAttribution
+from .hints import Hints
 
 class Sampler(object):
     needs_output = True
@@ -19,7 +20,7 @@ class Sampler(object):
         self.pipeline = pipeline
         self.output = output
         self.attribution = PipelineAttribution(self.pipeline.modules)
-        self.distribution_hints = {}
+        self.distribution_hints = Hints()
         self.name = self.__class__.__name__[:-len("Sampler")].lower()
         if self.output:
             for p in pipeline.output_names():
@@ -68,6 +69,13 @@ class Sampler(object):
 
     def is_converged(self):
         return False
+    
+    def start_estimate(self):
+        if self.distribution_hints.has_peak():
+            start = self.distribution_hints.get_peak()
+        else:
+            start = self.pipeline.start_vector()
+        return start
 
 
 class ParallelSampler(Sampler):

@@ -93,8 +93,10 @@ class FisherSampler(ParallelSampler):
 
     def execute(self):
         #Load the starting point and covariance matrix
-        #in the normalized space
-        start_vector = self.pipeline.start_vector()
+        #in the normalized space, either from the values
+        #file or a previous sampler
+        start_vector = self.start_estimate()
+
         for i,x in enumerate(start_vector):
             self.output.metadata("mu_{0}".format(i), x)
         start_vector = self.pipeline.normalize_vector(start_vector)
