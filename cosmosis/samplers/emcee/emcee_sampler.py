@@ -44,11 +44,7 @@ class EmceeSampler(ParallelSampler):
             elif self.distribution_hints.has_cov():
                 center = self.start_estimate()
                 cov = self.distribution_hints.get_cov()
-                p0 = self.emcee.utils.sample_ellipsoid(center, cov, size=self.nwalkers)
-                self.p0 = []
-                for row in p0:
-                    row = self.pipeline.denormalize_vector(self.pipeline.normalize_vector(row).clip(0.0001, 0.9999))
-                    self.p0.append(row)
+                self.p0 = self.emcee.utils.sample_ellipsoid(center, cov, size=self.nwalkers)
             else:
                 center_norm = self.pipeline.normalize_vector(self.start_estimate())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
