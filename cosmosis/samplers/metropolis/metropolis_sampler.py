@@ -48,6 +48,7 @@ class MetropolisSampler(ParallelSampler):
         quiet = self.pipeline.quiet
         self.sampler = metropolis.MCMC(start, posterior, covmat, quiet=quiet)
         self.analytics = Analytics(self.pipeline.varied_params, self.pool)
+        self.fast_slow_done = False
 
     def worker(self):
         while not self.is_converged():
@@ -58,10 +59,13 @@ class MetropolisSampler(ParallelSampler):
 
     def execute(self):
         #Run the MCMC  sampler.
-        if self.pipeline.do_fast_slow:
-            subsets = [(self.pipeline.slow_param_indices,1), 
-                        (self.pipeline.fast_param_indices,self.oversampling)]
-            self.sampler.set_subsets(subsets)
+        if self.pipeline.do_fast_slow and not self.fast_slow_done:
+            self.fast_slow_done = True
+            self.sampler.set_fast_slow(
+                self.pipeline.fast_param_indices,
+                self.pipeline.slow_param_indices, 
+                self.oversampling
+            )
 
         try:
             samples = self.sampler.sample(self.n)
