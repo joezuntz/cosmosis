@@ -189,7 +189,7 @@ class GridPlots(Plots):
 class GridPlots1D(GridPlots):
 
     def run(self):
-        return [self.plot_1d(name) for name in self.source.colnames]
+        return [self.plot_1d(name) for name in self.source.colnames if name not in self.excluded_columns]
 
     def plot_1d(self, name1):
         filename = self.filename(name1)
