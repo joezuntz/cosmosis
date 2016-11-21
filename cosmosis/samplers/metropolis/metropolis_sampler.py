@@ -27,6 +27,9 @@ class MetropolisSampler(ParallelSampler):
         random_start = self.read_ini("random_start", bool, default=False)
         self.Rconverge = self.read_ini("Rconverge", float, -1.0)
         self.oversampling = self.read_ini("oversampling", int, 5)
+        tuning_frequency = self.read_ini("tuning_frequency", int, -1)
+        tuning_grace = self.read_ini("tuning_grace", int, 10000000000)
+        tuning_end = self.read_ini("tuning_end", int, 10000)
         self.n = self.read_ini("nsteps", int, default=100)
         self.split = None #work out later
         if self.Rconverge==-1.0:
@@ -46,7 +49,11 @@ class MetropolisSampler(ParallelSampler):
 
         #Sampler object itself.
         quiet = self.pipeline.quiet
-        self.sampler = metropolis.MCMC(start, posterior, covmat, quiet=quiet)
+        self.sampler = metropolis.MCMC(start, posterior, covmat, 
+            quiet=quiet, 
+            tuning_frequency=tuning_frequency, 
+            tuning_grace=tuning_grace,
+            tuning_end=tuning_end)
         self.analytics = Analytics(self.pipeline.varied_params, self.pool)
         self.fast_slow_done = False
 
@@ -83,7 +90,6 @@ class MetropolisSampler(ParallelSampler):
         rate = self.sampler.accepted * 100.0 / self.sampler.iterations
         print "Accepted %d / %d samples (%.2f%%)\n" % \
             (self.sampler.accepted, self.sampler.iterations, rate)
-        self.sampler.tune()
 
     def is_converged(self):
          # user has pressed Ctrl-C
