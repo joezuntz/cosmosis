@@ -93,7 +93,8 @@ class FastSlowProposal(Proposal):
 
 
 class MCMC(object):
-	def __init__(self, start, posterior, covariance, quiet=False):
+	def __init__(self, start, posterior, covariance, quiet=False, 
+		tuning_frequency=-1, tuning_grace=np.inf, tuning_end=np.inf):
 		"""
 
 		"""
@@ -111,6 +112,13 @@ class MCMC(object):
 		cholesky = np.linalg.cholesky(covariance)
 		self.proposal = Proposal(cholesky)
 
+		#For adaptive sampling
+		self.last_covariance_estimate = covariance.copy()		
+		self.covariance_estimate = covariance.copy()
+		self.mean_estimate = start.copy()
+		self.tuning_frequency = tuning_frequency
+		self.tuning_grace = tuning_grace
+		self.tuning_end = tuning_end
 
 		#Set up instance variables storing samples, etc.
 		self.samples = []
@@ -141,17 +149,44 @@ class MCMC(object):
 				self.p = q
 				self.accepted += 1
 			#store next point
+			self.update_covariance_estimate()
+			if (self.iterations>self.tuning_grace 
+				and self.iterations%self.tuning_frequency==0
+				and self.iterations<self.tuning_end):
+				self.tune()
 			samples.append((self.p, self.Lp[0], self.Lp[1]))
 		return samples
 
+	def update_covariance_estimate(self):
+		n = self.iterations
+		if n>50:  #skip the first 50 samples
+			delta = (self.p - self.mean_estimate)/n
+			self.mean_estimate += delta
+			self.covariance_estimate += (n-1)*np.outer(delta,delta) - self.covariance_estimate/n
+
 	def set_fast_slow(self, fast_indices, slow_indices, oversampling):
+		self.fast_indices = fast_indices
+		self.slow_indices = slow_indices
+		self.oversampling = oversampling
 		self.proposal = FastSlowProposal(self.covariance, fast_indices, slow_indices, oversampling)
 
 	def tune(self):
-		#Not yet implemented!
-		pass
-
-
+		if isinstance(self.proposal, Proposal):
+			print "Tuning sampler proposal."
+			old_eigvals =  np.linalg.eigvals(self.last_covariance_estimate)
+			new_eigvals =  np.linalg.eigvals(self.covariance_estimate)
+			print "eigvals = ", new_eigvals
+			print "Fractional eigval change = ", (new_eigvals-old_eigvals)/old_eigvals
+			self.last_covariance_estimate = self.covariance_estimate.copy()
+			cholesky = np.linalg.cholesky(self.covariance_estimate)
+			self.proposal = Proposal(cholesky)
+		elif isinstance(self.proposal, FastSlowProposal):
+			print "Tuning sampler proposal."
+			self.proposal = FastSlowProposal(self.covariance_estimate, 
+				self.fast_indices, self.slow_indices, self.oversampling)
+		else:
+			#unknown proposal type
+			pass
 
 #I've been copying this algorithm out of CosmoMC
 #for the last decade.  Every time I need a new one
