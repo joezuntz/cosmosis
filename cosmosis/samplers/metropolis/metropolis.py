@@ -150,12 +150,19 @@ class MCMC(object):
 				self.accepted += 1
 			#store next point
 			self.update_covariance_estimate()
-			if (self.iterations>self.tuning_grace 
-				and self.iterations%self.tuning_frequency==0
-				and self.iterations<self.tuning_end):
+			if self.should_tune_now():
 				self.tune()
 			samples.append((self.p, self.Lp[0], self.Lp[1]))
 		return samples
+
+	def should_tune_now(self):
+		return (	
+			self.tuning_frequency>0
+		and self.iterations>self.tuning_grace 
+		and self.iterations%self.tuning_frequency==0
+		and self.iterations<self.tuning_end
+		)
+
 
 	def update_covariance_estimate(self):
 		n = self.iterations
