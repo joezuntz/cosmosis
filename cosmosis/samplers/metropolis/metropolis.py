@@ -136,18 +136,22 @@ class MCMC(object):
 			self.iterations += 1
 			# proposal point and its likelihood
 			q = self.proposal.propose(self.p)
-			if not self.quiet:
-				print "  ".join(str(x) for x in q)
 			#assume two proposal subsets for now
 			Lq = self.posterior(q)
 			if not self.quiet:
-				print
+				print "  ".join(str(x) for x in q)
 			#acceptance test
-			if  Lq[0] >= self.Lp[0] or  (Lq[0] - self.Lp[0]) >= np.log(np.random.uniform()):
+			delta = Lq[0] - self.Lp[0]
+			if  (delta>0) or (delta >= np.log(np.random.uniform())):
 				#update if accepted
 				self.Lp = Lq
 				self.p = q
 				self.accepted += 1
+				if not self.quiet:
+					print "[Accept delta={:.3g}]\n".format(delta)
+			elif not self.quiet:
+				print "[Reject delta={:.3g}]\n".format(delta)
+
 			#store next point
 			self.update_covariance_estimate()
 			if self.should_tune_now():
