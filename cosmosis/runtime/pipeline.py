@@ -6,7 +6,8 @@ import numpy as np
 import time
 import collections
 import ConfigParser
-
+import traceback
+import signal
 import utils
 import config
 import parameter
@@ -14,7 +15,6 @@ import prior
 import module
 from cosmosis.datablock.cosmosis_py import block
 import cosmosis.datablock.cosmosis_py as cosmosis_py
-
 
 PIPELINE_INI_SECTION = "pipeline"
 
@@ -452,12 +452,43 @@ class LikelihoodPipeline(Pipeline):
             if return_data:
                 return prior, np.repeat(np.nan, self.number_extra), None
             return prior, np.repeat(np.nan, self.number_extra)
+
+        try:
+            results = self.likelihood(p, return_data=return_data, all_params=all_params)
+            error = False
+
+            like = results[0]
+            extra = results[1]
+            
+            if return_data:
+                data = results[2]
+
+        except StandardError:
+            error = True
+            # If we are 
+            if self.debug:
+                sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
+                sys.stderr.write("\n\Because you have debug=T I will let this kill the chain.\n")
+                sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
+                raise
+
+            sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
+            sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
+
+            # Replace with bad values
+            like = np.nan
+            data = None
+            extra = np.repeat(np.nan, self.number_extra)
+
         if return_data:
-            like, extra, data = self.likelihood(p, return_data=True, all_params=all_params)
             return prior + like, extra, data
         else:
-            like, extra = self.likelihood(p, all_params=all_params)
             return prior + like, extra
+
+
+
         
     def likelihood(self, p, return_data=False, all_params=False):
         #Set the parameters by name from the parameter vector
