@@ -15,6 +15,13 @@ import prior
 import module
 from cosmosis.datablock.cosmosis_py import block
 import cosmosis.datablock.cosmosis_py as cosmosis_py
+try:
+    import faulthandler
+    faulthandler.enable()
+except ImportError:
+    pass
+
+
 
 PIPELINE_INI_SECTION = "pipeline"
 
