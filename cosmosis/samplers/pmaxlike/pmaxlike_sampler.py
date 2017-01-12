@@ -53,6 +53,7 @@ def posterior_and_gradient(p_in):
 
 
 class PMaxlikeSampler(ParallelSampler):
+    parallel_output = False
     sampler_outputs = [("like", float)]
 
     def config(self):
