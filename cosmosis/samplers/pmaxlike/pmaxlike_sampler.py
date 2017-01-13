@@ -14,25 +14,21 @@ def minus_log_posterior(p_in):
     if (not np.all(p_in>=0)) or (not np.all(p_in<=1.0)):
         nfail += 1
         pstr = '   '.join(str(x) for x in p_in)
-        msg1 = "[Proc {}] Posterior = NaN for out-of-bounds: (normalized) point = {}".format(rank, pstr)
-        msg2 = "[Proc {}] fails= {}".format(rank, nfail)
-        maxlike_sampler.output.log_error(msg1)
-        maxlike_sampler.output.log_error(msg2)
+        print "[Proc {}] Posterior = NaN for out-of-bounds: (normalized) point = {}".format(rank, pstr)
+        print "[Proc {}] fails= {}".format(rank, nfail)
         return np.inf
     neval +=1 
     p = maxlike_sampler.pipeline.denormalize_vector(p_in)
     post, extra = maxlike_sampler.pipeline.posterior(p)
     pstr = '   '.join(str(x) for x in p)
-    msg = "[Proc {} (evals={})] Posterior = {} for {}".format(rank, neval, post, pstr)
-    maxlike_sampler.output.log_warning(msg)
+    print "[Proc {} (evals={})] Posterior = {} for {}".format(rank, neval, post, pstr)
     return -post
 
 
 
 def posterior_and_gradient(p_in):
     pstr = '   '.join(str(x) for x in p_in)
-    msg = "Calculating gradient about (normalized) point {}".format(pstr)
-    maxlike_sampler.output.log_warning(msg)
+    print "Calculating gradient about (normalized) point {}".format(pstr)
     points = [p_in]
     n = len(p_in)
     for i in xrange(n):
