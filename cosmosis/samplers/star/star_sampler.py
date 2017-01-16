@@ -45,6 +45,10 @@ class StarSampler(ParallelSampler):
             else:
                 self.nstep = self.nsample
 
+        if self.output:
+            for name,value in zip(self.pipeline.varied_params, self.pipeline.start_vector()):
+                self.output.metadata("fid_{0}".format(name), value)
+
 
         #Also Generate the complete collection of parameter sets to run over.
         #This doesn't actually keep them all in memory, it is just the conceptual
@@ -65,13 +69,14 @@ class StarSampler(ParallelSampler):
         print
         
 
-        self.sample_points = []
+        sample_points = []
         start = self.pipeline.start_vector()
         for i,param in enumerate(self.pipeline.varied_params):
             for p in np.linspace(*param.limits, num=self.nsample):
                 v = start.copy()
                 v[i] = p
-                self.sample_points.append(v)
+                sample_points.append(v)
+        self.sample_points = iter(sample_points)
 
 
 
