@@ -894,6 +894,35 @@ class CovarianceMatrixEllipse(Plots):
         pylab.gca().add_patch(ellip)
         return ellip
 
+class StarPlots(Plots):
+    excluded_columns=["post","like"]
+
+    def star_plot(self, i, name):
+        n = self.source.metadata[0]['nsample_dimension']
+        x = self.source.get_col(name)[i*n:(i+1)*n]
+        y = self.source.get_col("post")[i*n:(i+1)*n]
+        figure,filename = self.figure(name)
+        pylab.figure(figure.number)
+
+        pylab.plot(x, y)
+        pylab.xlabel(self.latex(name))
+        pylab.ylabel("Posterior")
+
+        return filename
+
+    def run(self):
+        filenames = []
+
+        i=0
+        for name in self.source.colnames:
+            if name.lower() in self.excluded_columns: continue
+            filename = self.star_plot(i,name)
+            filenames.append(filename)
+            i+=1
+        return filenames
+
+
+
 
 class Tweaks(Loadable):
     filename="default_nonexistent_filename_ignore"

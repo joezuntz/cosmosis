@@ -251,3 +251,10 @@ class FisherProcessor(PostProcessor):
 		statistics.CovarianceMatrix1D,
 		statistics.CovarianceMatrixEllipseAreas,
 	]
+
+
+class StarProcessor(PostProcessor):
+	sampler='star'
+	elements=[
+		plots.StarPlots,
+	]
