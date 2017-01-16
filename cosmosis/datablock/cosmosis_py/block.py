@@ -656,7 +656,33 @@ class DataBlock(object):
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, True)
 
 	def _grid_put_replace(self, section, name_x, x, name_y, y, name_z, z, replace):
-		
+		# These conversions do not create new objects if x,y,z are already arrays.
+		x = np.asarray(x)
+		y = np.asarray(y)
+		z = np.asarray(z)
+
+		if x.ndim!=1 or y.ndim!=1 or z.ndim!=2 or z.shape!=(x.size,y.size):
+			msg = """
+	Your code tried to save or replace a grid {name_z}[{name_x}, {name_y}] in section {}. 
+	This requires 1D {name_x}, 1D {name_y}, 2D {name_z} and the shape of {name_z} to be (len({name_x}),len({name_y})).
+	Whereas your code tried:
+	{name_x} ndim = {}    [{}]
+	{name_y} ndim = {}    [{}]
+	{name_z} ndim = {}    [{}]
+	{name_x} shape = {}
+	{name_y} shape = {}
+	{name_z} shape = {}   [{}]
+			""".format(section, 
+				x.ndim, "OK" if x.ndim==1 else "WRONG",
+				y.ndim, "OK" if y.ndim==1 else "WRONG",
+				z.ndim, "OK" if z.ndim==2 else "WRONG",
+				x.shape,
+				y.shape,
+				z.shape, "OK" if z.shape==(x.size, y.size) else "WRONG",
+				name_z=name_z, name_x=name_x, name_y=name_y
+				)
+			raise ValueError(msg)
+
 		self[section, name_x] = x
 		self[section, name_y] = y
 		self[section, name_z] = z
@@ -665,36 +691,6 @@ class DataBlock(object):
 		sentinel_value = "%s_cosmosis_order_%s" % (name_x, name_y)
 		self[section, sentinel_key] = sentinel_value.lower()
 
-		# x = np.array(x, dtype=np.double)
-		# y = np.array(y, dtype=np.double)
-		# z = np.array(z, dtype=np.double)
-
-		# assert x.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
-		# assert y.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
-
-		# nx = len(x)
-		# ny = len(y)
-
-		# assert z.ndim==2, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
-		# assert z.shape==(nx,ny), "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
-
-
-		# z = z.copy().astype(np.double)
-
-		# z_ptr = (ct.POINTER(ct.c_double) * nx)()
-		# temp_x, x_ptr, nx1 = self.python_to_1d_c_array(x, np.double)
-		# temp_y, y_ptr, ny1 = self.python_to_1d_c_array(y, np.double)
-		# #Now return pointer to start of the data
-		# for i in xrange(nx):
-		# 	row_ptr = np.ctypeslib.as_ctypes(z[i])
-		# 	z_ptr[i] = row_ptr
-
-		# if replace:
-		# 	status = lib.c_datablock_replace_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
-		# else:
-		# 	status = lib.c_datablock_put_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
-		# if status!=0:
-		# 	raise BlockError.exception_for_status(status, section, ','.join([name_x, name_y, name_z]))
 
 
 class SectionOptions(object):
