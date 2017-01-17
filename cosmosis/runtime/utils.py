@@ -2,6 +2,7 @@ import numpy as np
 import argparse
 import os
 import errno
+from timeit import default_timer
 
 class EverythingIsNan(object):
     def __getitem__(self, param):
@@ -38,3 +39,15 @@ def mkdir(path):
         else:
             #Some other kind of error making directory
             raise
+
+class Timer:
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __enter__(self):
+        self.start = default_timer()
+        return self
+
+    def __exit__(self, *args):
+        interval = default_timer() - self.start
+        print "Time taken by step '{}': {}".format(self.msg, interval)
