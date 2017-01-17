@@ -897,17 +897,22 @@ class CovarianceMatrixEllipse(Plots):
 class StarPlots(Plots):
     excluded_columns=["post","like"]
 
-    def star_plot(self, i, name):
+    def star_plot(self, i, name, log):
         n = self.source.metadata[0]['nsample_dimension']
         x = self.source.get_col(name)[i*n:(i+1)*n]
         y = self.source.get_col("post")[i*n:(i+1)*n]
-        figure,filename = self.figure(name)
+        if log:
+            figure,filename = self.figure(name+"_log")
+        else:
+            figure,filename = self.figure(name)
+            y = np.exp(y-y.max())
         pylab.figure(figure.number)
-
         pylab.plot(x, y)
         pylab.xlabel(self.latex(name))
-        pylab.ylabel("Posterior")
-
+        if log:
+            pylab.ylabel("Log Posterior")
+        else:
+            pylab.ylabel("Posterior")
         return filename
 
     def run(self):
@@ -916,7 +921,10 @@ class StarPlots(Plots):
         i=0
         for name in self.source.colnames:
             if name.lower() in self.excluded_columns: continue
-            filename = self.star_plot(i,name)
+            # Do both log and non-log variants
+            filename = self.star_plot(i,name, True)
+            filenames.append(filename)
+            filename = self.star_plot(i,name, False)
             filenames.append(filename)
             i+=1
         return filenames
