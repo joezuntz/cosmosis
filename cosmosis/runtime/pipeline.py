@@ -224,17 +224,24 @@ class Pipeline(object):
         if self.root_directory=="cosmosis_none_signifier":
             self.root_directory=None
 
+        module_list = self.options.get(PIPELINE_INI_SECTION,
+                                       "modules", "").split()
+
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
         self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
-
+        self.shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", "")
+        self.shortcut_data = None
         self.do_fast_slow = self.options.getboolean(PIPELINE_INI_SECTION, "fast_slow", False)
+        if self.do_fast_slow and self.shortcut:
+            sys.stderr.write("Warning: you have the fast_slow and shortcut options both set, and we can only do one of those at once (we will do shortcut)\n")
+            self.do_fast_slow = False
+        if self.shortcut and not self.shortcut in module_list:
+            raise ValueError("You set the parameter shortcut=''.  The value should be one of the modules in the modules=... list.")
         self.slow_subspace_cache = None #until set in method
         # initialize modules
         self.modules = []
         if load and PIPELINE_INI_SECTION in self.options.sections():
-            module_list = self.options.get(PIPELINE_INI_SECTION,
-                                           "modules", "").split()
 
             for module_name in module_list:
                 # identify module file
@@ -395,7 +402,13 @@ class Pipeline(object):
     def run(self, data_package):
         modules = self.modules
         timings = []
-        if self.slow_subspace_cache:
+        if self.shortcut:
+            shortcut_module_index = modules.index(self.shortcut)
+            if self.shortcut_data is None:
+                first_module = 0
+            else:
+                first_module = shortcut_module_index
+        elif self.slow_subspace_cache:
             first_module = self.slow_subspace_cache.start_pipeline(data_package)
         else:
             first_module = 0
@@ -439,9 +452,13 @@ class Pipeline(object):
                 return None
 
             # If we are using a fast/slow split (and we are not already running on a cached subset)
-            # Then 
+            # Then see if it wants to cache these results
             if self.slow_subspace_cache and first_module==0:
                 self.slow_subspace_cache.next_module_results(module_number, data_package)
+
+            if self.shortcut and (self.shortcut_data is None) and (module_number==shortcut_module_index):
+                self.shortcut_data = data
+                print "* Saving shortcut data *"
 
         if self.timing:
             self.timings = timings
