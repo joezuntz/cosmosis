@@ -100,7 +100,8 @@ class MinuitSampler(ParallelSampler):
 
     def execute(self):
         #Run an iteration of minuit
-        param_vector, param_names, like, data, status = self.sample()
+        param_vector, param_names, like, data, status, made_cov, cov_vector = self.sample()
+
 
         #update the current parameters
         self.param_vector = param_vector.copy()
@@ -109,9 +110,14 @@ class MinuitSampler(ParallelSampler):
         if status == 0:
             print 
             print "SUCCESS: Minuit has converged!"
+            print
             self.save_results(param_vector, param_names, like, data)
             self.converged = True
-            print
+            self.distribution_hints.set_peak(param_vector)
+
+            if made_cov:
+                cov_matrix = cov_vector.reshape((self.ndim, self.ndim))
+                self.distribution_hints.set_cov(cov_matrix)
         elif self.neval > self.maxiter:
             print
             print "MINUIT has failed to converge properly in the max number of iterations.  Sorry."
@@ -171,6 +177,9 @@ class MinuitSampler(ParallelSampler):
 
         param_vector = self.param_vector.copy()
 
+        cov_vector = np.zeros(self.ndim*self.ndim)
+        made_cov = ct.c_int()
+
         options = MinuitOptionsStruct(
             #allow for more loops
             max_evals=self.maxiter-self.neval, strategy=self.strategy, 
@@ -185,13 +194,15 @@ class MinuitSampler(ParallelSampler):
             param_max.ctypes.data_as(ct.POINTER(ct.c_double)), 
             self.wrapped_likelihood, 
             param_names_array,
+            cov_vector.ctypes.data_as(ct.POINTER(ct.c_double)),
+            ct.byref(made_cov),
             options
             )
 
         #Run the pipeline one last time ourselves, so we can save the 
         #likelihood and cosmology
         like, _, data = self.pipeline.likelihood(param_vector, return_data=True)
-        return param_vector, param_names, like, data, status
+        return param_vector, param_names, like, data, status, made_cov, cov_vector
 
     def worker(self):
         self.sample()
