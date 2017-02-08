@@ -100,7 +100,7 @@ class Plots(PostProcessorElement):
         fig = self.get_output(name)
         if fig is None:
             fig = pylab.figure()
-            self.set_output(name, PostprocessPlot(name,filename,fig))
+            self.set_output(name, PostprocessPlot(name,filename,fig, info=names[:]))
         else:
             fig = fig.value
         self.figures[name] = fig
@@ -937,6 +937,7 @@ class Tweaks(Loadable):
     _all_filenames='all plots'
     def __init__(self):
         self.has_run=False
+        self.info=None
 
     def run(self):
         print "Please fill in the 'run' method of your tweak to modify a plot"
