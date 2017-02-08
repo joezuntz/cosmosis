@@ -3,7 +3,7 @@ from . import fisher
 from ...datablock import BlockError
 import numpy as np
 import scipy.linalg
-from ...runtime import prior
+from ...runtime import prior,utils
 
 def compute_fisher_vector(p):
     # use normalized parameters - fisherPipeline is a global
@@ -94,8 +94,10 @@ class FisherSampler(ParallelSampler):
 
     def execute(self):
         #Load the starting point and covariance matrix
-        #in the normalized space
-        start_vector = self.pipeline.start_vector()
+        #in the normalized space, either from the values
+        #file or a previous sampler
+        start_vector = self.start_estimate()
+
         for i,x in enumerate(start_vector):
             self.output.metadata("mu_{0}".format(i), x)
         start_vector = self.pipeline.normalize_vector(start_vector)
@@ -120,6 +122,9 @@ class FisherSampler(ParallelSampler):
         if self.converged:
             for row in fisher_matrix:
                 self.output.parameters(row)
+
+        covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
+        self.distribution_hints['covariance_matrix'] = covariance_matrix
 
     def is_converged(self):
         return self.converged

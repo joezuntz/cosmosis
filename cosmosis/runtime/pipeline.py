@@ -7,6 +7,8 @@ import time
 import collections
 import ConfigParser
 import warnings
+import traceback
+import signal
 import utils
 import config
 import parameter
@@ -14,6 +16,12 @@ import prior
 import module
 from cosmosis.datablock.cosmosis_py import block
 import cosmosis.datablock.cosmosis_py as cosmosis_py
+try:
+    import faulthandler
+    faulthandler.enable()
+except ImportError:
+    pass
+
 
 
 PIPELINE_INI_SECTION = "pipeline"
@@ -498,6 +506,8 @@ class LikelihoodPipeline(Pipeline):
 
         self.reset_fixed_varied_parameters()
 
+        self.print_priors()
+
         #We want to save some parameter results from the run for further output
         extra_saves = self.options.get(PIPELINE_INI_SECTION,
                                        "extra_output", "")
@@ -515,6 +525,15 @@ class LikelihoodPipeline(Pipeline):
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
 
+    def print_priors(self):
+        print ""
+        print "Parameter Priors"
+        print "----------------"
+        n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
+        for param in self.parameters:
+            s = "{}--{}".format(param.section,param.name)
+            print "{0:{1}}  ~ {2}" .format(s, n, param.prior)
+        print ""
     def reset_fixed_varied_parameters(self):
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]
@@ -552,8 +571,12 @@ class LikelihoodPipeline(Pipeline):
         return any([not param.in_range(x) for
                     param, x in zip(self.varied_params, p)])
 
-    def denormalize_vector(self, p):
-        return np.array([param.denormalize(x) for param, x
+    def denormalize_vector(self, p, raise_exception=True):
+        return np.array([param.denormalize(x, raise_exception) for param, x
+                         in zip(self.varied_params, p)])
+
+    def denormalize_vector_from_prior(self, p):
+        return np.array([param.denormalize_from_prior(x) for param, x
                          in zip(self.varied_params, p)])
 
     def normalize_vector(self, p):
@@ -672,12 +695,43 @@ class LikelihoodPipeline(Pipeline):
             if return_data:
                 return prior, np.repeat(np.nan, self.number_extra), None
             return prior, np.repeat(np.nan, self.number_extra)
+
+        try:
+            results = self.likelihood(p, return_data=return_data, all_params=all_params)
+            error = False
+
+            like = results[0]
+            extra = results[1]
+            
+            if return_data:
+                data = results[2]
+
+        except StandardError:
+            error = True
+            # If we are 
+            if self.debug:
+                sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
+                sys.stderr.write("\n\Because you have debug=T I will let this kill the chain.\n")
+                sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
+                raise
+
+            sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
+            sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
+
+            # Replace with bad values
+            like = np.nan
+            data = None
+            extra = np.repeat(np.nan, self.number_extra)
+
         if return_data:
-            like, extra, data = self.likelihood(p, return_data=True, all_params=all_params)
             return prior + like, extra, data
         else:
-            like, extra = self.likelihood(p, all_params=all_params)
             return prior + like, extra
+
+
+
         
     def likelihood(self, p, return_data=False, all_params=False):
         #Set the parameters by name from the parameter vector
