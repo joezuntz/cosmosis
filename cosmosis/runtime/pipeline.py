@@ -282,6 +282,8 @@ class LikelihoodPipeline(Pipeline):
 
         self.reset_fixed_varied_parameters()
 
+        self.print_priors()
+
         #We want to save some parameter results from the run for further output
         extra_saves = self.options.get(PIPELINE_INI_SECTION,
                                        "extra_output", "")
@@ -299,6 +301,15 @@ class LikelihoodPipeline(Pipeline):
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
 
+    def print_priors(self):
+        print ""
+        print "Parameter Priors"
+        print "----------------"
+        n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
+        for param in self.parameters:
+            s = "{}--{}".format(param.section,param.name)
+            print "{0:{1}}  ~ {2}" .format(s, n, param.prior)
+        print ""
     def reset_fixed_varied_parameters(self):
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]
@@ -338,6 +349,10 @@ class LikelihoodPipeline(Pipeline):
 
     def denormalize_vector(self, p):
         return np.array([param.denormalize(x) for param, x
+                         in zip(self.varied_params, p)])
+
+    def denormalize_vector_from_prior(self, p):
+        return np.array([param.denormalize_from_prior(x) for param, x
                          in zip(self.varied_params, p)])
 
     def normalize_vector(self, p):
