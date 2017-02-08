@@ -2,10 +2,11 @@ from . import lazy_pylab as pylab
 
 
 class PostprocessProduct(object):
-    def __init__(self, name, filename, value):
+    def __init__(self, name, filename, value, info=None):
         self.name = name
         self.filename = filename
         self.value = value
+        self.info = info
 
     def finalize(self):
         pass
@@ -19,6 +20,7 @@ class PostprocessPlot(PostprocessProduct):
     def tweak(self, tweak):
         print "Tweaking", self.name
         pylab.figure(self.value.number)
+        tweak.info = self.info
         tweak.run()
 
 
