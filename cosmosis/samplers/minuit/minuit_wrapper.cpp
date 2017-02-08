@@ -126,7 +126,7 @@ int cosmosis_minuit2_wrapper(
 			break;
 		default:
 			fprintf(stderr, "Internal error running the minimizer - wrong strategy %d (this should not be possible).\n", options.strategy);
-			fprintf(stderr, "Please open an issue with cosmosis to report this.\n");
+			fprintf(stderr, "Try running 'make' again but if that doesn't fix it please open an issue with cosmosis to report this.\n");
 			exit(1);
 
 	}
