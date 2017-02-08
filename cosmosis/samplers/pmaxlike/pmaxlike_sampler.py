@@ -7,6 +7,7 @@ neval = 0
 nfail = 0
 def minus_log_posterior(p_in):
     global neval, nfail
+    p_in, index = p_in
     if maxlike_sampler.pool:
         rank = maxlike_sampler.pool.rank
     else:
@@ -21,7 +22,7 @@ def minus_log_posterior(p_in):
     p = maxlike_sampler.pipeline.denormalize_vector(p_in)
     post, extra = maxlike_sampler.pipeline.posterior(p)
     pstr = '   '.join(str(x) for x in p)
-    print "[Proc {} (evals={})] Posterior = {} for {}".format(rank, neval, post, pstr)
+    print "[Proc {} (evals={})] Posterior = {} for {} (derivative:{})".format(rank, neval, post, pstr,index)
     return -post
 
 
@@ -29,12 +30,12 @@ def minus_log_posterior(p_in):
 def posterior_and_gradient(p_in):
     pstr = '   '.join(str(x) for x in p_in)
     print "Calculating gradient about (normalized) point {}".format(pstr)
-    points = [p_in]
+    points = [(p_in,0)]
     n = len(p_in)
     for i in xrange(n):
         p = p_in.copy()
         p[i] += maxlike_sampler.epsilon
-        points.append(p)
+        points.append((p, i+1))
 
     if maxlike_sampler.pool:
         results = maxlike_sampler.pool.map(minus_log_posterior, points)
@@ -93,18 +94,25 @@ class PMaxlikeSampler(ParallelSampler):
         if self.output_ini:
           self.pipeline.create_ini(opt, self.output_ini)
 
+        # If we are coupling to later samplers they can use the peak we have found.
+        self.distribution_hints.set_peak(opt)
+
         #Also if requested, approximate the covariance matrix with the 
         #inverse of the Hessian matrix.
         #For a gaussian likelihood this is exact.
-        if self.output_cov:
-            if hasattr(result, 'hess_inv'):
-                covmat = self.pipeline.denormalize_matrix(result.hess_inv)
+        covmat = None
+        if hasattr(result, 'hess_inv'):
+            covmat = self.pipeline.denormalize_matrix(result.hess_inv)
+        elif hasattr(result, 'hess'):
+            covmat = self.pipeline.denormalize_matrix(np.linalg.inv(result.hess_inv))
+
+        if covmat is None:
+            if self.output_cov:
+               self.output.log_error("Sorry - the optimization method you chose does not return a covariance (or Hessian) matrix")
+        else:
+            if self.output_cov:
                 np.savetxt(self.output_cov, covmat)
-            elif hasattr(result, 'hess'):
-                covmat = self.pipeline.denormalize_matrix(np.linalg.inv(result.hess_inv))
-                np.savetxt(self.output_cov, covmat)
-            else:
-                self.output.log_error("Sorry - the optimization method you chose does not return a covariance (or Hessian) matrix")
+            self.distribution_hints.set_cov(covmat)
 
         self.converged = True
 
