@@ -52,18 +52,24 @@ class MaxlikeSampler(Sampler):
         if self.output_ini:
           self.pipeline.create_ini(opt, self.output_ini)
 
+        self.distribution_hints.set_peak(opt)          
+
         #Also if requested, approximate the covariance matrix with the 
         #inverse of the Hessian matrix.
         #For a gaussian likelihood this is exact.
-        if self.output_cov:
-            if hasattr(result, 'hess_inv'):
-                covmat = self.pipeline.denormalize_matrix(result.hess_inv)
+        covmat = None
+        if hasattr(result, 'hess_inv'):
+            covmat = self.pipeline.denormalize_matrix(result.hess_inv)
+        elif hasattr(result, 'hess'):
+            covmat = self.pipeline.denormalize_matrix(np.linalg.inv(result.hess_inv))
+
+        if covmat is None:
+            if self.output_cov:
+               self.output.log_error("Sorry - the optimization method you chose does not return a covariance (or Hessian) matrix")
+        else:
+            if seld.output_cov:
                 np.savetxt(self.output_cov, covmat)
-            elif hasattr(result, 'hess'):
-                covmat = self.pipeline.denormalize_matrix(np.linalg.inv(result.hess_inv))
-                np.savetxt(self.output_cov, covmat)
-            else:
-                self.output.log_error("Sorry - the optimization method you chose does not return a covariance (or Hessian) matrix")
+            self.distribution_hints.set_cov(covmat)
 
         self.converged = True
 

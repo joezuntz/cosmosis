@@ -127,7 +127,7 @@ def main(args, pool=None):
                 sys.exit(1)
             #Additionally we tell the output here if
             #we are parallel or not.
-            if (pool is not None) and sampler_class.parallel_output:
+            if (pool is not None) and (sampler_class.parallel_output):
                 output_options['rank'] = pool.rank
                 output_options['parallel'] = pool.size
 
@@ -160,11 +160,10 @@ def main(args, pool=None):
             output = None
         print "****************************"
 
-
         #Initialize our sampler, with the class we got above.
         #It needs an extra pool argument if it is a ParallelSampler.
         #All the parallel samplers can also act serially too.
-        if pool:
+        if pool and sampler_class.is_parallel_sampler:
             sampler = sampler_class(ini, pipeline, output, pool)
         else:
             sampler = sampler_class(ini, pipeline, output)
@@ -220,9 +219,16 @@ def main(args, pool=None):
                 #Flush any output. This is to stop
                 #a problem in some MPI cases where loads
                 #of output is built up before being written.
-                if output: output.flush()
+                if output:
+                    output.flush()
+            # If we are in parallel tell the other processors to end the 
+            # loop and prepare for the next sampler
+            if pool and sampler.is_parallel_sampler:
+                pool.close()
         else:
-            sampler.worker()
+            if sampler.is_parallel_sampler:
+                sampler.worker()
+
 
         distribution_hints.update(sampler.distribution_hints)
 
