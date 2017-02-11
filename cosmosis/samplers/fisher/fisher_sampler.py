@@ -123,7 +123,7 @@ class FisherSampler(ParallelSampler):
                 self.output.parameters(row)
 
         covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
-        self.distribution_hints['covariance_matrix'] = covariance_matrix
+        self.distribution_hints.set_cov(covariance_matrix)
 
     def is_converged(self):
         return self.converged
