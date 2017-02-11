@@ -48,6 +48,9 @@ class KDE(scipy.stats.kde.gaussian_kde):
             axes = axes[0]
         return axes,like
 
+    def normalize_and_evaluate(self, points):
+        points = np.array([(p-norm[0])/norm[1] for norm, p in zip(self.norms, points)])
+        return self.evaluate(points)
 
     def evaluate(self, points):
         """Evaluate the estimated pdf on a set of points.
