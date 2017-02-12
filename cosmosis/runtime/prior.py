@@ -104,10 +104,10 @@ class ExponentialPrior(Prior):
         return "Expon({})".format(self.beta)
 
     def truncate(self, lower, upper):
-        return TruncatedExponentatialPrior(self.dist.kwds['scale'], lower, upper)
+        return TruncatedExponentialPrior(self.dist.kwds['scale'], lower, upper)
 
 
-class TruncatedExponentatialPrior(Prior):
+class TruncatedExponentialPrior(Prior):
     def __init__(self, beta, lower, upper):
         self.beta = beta
         self.lower = lower
