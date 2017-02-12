@@ -75,12 +75,13 @@ class FisherSampler(ParallelSampler):
         n = len(self.pipeline.varied_params)
         P = np.zeros((n,n))
         for i, param in enumerate(self.pipeline.varied_params):
-            if isinstance(param.prior, prior.GaussianPrior):
-                print "Applying additional prior sigma = {0} to {1}".format(param.prior.sigma2**0.5, param)
+            if isinstance(param.prior, prior.GaussianPrior) or isinstance(param.prior, prior.TruncatedGaussianPrior):
+                print "Applying additional prior sigma = {0} to {1}".format(param.prior.sigma, param)
                 print "This will be assumed to be centered at the parameter center regardless of what the ini file says"
-                print 
-                P[i,i] = 1./param.prior.sigma2
-            elif isinstance(param.prior, prior.ExponentialPrior):
+                print "The limits of the parameter will also not be respected." 
+                print
+                P[i,i] = 1./param.prior.sigma**2
+            elif isinstance(param.prior, prior.ExponentialPrior) or isinstance(param.prior, prior.TruncatedExponentialPrior):
                 print "There is an exponential prior applied to parameter {0}".format(param)
                 print "This is *not* accounted for in the Fisher matrix"
                 print
