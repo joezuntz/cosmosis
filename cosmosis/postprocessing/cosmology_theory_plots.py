@@ -234,25 +234,32 @@ class MatterPowerPlot(Plot):
             p = p.T
         pylab.loglog(kh, p[:,0], label=label)
 
+    def power_files_exist(self, name):
+        exist = [os.path.exists(
+                os.path.join(self.dirname, name, filename+".txt"))
+            for filename in ["k_h", "z", "p_k"]]
+        return all(exist)
+
+
     def plot(self):
         super(MatterPowerPlot, self).plot()
         done_any=False
-        if os.path.exists(self.dirname + "/matter_power_lin"):
+        if self.power_files_exist("matter_power_lin"):
             self.plot_section("matter_power_lin", "Linear")
             done_any=True
-        if os.path.exists(self.dirname + "/matter_power_nl"):
+        if self.power_files_exist("matter_power_nl"):
             self.plot_section("matter_power_nl", "Non-Linear")
             done_any=True
-        if os.path.exists(self.dirname + "/matter_power_gal"):
+        if self.power_files_exist("matter_power_gal"):
             self.plot_section("matter_power_gal", "Galaxy")
             done_any=True
-        if os.path.exists(self.dirname + "/matter_power_no_bao"):
+        if self.power_files_exist("matter_power_no_bao"):
             self.plot_section("matter_power_no_bao", "No BAO")
             done_any=True
-        if os.path.exists(self.dirname + "/intrinsic_alignment_parameters"):
+        if self.power_files_exist("intrinsic_alignment_parameters"):
             self.plot_section("intrinsic_alignment_parameters", "Intrinsic-intrinsic", p_name='p_ii')
             done_any=True
-        if os.path.exists(self.dirname + "/intrinsic_alignment_parameters"):
+        if self.power_files_exist("intrinsic_alignment_parameters"):
             self.plot_section("intrinsic_alignment_parameters", "Shear-intrinsic", p_name='p_gi')
             done_any=True
         if not done_any:
