@@ -97,6 +97,10 @@ def main(args):
 	#ini file that created the run
 	args = parser.parse_args(args)
 
+	for ini_filename in args.inifile:
+		if not os.path.exists(ini_filename):
+			raise ValueError("The file (or directory) {} does not exist.".format(ini_filename))
+
 	#Make the directory for the outputs to go in.
 	mkdir(args.outdir)
 	outputs = {}
