@@ -16,6 +16,6 @@ if [ $osname == "Darwin" ] && [ "$UPS_DIR" != "" ]
 	NEW_DYLD_PATH=$(dropit -p ${DYLD_LIBRARY_PATH} ${GCC_FQ_DIR}/lib)
 	DYLD_LIBRARY_PATH="$NEW_DYLD_PATH" python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py $@
 else
-	python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py $@
+	python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py "$@"
 fi
 
