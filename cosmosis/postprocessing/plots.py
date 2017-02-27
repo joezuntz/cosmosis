@@ -41,7 +41,7 @@ class Plots(PostProcessorElement):
 
     def finalize(self):
         super(Plots, self).finalize()
-        legend = self.options.get("legend", False)
+        legend = self.options.get("legend", "")
         if legend:
             legend_loc = legend_locations[self.options.get("legend_loc", "best").upper()]
             for fig in self.figures.values():

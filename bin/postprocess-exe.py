@@ -30,7 +30,7 @@ inputs.add_argument("--text", action='store_true', help="Tell postprocess that i
 inputs.add_argument("--derive", default="", help="Read a python script with functions in that derive new columns from existing ones")
 
 plots=parser.add_argument_group(title="Plotting", description="Plotting options")
-plots.add_argument("--legend", action='store_true', help="Add a legend to the plot")
+plots.add_argument("--legend", help="Add a legend to the plot with the specified titles, separated by | (the pipe symbol)")
 plots.add_argument("--legend-loc", default='best', help="The location of the legend: best, UR, UL, LL, LR, R, CL, CR, LC, UC, C (use quotes for the ones with two words.)")
 plots.add_argument("--swap", action='store_true', help="Swap the ordering of the parameters in (x,y)")
 plots.add_argument("--only", type=str, dest='prefix_only', help="Only make 2D plots where both parameter names start with this")
@@ -104,6 +104,15 @@ def main(args):
 	#Make the directory for the outputs to go in.
 	mkdir(args.outdir)
 	outputs = {}
+
+	#Deal with legends, if any
+	if args.legend:
+		labels = args.legend.split("|")
+		if len(labels)!=len(args.inifile):
+			raise ValueError("You specified {} legend names but {} files to plot".format(len(labels), len(args.inifile)))
+	else:
+		labels = args.inifile
+
 	for i,ini_filename in enumerate(args.inifile):
 		sampler, ini = read_input(ini_filename, args.text, args.weights)
 		processor_class = postprocessor_for_sampler(sampler)
@@ -115,7 +124,8 @@ def main(args):
 			continue
 
 		#Create and run the postprocessor
-		processor = processor_class(ini, ini_filename, i, **vars(args))
+
+		processor = processor_class(ini, labels[i], i, **vars(args))
 
 		#Inherit any plots from the previous postprocessor
 		#so we can make plots with multiple datasets on
