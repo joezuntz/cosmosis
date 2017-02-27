@@ -1,0 +1,26 @@
+#!/bin/bash
+
+## This is an example of how to submit a job using the "shifter"
+## system on the NERSC machine "cori".
+## To use it you would have to change
+## /global/cscratch1/sd/zuntz/cosmosis to
+## whatever your path to cosmosis is both in the "--volume" line
+## just below and the MY_COSMOSIS_DIR=... line below that.
+## Then build the code for shifter using the command
+## config/cori-make
+## and following the instructions before submitting this with
+## sbatch examples/cori-shifter-submit-example.sub
+
+#SBATCH --image=docker:joezuntz/cosmosis-nersc:latest
+#SBATCH --volume=/global/cscratch1/sd/zuntz/cosmosis:/cosmosis
+#SBATCH --partition=debug
+#SBATCH --time=00:10:00
+#SBATCH --nodes=1
+#SBATCH --mail-type=ALL
+#SBATCH --output=demo9.log.%j
+
+MY_COSMOSIS_DIR=/global/cscratch1/sd/zuntz/cosmosis/cosmosis
+
+date
+srun -n 32 shifter --image=docker:joezuntz/cosmosis-nersc --volume ${MY_COSMOSIS_DIR}:/cosmosis cosmosis --mpi demos/demo9.ini
+date

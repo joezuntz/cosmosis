@@ -100,7 +100,7 @@ class Plots(PostProcessorElement):
         fig = self.get_output(name)
         if fig is None:
             fig = pylab.figure()
-            self.set_output(name, PostprocessPlot(name,filename,fig))
+            self.set_output(name, PostprocessPlot(name,filename,fig, info=names[:]))
         else:
             fig = fig.value
         self.figures[name] = fig
@@ -112,7 +112,7 @@ class Plots(PostProcessorElement):
 
 
     def line_color(self):
-        possible_colors = ['b','g','r', 'k', 'c' 'm','y']
+        possible_colors = ['b','g','r', 'k', 'c', 'm','y']
         col = possible_colors[self.plot_set%len(possible_colors)]
         return col
 
@@ -362,14 +362,14 @@ class GridPlots2D(GridPlots):
         #three cases
         if do_image:
             colors = None #auto colors from the contourf
-            pylab.contour(like, levels = [level1, level2], extent=extent, linewidths=[3,1], colors=colors)
+            pylab.contour(like, levels = [level2, level1], extent=extent, linewidths=[1,3], colors=colors)
         elif do_fill:
             dark, light = self.shade_colors()
-            pylab.contourf(like, levels = [level2, level0], extent=extent, linewidths=[3,1], colors=[light])
-            pylab.contourf(like, levels = [level1, level0], extent=extent, linewidths=[3,1], colors=[dark])
+            pylab.contourf(like, levels = [level2, level0], extent=extent, linewidths=[1,3], colors=[light])
+            pylab.contourf(like, levels = [level1, level0], extent=extent, linewidths=[1,3], colors=[dark])
         else:
             colors = [self.line_color(), self.line_color()]
-            pylab.contour(like, levels = [level1, level2], extent=extent, linewidths=[3,1], colors=colors)
+            pylab.contour(like, levels = [level2, level1], extent=extent, linewidths=[1,3], colors=colors)
             
         pylab.xlabel(self.latex(name1))
         pylab.ylabel(self.latex(name2))
@@ -596,7 +596,8 @@ class TestPlots(Plots):
                 p.figure=fig
                 p.plot()
                 if figure is None:
-                    self.set_output(cls.filename, PostprocessPlot(p.filename,p.outfile,fig))
+                    self.set_output(cls.filename,
+                                     PostprocessPlot(p.filename,p.outfile,fig))
                 filenames.append(filename)
             except IOError as err:
                 if fig is not None:
@@ -893,12 +894,50 @@ class CovarianceMatrixEllipse(Plots):
         pylab.gca().add_patch(ellip)
         return ellip
 
+class StarPlots(Plots):
+    excluded_columns=["post","like"]
+
+    def star_plot(self, i, name, log):
+        n = self.source.metadata[0]['nsample_dimension']
+        x = self.source.get_col(name)[i*n:(i+1)*n]
+        y = self.source.get_col("post")[i*n:(i+1)*n]
+        if log:
+            figure,filename = self.figure(name+"_log")
+        else:
+            figure,filename = self.figure(name)
+            y = np.exp(y-y.max())
+        pylab.figure(figure.number)
+        pylab.plot(x, y)
+        pylab.xlabel(self.latex(name))
+        if log:
+            pylab.ylabel("Log Posterior")
+        else:
+            pylab.ylabel("Posterior")
+        return filename
+
+    def run(self):
+        filenames = []
+
+        i=0
+        for name in self.source.colnames:
+            if name.lower() in self.excluded_columns: continue
+            # Do both log and non-log variants
+            filename = self.star_plot(i,name, True)
+            filenames.append(filename)
+            filename = self.star_plot(i,name, False)
+            filenames.append(filename)
+            i+=1
+        return filenames
+
+
+
 
 class Tweaks(Loadable):
     filename="default_nonexistent_filename_ignore"
     _all_filenames='all plots'
     def __init__(self):
         self.has_run=False
+        self.info=None
 
     def run(self):
         print "Please fill in the 'run' method of your tweak to modify a plot"

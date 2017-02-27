@@ -3,7 +3,7 @@ from . import fisher
 from ...datablock import BlockError
 import numpy as np
 import scipy.linalg
-from ...runtime import prior
+from ...runtime import prior,utils
 
 def compute_fisher_vector(p):
     # use normalized parameters - fisherPipeline is a global
@@ -58,6 +58,14 @@ class FisherSampler(ParallelSampler):
         self.step_size = self.read_ini("step_size", float, 0.01)
         self.tolerance = self.read_ini("tolerance", float, 0.01)
         self.maxiter = self.read_ini("maxiter", int, 10)
+        self.use_numdifftools = self.read_ini("use_numdifftools", bool, False)
+
+        if self.output:
+            for p in self.pipeline.extra_saves:
+                name = '%s--%s'%p
+                print "NOTE: You set extra_output to include parameter %s in the parameter file" % name
+                print "      But the Fisher Sampler cannot do that, so this will be ignored."
+                self.output.del_column(name)
 
         self.converged = False
 
@@ -67,12 +75,13 @@ class FisherSampler(ParallelSampler):
         n = len(self.pipeline.varied_params)
         P = np.zeros((n,n))
         for i, param in enumerate(self.pipeline.varied_params):
-            if isinstance(param.prior, prior.GaussianPrior):
-                print "Applying additional prior sigma = {0} to {1}".format(param.prior.sigma2**0.5, param)
+            if isinstance(param.prior, prior.GaussianPrior) or isinstance(param.prior, prior.TruncatedGaussianPrior):
+                print "Applying additional prior sigma = {0} to {1}".format(param.prior.sigma, param)
                 print "This will be assumed to be centered at the parameter center regardless of what the ini file says"
-                print 
-                P[i,i] = 1./param.prior.sigma2
-            elif isinstance(param.prior, prior.ExponentialPrior):
+                print "The limits of the parameter will also not be respected." 
+                print
+                P[i,i] = 1./param.prior.sigma**2
+            elif isinstance(param.prior, prior.ExponentialPrior) or isinstance(param.prior, prior.TruncatedExponentialPrior):
                 print "There is an exponential prior applied to parameter {0}".format(param)
                 print "This is *not* accounted for in the Fisher matrix"
                 print
@@ -85,15 +94,21 @@ class FisherSampler(ParallelSampler):
 
     def execute(self):
         #Load the starting point and covariance matrix
-        #in the normalized space
-        start_vector = self.pipeline.start_vector()
+        #in the normalized space, either from the values
+        #file or a previous sampler
+        start_vector = self.start_estimate()
+
         for i,x in enumerate(start_vector):
             self.output.metadata("mu_{0}".format(i), x)
         start_vector = self.pipeline.normalize_vector(start_vector)
 
         #calculate the fisher matrix.
         #right now just a single step
-        fisher_calc = fisher.Fisher(compute_fisher_vector, start_vector, 
+        if self.use_numdifftools:
+            fisher_class = fisher.NumDiffToolsFisher
+        else:
+            fisher_class = fisher.Fisher
+        fisher_calc = fisher_class(compute_fisher_vector, start_vector, 
             self.step_size, self.tolerance, self.maxiter, pool=self.pool)
 
         fisher_matrix = fisher_calc.compute_fisher_matrix()
@@ -107,6 +122,9 @@ class FisherSampler(ParallelSampler):
         if self.converged:
             for row in fisher_matrix:
                 self.output.parameters(row)
+
+        covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
+        self.distribution_hints.set_cov(covariance_matrix)
 
     def is_converged(self):
         return self.converged

@@ -1,6 +1,6 @@
 import random
 import config
-import prior
+import prior as priors # to avoid breaking other stuff below
 import numpy as np
 
 class Parameter(object):
@@ -18,7 +18,24 @@ class Parameter(object):
         self.name = name
         self.start = start
 
+        if prior is None:
+            if limits is None:
+                # Parameter has no setting in the priors file and is fixed
+                prior = priors.DeltaFunctionPrior(start)
+            else:
+                # Parameter has no setting in the priors file and is variable
+                prior = priors.UniformPrior(limits[0], limits[1])
+        else:
+            if limits is None:
+                # Parameter does have setting in the priors file but is fixed - just fix value
+                prior = priors.DeltaFunctionPrior(start)
+            else:
+                # Parameter does have setting in the priors file and is variable - truncate prior to limits
+                prior = prior.truncate(limits[0], limits[1])
+
         self.prior = prior
+
+
         # TODO: check consistency of prior with limits
 
     def __eq__(self, other):
@@ -52,20 +69,7 @@ class Parameter(object):
         return self.limits[1] - self.limits[0]
 
     def random_point(self):
-        if self.prior is None:
-            return np.random.uniform(*self.limits)
-        else:
-            #For non-uniform priors we can get samples
-            #out of range.
-            x=np.nan
-            n=1000
-            for i in xrange(1000):
-                x = self.prior.sample()
-                if self.in_range(x): break
-            else:
-                raise ValueError("The priors and limits on parameter %s "
-                    "probably do not match (tried 1000 times)."%self)
-            return x
+        return self.prior.sample()
 
     def normalize(self, p):
         if self.is_fixed():
@@ -73,11 +77,20 @@ class Parameter(object):
         else:
             return (p - self.limits[0]) / (self.limits[1] - self.limits[0])
 
-    def denormalize(self, p):
+    def denormalize(self, p, raise_exception=True):
         if 0.0 <= p <= 1.0:
+            return p*(self.limits[1]-self.limits[0]) + self.limits[0]
+        elif not raise_exception:
             return p*(self.limits[1]-self.limits[0]) + self.limits[0]
         else:
             raise ValueError("parameter value not normalized")
+
+    def denormalize_from_prior(self, p):
+        if 0.0 <= p <= 1.0:
+            return self.prior.denormalize_from_prior(p)
+        else:
+            raise ValueError("parameter value not normalized")
+
 
     def evaluate_prior(self, p):
         if p < self.limits[0] or p > self.limits[1]:
@@ -92,9 +105,9 @@ class Parameter(object):
         values_ini = config.Inifile(value_file)
 
         if priors_files:
-            priors = prior.Prior.load_priors(priors_files)
+            priors_data = priors.Prior.load_priors(priors_files)
         else:
-            priors = {}
+            priors_data = {}
 
         parameters = []
         for (section, name), value in values_ini:
@@ -106,7 +119,7 @@ class Parameter(object):
             start, limits = Parameter.parse_parameter(value)
 
             # check for prior
-            pri = priors.get((section, name), None)
+            pri = priors_data.get((section, name), None)
 
 
             parameters.append(Parameter(section, name,

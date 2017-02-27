@@ -41,8 +41,12 @@ class EmceeSampler(ParallelSampler):
             elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in xrange(self.nwalkers)]
+            elif self.distribution_hints.has_cov():
+                center = self.start_estimate()
+                cov = self.distribution_hints.get_cov()
+                self.p0 = self.emcee.utils.sample_ellipsoid(center, cov, size=self.nwalkers)
             else:
-                center_norm = self.pipeline.normalize_vector(self.pipeline.start_vector())
+                center_norm = self.pipeline.normalize_vector(self.start_estimate())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
                 p0_norm = self.emcee.utils.sample_ball(center_norm, sigma_norm, size=self.nwalkers)
                 self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
@@ -84,6 +88,7 @@ class EmceeSampler(ParallelSampler):
         self.blob0 = extra_info
         self.num_samples += self.nsteps
         self.output.log_info("Done %d iterations", self.num_samples)
+        self.output.final("mean_acceptance_fraction", self.ensemble.acceptance_fraction.mean())
 
     def is_converged(self):
         return self.num_samples >= self.samples

@@ -106,7 +106,7 @@ for dirpath, dirnames, filenames in os.walk('.'):
 			info['page_name'] = '{}_{}'.format(name,version)
 			if dirpath.startswith('./'): dirpath=dirpath[2:]
 			info['dirname'] = dirpath
-			info['explanation'] = info['explanation'].strip().strip('"').replace("\n","\n\n")
+			info['explanation'] = info['explanation'].strip().strip('"').replace("\n", "  \n")#.replace("\n","\n\n")
 			outputs[category][info['full_name']] = info
 
 

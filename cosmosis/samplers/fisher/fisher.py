@@ -71,7 +71,7 @@ class Fisher(object):
                 print "Done %d, max allowed %d" % (self.iterations, self.maxiter)
                 return None
 
-    def compute_fisher_matrix(self):
+    def compute_derivatives(self):
         derivatives = []
         points = []
 
@@ -91,6 +91,11 @@ class Fisher(object):
             derivative, inv_cov = self.five_point_stencil_deriv(results_p)
             derivatives.append(derivative)
         derivatives = np.array(derivatives)
+        return derivatives, inv_cov
+
+
+    def compute_fisher_matrix(self):
+        derivatives, inv_cov = self.compute_derivatives()
 
         if not np.allclose(inv_cov, inv_cov.T):
             print "WARNING: The inverse covariance matrix produced by your pipeline"
@@ -119,8 +124,21 @@ class Fisher(object):
 
     def compute_one_sigma(Fmatrix):
         sigma = np.sqrt(np.linalg.inv(Fmatrix))
-
         return sigma
+
+class NumDiffToolsFisher(Fisher):
+    def compute_derivatives(self):
+        import numdifftools as nd
+        def wrapper(param_vector):
+            print "Running pipeline:", param_vector
+            return self.compute_vector(param_vector)[0]
+        jacobian_calculator = nd.Jacobian(wrapper, step=self.step_size)
+        derivatives = jacobian_calculator(self.current_params)
+        _, inv_cov = self.compute_vector(self.current_params)
+        print derivatives.shape, inv_cov.shape
+        return derivatives.T, inv_cov
+    
+
 
 def test():
     def theory_prediction(x):

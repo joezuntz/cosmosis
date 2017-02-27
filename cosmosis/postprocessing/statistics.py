@@ -138,6 +138,7 @@ class ConstrainingStatistics(Statistics):
         #which would indicate that the likelihood did not fall
         #off by the edges        
         if marge_like.min()==0: return
+
         like_ratio = marge_like.max() / marge_like.min()
         if like_ratio < 20:
             print
@@ -234,10 +235,12 @@ class GridStatistics(ConstrainingStatistics):
         self.shape = np.repeat(self.nsample, self.ndim)
 
         try:
-            like = np.exp(self.source.get_col("post")).reshape(self.shape)
+            like = self.source.get_col("post").reshape(self.shape).copy()
         except:
-            like = np.exp(self.source.get_col("like")).reshape(self.shape)
+            like = self.source.get_col("like").reshape(self.shape).copy()
+
         like -= like.max()
+
         self.like = np.exp(like).reshape(self.shape)
 
         grid_names = [self.source.colnames[i] for i in xrange(self.ncol) if i in self.grid_columns]
@@ -273,7 +276,6 @@ class GridStatistics(ConstrainingStatistics):
     def compute_grid_stats(self, i):
         name = self.source.colnames[i]
         col = self.source.get_col(name)
-
         #Sum the likelihood over all the axes other than this one
         #to get the marginalized likelihood
         marge_like = self.like.sum(tuple(j for j in xrange(self.ndim) if j!=i))
@@ -508,13 +510,16 @@ class Citations(Statistics):
         print 
         message = "#You should cite these papers in any publication based on this pipeline."
         print message
+        citations = set()
         f, filename, new_file = self.get_text_output("citations", message, self.source.name)
         for comment_set in self.source.comments:
             for comment in comment_set:
                 comment = comment.strip()
                 if comment.startswith("CITE"):
                     citation =comment[4:].strip()
-                    print "    ", citation
-                    f.write("%s\n"%citation)
+                    citations.add(citation)
+        for citation in citations:
+            print "    ", citation
+            f.write("%s\n"%citation)
         print
         return [filename]

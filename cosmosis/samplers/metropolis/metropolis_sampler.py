@@ -90,7 +90,9 @@ class MetropolisSampler(ParallelSampler):
 
     def load_covariance_matrix(self):
         covmat_filename = self.read_ini("covmat", str, "").strip()
-        if covmat_filename == "":
+        if covmat_filename == "" and self.distribution_hints.has_cov():
+                covmat =  self.distribution_hints.get_cov() 
+        elif covmat_filename == "":
             covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
         elif not os.path.exists(covmat_filename):
             raise ValueError(
