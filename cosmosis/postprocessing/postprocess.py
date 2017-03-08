@@ -62,7 +62,8 @@ class MetropolisProcessor(MetropolisHastingsProcessor):
 		statistics.MetropolisHastingsStatistics,
 		statistics.MetropolisHastingsCovariance,
 		statistics.DunkleyTest,
-		statistics.Citations,		
+		statistics.GelmanRubinStatistic,
+		statistics.Citations,
 		]
 
 

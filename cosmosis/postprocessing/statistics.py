@@ -316,6 +316,58 @@ class TestStatistics(Statistics):
     def run(self):
         return []
 
+
+class GelmanRubinStatistic(MetropolisHastingsStatistics):
+    def gelman_rubin(self, name):
+        # This simplified form compared to the online analytics code:
+        # - assumes the chains are fairly long
+        # - does one parameter at a time
+
+        # Get the chains for each input file
+        chains = self.source.reduced_col(name,stacked=False)
+
+        steps = min([len(chain) for chain in chains])
+        chains = [chain[:steps] for chain in chains]
+        means = [chain.mean() for chain in chains]
+        variances = [chain.var() for chain in chains]
+
+        number_chains = len(chains)
+
+        B_over_n = np.var(means, ddof=1)
+        B = B_over_n * steps
+        W = np.mean(variances)
+        V = W + (1. + 1./number_chains) * B_over_n
+        # TODO: check for 0-values in W
+        Rhat = np.sqrt(V/W)
+        return Rhat - 1.0
+
+    def run(self):
+        if len(self.source.data)<2:
+            print
+            print "(One chain found. Run multiple chains if you want the Gelman-Rubin test)"
+            print
+            return []
+        names = [c for c in self.source.colnames if  c not in ['weight', 'like', 'post']]
+        header = "#parameter   R-1\n"
+        f, filename, is_new = self.get_text_output("gelman", header)
+        print
+        print "Gelman-Rubin tests"
+        print "------------------"
+        print "(Variance of means / Mean of variances.  Smaller is better, a few percent is usually good convergence)"
+        print
+        for name in names:
+            R1 = self.gelman_rubin(name)
+            f.write("{}   {}\n".format(name,R1))
+            if R1>0.1:
+                print "{}    {}  -- POORLY CONVERGED PARAMETER AT 10% LEVEL".format(name,R1)
+            else:
+                print "{}    {}".format(name,R1)
+        print
+        return [filename]
+
+
+
+
 class DunkleyTest(MetropolisHastingsStatistics):
     """
     Run the Dunley et al (2005) power spectrum test
@@ -423,6 +475,13 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         print "    log(Z) = %g ± %g" % (logz,logz_sigma)
         print
 
+
+        weight = self.weight_col()
+        w = weight/weight.max()
+        n_eff = w.sum()
+
+        print "Effective number samples = ", n_eff
+        print
         #Now save to file
         header = '#logz    logz_sigma'
         f, filename, new_file  = self.get_text_output("evidence", header, self.source.name)
