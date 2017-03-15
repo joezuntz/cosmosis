@@ -221,6 +221,11 @@ class Pipeline(object):
 
             status = module.execute(data_package)
 
+            if status is None:
+                raise ValueError(("A module you ran, '{}', did not return a proper status value.\n"+
+                    "It should return an integer, 0 if everything worked.\n"+
+                    "Sorry to be picky but this kind of thing is important.").format(module))
+
             if self.debug:
                 sys.stdout.write("Done %.20s status = %d \n" % (module,status))
                 sys.stdout.flush()
