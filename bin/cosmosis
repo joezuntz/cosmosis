@@ -25,6 +25,10 @@ class ParseExtraParameters(argparse.Action):
             result[(section,param)] = value
         setattr(args, self.dest, result)
 
+def experimental_fault_handling():
+    import  cosmosis.runtime.handler
+    cosmosis.runtime.handler.activate_experimental_fault_handling()
+
 
 def demo_1_special (args):
     if "demo1.ini" in args.inifile:
@@ -235,9 +239,13 @@ try:
         parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
         parser.add_argument("inifile", help="Input ini file of parameters")
         parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
+        parser.add_argument("--experimental-fault-handling",action='store_true',help="Activate an experimental fault handling mode.")
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
         args = parser.parse_args(sys.argv[1:])
+
+        if args.experimental_fault_handling:
+            experimental_fault_handling()
 
         # initialize parallel workers
         if args.mpi:
