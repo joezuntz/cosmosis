@@ -774,7 +774,7 @@ class CovarianceMatrixGaussians(Plots):
         xmax = mu + 4*sigma
         sigma2 = sigma**2
         x = np.linspace(xmin, xmax, 200)
-        p = np.exp(-0.5 * (x-mu)**2 / sigma2) / np.sqrt(2*np.pi*sigma2)
+        p = np.exp(-0.5 * (x-mu)**2 / sigma2)# / np.sqrt(2*np.pi*sigma2)
         figure,filename = self.figure(name)
         pylab.figure(figure.number)
         pylab.plot(x, p, label=self.source.label)
