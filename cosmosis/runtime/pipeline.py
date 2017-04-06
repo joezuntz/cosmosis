@@ -444,6 +444,7 @@ class LikelihoodPipeline(Pipeline):
         if self.run(data):
             return data
         else:
+            sys.stderr.write("Pipeline failed on these parameters: {}\n".format(p))
             return None
 
     def create_ini(self, p, filename):
