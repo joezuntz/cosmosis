@@ -101,7 +101,7 @@ def main(args, pool=None):
             else:
                 raise ValueError("The sampler you chose does not support parallel execution!")
         for sampler_class in sampler_classes:
-            if issubclass(sampler_class,ParallelSampler) and not sampler_class.supports_smp:
+            if isinstance(pool, process_pool.Pool) and issubclass(sampler_class,ParallelSampler) and not sampler_class.supports_smp:
                 name = sampler_class.__name__[:-len("Sampler")].lower()
                 raise ValueError("Sorry, the {} sampler does not support the --smp flag.".format(name))
 
