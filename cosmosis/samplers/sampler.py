@@ -84,6 +84,7 @@ class Sampler(object):
 class ParallelSampler(Sampler):
     parallel_output = True
     is_parallel_sampler = True
+    supports_smp = True
     def __init__(self, ini, pipeline, output, pool=None):
         Sampler.__init__(self, ini, pipeline, output)
         self.pool = pool

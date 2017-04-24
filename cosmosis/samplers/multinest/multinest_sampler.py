@@ -63,6 +63,7 @@ MULTINEST_SECTION='multinest'
 class MultinestSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("post", float), ("weight", float)]
+    supports_smp=False
 
     def config(self):
         if self.pool:
