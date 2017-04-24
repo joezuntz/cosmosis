@@ -54,7 +54,7 @@ class ConstrainingStatistics(Statistics):
 
     def report_file_median(self):
         #Generate the medians file
-        header = "#parameter mean std_dev\n"
+        header = "#parameter mean std_dev"
         median_file, median_filename, new_file = self.get_text_output("medians", header, self.source.name)
         for P in zip(self.source.colnames, self.median, self.sigma):
             median_file.write("%s   %e   %e\n" % P)
@@ -70,7 +70,7 @@ class ConstrainingStatistics(Statistics):
 
     def report_file_l95(self):
         #Generate the medians file
-        header = "#parameter low95\n"
+        header = "#parameter low95"
         limit_file, limit_filename, new_file = self.get_text_output("low95", header, self.source.name)
         for P in zip(self.source.colnames, self.l95):
             limit_file.write("%s     %g\n" % P)
@@ -78,7 +78,7 @@ class ConstrainingStatistics(Statistics):
 
     def report_file_u95(self):
         #Generate the medians file
-        header = "#parameter upper95\n"
+        header = "#parameter upper95"
         limit_file, limit_filename, new_file = self.get_text_output("upper95", header, self.source.name)
         for P in zip(self.source.colnames, self.u95):
             limit_file.write("%s     %g\n" % P)
@@ -226,7 +226,7 @@ class GridStatistics(ConstrainingStatistics):
     def set_data(self):
         self.nsample = int(self.source.sampler_option("nsample_dimension"))
         self.nrow = len(self.source)
-        self.ncol = len(self.source.colnames)
+        self.ncol = int(self.source.sampler_option('n_varied'))
 
         extra = self.source.sampler_option("extra_output","").replace('/','--').split()
         self.grid_columns = [i for i in xrange(self.ncol) if (not self.source.colnames[i] in extra) and (self.source.colnames[i]!="post") and (self.source.colnames[i]!="like")]
@@ -255,11 +255,11 @@ class GridStatistics(ConstrainingStatistics):
 
     def compute_stats(self):
         #1D stats
-        self.mu = np.zeros(self.ncol-1)
-        self.median = np.zeros(self.ncol-1)
-        self.sigma = np.zeros(self.ncol-1)
-        self.l95 = np.zeros(self.ncol-1)
-        self.u95 = np.zeros(self.ncol-1)        
+        self.mu = np.zeros(self.ncol)
+        self.median = np.zeros(self.ncol)
+        self.sigma = np.zeros(self.ncol)
+        self.l95 = np.zeros(self.ncol)
+        self.u95 = np.zeros(self.ncol)        
         try:like = self.source.get_col("post")
         except:like = self.source.get_col("like")
         self.best_fit_index = np.argmax(like)
