@@ -148,13 +148,42 @@ class Inifile(IncludingConfigParser):
         # override parameters
         if override:
             for section, name in override:
-                if not self.has_section(section):
-                    self.add_section(section)
-                self.set(section, name, override[(section, name)])
+                if section=="DEFAULT":
+                    self._defaults[name] = override[(section,name)]
+                else:
+                    if not self.has_section(section):
+                        self.add_section(section)
+                    self.set(section, name, override[(section, name)])
 
     def __iter__(self):
         return (((section, name), value) for section in self.sections()
                 for name, value in self.items(section))
+
+    def items(self, section, raw=False, vars=None, defaults=True):
+        if defaults:
+            return IncludingConfigParser.items(self, section, raw=raw, vars=vars)
+        else:
+            d = collections.OrderedDict()
+            try:
+                d.update(self._sections[section])
+            except KeyError:
+                if section != ConfigParser.DEFAULTSECT:
+                    raise ConfigParser.NoSectionError(section)
+            # Update with the entry specific variables
+            if vars:
+                for key, value in vars.items():
+                    d[self.optionxform(key)] = value
+            options = d.keys()
+            if "__name__" in options:
+                options.remove("__name__")
+            if raw:
+                return [(option, d[option])
+                        for option in options]
+            else:
+                return [(option, self._interpolate(section, option, d[option], d))
+                        for option in options]
+
+
 
     def get(self, section, name, default=None):
         try:
