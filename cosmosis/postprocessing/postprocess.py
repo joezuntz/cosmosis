@@ -43,7 +43,29 @@ class MetropolisHastingsProcessor(PostProcessor):
 
 class EmceeProcessor(MetropolisHastingsProcessor):
 	sampler="emcee"
-	pass
+	def reduced_col(self, name, stacked=True):
+		cols = self.get_col(name, stacked=False)
+		burn = self.options.get("burn", 0)
+		thin = self.options.get("thin", 1)
+
+		if 0.0<burn<1.0:
+			burn = len(cols[0])*burn
+		else:
+			burn = int(burn)
+
+		cols = [col[burn::] for col in cols]
+
+		if thin!=1:
+			walkers=self.sampler_option("walkers")
+			index = np.arange(len(cols[0]), dtype=np.int64)
+			index = index//int(walkers)
+			w = (index%thin)==0
+			cols = [col[w] for col in cols]
+
+		if stacked:
+			return np.concatenate(cols)
+		else:
+			return cols
 
 class KombineProcessor(MetropolisHastingsProcessor):
 	sampler="kombine"
