@@ -48,7 +48,18 @@ class EmceeSampler(ParallelSampler):
                 center = self.start_estimate()
                 cov = self.load_covmat(covmat_file)
                 self.output.log_info("Generating starting position from covmat in  %s", covmat_file)
-                self.p0 = self.emcee.utils.sample_ellipsoid(center, cov, size=self.nwalkers)                
+                iterations_limit = 100000
+                n=0
+                p0 = []
+                for i in xrange(iterations_limit):
+                    p = self.emcee.utils.sample_ellipsoid(center, cov)[0]
+                    if np.isfinite(self.pipeline.prior(p)):
+                        p0.append(p)
+                    if len(p0)==self.nwalkers:
+                        break
+                else:
+                    raise ValueError("The covmat you used could not generate points inside the prior")
+                self.p0 = np.array(p0)
             elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in xrange(self.nwalkers)]
