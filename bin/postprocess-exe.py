@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 from cosmosis.postprocessing.postprocess import postprocessor_for_sampler
+from cosmosis.postprocessing.inputs import read_input
 from cosmosis.postprocessing.plots import Tweaks
-from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.utils import mkdir
-from cosmosis.output.text_output import TextColumnOutput
-from cosmosis.output.fits_output import FitsOutput
 import sys
 import argparse
 import os
@@ -46,51 +44,6 @@ plots.add_argument("--no-fill", dest='fill', default=True, action='store_false',
 plots.add_argument("--extra", dest='extra', default="", help="Load extra post-processing steps from this file.")
 plots.add_argument("--tweaks", dest='tweaks', default="", help="Load plot tweaks from this file.")
 plots.add_argument("--no-image", dest='image', default=True, action='store_false', help="Do not plot the image in  2D grids; just show the contours")
-
-def read_input(ini_filename, force_text, weighted):
-	if ini_filename.endswith("txt") or force_text:
-		output_info = TextColumnOutput.load_from_options({"filename":ini_filename})
-		metadata=output_info[2][0]
-		sampler = metadata.get("sampler")
-		if sampler is None:
-			print "This is not a cosmosis output file."
-			print "So I will assume it is a generic MCMC file"
-			if weighted:
-				sampler = "weighted_metropolis"
-			else:
-				sampler = "metropolis"
-			ini = output_info
-		else:
-			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="text", filename=ini_filename)}
-	elif ini_filename.endswith("fits"):
-		output_info = FitsOutput.load_from_options({"filename":ini_filename})
-		metadata=output_info[2][0]
-		sampler = metadata.get("sampler")
-		if sampler is None:
-			print "This is not a cosmosis output file."
-			print "So I will assume it is a generic MCMC file"
-			if weighted:
-				sampler = "weighted_metropolis"
-			else:
-				sampler = "metropolis"
-			ini = output_info
-		else:
-			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="fits", filename=ini_filename)}
-
-	elif os.path.isdir(ini_filename):
-		ini = Inifile(None)
-		ini.add_section("runtime")
-		ini.add_section("test")
-		sampler = "test"
-		ini.set("runtime", "sampler", sampler)
-		ini.set("test", "save_dir", ini_filename)
-	else:
-		#Determine the sampler and get the class
-		#designed to postprocess the output of that sampler
-		ini = Inifile(ini_filename)
-		sampler = ini.get("runtime", "sampler")
-	return sampler, ini
-
 
 def main(args):
 	#Read the command line arguments and load the
