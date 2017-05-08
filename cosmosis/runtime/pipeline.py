@@ -532,10 +532,13 @@ class LikelihoodPipeline(Pipeline):
         # loop through named likelihoods and sum their values
         likelihoods = []
         section_name = cosmosis_py.section_names.likelihoods
+        nlike = len(self.likelihood_names)
         for likelihood_name in self.likelihood_names:
             try:
                 L = data.get_double(section_name,likelihood_name+"_like")
                 likelihoods.append(L)
+                if not self.quiet and nlike>1:
+                    print "    Likelihood {} = {}".format(likelihood_name, L)
             except block.BlockError:
                 raise MissingLikelihoodError(likelihood_name, data)
 
