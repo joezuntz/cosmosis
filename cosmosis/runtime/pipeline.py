@@ -208,6 +208,8 @@ class Pipeline(object):
     def run(self, data_package):
         modules = self.modules
         first = (self.shortcut_data is None)
+        if self.timing:
+            start_time = time.time()
         if self.shortcut_module and not first:
             modules = modules[self.shortcut_module:]
 
@@ -232,7 +234,7 @@ class Pipeline(object):
 
             if self.timing:
                 t2 = time.time()
-                sys.stdout.write("%s took: %f seconds\n"% (module,t2-t1))
+                sys.stdout.write("%s took: %.3f seconds\n"% (module,t2-t1))
 
             if status:
                 if self.debug:
@@ -254,6 +256,10 @@ class Pipeline(object):
             if self.shortcut_module and first and module_number==self.shortcut_module-1:
                 print "Saving shortcut data"
                 self.shortcut_data = data_package.clone()
+
+        if self.timing:
+            end_time = time.time()
+            sys.stdout.write("Total pipeline time: {:.3} seconds\n".format(end_time-start_time))
 
 
         if not self.quiet:
