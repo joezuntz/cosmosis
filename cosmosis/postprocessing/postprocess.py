@@ -2,9 +2,62 @@ from . import plots
 from . import statistics
 from .postprocess_base import PostProcessor, postprocessor_registry
 import numpy as np
+import collections
+import hashlib
 
 def postprocessor_for_sampler(sampler):
 	return postprocessor_registry.get(sampler)
+
+def blinding_value(name, seed):
+    #hex number derived from code phrase
+    m = hashlib.md5(name).hexdigest()
+    #convert to decimal
+    s = int(m, 16) + seed
+    # last 8 digits
+    f = s%100000000
+    # turn 8 digit number into value between 0 and 1
+    g = f*1e-8
+    #get value between -1 and 1
+    return g*2-1
+
+
+def additive_blinding(postprocessors, seed):
+	factors = collections.defaultdict(lambda: -np.inf)
+	for P in postprocessors:
+		for c,col in enumerate(P.colnames):
+			col = col.lower()
+			#Skip likelihood columns
+			if col in ['like','post', 'weight', 'log_weight', 'old_weight', 'old_log_weight']:continue
+			#Work out the approximate scale of the parameters.
+			f = P.approximate_scale_ceiling(c)
+			#We use the max approx scale over all the chains
+			factors[col] = max(factors[col], f)
+
+	#print out scale info
+	for col,f in factors.items():
+		print "Blinding additive value for %s ~ %.1e" % (col, f)
+
+	for P in postprocessors:
+		for c,col in enumerate(P.colnames):
+			col = col.lower()
+			if col in ['like','post', 'weight', 'log_weight', 'old_weight', 'old_log_weight']:continue
+			#add +- the ceiling of the typical standard deviation. e.g. if width is ~ 20% add up to 3.0
+			b = 3 * factors[col] * blinding_value(col,seed)
+			P.additive_blind_column(c,b)
+
+def multiplicative_blinding(postprocessors, seed):
+	#print out scale info
+	scale = 0.5
+	print "Blinding all parameters by -50% to +50%"
+	for P in postprocessors:
+		for c,col in enumerate(P.colnames):
+			col = col.lower()
+			#blind by up to 50%
+			f = blinding_value(col,seed) * 0.5
+			P.multiplicative_blind_column(c,f)
+
+
+
 
 class MetropolisHastingsProcessor(PostProcessor):
 	elements=[
@@ -281,3 +334,5 @@ class StarProcessor(PostProcessor):
 	elements=[
 		plots.StarPlots,
 	]
+
+
