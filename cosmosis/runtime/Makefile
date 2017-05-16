@@ -10,4 +10,4 @@ experimental_fault_handler.so:
 	-$(CC) -fPIC -shared handler.c -o experimental_fault_handler.so
 
 clean:
-	rm experimental_fault_handler.so
+	rm -f experimental_fault_handler.so
