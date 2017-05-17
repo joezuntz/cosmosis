@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+import argparse
+from cStringIO import StringIO
+import collections
+from cosmosis.runtime.config import Inifile
+import sys
+
+def extract_section(lines, section):
+    start = "## START_OF_{}_INI".format(section).upper()
+    end = "## END_OF_{}_INI".format(section).upper()
+    in_section = False
+    output_lines = []
+    for line in lines:
+        if line.startswith(start):
+            in_section = True
+            continue
+        elif line.startswith(end):
+            break
+        elif in_section:
+            output_lines.append(line[3:])
+    return output_lines
+
+def parse_new_values(infile):
+    output = {}
+    for line in open(infile):
+        line=line.strip()
+        if (not line) or line.startswith('#'):
+            continue
+        words = line.split()
+        if '--' in words[0]:
+            section,param = words[0].split('--')
+        else:
+            continue
+        value = words[1]
+        output[(section,param)] = value
+    return output
+
+def read_header(chain_file):
+    lines = []
+    for line in open(chain_file):
+        if line.startswith("#"):
+            lines.append(line)
+        else:
+            break
+    return lines
+
+def change_central_value(ini, section, name, value):
+    old_value = ini.get(section, name)
+    words = old_value.split()
+    if len(words)==1:
+        new_value = str(value)
+    elif len(words)==3:
+        new_value = "{}   {}   {}".format(words[0], value, words[2])
+    else:
+        raise ValueError("Bad line in ini: [{}] {} = {}".format(section, name, old_value))
+    ini.set(section, name, new_value)
+
+def main(chain, postprocess_text_file):
+    lines = read_header(chain)
+    values_lines = extract_section(lines, "VALUES")
+    buffer = StringIO()
+    buffer.writelines(values_lines)
+    buffer.seek(0)
+    ini = Inifile(None)
+    ini.readfp(buffer)
+
+    ini.write(sys.stdout)
+
+    new_values = parse_new_values(postprocess_text_file)
+    for (section,param), value in new_values.items():
+        change_central_value(ini, section, param, value)
+
+    ini.write(sys.stdout)
+    
+
+parser = argparse.ArgumentParser("Use a chain and a text file from postprocess to make a new values file.")
+parser.add_argument("chain", help="Name of the chain file to read values from or values.ini to start from")
+parser.add_argument("postprocess_text_file", help="Name of a file of the form output by postprocess containing parameter values")
+
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    main(args.chain, args.postprocess_text_file)
