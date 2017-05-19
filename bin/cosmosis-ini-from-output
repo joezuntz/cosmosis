@@ -45,7 +45,11 @@ def read_header(chain_file):
     return lines
 
 def change_central_value(ini, section, name, value):
-    old_value = ini.get(section, name)
+    try:
+        old_value = ini.get(section, name)
+    except:
+        sys.stderr.write("Ignoring presumably derived parameter {}--{}\n".format(section,name))
+        return
     words = old_value.split()
     if len(words)==1:
         new_value = str(value)
@@ -63,8 +67,6 @@ def main(chain, postprocess_text_file):
     buffer.seek(0)
     ini = Inifile(None)
     ini.readfp(buffer)
-
-    ini.write(sys.stdout)
 
     new_values = parse_new_values(postprocess_text_file)
     for (section,param), value in new_values.items():
