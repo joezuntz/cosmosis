@@ -13,7 +13,7 @@ def compute_fisher_vector(p):
     except ValueError:
         print "Parameter vector outside limits: %r" % p
         return None
-    print x
+
     #Run the pipeline, generating a data block
     data = fisherPipeline.run_parameters(x)
 

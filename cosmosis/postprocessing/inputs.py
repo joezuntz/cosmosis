@@ -1,6 +1,7 @@
 from cosmosis.output.text_output import TextColumnOutput
 from cosmosis.output.fits_output import FitsOutput
 from cosmosis.runtime.config import Inifile
+import os
 
 
 def read_input(filename, force_text=False, weighted=False):
