@@ -63,4 +63,5 @@ params:
     max_modes: "(integer; default=100) If multi-modal, maximum number of allowed modes"
     cluster_dimensions: "(integer; default=-1) Look for multiple modes only on the first dimensions"
     mode_ztolerance: "(float; default=0.5) If multi-modal, get separate stats for modes with this evidence difference"
+    wrapped_params: "(str; default='') Space separated list of parameters (section--name) that should be given periodic boundary conditions. Can help sample params that hit edge of prior."
 
