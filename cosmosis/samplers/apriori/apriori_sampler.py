@@ -34,7 +34,7 @@ class AprioriSampler(ParallelSampler):
         nparam = len(self.pipeline.varied_params)
 
         if self.pool:
-            chunk_size = self.pool.size()
+            chunk_size = self.pool.size
 
         def sample_from_prior():
             x = np.random.uniform(0.0,1.0,size=nparam)
