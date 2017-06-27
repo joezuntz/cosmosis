@@ -47,6 +47,8 @@ class Pipeline(object):
         if self.root_directory=="cosmosis_none_signifier":
             self.root_directory=None
 
+        base_directory = self.base_directory()
+
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
         self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
@@ -59,26 +61,11 @@ class Pipeline(object):
             module_list = self.options.get(PIPELINE_INI_SECTION,
                                            "modules", "").split()
 
-            for module_name in module_list:
-                # identify module file
+            self.modules = [
+                module.Module.from_options(module_name,self.options,base_directory)
+                for module_name in module_list
+            ]
 
-                filename = self.find_module_file(
-                    self.options.get(module_name, "file"))
-
-                # identify relevant functions
-                setup_function = self.options.get(module_name,
-                                                  "setup", "setup")
-                exec_function = self.options.get(module_name,
-                                                 "function", "execute")
-                cleanup_function = self.options.get(module_name,
-                                                    "cleanup", "cleanup")
-
-                self.modules.append(module.Module(module_name,
-                                                  filename,
-                                                  setup_function,
-                                                  exec_function,
-                                                  cleanup_function,
-                                                  self.root_directory))
             self.shortcut_module=0
             self.shortcut_data=None
             if shortcut is not None:
@@ -127,16 +114,7 @@ class Pipeline(object):
             for global_section in global_sections.split():
                 relevant_sections.append(global_section)
 
-
-            config_block = block.DataBlock()
-
-            for (section, name), value in self.options:
-                if section in relevant_sections:
-                    # add back a default section?
-                    val = self.options.gettyped(section, name)
-                    if val is not None:
-                        config_block.put(section, name, val)
-
+            config_block = config_to_block(relevant_sections, self.options)
             module.setup(config_block, quiet=self.quiet)
 
             if self.timing:
@@ -576,3 +554,15 @@ class LikelihoodPipeline(Pipeline):
             return like, extra_saves, data
         else:
             return like, extra_saves
+
+
+def config_to_block(relevant_sections, options):
+    config_block = block.DataBlock()
+
+    for (section, name), value in options:
+        if section in relevant_sections:
+            # add back a default section?
+            val = options.gettyped(section, name)
+            if val is not None:
+                config_block.put(section, name, val)
+    return config_block
