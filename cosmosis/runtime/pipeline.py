@@ -316,7 +316,10 @@ class LikelihoodPipeline(Pipeline):
         print ""
         print "Parameter Priors"
         print "----------------"
-        n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
+        if self.parameters:
+            n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
+        else:
+            n=1
         for param in self.parameters:
             s = "{}--{}".format(param.section,param.name)
             print "{0:{1}}  ~ {2}" .format(s, n, param.prior)
