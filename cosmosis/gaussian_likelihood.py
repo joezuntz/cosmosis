@@ -39,7 +39,7 @@ class GaussianLikelihood(object):
             if include_norm:
                 # We have no datablock here so we don't want to call any subclass method
                 self.log_det_constant = GaussianLikelihood.extract_covariance_log_determinant(self,None)
-                print "Including -0.5*|C| normalization in likelihood where |C| = {}".format(self.log_det_constant)
+                print "Including -0.5*|C| normalization in {} likelihood where |C| = {}".format(self.like_name, self.log_det_constant)
             else:
                 self.log_det_constant = 0.0
 
@@ -270,6 +270,14 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
         self.cov = np.array([[sigma**2]])
         self.inv_cov = np.array([[sigma**-2]])
 
+        include_norm = self.options.get_bool("include_norm", False)
+        if include_norm:
+            # We have no datablock here so we don't want to call any subclass method
+            self.log_det_constant = GaussianLikelihood.extract_covariance_log_determinant(self,None)
+            print "Including -0.5*|C| normalization in {} likelihood where |C| = {}".format(self.like_name, self.log_det_constant)
+        else:
+            self.log_det_constant = 0.0
+            
     def build_data(self):
         """Sub-classes can over-ride this if they wish, to generate 
         the data point in a more complex way"""
