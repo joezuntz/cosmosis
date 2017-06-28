@@ -98,6 +98,9 @@ class FisherSampler(ParallelSampler):
         #file or a previous sampler
         start_vector = self.start_estimate()
 
+        if len(self.pipeline.varied_params)==0:
+            raise ValueError("Your values file did not include any varied parameters so we cannot make a Fisher matrix")
+
         for i,x in enumerate(start_vector):
             self.output.metadata("mu_{0}".format(i), x)
         start_vector = self.pipeline.normalize_vector(start_vector)
