@@ -68,6 +68,8 @@ class EmceeSampler(ParallelSampler):
                 center_norm = self.pipeline.normalize_vector(self.start_estimate())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
                 p0_norm = self.emcee.utils.sample_ball(center_norm, sigma_norm, size=self.nwalkers)
+                p0_norm[p0_norm<=0] = 0.001
+                p0_norm[p0_norm>=1] = 0.999
                 self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
                 self.output.log_info("Generating starting positions in small ball around starting point")
 

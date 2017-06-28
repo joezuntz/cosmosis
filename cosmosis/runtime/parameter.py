@@ -83,13 +83,13 @@ class Parameter(object):
         elif not raise_exception:
             return p*(self.limits[1]-self.limits[0]) + self.limits[0]
         else:
-            raise ValueError("parameter value not normalized")
+            raise ValueError("parameter value {} for {} not normalized".format(p,self))
 
     def denormalize_from_prior(self, p):
         if 0.0 <= p <= 1.0:
             return self.prior.denormalize_from_prior(p)
         else:
-            raise ValueError("parameter value not normalized")
+            raise ValueError("parameter value {} for {} not normalized".format(p,self))
 
 
     def evaluate_prior(self, p):
