@@ -3,25 +3,6 @@ from cosmosis.runtime.config import Inifile
 import os
 import tempfile
 
-class FakeFile(object):
-	def __init__(self, iterable):
-		self.it=iterable
-		self.i=0
-	def read(self):
-		pass
-	def open(self, *args, **kwargs):
-		return self
-	def close(self, *args, **kwargs):
-		pass
-	def __iter__(self):
-		return iter(self.it)
-	def readline(self):
-		try:
-			x = self.it[self.i]
-		except IndexError:
-			x = ''
-		self.i += 1
-		return x
 
 def ini_from_header(header_text):
 	"""
@@ -75,8 +56,7 @@ def ini_from_header(header_text):
 
 
 class Rerunner(PostProcessorElement):
-	save_dir = "rerun_output_data"
-	def test_run_sample(self, sample, temp_params, temp_values, temp_dir):
+	def test_run_sample(self, sample, dirname):
 
 		#Turn the output header into an ini file.
 		#Definitely better to do it here as any
@@ -89,7 +69,7 @@ class Rerunner(PostProcessorElement):
 		# - save to our temp dir
 		# - read from our temp files
 		param_ini.write("[pipeline]\nvalues={}\n".format(temp_values))
-		param_ini.write("[runtime]\nsampler=test\n[test]\nsave_dir={}\n".format(self.save_dir))
+		param_ini.write("[runtime]\nsampler=test\n[test]\nsave_dir={}\n".format(dirname))
 		param_ini.flush()
 
 		# and the values so that we use the desired parameters
@@ -123,19 +103,13 @@ class Rerunner(PostProcessorElement):
 
 class BestFitRerunner(Rerunner):
 	"Re-run sample(s) from an existing chain under the test sampler"
+	save_dir = "rerun_output_data"
 
 	def run(self):
 		best_fit_index = self.source.get_col("post").argmax()
 		sample = self.source.get_row(best_fit_index)
-		#Save to these temporaries
-		temp_params = "temp.ini"
-		temp_values = "temp_values.ini"
-		temp_dir = "temp_save"
 
-		#
-		self.test_run_sample(sample, temp_params, temp_values, temp_dir)
+		self.test_run_sample(sample, self.save_dir)
 
-		#The directory temp_dir now contains
-		#all the info we need
 
 		return []
