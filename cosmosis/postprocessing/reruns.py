@@ -56,7 +56,11 @@ def ini_from_header(header_text):
 
 
 class Rerunner(PostProcessorElement):
-	def test_run_sample(self, sample, dirname):
+	def __init__(self, dirname, *args, **kwargs):
+		self.rerun_dirname=dirname
+		super(Rerunner, self).__init__(*args, **kwargs)
+
+	def test_run_sample(self, sample):
 
 		#Turn the output header into an ini file.
 		#Definitely better to do it here as any
@@ -68,8 +72,8 @@ class Rerunner(PostProcessorElement):
 		# - run the test sampler not the old sampelr
 		# - save to our temp dir
 		# - read from our temp files
-		param_ini.write("[pipeline]\nvalues={}\n".format(temp_values))
-		param_ini.write("[runtime]\nsampler=test\n[test]\nsave_dir={}\n".format(dirname))
+		param_ini.write("[pipeline]\nvalues={}\n".format(value_ini.name))
+		param_ini.write("[runtime]\nsampler=test\n[test]\nsave_dir={}\n".format(self.rerun_dirname))
 		param_ini.flush()
 
 		# and the values so that we use the desired parameters
@@ -103,13 +107,14 @@ class Rerunner(PostProcessorElement):
 
 class BestFitRerunner(Rerunner):
 	"Re-run sample(s) from an existing chain under the test sampler"
-	save_dir = "rerun_output_data"
 
 	def run(self):
 		best_fit_index = self.source.get_col("post").argmax()
 		sample = self.source.get_row(best_fit_index)
-
-		self.test_run_sample(sample, self.save_dir)
+		print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+		print "Re-running maximum-posterior sample and saving results to {}".format(self.rerun_dirname)
+		print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+		self.test_run_sample(sample)
 
 
 		return []

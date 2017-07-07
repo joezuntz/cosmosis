@@ -44,6 +44,7 @@ plots.add_argument("--no-fill", dest='fill', default=True, action='store_false',
 plots.add_argument("--extra", dest='extra', default="", help="Load extra post-processing steps from this file.")
 plots.add_argument("--tweaks", dest='tweaks', default="", help="Load plot tweaks from this file.")
 plots.add_argument("--no-image", dest='image', default=True, action='store_false', help="Do not plot the image in  2D grids; just show the contours")
+plots.add_argument("--run-max-post", default="", help="Run the test sampler on maximum-posterior sample and save to the named directory.")
 
 def main(args):
 	#Read the command line arguments and load the
@@ -65,6 +66,9 @@ def main(args):
 			raise ValueError("You specified {} legend names but {} files to plot".format(len(labels), len(args.inifile)))
 	else:
 		labels = args.inifile
+
+	if len(args.inifile)>1 and args.run_max_post:
+		raise ValueError("Can only use the --run-max-post argument with a single parameter file for now")
 
 	for i,ini_filename in enumerate(args.inifile):
 		sampler, ini = read_input(ini_filename, args.text, args.weights)
@@ -88,6 +92,11 @@ def main(args):
 		#script here
 		if args.extra:
 			processor.load_extra_steps(args.extra)
+
+		#Optionally add a step in which we 
+		if args.run_max_post:
+			processor.add_rerun_bestfit_step(args.run_max_post)
+
 
 		#Run the postprocessor and make the outputs for this chain
 		processor.run()

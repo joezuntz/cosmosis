@@ -40,6 +40,13 @@ class PostProcessor(object):
             print "Adding post-processor step: %s" % (e.__class__.__name__)
         self.steps.extend(extra)
 
+    def add_rerun_bestfit_step(self, dirname):
+        from .reruns import BestFitRerunner
+        rerunner = BestFitRerunner(dirname, self, **self.options)
+        self.steps.append(rerunner)
+
+
+
     def approximate_scale_ceiling(self, c):
         r = np.mean([d[:,c].std() for d in self.data])
         scale = (10**np.ceil(np.log10(abs(r))))
@@ -99,6 +106,7 @@ class PostProcessor(object):
             self.sampler_options[key]=str(val)        
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
             output_module.input_from_options(output_options)
+
 
     def sampler_option(self, key, default=None):
         return self.sampler_options.get(key, default)
