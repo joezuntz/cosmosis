@@ -142,7 +142,7 @@ class Inifile(IncludingConfigParser):
         # default read behavior is to ignore unreadable files which
         # is probably not what we want here
         if filename is not None:
-            if not os.path.exists(filename):
+            if isinstance(filename,str) and not os.path.exists(filename):
                 raise IOError("Unable to open configuration file %s." % (filename, ))
             self.read(filename)
 

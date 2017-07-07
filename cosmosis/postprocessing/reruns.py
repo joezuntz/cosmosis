@@ -1,7 +1,7 @@
 from .elements import PostProcessorElement
 from cosmosis.runtime.config import Inifile
 import os
-
+import tempfile
 
 class FakeFile(object):
 	def __init__(self, iterable):
@@ -13,6 +13,8 @@ class FakeFile(object):
 		return self
 	def close(self, *args, **kwargs):
 		pass
+	def __iter__(self):
+		return iter(self.it)
 	def readline(self):
 		try:
 			x = self.it[self.i]
@@ -56,14 +58,15 @@ def ini_from_header(header_text):
 		elif state=='values':
 			value_lines.append(line+"\n")
 
-	#We have to do a bit of hackery to coerce these into
-	#an ini file form
-	param_file = FakeFile(param_lines)
-	value_file = FakeFile(value_lines)
-	param_ini = Inifile([param_file])
-	value_ini = Inifile([value_file])
+	f = tempfile.NamedTemporaryFile(suffix='.ini')
+	f.writelines(param_lines)
+	f.flush()
 
-	return param_ini, value_ini
+	g = tempfile.NamedTemporaryFile(suffix='.ini')
+	g.writelines(value_lines)
+	g.flush()
+
+	return f, g
 
 
 
@@ -71,7 +74,8 @@ def ini_from_header(header_text):
 #
 
 
-class Rerunner(Rerunner):
+class Rerunner(PostProcessorElement):
+	save_dir = "rerun_output_data"
 	def test_run_sample(self, sample, temp_params, temp_values, temp_dir):
 
 		#Turn the output header into an ini file.
@@ -84,22 +88,16 @@ class Rerunner(Rerunner):
 		# - run the test sampler not the old sampelr
 		# - save to our temp dir
 		# - read from our temp files
-		param_ini.set("pipeline", "values", temp_values)
-		param_ini.set("runtime", "sampler", "test")
-		if 'test' not in param_ini.sections():
-			param_ini.add_section('test')
-
-		param_ini.set("test", "save_dir", temp_dir)
+		param_ini.write("[pipeline]\nvalues={}\n".format(temp_values))
+		param_ini.write("[runtime]\nsampler=test\n[test]\nsave_dir={}\n".format(self.save_dir))
+		param_ini.flush()
 
 		# and the values so that we use the desired parameters
 		for (name, value) in zip(self.source.colnames, sample):
 			if '--' in name:
 				section, key = name.split('--', 1)
-				value_ini.set(section, key, value)
-
-		# save these files so we can run cosmosis on them
-		param_ini.write(open(temp_params,'w'))
-		value_ini.write(open(temp_values,'w'))
+				value_ini.write("[{}]\n{}={}\n".format(section, key, value))
+		value_ini.flush()
 
 		#A bit of painful fiddling to work around
 		#link issues on a mac.  To run the postprocess
@@ -114,7 +112,7 @@ class Rerunner(Rerunner):
 			new_ld = ''
 
 		#Run the actual command
-		cmd = "{0} cosmosis {1}".format(new_ld, temp_params)
+		cmd = "{0} cosmosis {1}".format(new_ld, param_ini.name)
 		status = os.system(cmd)
 
 		#Now we have the cosmology data!
@@ -123,11 +121,11 @@ class Rerunner(Rerunner):
 
 
 
-class BestFitRerunner(PostProcessorElement):
+class BestFitRerunner(Rerunner):
 	"Re-run sample(s) from an existing chain under the test sampler"
 
 	def run(self):
-		best_fit_index = self.source.get_col("like").argmax()
+		best_fit_index = self.source.get_col("post").argmax()
 		sample = self.source.get_row(best_fit_index)
 		#Save to these temporaries
 		temp_params = "temp.ini"
