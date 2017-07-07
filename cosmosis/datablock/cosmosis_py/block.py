@@ -1,7 +1,7 @@
 import ctypes as ct
 from . import lib
 from . import errors
-from . import types
+from . import dbt_types as types
 from .errors import BlockError
 import numpy as np
 import os
@@ -307,18 +307,24 @@ class DataBlock(object):
 		method = self._method_for_type(T, method_type)
 		if method: 
 			return method
+
 		if hasattr(value,'__len__'):
+			#let numpy work out what type this should be.
 			array = np.array(value)
-			method = {
-				(1,'i'):(self.get_int_array_1d,self.put_int_array_1d,self.replace_int_array_1d),
-				#These are not implemented yet
-				# (2,'i'):(self.get_int_array_2d,self.put_int_array_1d,self.replace_int_array_1d),
-				(1,'f'):(self.get_double_array_1d,self.put_double_array_1d,self.replace_double_array_1d),
-				(2,'i'):(self.get_int_array_nd,self.put_int_array_nd,self.replace_int_array_nd),
-				(2,'f'):(self.get_double_array_nd,self.put_double_array_nd,self.replace_double_array_nd),
-				# (1,'c'):(self.get_complex_array_1d,self.put_complex_array_1d,self.replace_complex_array_1d),
-				# (2,'c'):(self.get_complex_array_2d,self.put_complex_array_1d,self.replace_complex_array_1d),
-			}.get((array.ndim,array.dtype.kind))
+			kind = array.dtype.kind
+			ndim = array.ndim
+			if ndim==1:
+				#1D arrays have their own specific methods,
+				#for integer and float
+				if kind=='i':
+					method = (self.get_int_array_1d,self.put_int_array_1d,self.replace_int_array_1d)
+				elif kind=='f':
+					method = (self.get_double_array_1d,self.put_double_array_1d,self.replace_double_array_1d)
+			#otherwise we just use the generic n-d arrays
+			elif kind=='i':
+				method = (self.get_int_array_nd,self.put_int_array_nd,self.replace_int_array_nd)
+			elif kind=='f':
+				method = (self.get_double_array_nd,self.put_double_array_nd,self.replace_double_array_nd)
 			if method:
 				return method[method_type]
 		raise ValueError("I do not know how to handle this type %r %r"%(value,type(value)))
@@ -481,6 +487,10 @@ class DataBlock(object):
 			for name, value in vector_outputs:
 				vector_outfile = os.path.join(dirname,section,name+'.txt')
 				header = "%s\n"%name
+				if value.ndim>2:
+					header += "shape = %s\n"%str(value.shape)
+					print "Flattening %s--%s when saving; shape info in header" % (section,name)
+					value = value.flatten()
 				if name in meta:
 					for key,val in meta[name].items():
 						header+='%s = %s\n' % (key,val)
@@ -531,6 +541,10 @@ class DataBlock(object):
 			for name, value in vector_outputs:
 				vector_outfile = os.path.join(dirname,section,name+'.txt')
 				header = "%s\n"%name
+				if value.ndim>2:
+					header += "shape = %s\n"%str(value.shape)
+					print "Flattening %s--%s when saving; shape info in header" % (section,name)
+					value = value.flatten()
 				if name in meta:
 					for key,val in meta[name].items():
 						header+='%s = %s\n' % (key,val)
@@ -578,6 +592,20 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
+	def get_log_count(self):
+		return lib.c_datablock_get_log_count(self._ptr)
+
+	def get_log_entry(self, i):
+		smax = 128
+		ptype = ct.create_string_buffer(smax)
+		section = ct.create_string_buffer(smax)
+		name = ct.create_string_buffer(smax)
+		dtype = ct.create_string_buffer(smax)
+		status = lib.c_datablock_get_log_entry(self._ptr, i, smax, ptype, section, name, dtype)
+		if status:
+			raise ValueError("Asked for log entry above maximum or less than zero")
+		return ptype.value, section.value, name.value, dtype.value
+
 	def log_access(self, log_type, section, name):
 		status = lib.c_datablock_log_access(self._ptr, log_type, section, name)
 		if status!=0:
@@ -604,11 +632,14 @@ class DataBlock(object):
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, False)
 
 	def get_grid(self, section, name_x, name_y, name_z):
+		name_x = name_x.lower()
+		name_y = name_y.lower()
+		name_z = name_z.lower()
 		x = self[section, name_x]
 		y = self[section, name_y]
 		z = self[section, name_z]
 		sentinel_key = "_cosmosis_order_%s"%name_z
-		sentinel_value = self[section, sentinel_key]
+		sentinel_value = self[section, sentinel_key].lower()
 
 		if sentinel_value== "%s_cosmosis_order_%s" % (name_x, name_y):
 			assert z.shape==(x.size, y.size)
@@ -625,42 +656,77 @@ class DataBlock(object):
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, True)
 
 	def _grid_put_replace(self, section, name_x, x, name_y, y, name_z, z, replace):
-		
+		# These conversions do not create new objects if x,y,z are already arrays.
+		x = np.asarray(x)
+		y = np.asarray(y)
+		z = np.asarray(z)
+
+		if x.ndim!=1 or y.ndim!=1 or z.ndim!=2 or z.shape!=(x.size,y.size):
+			msg = """
+	Your code tried to save or replace a grid {name_z}[{name_x}, {name_y}] in section {}. 
+	This requires 1D {name_x}, 1D {name_y}, 2D {name_z} and the shape of {name_z} to be (len({name_x}),len({name_y})).
+	Whereas your code tried:
+	{name_x} ndim = {}    [{}]
+	{name_y} ndim = {}    [{}]
+	{name_z} ndim = {}    [{}]
+	{name_x} shape = {}
+	{name_y} shape = {}
+	{name_z} shape = {}   [{}]
+			""".format(section, 
+				x.ndim, "OK" if x.ndim==1 else "WRONG",
+				y.ndim, "OK" if y.ndim==1 else "WRONG",
+				z.ndim, "OK" if z.ndim==2 else "WRONG",
+				x.shape,
+				y.shape,
+				z.shape, "OK" if z.shape==(x.size, y.size) else "WRONG",
+				name_z=name_z, name_x=name_x, name_y=name_y
+				)
+			raise ValueError(msg)
+
 		self[section, name_x] = x
 		self[section, name_y] = y
 		self[section, name_z] = z
 
 		sentinel_key = "_cosmosis_order_%s"%name_z
 		sentinel_value = "%s_cosmosis_order_%s" % (name_x, name_y)
-		self[section, sentinel_key] = sentinel_value
-
-		# x = np.array(x, dtype=np.double)
-		# y = np.array(y, dtype=np.double)
-		# z = np.array(z, dtype=np.double)
-
-		# assert x.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
-		# assert y.ndim==1, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
-
-		# nx = len(x)
-		# ny = len(y)
-
-		# assert z.ndim==2, "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
-		# assert z.shape==(nx,ny), "In grid sampler need two 1D arrays x[nx], y[ny] and one 2D z[nx,ny]"
+		self[section, sentinel_key] = sentinel_value.lower()
 
 
-		# z = z.copy().astype(np.double)
 
-		# z_ptr = (ct.POINTER(ct.c_double) * nx)()
-		# temp_x, x_ptr, nx1 = self.python_to_1d_c_array(x, np.double)
-		# temp_y, y_ptr, ny1 = self.python_to_1d_c_array(y, np.double)
-		# #Now return pointer to start of the data
-		# for i in xrange(nx):
-		# 	row_ptr = np.ctypeslib.as_ctypes(z[i])
-		# 	z_ptr[i] = row_ptr
+class SectionOptions(object):
+	"""
+	The SectionOptions object wraps is a handy short-cut to let you
+	look up objects in a DataBlock object, but looking specifically at
+	the special section in an ini file that refers to "the section that 
+	defines the current module"
 
-		# if replace:
-		# 	status = lib.c_datablock_replace_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
-		# else:
-		# 	status = lib.c_datablock_put_double_grid(self._ptr, section, name_x, nx, x_ptr, name_y, ny, y_ptr, name_z, z_ptr)
-		# if status!=0:
-		# 	raise BlockError.exception_for_status(status, section, ','.join([name_x, name_y, name_z]))
+	"""
+	def __init__(self, block):
+		self.block=block
+
+	def has_value(self, name):
+		has = self.block.has_value(option_section, name)
+		return bool(has)
+
+
+
+def _make_getter(cls, name):
+	if name=='__getitem__':
+		def getter(self, key):
+			return self.block[option_section, key]
+	elif "array" in name:
+		def getter(self, key):
+			return getattr(self.block, name)(option_section, key)
+	else:
+		def getter(self, key, default=None):
+			return getattr(self.block, name)(option_section, key, default=default)
+
+	return getter
+
+
+
+
+for name in dir(DataBlock):
+	if name.startswith('get') or name=='__getitem__':
+		setattr(SectionOptions, name, _make_getter(SectionOptions, name))
+

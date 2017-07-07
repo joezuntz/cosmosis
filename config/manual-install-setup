@@ -1,30 +1,34 @@
 #This script is only used if you did a manual installation of CosmoSIS;
 #i.e. if you did not use the "bootstrap" script and have no "ups" directory
 
-#See the wiki https://bitbucket.org/joezuntz/cosmosis/wiki/edit/Manual%20Install
+#See the wiki https://bitbucket.org/joezuntz/cosmosis/wiki/Manual%20Install
 #on how to change and use this file
 
 
 export COSMOSIS_SRC_DIR=/path/to/cosmosis
 
 #The gnu science library
-export GSL_INC=/path/to/gsl.h
-export GSL_LIB=/path/to/libgsl.a
+export GSL_INC=/path/to/gsl/include
+export GSL_LIB=/path/to/gsl/lib
 
 #The cfitsio FITS library
-export CFITSIO_INC=/path/to/fitsio.h
-export CFITSIO_LIB=/path/to/libcfitsio.a
+export CFITSIO_INC=/path/to/cfitsio/include
+export CFITSIO_LIB=/path/to/cfitsio/lib
+
+#The fftw3 Fourier transform library
+export FFTW_LIBRARY=/path/to/fftw/lib
+export FFTW_INCLUDE_DIR=/path/to/fftw/include
 
 #The lapack linear algebra package
-#On a mac just put a '.' instead of this path
-export LAPACK_LIB=/path/to/lapack
+#On a mac this should just say "-framework Accelerate" or "-framework veclib" if that doesn't work
+export LAPACK_LINK="-L/path/to/lapack/lib -llapack -lblas"
 
 
 #You may need to add :${DYLD_LIBRARY_PATH} to the end of this
-export DYLD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/
+export DYLD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-1.0/lib/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/plc-2.0/lib/
 
 #You may need to add :${LD_LIBRARY_PATH} to the end of this
-export LD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-1.0/lib/
+export LD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-1.0/lib/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/plc-2.0/lib/
 
 
 export PYTHONPATH=${COSMOSIS_SRC_DIR}:${PYTHONPATH}

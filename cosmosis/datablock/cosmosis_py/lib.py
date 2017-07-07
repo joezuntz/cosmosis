@@ -1,5 +1,5 @@
 import ctypes as ct
-from . import types
+from . import dbt_types
 
 
 dll = ct.cdll.LoadLibrary("libcosmosis.so")
@@ -184,6 +184,21 @@ load_library_function(
 	[c_block, c_str, c_str, c_str],
 	ct.c_int
 	)
+
+load_library_function(
+	locals(),
+	"c_datablock_get_log_count",
+	[c_block],
+	ct.c_int
+	)
+
+load_library_function(
+	locals(),
+	"c_datablock_get_log_entry",
+	[c_block, ct.c_int, ct.c_int, c_str, c_str, c_str, c_str],
+	c_status
+	)
+
 
 
 

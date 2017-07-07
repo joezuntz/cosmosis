@@ -28,3 +28,9 @@ ups/
 conda/
 config/first
 cosmosis-des-library/
+cosmosis-ska-forecasting/
+modules/Makefile.modules
+modules/*
+cosmosis/samplers/multinest/multinest_src/mpi
+config/shifter-make.log
+config/make.temp.sub

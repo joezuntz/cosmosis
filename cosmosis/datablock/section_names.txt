@@ -4,15 +4,21 @@
 
 #likelihoods
 likelihoods
+data_vector
 
 #input parameters
 cosmological_parameters
 halo_model_parameters
-intrinsic_alignment_parameters
 baryon_parameters
 shear_calibration_parameters
 number_density_params
 post_friedmann_parameters
+
+#intrinsic alignment quantities
+intrinsic_alignment_parameters
+intrinsic_power
+galaxy_intrinsic_power
+matter_intrinsic_power
 
 # source number density
 wl_number_density
@@ -20,6 +26,8 @@ wl_number_density
 # 2-pt and related quantities
 matter_power_nl
 matter_power_lin
+matter_galaxy_power
+galaxy_power
 shear_xi
 shear_cl
 shear_cl_gg
@@ -32,16 +40,20 @@ gal_matter_power_lin
 linear_cdm_transfer
 sigma_r_lin
 sigma_r_nl
+galaxy_xi
+galaxy_shear_xi
+galaxy_intrinsic_xi
 
 #nuisance parameters
 planck
 intrinsic_alignment_field
-
+fgas_parameters
 shear_calibration
 supernova_params
 
-# galaxy bias
+# galaxies
 bias_field
+galaxy_luminosity_function
 
 #background quantities
 distances

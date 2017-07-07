@@ -148,3 +148,32 @@ class Module(object):
                 raise ValueError("Unknown module type passed "
                                  "to load_interface")
         return function
+
+
+    @classmethod
+    def from_options(cls,module_name,options,root_directory=None):
+        if root_directory is None:
+            root_directory = os.environ.get("COSMOSIS_SRC_DIR", ".")
+
+        filename = cls.find_module_file(root_directory,
+            options.get(module_name, "file"))
+
+        # identify relevant functions
+        setup_function = options.get(module_name,
+                                      "setup", "setup")
+        exec_function = options.get(module_name,
+                                     "function", "execute")
+        cleanup_function = options.get(module_name,
+                                        "cleanup", "cleanup")
+
+        m = cls(module_name, filename,
+              setup_function, exec_function, cleanup_function,
+              root_directory)
+
+        return m
+
+    @staticmethod
+    def find_module_file(base_directory, path):
+        """Find a module file, which is assumed to be 
+        either absolute or relative to COSMOSIS_SRC_DIR"""
+        return os.path.join(base_directory, path)

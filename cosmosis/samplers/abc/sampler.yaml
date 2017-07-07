@@ -1,0 +1,48 @@
+name: "abcpmc"
+version: "0.1.1"
+parallel: parallel
+purpose: "Approximate Bayesian Computing (ABC) Population Monte Carlo (PMC) "
+url: "http://abcpmc.readthedocs.org/en/latest/"
+attribution: ["Joel Akeret and contributors"]
+cite:
+    - "Akeret, J., Refregier, A., Amara, A, Seehars, S., and Hasner, C., JCAP (submitted 2015)"
+    - "Beaumont et al. 2009 arXiv:0805.2256"
+    - "Fillippi et al 2012 arXiv:1106.6280"
+
+explanation: >
+    abcpmc is a Python Approximate Bayesian Computing (ABC) Population Monte Carlo (PMC) implementation based 
+    on Sequential Monte Carlo (SMC) with Particle Filtering techniques. 
+    This likelihood free implementation estimates the posterior distribution using a model to simulate a 
+    dataset given a set of parameters. A metric rho is used to determine a distance between the model and the data 
+    and parameter values are retained if rho(model,data) < epsilon. This epsilon threshold can be fixed or linearly
+    or exponentially modified every iteration in abcpmc. 
+    abcpmc uses a set of N particles to explore parameter space (theta), on the first iteration, t=0, these are chosen from
+    the prior. On subsequent iterations, t, another N particles are selected
+    with a perturbation kernal K(theta(t) | theta(t-1)) using twice the weighted covariance matrix.
+    It is extendable with k-nearest neighbour (KNN) or optimal local covariance matrix (OLCM) 
+    pertubation kernels.
+
+    This implementation of abcpmc in CosmoSIS requires an understanding of how ABC sampling works and we
+    recommend you contact the CosmoSIS team for specific implementaion questions; we would be very happy to help out!
+    
+
+installation: >
+    pip install abcpmc  #to install centrally, may require sudo
+    
+    pip install abcpmc --user #to install just for you
+    
+
+# List of configuration options for this sampler
+params:
+    npart: (integer) number of particles
+    threshold: "(string; default = LinearEps) Various different threshold implementations, options =  LinearEps, ConstEps, ExpEps"
+    epimax: (double; default = 5.0) epsilon at t=0
+    epimin: (double; default = 1.0) epsilon at t=T
+    niter: (integer; default = 2) T - number of iterations
+    particle_prop: "(string; default = weighted_cov) Particle proposal kernal, options = weighted_cov, KNN, OLCM"
+    num_nn: (integer; default = 10) number of neighbours if using particle_prop = KNN
+    set_prior: "(string; default = Gaussian) prior, options = Gaussian, uniform"
+    run_multigauss: (boolean; default = F) generate multigaussian data
+    ngauss: (int; default = 4) dimension of multigaussian if run_multigauss
+    metric_kw: (str; default = "chi2") mean, chi2 or other; if "other" then need to specify name of function "distance_func"
+    distance_func: (str; default=None) "def func(x,y):\n\t do some calculation\n\t return dist_result"

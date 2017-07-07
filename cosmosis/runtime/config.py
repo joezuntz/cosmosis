@@ -13,36 +13,12 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
         %include filename.ini
         This is assumed to end a section, and the last section
         in the included file is assumed to end as well
+
+        Note that the caller of the read() method may set a no_expand_includes
+        attribute on this object, to cause any %include lines to *not* actually
+        be actioned (they will be regarded as comments, but still delineate
+        sections).
     """
-    def read(self, filenames):
-        """Read and parse a filename or a list of filenames.
-
-        Files that cannot be opened are silently ignored; this is
-        designed so that you can specify a list of potential
-        configuration file locations (e.g. current directory, user's
-        home directory, systemwide directory), and all existing
-        configuration files in the list will be read.  A single
-        filename may also be given.
-
-        Return list of successfully read files.
-
-        COSMOSIS OVERRIDE: Allow file-like objects
-        """
-        if isinstance(filenames, basestring):
-            filenames = [filenames]
-        read_ok = []
-        for filename in filenames:
-            if hasattr(filename, 'read'):
-                fp = filename
-            else:
-                try:
-                    fp = open(filename)
-                except IOError:
-                    continue
-            self._read(fp, filename)
-            fp.close()
-            read_ok.append(filename)
-        return read_ok
 
     def _read(self, fp, fpname):
         """Parse a sectioned setup file.
@@ -77,7 +53,8 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
             # a section header or option header?
             else:
                 #JAZ add environment variable expansion
-                line = os.path.expandvars(line)
+                if not getattr(self, 'no_expand_vars', False):
+                    line = os.path.expandvars(line)
                 # is it a section header?
                 mo = self.SECTCRE.match(line)
                 if mo:
@@ -94,18 +71,18 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
                     optname = None
                 # no section header in the file?
                 elif line.lower().startswith('%include'):
-                    include_statement, filename = line.split()
-                    filename = filename.strip('"')
-                    filename = filename.strip("'")
-                    sys.stdout.write("Reading included ini file: %s\n" %
-                                     (filename,))
-                    if not os.path.exists(filename):
-                        # TODO: remove direct sys.stderr writes
-                        sys.stderr.write("Tried to include non-existent "
-                                         "ini file: %s\n" % (filename,))
-                        raise IOError("Tried to include non-existent "
-                                      "ini file: %s\n" % (filename,))
-                    self.read(filename)
+                    if  not  getattr (self, 'no_expand_includes', False):
+                        include_statement, filename = line.split()
+                        filename = filename.strip('"').strip("'")
+                        sys.stdout.write("Reading included ini file: `"
+                                                           + filename + "'\n")
+                        if not os.path.exists(filename):
+                            # TODO: remove direct sys.stderr writes
+                            sys.stderr.write("Tried to include non-existent "
+                                             "ini file: `" + filename + "'\n")
+                            raise IOError("Tried to include non-existent "
+                                          "ini file: `" + filename + "'\n")
+                        self.read(filename)
                     cursect = None
                 elif cursect is None:
                     raise ConfigParser.MissingSectionHeaderError(fpname,
@@ -165,20 +142,49 @@ class Inifile(IncludingConfigParser):
         # default read behavior is to ignore unreadable files which
         # is probably not what we want here
         if filename is not None:
-            if isinstance(filename, basestring) and not os.path.exists(filename):
+            if not os.path.exists(filename):
                 raise IOError("Unable to open configuration file %s." % (filename, ))
             self.read(filename)
 
         # override parameters
         if override:
             for section, name in override:
-                if not self.has_section(section):
-                    self.add_section(section)
-                self.set(section, name, override[(section, name)])
+                if section=="DEFAULT":
+                    self._defaults[name] = override[(section,name)]
+                else:
+                    if not self.has_section(section):
+                        self.add_section(section)
+                    self.set(section, name, override[(section, name)])
 
     def __iter__(self):
         return (((section, name), value) for section in self.sections()
                 for name, value in self.items(section))
+
+    def items(self, section, raw=False, vars=None, defaults=True):
+        if defaults:
+            return IncludingConfigParser.items(self, section, raw=raw, vars=vars)
+        else:
+            d = collections.OrderedDict()
+            try:
+                d.update(self._sections[section])
+            except KeyError:
+                if section != ConfigParser.DEFAULTSECT:
+                    raise ConfigParser.NoSectionError(section)
+            # Update with the entry specific variables
+            if vars:
+                for key, value in vars.items():
+                    d[self.optionxform(key)] = value
+            options = d.keys()
+            if "__name__" in options:
+                options.remove("__name__")
+            if raw:
+                return [(option, d[option])
+                        for option in options]
+            else:
+                return [(option, self._interpolate(section, option, d[option], d))
+                        for option in options]
+
+
 
     def get(self, section, name, default=None):
         try:

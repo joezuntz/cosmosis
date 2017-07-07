@@ -1,0 +1,32 @@
+# This setup script is suitable for Ubuntu 14 machines
+# where the dependencies have been installed with apt-get
+# You may need to change the COSMOSIS_SRC_DIR to match the path you installed on.
+
+export COSMOSIS_SRC_DIR=$HOME/cosmosis
+
+#The gnu science library
+export GSL_INC=/usr/include
+export GSL_LIB=/usr/lib
+
+#The cfitsio FITS library
+export CFITSIO_INC=/usr/include
+export CFITSIO_LIB=/usr/lib/x86_64-linux-gnu
+
+#The fftw3 Fourier transform library
+export FFTW_LIBRARY=/usr/lib
+export FFTW_INCLUDE_DIR=/usr/include
+
+#The lapack linear algebra package
+#On a mac just put a '.' instead of this path
+export LAPACK_LIB=/usr/lib
+export LAPACK_LINK="-L/usr/lib -llapack -lblas"
+
+#You may need to add :${DYLD_LIBRARY_PATH} to the end of this
+export DYLD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/
+
+#You may need to add :${LD_LIBRARY_PATH} to the end of this
+export LD_LIBRARY_PATH=/path/to/libgfortran:${COSMOSIS_SRC_DIR}/cosmosis/datablock/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck/plc-1.0/lib/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/plc-2.0/lib/:${COSMOSIS_SRC_DIR}/cosmosis-standard-library/likelihood/planck2015/plc-2.0/builddir:${CFITSIO_LIB}
+
+
+export PYTHONPATH=${COSMOSIS_SRC_DIR}:${PYTHONPATH}
+export PATH=${COSMOSIS_SRC_DIR}/bin:/path/to/gcc:/path/to/python/:${PATH}

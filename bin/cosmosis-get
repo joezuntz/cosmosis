@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+import argparse
+import os
+import sys
+from argparse import RawTextHelpFormatter
+
+
+help = """
+
+Download CosmoSIS modules from internet repositories.
+
+It is a very, very good idea to store your work in a version controlled repository.
+
+CosmoSIS strongly encourages you to do this, and you can use the GitHub or BitBucket
+websites to do it for free (to keep your work private before you're ready to release
+it you may need to register as an academic/non-commercial user if you don't want to pay).
+
+This script helps you download an existing module that you or someone else has put
+in a repository.  If you want instead to make a new module and repository, then use the 
+cosmosis-new-module tool instead.
+
+To use this script you'll need to know the web address of the module you want to download,
+for example, http://github.com/my_friends_user_name/my_friends_module
+
+"""
+
+parser = argparse.ArgumentParser(description=help, formatter_class=RawTextHelpFormatter)
+parser.add_argument("url", help="The web address to for the module files, for example a github or bitbucket repository URL")
+parser.add_argument("-d", "--dirname", help="The module will be downloaded to modules/dirname")
+parser.add_argument("--hg", "--mercurial", help="Download with mercurial instead of git")
+args = parser.parse_args()
+
+#call this script with a url and it will clone it into a directory in modules
+#based on the last part of the url
+#or alternatively just a github/bitbucket username/repo
+
+try:
+	cosmosis_dir=os.environ['COSMOSIS_SRC_DIR']
+except KeyError:
+	print "Please run the config/setup-cosmosis or similar script before running this script"
+	print "Or otherwise define the COSMOSIS_SRC_DIR variable"
+	sys.exit(1)
+
+# decide repo and dir name
+
+reponame = args.url.split("/")[-1]
+if args.dirname:
+	projname = args.dirname
+else:
+	projname=reponame
+
+dirname = cosmosis_dir+"/modules/{0}".format(projname)
+
+print "Downloading to {0}".format(dirname)
+
+# check if named repo already exists
+if os.path.exists(dirname) and os.path.isdir(dirname):
+	print "You already have a directory called {0}".format(dirname)
+	print "Is it possible you already downloaded this module?"
+	print "Or you could specify a name for the directory you want this "
+	print 'to go into instead of just using the default.  Use the '
+	print "-d or --dirname flag on the command line"
+	sys.exit(1)
+elif os.path.exists(dirname):
+	print "There is already a file called {0}".format(dirname)
+	print "I was going to create a new directory there."
+	print "Please remove or rename that file if you want me to do this"
+	print 
+	print "Or you could specify a name for the directory you want this "
+	print 'to go into instead of just using the default.  Use the '
+	print "-d or --dirname flat on the command line"
+	sys.exit(1)
+
+# check if remote repo exists
+if args.hg:
+	program='hg'
+else:
+	program='git'
+
+cmd = '{0} clone {1} {2}'.format(program, args.url, dirname)
+print "I will now run this command:"
+print cmd
+print
+status = os.system(cmd)
+print
+if status:
+	print "Something went wrong there - sorry.  Maybe the URL doesn't exist?"
+	print "The error message above might give some clues"
+	sys.exit(status)
+else:
+	print "It worked!  Your module is now in {0}".format(dirname)
+
+if os.path.exists("{0}/Makefile") or os.path.exists("{0}/makefile"):
+	print "Because there is a Makefile in there I will add this project to your"
+	print "modules/Makefile.modules file so it will be made when you run make from the main dir"
+
+	parent_makefile=os.path.join(cosmosis_dir,"modules","Makefile.modules")
+	parent_include= "SUBDIRS+={0}".format(projname)
+	open(parent_makefile,"a").write(parent_include+"\n")
+else:
+	print "Because there is no Makefile in there I won't add this project to Makefile.modules"
+	print "But if you add one later and want it to be included when you type 'make' in the main dir"
+	print "Then just add a line:"
+	print "SUBDIRS+={0}".format(projname)
+	print "to modules/Makefile.modules"

@@ -1,0 +1,27 @@
+name: "importance"
+version: "1.0"
+parallel: embarrassing
+purpose: "Importance sampling"
+url: "https://bitbucket.org/joezuntz/cosmosis"
+attribution: ["CosmoSIS Team"]
+cite: []
+explanation: >
+    Importance sampling is a general method for estimating quantities from
+    one distribution, P', when what you have is samples from another, similar
+    distribution, P. In IS a weight is calculated for each sample that depends
+    on the difference between the likelihoods under the two distributions.
+
+    IS works better the more similar the two distributions are, but can also
+    be useful for adding additional constraints to an existing data set.
+
+    There's a nice introduction to the general idea in Mackay ch. 29:
+    http://www.inference.phy.cam.ac.uk/itila/book.html
+
+
+installation: >
+    No special installation required; everything is packaged with CosmoSIS
+
+params:
+    input_filename: (string) cosmosis-format chain of input samples
+    nstep: (integer; default=128) number of samples to do between saving output
+    add_to_likelihood: (bool; default=N) include the old likelihood in the old likelihood; i.e. P'=P*P_new

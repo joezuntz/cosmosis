@@ -1,7 +1,7 @@
 import abc
 import logging
 import numpy as np
-
+import fcntl
 
 output_registry = {}
 LOG_LEVEL_NOISY = 15
@@ -166,6 +166,13 @@ class OutputBase(object):
     def comment_file_wrapper(self):
         return CommentFileWrapper(self)
 
+    @staticmethod
+    def lock_file(f):
+        fcntl.lockf(f, fcntl.LOCK_EX|fcntl.LOCK_NB)
+
+    @staticmethod
+    def unlock_file(f):
+        fcntl.lockf(f, fcntl.LOCK_UN|fcntl.LOCK_NB)
 
     def close(self):
         self._close()

@@ -1,0 +1,21 @@
+#This is a template for sampler description files
+name: "star"
+version: "1.0"
+parallel: embarrassing
+purpose: "Simple star sampler"
+url: "https://bitbucket.org/joezuntz/cosmosis"
+attribution: [CosmoSIS Team]
+cite: []
+
+
+explanation: >
+
+    
+
+installation: >
+    No special installation required; everything is packaged with CosmoSIS
+
+# List of configuration options for this sampler
+params:
+    nsample_dimension: (integer) The number of star points along each dimension of the space
+    save: "(string; default='') If set, a base directory or .tgz name for saving the cosmology output for every point in the star"

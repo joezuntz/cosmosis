@@ -1,7 +1,7 @@
 #include "datablock.hh"
 #include "clamp.hh"
 #include <iostream>
-
+#include "cxxabi.h"
 using namespace std;
 
 bool cosmosis::DataBlock::has_val(string section,
@@ -130,6 +130,41 @@ void cosmosis::DataBlock::log_access(const std::string& log_type,
 {
   auto entry = log_entry(log_type, section, name, type);
   access_log_.push_back(entry);
+}
+
+int cosmosis::DataBlock::get_log_count()
+{
+  return access_log_.size();
+}
+
+
+DATABLOCK_STATUS
+cosmosis::DataBlock::get_log_entry(int i, 
+  std::string& log_type, 
+  std::string& section, 
+  std::string& name, 
+  std::string& type)
+{
+  if (i<0) return DBS_SIZE_INSUFFICIENT;
+  unsigned int j = (unsigned int) i;
+  if (j>=access_log_.size()) return DBS_SIZE_INSUFFICIENT;
+  const log_entry entry = access_log_[j];
+  log_type = std::get<0>(entry);
+  section = std::get<1>(entry);
+  name = std::get<2>(entry);
+  std::type_index info(std::get<3>(entry));
+  char type_name[128];
+  int status;
+  size_t len = 128;
+  abi::__cxa_demangle(info.name(), type_name, &len, &status); 
+  if (status){
+    type = info.name();
+  }
+  else{
+    type = type_name;
+  }
+
+  return DBS_SUCCESS;
 }
 
 void cosmosis::DataBlock::report_failures(std::ostream &output)
