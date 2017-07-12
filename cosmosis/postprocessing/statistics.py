@@ -1,7 +1,7 @@
 #coding: utf-8
 from .elements import PostProcessorElement, MCMCPostProcessorElement, WeightedMCMCPostProcessorElement, MultinestPostProcessorElement
 import numpy as np
-from .utils import std_weight, mean_weight, median_weight, percentile_weight
+from .utils import std_weight, mean_weight, median_weight, percentile_weight, find_asymmetric_errorbars
 from .outputs import PostprocessText
 
 class Statistics(PostProcessorElement):
@@ -45,6 +45,10 @@ class ConstrainingStatistics(Statistics):
             self.report_file_u95(),
             self.report_file_l68(),
             self.report_file_u68(),
+            self.report_file_err("lerr68", self.lerr68),
+            self.report_file_err("uerr68", self.uerr68),
+            self.report_file_err("lerr95", self.lerr95),
+            self.report_file_err("uerr95", self.uerr95),
         ]
     def report_file_mean(self):        
         #Generate the means file
@@ -102,6 +106,14 @@ class ConstrainingStatistics(Statistics):
             limit_file.write("%s     %g\n" % P)
         return limit_filename
 
+    def report_file_err(self, name, data):
+        #Generate the medians file
+        header = "#parameter {}".format(name)
+        limit_file, limit_filename, new_file = self.get_text_output(name, header, self.source.name)
+        for P in zip(self.source.colnames, data):
+            limit_file.write("%s     %g\n" % P)
+        return limit_filename
+
     @staticmethod
     def find_median(x, P):
         C = [0] + P.cumsum()
@@ -114,6 +126,8 @@ class ConstrainingStatistics(Statistics):
 
     def report_screen(self):
         self.report_screen_mean()
+        self.report_screen_asym()
+        self.report_screen_asym95()
         self.report_screen_median()
         self.report_screen_mode()
         self.report_screen_limits()
@@ -124,8 +138,27 @@ class ConstrainingStatistics(Statistics):
         print
         print "Marginalized mean, std-dev:"
         for P in zip(self.source.colnames, self.mu, self.sigma):
-            print '    %s = %g ± %g' % P
+            print '    %s = %g ± %g ' % P
         print
+
+    def report_screen_asym(self):
+        #Means
+        print
+        print "Marginalized mean, 68% asymmetric error bars:"
+        for P in zip(self.source.colnames, self.mu, self.lerr68, self.uerr68):
+            name,mu,lerr,uerr = P
+            print '    %s = %g + %g - %g ' % (name,mu,mu-lerr,uerr-mu)
+        print
+
+    def report_screen_asym95(self):
+        #Means
+        print
+        print "Marginalized mean, 95% asymmetric error bars:"
+        for P in zip(self.source.colnames, self.mu, self.lerr95, self.uerr95):
+            name,mu,lerr,uerr = P
+            print '    %s = %g + %g - %g ' % (name,mu,mu-lerr,uerr-mu)
+        print
+
     def report_screen_median(self):
         #Medians
         print "Marginalized median, std-dev:"
@@ -179,7 +212,11 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
     def compute_basic_stats_col(self, col):
         data = self.reduced_col(col)
         n = len(data)
-        return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.)
+        try:
+            (lerr68, uerr68), (lerr95, uerr95) = find_asymmetric_errorbars([0.68, 0.95], data)
+        except ValueError:
+            (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
+        return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.), lerr68, uerr68, lerr95, uerr95
 
     def compute_basic_stats(self):
         self.mu = []
@@ -189,12 +226,16 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.u68 = []
         self.l95 = []
         self.u95 = []
+        self.lerr68 = []
+        self.uerr68 = []
+        self.lerr95 = []
+        self.uerr95 = []
         try:self.best_fit_index = self.source.get_col("post").argmax()
         except:self.best_fit_index = self.source.get_col("like").argmax()
         
         n = 0
         for col in self.source.colnames:
-            n, mu, sigma, median, l68, u68, l95, u95 = self.compute_basic_stats_col(col)
+            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95 = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
             self.median.append(median)
@@ -202,6 +243,10 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
             self.u68.append(u68)
             self.l95.append(l95)
             self.u95.append(u95)
+            self.lerr68.append(lerr68)
+            self.uerr68.append(uerr68)
+            self.lerr95.append(lerr95)
+            self.uerr95.append(uerr95)
         return n
 
     def run(self):
@@ -490,9 +535,14 @@ class WeightedStatistics(object):
         data = self.reduced_col(col)
         weight = self.weight_col()
         n = len(data)
+        try:
+            (lerr68, uerr68), (lerr95, uerr95) = find_asymmetric_errorbars([0.68, 0.95], data, weight)
+        except ValueError:
+            (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
+
         return (n, mean_weight(data,weight), std_weight(data,weight), 
             median_weight(data, weight), percentile_weight(data, weight, 32.), percentile_weight(data, weight, 68.),
-            percentile_weight(data, weight, 5.), percentile_weight(data, weight, 95.))
+            percentile_weight(data, weight, 5.), percentile_weight(data, weight, 95.), lerr68, uerr68, lerr95, uerr95)
 
 class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, MetropolisHastingsStatistics):
     def run(self):
@@ -533,11 +583,15 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.u95 = []
         self.l68 = []
         self.u68 = []
+        self.lerr68 = []
+        self.uerr68 = []
+        self.lerr95 = []
+        self.uerr95 = []        
         try:self.best_fit_index = self.source.get_col("post").argmax()
         except:self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         for col in self.source.colnames:
-            n, mu, sigma, median, l68, u68, l95, u95 = self.compute_basic_stats_col(col)
+            n, mu, sigma, median, l68, u68, l95, u95,  lerr68, uerr68, lerr95, uerr95 = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
             self.median.append(median)
@@ -545,6 +599,10 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
             self.u68.append(u68)
             self.l95.append(l95)
             self.u95.append(u95)
+            self.lerr68.append(lerr68)
+            self.uerr68.append(uerr68)
+            self.lerr95.append(lerr95)
+            self.uerr95.append(uerr95)
         return n
 
     def run(self):
