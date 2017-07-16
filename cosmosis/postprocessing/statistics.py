@@ -147,7 +147,7 @@ class ConstrainingStatistics(Statistics):
         print "Marginalized mean, 68% asymmetric error bars:"
         for P in zip(self.source.colnames, self.mu, self.lerr68, self.uerr68):
             name,mu,lerr,uerr = P
-            print '    %s = %g + %g - %g ' % (name,mu,mu-lerr,uerr-mu)
+            print '    %s = %g + %g - %g ' % (name,mu,uerr-mu, mu-lerr)
         print
 
     def report_screen_asym95(self):
@@ -156,7 +156,7 @@ class ConstrainingStatistics(Statistics):
         print "Marginalized mean, 95% asymmetric error bars:"
         for P in zip(self.source.colnames, self.mu, self.lerr95, self.uerr95):
             name,mu,lerr,uerr = P
-            print '    %s = %g + %g - %g ' % (name,mu,mu-lerr,uerr-mu)
+            print '    %s = %g + %g - %g ' % (name,mu,uerr-mu, mu-lerr)
         print
 
     def report_screen_median(self):
