@@ -48,8 +48,11 @@ def find_asymmetric_errorbars(levels, v, weights=None):
     xmin = x[weights>0].min()
     xmax = x[weights>0].max()
     X = np.linspace(xmin,xmax,500)
-    Y = K.evaluate(X)
+    Y = K.normalize_and_evaluate(np.atleast_2d(X))
     Y/=Y.max()
+
+    peak1d = X[Y.argmax()]
+    peak1d = peak1d*sigma+mu
 
     #Take the log but suppress the log(0) warning
     old_settings = np.geterr()
@@ -81,4 +84,4 @@ def find_asymmetric_errorbars(levels, v, weights=None):
         high = high*sigma+mu
         limits.append((low,high))
 
-    return limits
+    return peak1d, limits

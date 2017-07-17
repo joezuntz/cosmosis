@@ -49,6 +49,7 @@ class ConstrainingStatistics(Statistics):
             self.report_file_err("uerr68", self.uerr68),
             self.report_file_err("lerr95", self.lerr95),
             self.report_file_err("uerr95", self.uerr95),
+            self.report_file_err("peak1d", self.peak1d),
         ]
     def report_file_mean(self):        
         #Generate the means file
@@ -114,6 +115,7 @@ class ConstrainingStatistics(Statistics):
             limit_file.write("%s     %g\n" % P)
         return limit_filename
 
+
     @staticmethod
     def find_median(x, P):
         C = [0] + P.cumsum()
@@ -144,8 +146,8 @@ class ConstrainingStatistics(Statistics):
     def report_screen_asym(self):
         #Means
         print
-        print "Marginalized mean, 68% asymmetric error bars:"
-        for P in zip(self.source.colnames, self.mu, self.lerr68, self.uerr68):
+        print "Marginalized 1D peak, 68% asymmetric error bars:"
+        for P in zip(self.source.colnames, self.peak1d, self.lerr68, self.uerr68):
             name,mu,lerr,uerr = P
             print '    %s = %g + %g - %g ' % (name,mu,uerr-mu, mu-lerr)
         print
@@ -153,8 +155,8 @@ class ConstrainingStatistics(Statistics):
     def report_screen_asym95(self):
         #Means
         print
-        print "Marginalized mean, 95% asymmetric error bars:"
-        for P in zip(self.source.colnames, self.mu, self.lerr95, self.uerr95):
+        print "Marginalized 1D peak, 95% asymmetric error bars:"
+        for P in zip(self.source.colnames, self.peak1d, self.lerr95, self.uerr95):
             name,mu,lerr,uerr = P
             print '    %s = %g + %g - %g ' % (name,mu,uerr-mu, mu-lerr)
         print
@@ -213,10 +215,11 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         data = self.reduced_col(col)
         n = len(data)
         try:
-            (lerr68, uerr68), (lerr95, uerr95) = find_asymmetric_errorbars([0.68, 0.95], data)
+            peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data)
         except ValueError:
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
-        return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.), lerr68, uerr68, lerr95, uerr95
+            peak1d = np.nan
+        return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.), lerr68, uerr68, lerr95, uerr95, peak1d
 
     def compute_basic_stats(self):
         self.mu = []
@@ -230,12 +233,13 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.uerr68 = []
         self.lerr95 = []
         self.uerr95 = []
+        self.peak1d = []
         try:self.best_fit_index = self.source.get_col("post").argmax()
         except:self.best_fit_index = self.source.get_col("like").argmax()
         
         n = 0
         for col in self.source.colnames:
-            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95 = self.compute_basic_stats_col(col)
+            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
             self.median.append(median)
@@ -247,6 +251,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
             self.uerr68.append(uerr68)
             self.lerr95.append(lerr95)
             self.uerr95.append(uerr95)
+            self.peak1d.append(peak1d)
         return n
 
     def run(self):
@@ -536,13 +541,15 @@ class WeightedStatistics(object):
         weight = self.weight_col()
         n = len(data)
         try:
-            (lerr68, uerr68), (lerr95, uerr95) = find_asymmetric_errorbars([0.68, 0.95], data, weight)
-        except ValueError:
+            print col
+            peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data, weight)
+        except RuntimeError:
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
+            peak1d = np.nan
 
         return (n, mean_weight(data,weight), std_weight(data,weight), 
             median_weight(data, weight), percentile_weight(data, weight, 32.), percentile_weight(data, weight, 68.),
-            percentile_weight(data, weight, 5.), percentile_weight(data, weight, 95.), lerr68, uerr68, lerr95, uerr95)
+            percentile_weight(data, weight, 5.), percentile_weight(data, weight, 95.), lerr68, uerr68, lerr95, uerr95, peak1d)
 
 class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, MetropolisHastingsStatistics):
     def run(self):
@@ -576,6 +583,7 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
 #The class hierarchy is getting too complex for this - revise it
 class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, WeightedMCMCPostProcessorElement):
     def compute_basic_stats(self):
+        #TODO make this code less ridiculous
         self.mu = []
         self.sigma = []
         self.median = []
@@ -586,12 +594,13 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.lerr68 = []
         self.uerr68 = []
         self.lerr95 = []
-        self.uerr95 = []        
+        self.uerr95 = []
+        self.peak1d = []      
         try:self.best_fit_index = self.source.get_col("post").argmax()
         except:self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         for col in self.source.colnames:
-            n, mu, sigma, median, l68, u68, l95, u95,  lerr68, uerr68, lerr95, uerr95 = self.compute_basic_stats_col(col)
+            n, mu, sigma, median, l68, u68, l95, u95,  lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
             self.median.append(median)
@@ -603,6 +612,7 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
             self.uerr68.append(uerr68)
             self.lerr95.append(lerr95)
             self.uerr95.append(uerr95)
+            self.peak1d.append(peak1d)
         return n
 
     def run(self):
