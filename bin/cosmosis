@@ -3,7 +3,7 @@
 import sys
 import argparse
 import os
-
+import pdb
 from cosmosis.runtime.config import Inifile, CosmosisConfigurationError
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
@@ -245,6 +245,7 @@ try:
         parser.add_argument("inifile", help="Input ini file of parameters")
         parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
         parser.add_argument("--smp",type=int,default=0,help="Run with the given number of processes in shared memory multiprocessing (this is experimental and does not work for multinest).")
+        parser.add_argument("--pdb",action='store_true',help="Start the python debugger on an uncaught error. Only in serial mode.")
         parser.add_argument("--experimental-fault-handling",action='store_true',help="Activate an experimental fault handling mode.")
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
@@ -261,7 +262,15 @@ try:
             with process_pool.Pool(args.smp) as pool:
                 main(args,pool)
         else:
-            main(args)
+            try:
+                main(args)
+            except StandardError as error:
+                if args.pdb:
+                    print "There was an exception - starting python debugger because you ran with --pdb"
+                    print error
+                    pdb.post_mortem()
+                else:
+                    raise
 except CosmosisConfigurationError as e:
     print e
     sys.exit (1)
