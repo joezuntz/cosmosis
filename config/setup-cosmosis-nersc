@@ -69,7 +69,7 @@ else
 	pip install -r config/nersc-pip-req.txt
 
 	# We have to set some options specifically for mpi4py to make sure it picks up the right MPI
-	CFLAGS="-I$MPICH_DIR/include" LDFLAGS="-L$MPICH_DIR/lib -lmpich"  pip install mpi4py
+	CFLAGS="-I$MPICH_DIR/include" LDFLAGS="-L$MPICH_DIR/lib -lmpich"  pip install -vvv  mpi4py --no-cache-dir
 fi
 
 
@@ -104,4 +104,4 @@ echo
 echo "CosmoSIS initialized"
 echo
 
-set-git-prompt-repo-name
+#set-git-prompt-repo-name
