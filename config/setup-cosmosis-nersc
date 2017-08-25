@@ -1,0 +1,106 @@
+# detect COSMOSIS_SRC_DIR
+cosmosis_dir=$( (builtin cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
+cosmosis_dir=${cosmosis_dir%/config}
+export COSMOSIS_SRC_DIR="$cosmosis_dir"
+
+# Modules - depends on the machine
+if [ $NERSC_HOST == "cori" ]
+then
+	module swap PrgEnv-intel PrgEnv-gnu
+	module load gsl
+	module load python
+	module load fftw/3.3.4.11
+elif [ $NERSC_HOST == "edison" ]
+	module swap PrgEnv-intel PrgEnv-gnu
+	module load gsl
+	module load python
+	module load fftw
+else
+	echo "Unknown NERSC host - was expecting NERSC_HOST variable to be one of cori,edison
+	return
+fi
+
+# Compilers
+export COSMOSIS_ALT_COMPILERS=1
+export CC=gcc
+export CXX=g++
+export FC=gfortran
+export MPIFC=ftn
+
+# Environment variables for compilation
+export LAPACK_LINK="-L$CRAY_LIBSCI_PREFIX_DIR/lib -lsci_gnu"
+export GSL_INC=$GSL_DIR/include
+export GSL_LIB=$GSL_DIR/lib
+export FFTW_INCLUDE_DIR=$FFTW_INC
+export FFTW_LIBRARY=$FFTW_DIR
+export CFITSIO_DIR=/project/projectdirs/des/zuntz/cfitsio
+export CFITSIO_INC=$CFITSIO_DIR/include
+export CFITSIO_LIB=$CFITSIO_DIR/lib
+
+# Environment variables for runtime
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/cosmosis/datablock:$COSMOSIS_SRC_DIR/cosmosis-standard-library/likelihood/planck2015/plc-2.0/
+export PYTHONPATH=${COSMOSIS_SRC_DIR}:$PYTHONPATH
+export PATH=$COSMOSIS_SRC_DIR/bin:$PATH
+
+PRE_CONDA_PS1=$PS1
+
+# Conda environment to install and supply python requirements
+# Might find we need to add more to the files here.
+# If this has already been run then a conda environment should exist here already
+# Otherwise create it
+if [ -d $COSMOSIS_SRC_DIR/env ]
+then
+	source activate $COSMOSIS_SRC_DIR/env
+else
+	echo "Creating conda environment (one-off)"
+	# We seem to have to do this in two pieces because conda doesn't have some 
+	# of the requirements, so we use pip for the second lot.
+	# Might need to revisit this.
+
+	# Create the environment with some basic conda stuff in
+	conda create -p env --file config/nersc-conda-req.txt
+	
+	#Activate it
+	source activate $COSMOSIS_SRC_DIR/env
+
+	# Now this pip points to the one in the environment.
+	# Install most of the rest of the requirements
+	pip install -r config/nersc-pip-req.txt
+
+	# We have to set some options specifically for mpi4py to make sure it picks up the right MPI
+	CFLAGS="-I$MPICH_DIR/include" LDFLAGS="-L$MPICH_DIR/lib -lmpich"  pip install mpi4py
+fi
+
+
+
+function git-show-top-level {
+    local __toplevel=`git rev-parse --show-toplevel 2> /dev/null`
+    if [ -z "$__toplevel" ]
+    then
+        :
+    else
+        echo "(`basename $__toplevel 2> /dev/null`) "
+    fi
+}
+
+function set-git-prompt-repo-name {
+  if [ ! -z "${PS1-}" ] 
+  then
+    export OLD_PS1="$PS1"
+    local __git_repo='`git-show-top-level`'
+    export PS1="\[$(tput setaf 4)\]$__git_repo\[$(tput sgr0)\]${PRE_CONDA_PS1}"
+  echo "Your prompt will now show which repository (part of cosmosis) you are in"
+  echo "Use the command reset-prompt to undo this"
+  echo
+  fi
+}
+
+function reset-prompt {
+  export PS1="$OLD_PS1"
+}
+
+echo
+echo "CosmoSIS initialized"
+echo
+
+set-git-prompt-repo-name
