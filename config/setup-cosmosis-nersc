@@ -11,12 +11,13 @@ then
 	module load python
 	module load fftw/3.3.4.11
 elif [ $NERSC_HOST == "edison" ]
+then
 	module swap PrgEnv-intel PrgEnv-gnu
 	module load gsl
 	module load python
 	module load fftw
 else
-	echo "Unknown NERSC host - was expecting NERSC_HOST variable to be one of cori,edison
+	echo "Unknown NERSC host - was expecting NERSC_HOST variable to be one of cori,edison"
 	return
 fi
 

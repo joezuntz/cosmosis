@@ -1,7 +1,6 @@
 astropy
 Cython
 matplotlib
-mpi4py
 numpy
 PyYAML
 scikit-learn
