@@ -381,13 +381,14 @@ class LikelihoodPipeline(Pipeline):
         return c
 
 
-    def start_vector(self, all_params=False):
+    def start_vector(self, all_params=False, as_array=True):
         if all_params:
-            return np.array([param.start for
-                 param in self.parameters])
+            p = [param.start for param in self.parameters]
         else:            
-            return np.array([param.start for
-                         param in self.varied_params])
+            p =[param.start for param in self.varied_params]
+        if as_array:
+            p = np.array(p)
+        return p
 
     def min_vector(self, all_params=False):
         if all_params:
