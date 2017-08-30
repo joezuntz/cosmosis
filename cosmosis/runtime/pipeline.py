@@ -452,16 +452,21 @@ class LikelihoodPipeline(Pipeline):
         ini.close()
 
 
-    def prior(self, p, all_params=False):
+    def prior(self, p, all_params=False, total_only=True):
         if all_params:
             params = self.parameters
         else:
             params = self.varied_params
-        return sum([param.evaluate_prior(x) for param, x in
-                    zip(params, p)])
+        priors = [(str(param),param.evaluate_prior(x)) for x in zip(params,p)]
+        if total_only:
+            return sum(pr[1] for pr in priors)
+        else:
+            return priors
 
     def posterior(self, p, return_data=False, all_params=False):
-        prior = self.prior(p, all_params=all_params)
+        priors = self.prior(p, all_params=all_params, total_only=False)
+        # The total prior
+        prior = sum(pr[1] for pr in priors)
         if prior == -np.inf:
             if not self.quiet:
                 sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
@@ -478,6 +483,8 @@ class LikelihoodPipeline(Pipeline):
             
             if return_data:
                 data = results[2]
+                for name,pr in priors:
+                    data["priors", name] = pr
 
         except StandardError:
             error = True
