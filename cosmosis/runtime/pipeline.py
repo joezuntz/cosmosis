@@ -457,7 +457,7 @@ class LikelihoodPipeline(Pipeline):
             params = self.parameters
         else:
             params = self.varied_params
-        priors = [(str(param),param.evaluate_prior(x)) for x in zip(params,p)]
+        priors = [(str(param),param.evaluate_prior(x)) for param,x in zip(params,p)]
         if total_only:
             return sum(pr[1] for pr in priors)
         else:
