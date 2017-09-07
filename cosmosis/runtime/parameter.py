@@ -49,6 +49,10 @@ class Parameter(object):
         elif isinstance(other, Parameter):
             return (self.section == other.section and
                     self.name == other.name)
+        elif isinstance(other, str):
+            return other==self.__str__()
+        else:
+            raise NotImplementedError("Tried to do parameter==something where something was not a thing I understand.")
 
     def __str__(self):
         return self.section + "--" + self.name
@@ -57,6 +61,10 @@ class Parameter(object):
         return self.__str__()
 
     def is_fixed(self):
+        """Test whether this parameter is fixed or varied.
+
+        Returns: Boolean, true if parameter is fixed to a single value and false if it can vary.
+        """
         return self.limits[0] == self.limits[1]
 
     def is_varied(self):
