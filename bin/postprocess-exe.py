@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 from cosmosis.postprocessing.postprocess import postprocessor_for_sampler
+from cosmosis.postprocessing.inputs import read_input
 from cosmosis.postprocessing.plots import Tweaks
-from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.utils import mkdir
-from cosmosis.output.text_output import TextColumnOutput
-from cosmosis.output.fits_output import FitsOutput
 import sys
 import argparse
 import os
@@ -30,7 +28,7 @@ inputs.add_argument("--text", action='store_true', help="Tell postprocess that i
 inputs.add_argument("--derive", default="", help="Read a python script with functions in that derive new columns from existing ones")
 
 plots=parser.add_argument_group(title="Plotting", description="Plotting options")
-plots.add_argument("--legend", action='store_true', help="Add a legend to the plot")
+plots.add_argument("--legend", help="Add a legend to the plot with the specified titles, separated by | (the pipe symbol)")
 plots.add_argument("--legend-loc", default='best', help="The location of the legend: best, UR, UL, LL, LR, R, CL, CR, LC, UC, C (use quotes for the ones with two words.)")
 plots.add_argument("--swap", action='store_true', help="Swap the ordering of the parameters in (x,y)")
 plots.add_argument("--only", type=str, dest='prefix_only', help="Only make 2D plots where both parameter names start with this")
@@ -46,60 +44,32 @@ plots.add_argument("--no-fill", dest='fill', default=True, action='store_false',
 plots.add_argument("--extra", dest='extra', default="", help="Load extra post-processing steps from this file.")
 plots.add_argument("--tweaks", dest='tweaks', default="", help="Load plot tweaks from this file.")
 plots.add_argument("--no-image", dest='image', default=True, action='store_false', help="Do not plot the image in  2D grids; just show the contours")
-
-def read_input(ini_filename, force_text, weighted):
-	if ini_filename.endswith("txt") or force_text:
-		output_info = TextColumnOutput.load_from_options({"filename":ini_filename})
-		metadata=output_info[2][0]
-		sampler = metadata.get("sampler")
-		if sampler is None:
-			print "This is not a cosmosis output file."
-			print "So I will assume it is a generic MCMC file"
-			if weighted:
-				sampler = "weighted_metropolis"
-			else:
-				sampler = "metropolis"
-			ini = output_info
-		else:
-			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="text", filename=ini_filename)}
-	elif ini_filename.endswith("fits"):
-		output_info = FitsOutput.load_from_options({"filename":ini_filename})
-		metadata=output_info[2][0]
-		sampler = metadata.get("sampler")
-		if sampler is None:
-			print "This is not a cosmosis output file."
-			print "So I will assume it is a generic MCMC file"
-			if weighted:
-				sampler = "weighted_metropolis"
-			else:
-				sampler = "metropolis"
-			ini = output_info
-		else:
-			ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="fits", filename=ini_filename)}
-
-	elif os.path.isdir(ini_filename):
-		ini = Inifile(None)
-		ini.add_section("runtime")
-		ini.add_section("test")
-		sampler = "test"
-		ini.set("runtime", "sampler", sampler)
-		ini.set("test", "save_dir", ini_filename)
-	else:
-		#Determine the sampler and get the class
-		#designed to postprocess the output of that sampler
-		ini = Inifile(ini_filename)
-		sampler = ini.get("runtime", "sampler")
-	return sampler, ini
-
+plots.add_argument("--run-max-post", default="", help="Run the test sampler on maximum-posterior sample and save to the named directory.")
 
 def main(args):
 	#Read the command line arguments and load the
 	#ini file that created the run
 	args = parser.parse_args(args)
 
+	for ini_filename in args.inifile:
+		if not os.path.exists(ini_filename):
+			raise ValueError("The file (or directory) {} does not exist.".format(ini_filename))
+
 	#Make the directory for the outputs to go in.
 	mkdir(args.outdir)
 	outputs = {}
+
+	#Deal with legends, if any
+	if args.legend:
+		labels = args.legend.split("|")
+		if len(labels)!=len(args.inifile):
+			raise ValueError("You specified {} legend names but {} files to plot".format(len(labels), len(args.inifile)))
+	else:
+		labels = args.inifile
+
+	if len(args.inifile)>1 and args.run_max_post:
+		raise ValueError("Can only use the --run-max-post argument with a single parameter file for now")
+
 	for i,ini_filename in enumerate(args.inifile):
 		sampler, ini = read_input(ini_filename, args.text, args.weights)
 		processor_class = postprocessor_for_sampler(sampler)
@@ -111,7 +81,8 @@ def main(args):
 			continue
 
 		#Create and run the postprocessor
-		processor = processor_class(ini, ini_filename, i, **vars(args))
+
+		processor = processor_class(ini, labels[i], i, **vars(args))
 
 		#Inherit any plots from the previous postprocessor
 		#so we can make plots with multiple datasets on
@@ -121,6 +92,11 @@ def main(args):
 		#script here
 		if args.extra:
 			processor.load_extra_steps(args.extra)
+
+		#Optionally add a step in which we 
+		if args.run_max_post:
+			processor.add_rerun_bestfit_step(args.run_max_post)
+
 
 		#Run the postprocessor and make the outputs for this chain
 		processor.run()

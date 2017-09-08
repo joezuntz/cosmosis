@@ -28,9 +28,22 @@ class GaussianLikelihood(object):
     def __init__(self, options):
         self.options=options
         self.data_x, self.data_y = self.build_data()
+
         if self.constant_covariance:
             self.cov = self.build_covariance()
             self.inv_cov = self.build_inverse_covariance()
+
+            # We may want to include the normalization of the likelihood
+            # via the log |C| term.
+            include_norm = self.options.get_bool("include_norm", False)
+            if include_norm:
+                # We have no datablock here so we don't want to call any subclass method
+                self.log_det_constant = GaussianLikelihood.extract_covariance_log_determinant(self,None)
+                print "Including -0.5*|C| normalization in {} likelihood where |C| = {}".format(self.like_name, self.log_det_constant)
+            else:
+                self.log_det_constant = 0.0
+
+        #Interpolation type, when interpolating into theory vectors
         self.kind = self.options.get_string("kind", "cubic")
 
         #Allow over-riding where the inputs come from in 
@@ -162,6 +175,8 @@ class GaussianLikelihood(object):
             log_det = self.extract_covariance_log_determinant(block)
             block[names.data_vector, self.like_name+"_LOG_DET"] = log_det
             like -= 0.5 * log_det
+        else:
+            like -= 0.5*self.log_det_constant
 
         #Now save the resulting likelihood
         block[names.likelihoods, self.like_name+"_LIKE"] = like
@@ -255,6 +270,14 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
         self.cov = np.array([[sigma**2]])
         self.inv_cov = np.array([[sigma**-2]])
 
+        include_norm = self.options.get_bool("include_norm", False)
+        if include_norm:
+            # We have no datablock here so we don't want to call any subclass method
+            self.log_det_constant = GaussianLikelihood.extract_covariance_log_determinant(self,None)
+            print "Including -0.5*|C| normalization in {} likelihood where log|C| = {}".format(self.like_name, self.log_det_constant)
+        else:
+            self.log_det_constant = 0.0
+            
     def build_data(self):
         """Sub-classes can over-ride this if they wish, to generate 
         the data point in a more complex way"""

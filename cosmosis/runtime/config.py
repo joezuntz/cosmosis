@@ -53,7 +53,8 @@ class IncludingConfigParser(ConfigParser.ConfigParser):
             # a section header or option header?
             else:
                 #JAZ add environment variable expansion
-                line = os.path.expandvars(line)
+                if not getattr(self, 'no_expand_vars', False):
+                    line = os.path.expandvars(line)
                 # is it a section header?
                 mo = self.SECTCRE.match(line)
                 if mo:
@@ -141,20 +142,49 @@ class Inifile(IncludingConfigParser):
         # default read behavior is to ignore unreadable files which
         # is probably not what we want here
         if filename is not None:
-            if not os.path.exists(filename):
+            if isinstance(filename,str) and not os.path.exists(filename):
                 raise IOError("Unable to open configuration file %s." % (filename, ))
             self.read(filename)
 
         # override parameters
         if override:
             for section, name in override:
-                if not self.has_section(section):
-                    self.add_section(section)
-                self.set(section, name, override[(section, name)])
+                if section=="DEFAULT":
+                    self._defaults[name] = override[(section,name)]
+                else:
+                    if not self.has_section(section):
+                        self.add_section(section)
+                    self.set(section, name, override[(section, name)])
 
     def __iter__(self):
         return (((section, name), value) for section in self.sections()
                 for name, value in self.items(section))
+
+    def items(self, section, raw=False, vars=None, defaults=True):
+        if defaults:
+            return IncludingConfigParser.items(self, section, raw=raw, vars=vars)
+        else:
+            d = collections.OrderedDict()
+            try:
+                d.update(self._sections[section])
+            except KeyError:
+                if section != ConfigParser.DEFAULTSECT:
+                    raise ConfigParser.NoSectionError(section)
+            # Update with the entry specific variables
+            if vars:
+                for key, value in vars.items():
+                    d[self.optionxform(key)] = value
+            options = d.keys()
+            if "__name__" in options:
+                options.remove("__name__")
+            if raw:
+                return [(option, d[option])
+                        for option in options]
+            else:
+                return [(option, self._interpolate(section, option, d[option], d))
+                        for option in options]
+
+
 
     def get(self, section, name, default=None):
         try:

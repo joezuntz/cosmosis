@@ -3,26 +3,11 @@ from . import elements
 from . import plots
 from . import statistics
 import numpy as np
-import hashlib
 from cosmosis import output as output_module
 from ..runtime.config import Inifile
 import imp
 import os
 postprocessor_registry = {}
-
-
-def blinding_value(name):
-    #hex number derived from code phrase
-    m = hashlib.md5(name).hexdigest()
-    #convert to decimal
-    s = int(m, 16)
-    # last 8 digits
-    f = s%100000000
-    # turn 8 digit number into value between 0 and 1
-    g = f*1e-8
-    #get value between -1 and 1
-    return g*2-1
-
 
 
 class PostProcessMetaclass(abc.ABCMeta):
@@ -55,29 +40,26 @@ class PostProcessor(object):
             print "Adding post-processor step: %s" % (e.__class__.__name__)
         self.steps.extend(extra)
 
-    def blind_data(self,multiplicative):
-        #blind self.data
-        for c,col in enumerate(self.colnames):
-            if col.lower() in ['like','post', 'weight', 'log_weight', 'old_weight', 'old_log_weight']: continue
-            #get col mean to get us a rough scale to work with
-            if multiplicative:
-                #use upper here so it is different from non-multiplicative
-                #scale by value between 0.75 and 1.25
-                for d in self.data:
-                    scale = 0.2
-                    d[:,c] *= (1+scale*blinding_value(col.lower()))
-                print "Blinding scale value for %s in %f - %f" % (col, 1-scale, 1+scale)
+    def add_rerun_bestfit_step(self, dirname):
+        from .reruns import BestFitRerunner
+        rerunner = BestFitRerunner(dirname, self, **self.options)
+        self.steps.append(rerunner)
 
-            else:
-                r = np.mean([d[:,c].std() for d in self.data])
-                if r==0.0:
-                    print "Not blinding constant %s" % col
-                    continue
-                scale = (10**np.ceil(np.log10(abs(r))))
-                #make a random number between -1 and 1 based on the column name
-                for d in self.data:
-                    d[:,c] += scale * blinding_value(col.upper())
-                print "Blinding additive value for %s ~ %f" % (col, scale)
+
+
+    def approximate_scale_ceiling(self, c):
+        r = np.mean([d[:,c].std() for d in self.data])
+        scale = (10**np.ceil(np.log10(abs(r))))
+        return scale
+
+    def additive_blind_column(self, c, value):
+        for d in self.data:
+            d[:,c] += value
+
+    def multiplicative_blind_column(self, c, value):
+        for d in self.data:
+            d[:,c] *= (1+value)
+
 
     def derive_extra_columns(self):
         if not self.derive_file: return
@@ -125,6 +107,7 @@ class PostProcessor(object):
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
             output_module.input_from_options(output_options)
 
+
     def sampler_option(self, key, default=None):
         return self.sampler_options.get(key, default)
 
@@ -141,10 +124,6 @@ class PostProcessor(object):
 
         #set the column names
         self.colnames = [c.lower() for c in self.colnames]
-        if self.options.get('blind_add',False):
-            self.blind_data(multiplicative=False)
-        if self.options.get('blind_mul',False):
-            self.blind_data(multiplicative=True)
         self.data_stacked = np.concatenate(self.data).T
 
     def load(self, ini):

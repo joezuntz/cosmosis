@@ -63,6 +63,7 @@ MULTINEST_SECTION='multinest'
 class MultinestSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("post", float), ("weight", float)]
+    supports_smp=False
 
     def config(self):
         if self.pool:
@@ -114,6 +115,31 @@ class MultinestSampler(ParallelSampler):
         self.cluster_dimensions = self.read_ini("cluster_dimensions", int, default=-1)
         self.mode_ztolerance    = self.read_ini("mode_ztolerance", float, default=0.5)
 
+        #Parameters with wrap-around edges - can help sampling
+        #of parameters which are relatively flat in likelihood
+        wrapped_params = self.read_ini("wrapped_params", str, default="")
+        wrapped_params = wrapped_params.split()
+        self.wrapping = [0 for i in xrange(self.ndim)]
+        if wrapped_params:
+            print("")
+        for p in wrapped_params:
+            try:
+                P = p.split('--')
+            except ValueError:
+                raise ValueError("You included {} in wrapped_params mulitnest option but should be format: section--name".format(p))
+            if P in self.pipeline.varied_params:
+                index = self.pipeline.varied_params.index(P)
+                self.wrapping[index] = 1
+                print "MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p)
+            elif P in self.pipeline.parameters:
+                print "MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not fixed in this pipeline, so this will have no effect.".format(p)
+            else:
+                raise ValueError("You asked for an unknown parameter, {} to be wrapped around in the multinest wrapped_params option.".format(p))
+        if wrapped_params:
+            print("")
+
+
+
         if self.output:
             def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
                 print "Saving %d samples" % nsample
@@ -128,9 +154,9 @@ class MultinestSampler(ParallelSampler):
             nextra = nparam-ndim
             #pull out values from cube
             cube_vector = np.array([cube_p[i] for i in xrange(ndim)])
-            vector = self.pipeline.denormalize_vector(cube_vector)
+            vector = self.pipeline.denormalize_vector_from_prior(cube_vector)
             try:
-                like, extra = self.pipeline.posterior(vector)
+                like, extra = self.pipeline.likelihood(vector)
             except KeyboardInterrupt:
                 raise sys.exit(1)
 
@@ -159,6 +185,8 @@ class MultinestSampler(ParallelSampler):
         # only master gets dumper function
         cluster_dimensions = self.ndim if self.cluster_dimensions==-1 else self.cluster_dimensions
         periodic_boundaries = (ct.c_int*self.ndim)()
+        for i in xrange(self.ndim):
+            periodic_boundaries[i] = self.wrapping[i]
         context=None
         init_mpi=False
         

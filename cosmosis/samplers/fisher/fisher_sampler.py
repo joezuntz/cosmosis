@@ -3,7 +3,7 @@ from . import fisher
 from ...datablock import BlockError
 import numpy as np
 import scipy.linalg
-from ...runtime import prior
+from ...runtime import prior,utils
 
 def compute_fisher_vector(p):
     # use normalized parameters - fisherPipeline is a global
@@ -13,7 +13,7 @@ def compute_fisher_vector(p):
     except ValueError:
         print "Parameter vector outside limits: %r" % p
         return None
-    print x
+
     #Run the pipeline, generating a data block
     data = fisherPipeline.run_parameters(x)
 
@@ -75,12 +75,13 @@ class FisherSampler(ParallelSampler):
         n = len(self.pipeline.varied_params)
         P = np.zeros((n,n))
         for i, param in enumerate(self.pipeline.varied_params):
-            if isinstance(param.prior, prior.GaussianPrior):
-                print "Applying additional prior sigma = {0} to {1}".format(param.prior.sigma2**0.5, param)
+            if isinstance(param.prior, prior.GaussianPrior) or isinstance(param.prior, prior.TruncatedGaussianPrior):
+                print "Applying additional prior sigma = {0} to {1}".format(param.prior.sigma, param)
                 print "This will be assumed to be centered at the parameter center regardless of what the ini file says"
-                print 
-                P[i,i] = 1./param.prior.sigma2
-            elif isinstance(param.prior, prior.ExponentialPrior):
+                print "The limits of the parameter will also not be respected." 
+                print
+                P[i,i] = 1./param.prior.sigma**2
+            elif isinstance(param.prior, prior.ExponentialPrior) or isinstance(param.prior, prior.TruncatedExponentialPrior):
                 print "There is an exponential prior applied to parameter {0}".format(param)
                 print "This is *not* accounted for in the Fisher matrix"
                 print
@@ -93,8 +94,13 @@ class FisherSampler(ParallelSampler):
 
     def execute(self):
         #Load the starting point and covariance matrix
-        #in the normalized space
-        start_vector = self.pipeline.start_vector()
+        #in the normalized space, either from the values
+        #file or a previous sampler
+        start_vector = self.start_estimate()
+
+        if len(self.pipeline.varied_params)==0:
+            raise ValueError("Your values file did not include any varied parameters so we cannot make a Fisher matrix")
+
         for i,x in enumerate(start_vector):
             self.output.metadata("mu_{0}".format(i), x)
         start_vector = self.pipeline.normalize_vector(start_vector)
@@ -119,6 +125,9 @@ class FisherSampler(ParallelSampler):
         if self.converged:
             for row in fisher_matrix:
                 self.output.parameters(row)
+
+        covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
+        self.distribution_hints.set_cov(covariance_matrix)
 
     def is_converged(self):
         return self.converged

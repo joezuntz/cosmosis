@@ -47,6 +47,8 @@ class Pipeline(object):
         if self.root_directory=="cosmosis_none_signifier":
             self.root_directory=None
 
+        base_directory = self.base_directory()
+
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
         self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
@@ -59,26 +61,11 @@ class Pipeline(object):
             module_list = self.options.get(PIPELINE_INI_SECTION,
                                            "modules", "").split()
 
-            for module_name in module_list:
-                # identify module file
+            self.modules = [
+                module.Module.from_options(module_name,self.options,base_directory)
+                for module_name in module_list
+            ]
 
-                filename = self.find_module_file(
-                    self.options.get(module_name, "file"))
-
-                # identify relevant functions
-                setup_function = self.options.get(module_name,
-                                                  "setup", "setup")
-                exec_function = self.options.get(module_name,
-                                                 "function", "execute")
-                cleanup_function = self.options.get(module_name,
-                                                    "cleanup", "cleanup")
-
-                self.modules.append(module.Module(module_name,
-                                                  filename,
-                                                  setup_function,
-                                                  exec_function,
-                                                  cleanup_function,
-                                                  self.root_directory))
             self.shortcut_module=0
             self.shortcut_data=None
             if shortcut is not None:
@@ -127,16 +114,7 @@ class Pipeline(object):
             for global_section in global_sections.split():
                 relevant_sections.append(global_section)
 
-
-            config_block = block.DataBlock()
-
-            for (section, name), value in self.options:
-                if section in relevant_sections:
-                    # add back a default section?
-                    val = self.options.gettyped(section, name)
-                    if val is not None:
-                        config_block.put(section, name, val)
-
+            config_block = config_to_block(relevant_sections, self.options)
             module.setup(config_block, quiet=self.quiet)
 
             if self.timing:
@@ -208,6 +186,8 @@ class Pipeline(object):
     def run(self, data_package):
         modules = self.modules
         first = (self.shortcut_data is None)
+        if self.timing:
+            start_time = time.time()
         if self.shortcut_module and not first:
             modules = modules[self.shortcut_module:]
 
@@ -221,13 +201,18 @@ class Pipeline(object):
 
             status = module.execute(data_package)
 
+            if status is None:
+                raise ValueError(("A module you ran, '{}', did not return a proper status value.\n"+
+                    "It should return an integer, 0 if everything worked.\n"+
+                    "Sorry to be picky but this kind of thing is important.").format(module))
+
             if self.debug:
                 sys.stdout.write("Done %.20s status = %d \n" % (module,status))
                 sys.stdout.flush()
 
             if self.timing:
                 t2 = time.time()
-                sys.stdout.write("%s took: %f seconds\n"% (module,t2-t1))
+                sys.stdout.write("%s took: %.3f seconds\n"% (module,t2-t1))
 
             if status:
                 if self.debug:
@@ -249,6 +234,10 @@ class Pipeline(object):
             if self.shortcut_module and first and module_number==self.shortcut_module-1:
                 print "Saving shortcut data"
                 self.shortcut_data = data_package.clone()
+
+        if self.timing:
+            end_time = time.time()
+            sys.stdout.write("Total pipeline time: {:.3} seconds\n".format(end_time-start_time))
 
 
         if not self.quiet:
@@ -282,6 +271,8 @@ class LikelihoodPipeline(Pipeline):
 
         self.reset_fixed_varied_parameters()
 
+        self.print_priors()
+
         #We want to save some parameter results from the run for further output
         extra_saves = self.options.get(PIPELINE_INI_SECTION,
                                        "extra_output", "")
@@ -299,6 +290,18 @@ class LikelihoodPipeline(Pipeline):
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
 
+    def print_priors(self):
+        print ""
+        print "Parameter Priors"
+        print "----------------"
+        if self.parameters:
+            n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
+        else:
+            n=1
+        for param in self.parameters:
+            s = "{}--{}".format(param.section,param.name)
+            print "{0:{1}}  ~ {2}" .format(s, n, param.prior)
+        print ""
     def reset_fixed_varied_parameters(self):
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]
@@ -336,8 +339,12 @@ class LikelihoodPipeline(Pipeline):
         return any([not param.in_range(x) for
                     param, x in zip(self.varied_params, p)])
 
-    def denormalize_vector(self, p):
-        return np.array([param.denormalize(x) for param, x
+    def denormalize_vector(self, p, raise_exception=True):
+        return np.array([param.denormalize(x, raise_exception) for param, x
+                         in zip(self.varied_params, p)])
+
+    def denormalize_vector_from_prior(self, p):
+        return np.array([param.denormalize_from_prior(x) for param, x
                          in zip(self.varied_params, p)])
 
     def normalize_vector(self, p):
@@ -374,13 +381,14 @@ class LikelihoodPipeline(Pipeline):
         return c
 
 
-    def start_vector(self, all_params=False):
+    def start_vector(self, all_params=False, as_array=True):
         if all_params:
-            return np.array([param.start for
-                 param in self.parameters])
+            p = [param.start for param in self.parameters]
         else:            
-            return np.array([param.start for
-                         param in self.varied_params])
+            p =[param.start for param in self.varied_params]
+        if as_array:
+            p = np.array(p)
+        return p
 
     def min_vector(self, all_params=False):
         if all_params:
@@ -424,6 +432,7 @@ class LikelihoodPipeline(Pipeline):
         if self.run(data):
             return data
         else:
+            sys.stderr.write("Pipeline failed on these parameters: {}\n".format(p))
             return None
 
     def create_ini(self, p, filename):
@@ -443,16 +452,21 @@ class LikelihoodPipeline(Pipeline):
         ini.close()
 
 
-    def prior(self, p, all_params=False):
+    def prior(self, p, all_params=False, total_only=True):
         if all_params:
             params = self.parameters
         else:
             params = self.varied_params
-        return sum([param.evaluate_prior(x) for param, x in
-                    zip(params, p)])
+        priors = [(str(param),param.evaluate_prior(x)) for param,x in zip(params,p)]
+        if total_only:
+            return sum(pr[1] for pr in priors)
+        else:
+            return priors
 
     def posterior(self, p, return_data=False, all_params=False):
-        prior = self.prior(p, all_params=all_params)
+        priors = self.prior(p, all_params=all_params, total_only=False)
+        # The total prior
+        prior = sum(pr[1] for pr in priors)
         if prior == -np.inf:
             if not self.quiet:
                 sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
@@ -469,6 +483,8 @@ class LikelihoodPipeline(Pipeline):
             
             if return_data:
                 data = results[2]
+                for name,pr in priors:
+                    data["priors", name] = pr
 
         except StandardError:
             error = True
@@ -511,10 +527,13 @@ class LikelihoodPipeline(Pipeline):
         # loop through named likelihoods and sum their values
         likelihoods = []
         section_name = cosmosis_py.section_names.likelihoods
+        nlike = len(self.likelihood_names)
         for likelihood_name in self.likelihood_names:
             try:
                 L = data.get_double(section_name,likelihood_name+"_like")
                 likelihoods.append(L)
+                if not self.quiet and nlike>1:
+                    print "    Likelihood {} = {}".format(likelihood_name, L)
             except block.BlockError:
                 raise MissingLikelihoodError(likelihood_name, data)
 
@@ -543,3 +562,15 @@ class LikelihoodPipeline(Pipeline):
             return like, extra_saves, data
         else:
             return like, extra_saves
+
+
+def config_to_block(relevant_sections, options):
+    config_block = block.DataBlock()
+
+    for (section, name), value in options:
+        if section in relevant_sections:
+            # add back a default section?
+            val = options.gettyped(section, name)
+            if val is not None:
+                config_block.put(section, name, val)
+    return config_block
