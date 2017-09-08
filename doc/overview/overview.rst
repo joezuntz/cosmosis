@@ -40,7 +40,9 @@ CosmoSIS modules do not send their calculations on to each other directly.  Inst
 Samplers
 ========
 
+In CosmoSIS a `sampler` is a code that generates a series of sample sets of parameters on which the likelihood must be run.  Some of these are trivial, like the `test` sampler, which just generates a single sample.  Others are much more complex and explore the parameter space dynamically.  Most of them are what statisticians would genuinely consider to be a *sampler* - they generate samples from the posterior distribution.
 
+There are many different samplers packaged with the code that are useful in different circumstances. They are all interact with the rest of CosmoSIS in very similar ways - they are configured from options in a parameter file, and they build a likelihood pipeline which they run whenever they have a new sample whose posterior they want to evaluate.
 
 
 User Interface
