@@ -3,8 +3,8 @@ CosmoSIS Overview
 
 
 
-Architecture
-============
+What CosmoSIS does
+==================
 
 CosmoSIS connects together **samplers**, which decide how to explore a cosmological parameter space, with **pipelines** made from a sequence of **modules**, which calculate the steps needed to get a likelihood functions. You have to decide on what calculations your likelihood function should consist of and choose or write modules that perform them.
 

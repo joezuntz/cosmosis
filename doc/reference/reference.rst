@@ -1,11 +1,9 @@
-Installing CosmoSIS
+Reference
 -------------------
 
 .. toctree::
    :maxdepth: 1
 
-   bootstrap
-   docker
-   manual
+   samplers/samplers
 
 

@@ -1,5 +1,5 @@
-Manually installing CosmoSIS
------------------------------
+Manual Installation
+-------------------
 
 We recommend using one of the automatic installation methods described above.  They install everything neatly in a single directory and will not mess up your current installation of anything.  Even if you're an expert it really is much easier.
 

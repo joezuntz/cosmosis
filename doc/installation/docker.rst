@@ -16,9 +16,9 @@ You need admin rights to install docker, but not to use it, so if you have a sys
     * `Installation on Windows <https://docs.docker.com/docker-for-windows/install/>`_ (get the stable version)
     * On Linux, docker is available in most package managers like apt and yum.  You can also try the more `opaque instructions on the docker site <https://docs.docker.com/engine/installation/#server>`_.
 
-#. :code:`git clone https://bitbucket.org/joezuntz/cosmosis-docker  #This will download the cosmosis-docker installer`
+#. :code:`git clone https://bitbucket.org/joezuntz/cosmosis-docker` This will download the cosmosis-docker installer
 #. :code:`cd cosmosis-docker`
-#. :code:`./get-cosmosis-and-vm ./cosmosis  #This download cosmosis. Wait a little while for the download to complete.`
-#. :code:`./start-cosmosis-vm ./cosmosis  #This starts you inside docker.  Read what it says on the screen.`
+#. :code:`./get-cosmosis-and-vm ./cosmosis`  This download cosmosis. Wait a little while for the download to complete.
+#. :code:`./start-cosmosis-vm ./cosmosis`  #This starts you inside docker.  Read what it says on the screen.
 #. First time only: :code:`update-cosmosis --develop` to get the development version which has some fixes in.
 #. First time only, or when you change any C/C++/F90 code: :code:`make`

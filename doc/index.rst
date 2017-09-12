@@ -14,7 +14,7 @@ It is a framework for structuring cosmological parameter estimation in a way tha
 
 It consolidates and connects together existing code for predicting cosmic observables, and makes mapping out experimental likelihoods with a range of different techniques much more accessible
 
-CosmoSIS is described in Zuntz et al: http://arxiv.org/abs/1409.3409 - if you make use of it in your research, please cite that paper and include the URL of this repository in your acknowledgments. Thanks!
+CosmoSIS is described in `Zuntz et al <http://arxiv.org/abs/1409.3409>` - if you make use of it in your research, please cite that paper and include the URL of this repository in your acknowledgments. Thanks!
 
 
 .. toctree::
@@ -25,7 +25,7 @@ CosmoSIS is described in Zuntz et al: http://arxiv.org/abs/1409.3409 - if you ma
    installation/installation
    tutorials/tutorials
    manual
-   reference
+   reference/reference
    help/help
 
 
