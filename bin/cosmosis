@@ -8,7 +8,7 @@ from cosmosis.runtime.config import Inifile, CosmosisConfigurationError
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
 from cosmosis.runtime import process_pool
-from cosmosis.runtime.utils import ParseExtraParameters
+from cosmosis.runtime.utils import ParseExtraParameters, stdout_redirected
 from cosmosis.samplers.sampler import sampler_registry, ParallelSampler, Hints
 from cosmosis import output as output_module
 import ConfigParser
@@ -81,8 +81,16 @@ def main(args, pool=None):
     # Load configuration.
     ini = Inifile(args.inifile, override=args.params)
 
+
+
     # Create pipeline.
-    pipeline = LikelihoodPipeline(ini, override=args.variables) 
+    pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", False)
+    if (pool is None) or pool.is_master() or pool_stdout:
+        pipeline = LikelihoodPipeline(ini, override=args.variables) 
+    else:
+        # Suppress output on everything except the master process
+        with stdout_redirected():
+            pipeline = LikelihoodPipeline(ini, override=args.variables) 
 
     # determine the type(s) of sampling we want.
     sample_methods = ini.get(RUNTIME_INI_SECTION, "sampler", "test").split()
