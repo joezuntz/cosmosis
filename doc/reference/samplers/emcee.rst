@@ -3,14 +3,19 @@ The Emcee sampler
 
 Ensemble walker sampling
 
-===========  ===================================
-Name         emcee
-Version      2.1.0
-Author(s)    Dan Foreman-Mackey and contributors
-URL          http://dan.iel.fm/emcee/
-Citation(s)  PASP, 125, 925, 306-312
-Parallelism  parallel
-===========  ===================================
++--------------+--------------------------------------+
+| | Name       | | emcee                              |
++--------------+--------------------------------------+
+| | Version    | | 2.1.0                              |
++--------------+--------------------------------------+
+| | Author(s)  | | Dan Foreman-Mackey and contributors|
++--------------+--------------------------------------+
+| | URL        | | http://dan.iel.fm/emcee/           |
++--------------+--------------------------------------+
+| | Citation(s)| | PASP, 125, 925, 306-312            |
++--------------+--------------------------------------+
+| | Parallelism| | parallel                           |
++--------------+--------------------------------------+
 
 The emcee sampler is a form of Monte-Carlo Markov Chain that uses an ensemble of 'walkers' that explore the parameter space.  Each walker chooses another walker at random and proposes along the line connecting the two of them using the Metropolis acceptance rule. The proposal scale is given by the separation of the two walkers.
 
@@ -40,36 +45,22 @@ Parameters
 These parameters can be set in the sampler's section in the ini parameter file.  
 If no default is specified then the parameter is required. A listing of "(empty)" means a blank string is the default.
 
-.. list-table::
-    :widths: auto
-    :header-rows: 1
-
-    * - Parameter
-      - Type
-      - Meaning
-      - Default
-    * - random_start
-      - bool
-      - N
-      - whether to start the walkers at random points in the prior instead of near the start.  Usually a bad idea
-    * - covmat
-      - string
-      - (empty)
-      - a file containing a covariance matrix for initializing the walkers.
-    * - samples
-      - integer
-      - 
-      - number of jumps to attempt per walker
-    * - start_points
-      - string
-      - (empty)
-      - a file containing starting points for the walkers. If not specified walkers are initialized randomly from the prior distribution.
-    * - nsteps
-      - integer
-      - 
-      - number of sample steps taken in between writing output
-    * - walkers
-      - integer
-      - 
-      - number of walkers in the space
-
++---------------+----------+-------------------------------------------------------------+----------+
+| | Parameter   | | Type   | | Meaning                                                   | | Default|
++---------------+----------+-------------------------------------------------------------+----------+
+| | random_start| | bool   | | whether to start the walkers at random points in the prior| | N      |
+|               |          | | instead of near the start.  Usually a bad idea            |          |
++---------------+----------+-------------------------------------------------------------+----------+
+| | covmat      | | string | | a file containing a covariance matrix for initializing the| | (empty)|
+|               |          | | walkers.                                                  |          |
++---------------+----------+-------------------------------------------------------------+----------+
+| | samples     | | integer| | number of jumps to attempt per walker                     |          |
++---------------+----------+-------------------------------------------------------------+----------+
+| | start_points| | string | | a file containing starting points for the walkers. If not | | (empty)|
+|               |          | | specified walkers are initialized randomly from the prior |          |
+|               |          | | distribution.                                             |          |
++---------------+----------+-------------------------------------------------------------+----------+
+| | nsteps      | | integer| | number of sample steps taken in between writing output    |          |
++---------------+----------+-------------------------------------------------------------+----------+
+| | walkers     | | integer| | number of walkers in the space                            |          |
++---------------+----------+-------------------------------------------------------------+----------+

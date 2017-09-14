@@ -3,14 +3,19 @@ The Fisher sampler
 
 Fisher matrix calculation
 
-===========  =======================================
-Name         fisher
-Version      1.0
-Author(s)    CosmoSIS Team
-URL          https://bitbucket.org/joezuntz/cosmosis
-Citation(s)
-Parallelism  embarrassing
-===========  =======================================
++--------------+------------------------------------------+
+| | Name       | | fisher                                 |
++--------------+------------------------------------------+
+| | Version    | | 1.0                                    |
++--------------+------------------------------------------+
+| | Author(s)  | | CosmoSIS Team                          |
++--------------+------------------------------------------+
+| | URL        | | https://bitbucket.org/joezuntz/cosmosis|
++--------------+------------------------------------------+
+| | Citation(s)|                                          |
++--------------+------------------------------------------+
+| | Parallelism| | embarrassing                           |
++--------------+------------------------------------------+
 
 
 
@@ -20,8 +25,7 @@ Fisher matrices can be used to approximate the full likelihood shape one would d
 
 For a general distribution the Fisher matrix can be rather fiddly to calculate;  this sampler does not do that.  Instead it assumes a Gaussian likelihood, in which case the fisher matrix can be computed from to the derivatives v of the observable quantities with respect to the parameters p, and their covariance matrix C:
 
-.. math::
-    F_{ij} = \sum_{mn} \frac{\partial v_m}{\partial p_i} [C^{-1}]_{mn} \frac{\partial v_n}{\partial p_j}
+F_{ij} = \sum_{mn} \frac{\partial v_m}{\partial p_i} [C^{-1}]_{mn} \frac{\partial v_n}{\partial p_j}
 
 There is an additional term that arises when the covariance matrix C depends on the parameters p, which we do not currently calculate here, as it is usually fixed in  cosmology. We plan to implement this shortly, however.
 
@@ -47,16 +51,10 @@ Parameters
 These parameters can be set in the sampler's section in the ini parameter file.  
 If no default is specified then the parameter is required. A listing of "(empty)" means a blank string is the default.
 
-.. list-table::
-    :widths: auto
-    :header-rows: 1
-
-    * - Parameter
-      - Type
-      - Meaning
-      - Default
-    * - step_size
-      - float
-      - 0.01
-      - The size, as a fraction of the total parameter range, of steps to use in the derivative calculation. You should investigate stability wrt this.
-
++------------+--------+-----------------------------------------------------------+----------+
+| | Parameter| | Type | | Meaning                                                 | | Default|
++------------+--------+-----------------------------------------------------------+----------+
+| | step_size| | float| | The size, as a fraction of the total parameter range, of| | 0.01   |
+|            |        | | steps to use in the derivative calculation. You should  |          |
+|            |        | | investigate stability wrt this.                         |          |
++------------+--------+-----------------------------------------------------------+----------+

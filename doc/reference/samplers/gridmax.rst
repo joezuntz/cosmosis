@@ -3,14 +3,19 @@ The Gridmax sampler
 
 Naive grid maximum-posterior
 
-===========  =======================================
-Name         gridmax
-Version      1.0
-Author(s)    CosmoSIS Team
-URL          https://bitbucket.org/joezuntz/cosmosis
-Citation(s)
-Parallelism  parallel
-===========  =======================================
++--------------+------------------------------------------+
+| | Name       | | gridmax                                |
++--------------+------------------------------------------+
+| | Version    | | 1.0                                    |
++--------------+------------------------------------------+
+| | Author(s)  | | CosmoSIS Team                          |
++--------------+------------------------------------------+
+| | URL        | | https://bitbucket.org/joezuntz/cosmosis|
++--------------+------------------------------------------+
+| | Citation(s)|                                          |
++--------------+------------------------------------------+
+| | Parallelism| | parallel                               |
++--------------+------------------------------------------+
 
 This sampler is a naive and experimental attempt to try a parallel ML/MAP sampler.
 
@@ -38,24 +43,15 @@ Parameters
 These parameters can be set in the sampler's section in the ini parameter file.  
 If no default is specified then the parameter is required. A listing of "(empty)" means a blank string is the default.
 
-.. list-table::
-    :widths: auto
-    :header-rows: 1
-
-    * - Parameter
-      - Type
-      - Meaning
-      - Default
-    * - output_ini
-      - string
-      - (empty)
-      - if present, save the resulting parameters to a new ini file with this name
-    * - tolerance
-      - real
-      - 0.1
-      - tolerance for Delta Log Like along one complete loop through the dimensions
-    * - nsteps
-      - integer
-      - 
-      - The number of sample points along each line through the space
-
++-------------+----------+---------------------------------------------------------------+----------+
+| | Parameter | | Type   | | Meaning                                                     | | Default|
++-------------+----------+---------------------------------------------------------------+----------+
+| | output_ini| | string | | if present, save the resulting parameters to a new ini file | | (empty)|
+|             |          | | with this name                                              |          |
++-------------+----------+---------------------------------------------------------------+----------+
+| | tolerance | | real   | | tolerance for Delta Log Like along one complete loop through| | 0.1    |
+|             |          | | the dimensions                                              |          |
++-------------+----------+---------------------------------------------------------------+----------+
+| | nsteps    | | integer| | The number of sample points along each line through the     |          |
+|             |          | | space                                                       |          |
++-------------+----------+---------------------------------------------------------------+----------+

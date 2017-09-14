@@ -3,14 +3,19 @@ The Test sampler
 
 Evaluate a single parameter set
 
-===========  =======================================
-Name         test
-Version      1.0
-Author(s)    CosmoSIS Team
-URL          https://bitbucket.org/joezuntz/cosmosis
-Citation(s)
-Parallelism  serial
-===========  =======================================
++--------------+------------------------------------------+
+| | Name       | | test                                   |
++--------------+------------------------------------------+
+| | Version    | | 1.0                                    |
++--------------+------------------------------------------+
+| | Author(s)  | | CosmoSIS Team                          |
++--------------+------------------------------------------+
+| | URL        | | https://bitbucket.org/joezuntz/cosmosis|
++--------------+------------------------------------------+
+| | Citation(s)|                                          |
++--------------+------------------------------------------+
+| | Parallelism| | serial                                 |
++--------------+------------------------------------------+
 
 This is the most trivial possible 'sampler' - it just runs on a single parameter sample. It is mainly useful for testing and for generating  cosmology results for plotting.
 
@@ -42,24 +47,15 @@ Parameters
 These parameters can be set in the sampler's section in the ini parameter file.  
 If no default is specified then the parameter is required. A listing of "(empty)" means a blank string is the default.
 
-.. list-table::
-    :widths: auto
-    :header-rows: 1
-
-    * - Parameter
-      - Type
-      - Meaning
-      - Default
-    * - fatal_errors
-      - bool
-      - N
-      - Any errors in the pipeline trigger an immediate failure so you can diagnose errors
-    * - graph
-      - string
-      - (empty)
-      - Requires pygraphviz.  Save a dot file describing the pipeline
-    * - save_dir
-      - string
-      - (empty)
-      - Save all the data computed in the pipeline to this directory (can also end with .tgz to get a zipped form)
-
++---------------+---------+---------------------------------------------------------------+----------+
+| | Parameter   | | Type  | | Meaning                                                     | | Default|
++---------------+---------+---------------------------------------------------------------+----------+
+| | fatal_errors| | bool  | | Any errors in the pipeline trigger an immediate failure so  | | N      |
+|               |         | | you can diagnose errors                                     |          |
++---------------+---------+---------------------------------------------------------------+----------+
+| | graph       | | string| | Requires pygraphviz.  Save a dot file describing the        | | (empty)|
+|               |         | | pipeline                                                    |          |
++---------------+---------+---------------------------------------------------------------+----------+
+| | save_dir    | | string| | Save all the data computed in the pipeline to this directory| | (empty)|
+|               |         | | (can also end with .tgz to get a zipped form)               |          |
++---------------+---------+---------------------------------------------------------------+----------+

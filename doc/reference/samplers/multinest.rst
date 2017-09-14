@@ -3,14 +3,19 @@ The Multinest sampler
 
 Nested sampling
 
-===========  ===================================================
-Name         multinest
-Version      3.7
-Author(s)    Farhan Feroz,Mike Hobson
-URL          https://ccpforge.cse.rl.ac.uk/gf/project/multinest/
-Citation(s)  arXiv:0809.3437, arXiv:0704.3704, arXiv:1306.2144
-Parallelism  parallel
-===========  ===================================================
++--------------+------------------------------------------------------+
+| | Name       | | multinest                                          |
++--------------+------------------------------------------------------+
+| | Version    | | 3.7                                                |
++--------------+------------------------------------------------------+
+| | Author(s)  | | Farhan Feroz,Mike Hobson                           |
++--------------+------------------------------------------------------+
+| | URL        | | https://ccpforge.cse.rl.ac.uk/gf/project/multinest/|
++--------------+------------------------------------------------------+
+| | Citation(s)| | arXiv:0809.3437, arXiv:0704.3704, arXiv:1306.2144  |
++--------------+------------------------------------------------------+
+| | Parallelism| | parallel                                           |
++--------------+------------------------------------------------------+
 
 Nested sampling is a method designed to calculate the Bayesian Evidence of a distribution, for use in comparing multiple models to see which fit the data better.
 
@@ -42,80 +47,49 @@ Parameters
 These parameters can be set in the sampler's section in the ini parameter file.  
 If no default is specified then the parameter is required. A listing of "(empty)" means a blank string is the default.
 
-.. list-table::
-    :widths: auto
-    :header-rows: 1
-
-    * - Parameter
-      - Type
-      - Meaning
-      - Default
-    * - live_points
-      - integer
-      - 
-      - Number of live points in the ensemble
-    * - random_seed
-      - integer
-      - -1
-      - Seed to use for random proposal; -1 to generate from current time.  Allows re-running chains exactly
-    * - feedback
-      - bool
-      - T
-      - Print out progression information from multinest
-    * - resume
-      - bool
-      - F
-      - If you previously set multinest_outfile_root you can restart an interrupted chain with this setting
-    * - wrapped_params
-      - str
-      - (empty)
-      - Space separated list of parameters (section--name) that should be given periodic boundary conditions. Can help sample params that hit edge of prior.
-    * - multinest_outfile_root
-      - str
-      - (empty)
-      - In addition to CosmoSIS output, save a collection of multinest output files
-    * - ins
-      - boolean
-      - True
-      - Use Importance Nested Sampling (INS) mode - see papers for more info
-    * - efficiency
-      - float
-      - 0.1
-      - Target efficiency for INS - see papers
-    * - update_interval
-      - integer
-      - 200
-      - Frequency of printed output from inside multinest
-    * - max_iterations
-      - integer
-      - 
-      - Maximum number of samples to take
-    * - mode_ztolerance
-      - float
-      - 0.5
-      - If multi-modal, get separate stats for modes with this evidence difference
-    * - log_zero
-      - float
-      - -1e5
-      - Log-probabilities lower than this value are considered to be -infinity
-    * - cluster_dimensions
-      - integer
-      - -1
-      - Look for multiple modes only on the first dimensions
-    * - max_modes
-      - integer
-      - 100
-      - If multi-modal, maximum number of allowed modes
-    * - mode_separation
-      - bool
-      - N
-      - Optimize for multi-modal or other odd likelihoods - split into different proposal modes
-    * - constant_efficiency
-      - bool
-      - N
-      - Constant efficiency mode - see papers
-    * - tolerance
-      - float
-      - 0.1
-      - Target error on evidence
-
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | Parameter             | | Type   | | Meaning                                                     | | Default|
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | live_points           | | integer| | Number of live points in the ensemble                       |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | random_seed           | | integer| | Seed to use for random proposal; -1 to generate from current| | -1     |
+|                         |          | | time.  Allows re-running chains exactly                     |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | feedback              | | bool   | | Print out progression information from multinest            | | T      |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | resume                | | bool   | | If you previously set multinest_outfile_root you can restart| | F      |
+|                         |          | | an interrupted chain with this setting                      |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | wrapped_params        | | str    | | Space separated list of parameters (section--name) that     | | (empty)|
+|                         |          | | should be given periodic boundary conditions. Can help      |          |
+|                         |          | | sample params that hit edge of prior.                       |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | multinest_outfile_root| | str    | | In addition to CosmoSIS output, save a collection of        | | (empty)|
+|                         |          | | multinest output files                                      |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | ins                   | | boolean| | Use Importance Nested Sampling (INS) mode - see papers for  | | True   |
+|                         |          | | more info                                                   |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | efficiency            | | float  | | Target efficiency for INS - see papers                      | | 0.1    |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | update_interval       | | integer| | Frequency of printed output from inside multinest           | | 200    |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | max_iterations        | | integer| | Maximum number of samples to take                           |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | mode_ztolerance       | | float  | | If multi-modal, get separate stats for modes with this      | | 0.5    |
+|                         |          | | evidence difference                                         |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | log_zero              | | float  | | Log-probabilities lower than this value are considered to be| | -1e5   |
+|                         |          | | -infinity                                                   |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | cluster_dimensions    | | integer| | Look for multiple modes only on the first dimensions        | | -1     |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | max_modes             | | integer| | If multi-modal, maximum number of allowed modes             | | 100    |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | mode_separation       | | bool   | | Optimize for multi-modal or other odd likelihoods - split   | | N      |
+|                         |          | | into different proposal modes                               |          |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | constant_efficiency   | | bool   | | Constant efficiency mode - see papers                       | | N      |
++-------------------------+----------+---------------------------------------------------------------+----------+
+| | tolerance             | | float  | | Target error on evidence                                    | | 0.1    |
++-------------------------+----------+---------------------------------------------------------------+----------+

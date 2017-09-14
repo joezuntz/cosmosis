@@ -3,14 +3,19 @@ The Grid sampler
 
 Simple grid sampler
 
-===========  =======================================
-Name         grid
-Version      1.0
-Author(s)    CosmoSIS Team
-URL          https://bitbucket.org/joezuntz/cosmosis
-Citation(s)
-Parallelism  embarrassing
-===========  =======================================
++--------------+------------------------------------------+
+| | Name       | | grid                                   |
++--------------+------------------------------------------+
+| | Version    | | 1.0                                    |
++--------------+------------------------------------------+
+| | Author(s)  | | CosmoSIS Team                          |
++--------------+------------------------------------------+
+| | URL        | | https://bitbucket.org/joezuntz/cosmosis|
++--------------+------------------------------------------+
+| | Citation(s)|                                          |
++--------------+------------------------------------------+
+| | Parallelism| | embarrassing                           |
++--------------+------------------------------------------+
 
 Grid sampling is the simplest and most brute-force way to explore a parameter space. It simply builds an even grid of points in parameter space and samples all of them.
 
@@ -36,20 +41,11 @@ Parameters
 These parameters can be set in the sampler's section in the ini parameter file.  
 If no default is specified then the parameter is required. A listing of "(empty)" means a blank string is the default.
 
-.. list-table::
-    :widths: auto
-    :header-rows: 1
-
-    * - Parameter
-      - Type
-      - Meaning
-      - Default
-    * - nsample_dimension
-      - integer
-      - 
-      - The number of grid points along each dimension of the space
-    * - save
-      - string
-      - (empty)
-      - If set, a base directory or .tgz name for saving the cosmology output for every point in the grid
-
++--------------------+----------+--------------------------------------------------------------+----------+
+| | Parameter        | | Type   | | Meaning                                                    | | Default|
++--------------------+----------+--------------------------------------------------------------+----------+
+| | nsample_dimension| | integer| | The number of grid points along each dimension of the space|          |
++--------------------+----------+--------------------------------------------------------------+----------+
+| | save             | | string | | If set, a base directory or .tgz name for saving the       | | (empty)|
+|                    |          | | cosmology output for every point in the grid               |          |
++--------------------+----------+--------------------------------------------------------------+----------+

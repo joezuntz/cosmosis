@@ -3,14 +3,19 @@ The Snake sampler
 
 Intelligent Grid exploration
 
-===========  =======================================
-Name         snake
-Version      1.0
-Author(s)    CosmoSIS Team
-URL          https://bitbucket.org/joezuntz/cosmosis
-Citation(s)  ApJ 777 172 (2013)
-Parallelism  parallel
-===========  =======================================
++--------------+------------------------------------------+
+| | Name       | | snake                                  |
++--------------+------------------------------------------+
+| | Version    | | 1.0                                    |
++--------------+------------------------------------------+
+| | Author(s)  | | CosmoSIS Team                          |
++--------------+------------------------------------------+
+| | URL        | | https://bitbucket.org/joezuntz/cosmosis|
++--------------+------------------------------------------+
+| | Citation(s)| | ApJ 777 172 (2013)                     |
++--------------+------------------------------------------+
+| | Parallelism| | parallel                               |
++--------------+------------------------------------------+
 
 Snake is a more intelligent version of the grid sampler that avoids taking large number of samples with a low likelihood, which the naive grid sampler nearly always does.
 
@@ -36,24 +41,13 @@ Parameters
 These parameters can be set in the sampler's section in the ini parameter file.  
 If no default is specified then the parameter is required. A listing of "(empty)" means a blank string is the default.
 
-.. list-table::
-    :widths: auto
-    :header-rows: 1
-
-    * - Parameter
-      - Type
-      - Meaning
-      - Default
-    * - threshold
-      - float
-      - 4.0
-      - Termination for difference betwen max-like and highest surface likelihood
-    * - nsample_dimension
-      - integer
-      - 10
-      - Number of grid points per dimension
-    * - maxiter
-      - integer
-      - 100000
-      - Maximum number of samples to take
-
++--------------------+----------+---------------------------------------------------------+----------+
+| | Parameter        | | Type   | | Meaning                                               | | Default|
++--------------------+----------+---------------------------------------------------------+----------+
+| | threshold        | | float  | | Termination for difference betwen max-like and highest| | 4.0    |
+|                    |          | | surface likelihood                                    |          |
++--------------------+----------+---------------------------------------------------------+----------+
+| | nsample_dimension| | integer| | Number of grid points per dimension                   | | 10     |
++--------------------+----------+---------------------------------------------------------+----------+
+| | maxiter          | | integer| | Maximum number of samples to take                     | | 100000 |
++--------------------+----------+---------------------------------------------------------+----------+

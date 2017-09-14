@@ -3,14 +3,19 @@ The Maxlike sampler
 
 Find the maximum likelihood using various methods in scipy
 
-===========  =======================================================================================
-Name         maxlike
-Version      1.0
-Author(s)    SciPy developers
-URL          http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.optimize.minimize.html
-Citation(s)
-Parallelism  serial
-===========  =======================================================================================
++--------------+------------------------------------------------------------------------------------------+
+| | Name       | | maxlike                                                                                |
++--------------+------------------------------------------------------------------------------------------+
+| | Version    | | 1.0                                                                                    |
++--------------+------------------------------------------------------------------------------------------+
+| | Author(s)  | | SciPy developers                                                                       |
++--------------+------------------------------------------------------------------------------------------+
+| | URL        | | http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.optimize.minimize.html|
++--------------+------------------------------------------------------------------------------------------+
+| | Citation(s)|                                                                                          |
++--------------+------------------------------------------------------------------------------------------+
+| | Parallelism| | serial                                                                                 |
++--------------+------------------------------------------------------------------------------------------+
 
 This sampler attempts to find the single point in parameter space with the highest likelihood.  It wraps a variety of samplers from the scipy.minimize package.
 
@@ -70,32 +75,19 @@ Parameters
 These parameters can be set in the sampler's section in the ini parameter file.  
 If no default is specified then the parameter is required. A listing of "(empty)" means a blank string is the default.
 
-.. list-table::
-    :widths: auto
-    :header-rows: 1
-
-    * - Parameter
-      - Type
-      - Meaning
-      - Default
-    * - output_ini
-      - string
-      - (empty)
-      - if present, save the resulting parameters to a new ini file with this name
-    * - maxiter
-      - integer
-      - 1000
-      - Maximum number of iterations of the sampler
-    * - tolerance
-      - real
-      - 1e-3
-      - The tolerance parameter for termination.  Meaning depends on the sampler - see scipy docs.
-    * - output_covmat
-      - string
-      - (empty)
-      - if present and the sampler supports it, save the estimated covariance to this file
-    * - method
-      - string
-      - Nelder-Mead
-      - The minimization method to use.
-
++----------------+----------+---------------------------------------------------------------+--------------+
+| | Parameter    | | Type   | | Meaning                                                     | | Default    |
++----------------+----------+---------------------------------------------------------------+--------------+
+| | output_ini   | | string | | if present, save the resulting parameters to a new ini file | | (empty)    |
+|                |          | | with this name                                              |              |
++----------------+----------+---------------------------------------------------------------+--------------+
+| | maxiter      | | integer| | Maximum number of iterations of the sampler                 | | 1000       |
++----------------+----------+---------------------------------------------------------------+--------------+
+| | tolerance    | | real   | | The tolerance parameter for termination.  Meaning depends on| | 1e-3       |
+|                |          | | the sampler - see scipy docs.                               |              |
++----------------+----------+---------------------------------------------------------------+--------------+
+| | output_covmat| | string | | if present and the sampler supports it, save the estimated  | | (empty)    |
+|                |          | | covariance to this file                                     |              |
++----------------+----------+---------------------------------------------------------------+--------------+
+| | method       | | string | | The minimization method to use.                             | | Nelder-Mead|
++----------------+----------+---------------------------------------------------------------+--------------+
