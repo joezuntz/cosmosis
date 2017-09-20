@@ -1,3 +1,5 @@
+#coding: utf-8
+
 import random
 import config
 import prior as priors # to avoid breaking other stuff below
@@ -72,6 +74,7 @@ class Parameter(object):
         return self.prior.sample()
 
     def normalize(self, p):
+        u"""Return the position of `p` between the allowable limits: a value fron 0.0 to 1.0."""
         if self.is_fixed():
             return 0.0
         else:

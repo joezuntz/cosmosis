@@ -1,3 +1,5 @@
+#coding: utf-8
+
 u"""Definition of the :class:`DataBlock` class."""
 
 
