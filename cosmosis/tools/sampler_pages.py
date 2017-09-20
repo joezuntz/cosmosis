@@ -3,6 +3,21 @@ import yaml
 import glob
 from collections import OrderedDict
 import tabulate
+from tabulate import Line, DataRow, TableFormat
+import textwrap
+
+
+
+table_format = TableFormat(lineabove=Line("+", "-", "+", "+"),
+linebelowheader=Line("+", "-", "+", "+"),
+linebetweenrows=Line("+", "-", "+", "+"),
+linebelow=Line("+", "-", "+", "+"),
+headerrow=DataRow("|", "|", "|"),
+datarow=DataRow("|", "|", "|"),
+padding=0, with_header_hide=None)
+
+tabulate.multiline_formats[table_format] = table_format
+
 
 #Generate the summary page of all the samplers
 #Generate the specific page for each sampler.
@@ -67,9 +82,6 @@ Parameters
 These parameters can be set in the sampler's section in the ini parameter file.  
 If no default is specified then the parameter is required. A listing of "(empty)" means a blank string is the default.
 
-.. list-table::
-    :widths: auto
-    :header-rows: 1
 {parameter_table}
 """
 
@@ -98,34 +110,75 @@ def header_table(info):
 		["Citation(s)", info["citations"]],
 		["Parallelism", info["parallel"]],
 	]
-	return tabulate.tabulate(table, tablefmt='rst')
+	text = rst_table(table)
+	return text
+
+
+def rst_table(rows):
+    ncol = len(rows[0])
+
+    # Find the max length of each column
+    maxlens = []
+    for i in xrange(ncol):
+        col = [row[i] for row in rows]
+        maxlen = 0
+        for item in col:
+            if item:
+                l = max([len(line) for line in item.splitlines()]) + 3  
+                #the 3 makes space for the extra "|" below
+                #which makes lines split properly
+            else:
+                l = 0
+            maxlen = max(l,maxlen)
+        maxlens.append(maxlen)
+
+    maxnlines = []
+    for row in rows:
+        maxnline = 0
+        for item in row:
+            nline = len(item.splitlines())
+            maxnline = max(nline,maxnline)
+        maxnlines.append(maxnline)
+
+
+    sepline = "+" + ("+".join('-'*l for l in maxlens)) + "+"
+
+    subrows = []
+    for row,maxnline in zip(rows, maxnlines):
+        for i in xrange(maxnline):
+            subrow = []
+            for item in row:
+                item = item.splitlines()
+                if len(item)>i:
+                    subrow.append(" | " + item[i])
+                else:
+                    subrow.append("")
+            subrows.append(subrow)
+        subrows.append(None)
+
+    output = [sepline]
+    for subrow in subrows:
+        if subrow is None:
+            outrow = sepline
+        else:
+            outrow = "|" + ("|".join([item.ljust(l) for item,l in zip(subrow,maxlens)])) + "|"
+        output.append(outrow)
+    return "\n".join(output)
 
 
 
 def make_parameter_table(params):
 	headers = ['Parameter', 'Type', 'Meaning', 'Default']
-	text = """
-    * - Parameter
-      - Type
-      - Meaning
-      - Default
-"""
-	table = []
+	table = [headers]
 	for pname, description in list(params.items()):
 		try:
 			dtype, default, rest = parse_parameter_description(description)
+			rest = textwrap.fill(rest, 60)
 			table.append([pname,dtype,rest,default])
-			text += """    * - {}
-      - {}
-      - {}
-      - {}
-""".format(pname,dtype,default,rest)
 		except (IndexError, ValueError):
 			print "ERROR: Could not parse in {0}".format(name)
 			print description
-	return text
-
-#	return tabulate.tabulate(table, headers=headers, tablefmt='rst')
+	return rst_table(table)
 
 
 def generate_sampler_wiki(info):
@@ -142,7 +195,7 @@ def generate_sampler_wiki(info):
 	info['parameter_table'] = make_parameter_table(info['params'])
 	info['name'] = name.capitalize()
 	markdown = rst_template.format(**info)
-	page.write(markdown)
+	page.write(markdown.encode('utf-8'))
 	page.close()
 
 
