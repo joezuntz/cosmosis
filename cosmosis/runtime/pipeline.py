@@ -501,7 +501,7 @@ class LikelihoodPipeline(Pipeline):
             sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
 
             # Replace with bad values
-            like = np.nan
+            like = -np.inf
             data = None
             extra = np.repeat(np.nan, self.number_extra)
 
