@@ -35,7 +35,7 @@ class Sampler(object):
             output.metadata("n_varied", len(self.pipeline.varied_params))
 
             self.attribution.write_output(self.output)
-        blinding_header = self.ini.getboolean("output","blinding-header", False)
+        blinding_header = self.ini.getboolean("output","blinding-header", fallback=False)
         if blinding_header and self.output:
             output.comment("")
             output.comment("Blank lines prevent accidental unblinding")
@@ -48,13 +48,13 @@ class Sampler(object):
         and also save to the output file if it exists
         """
         if option_type is float:
-            val = self.ini.getfloat(self.name, option, default)
+            val = self.ini.getfloat(self.name, option, fallback=default)
         elif option_type is int:
-            val = self.ini.getint(self.name, option, default)
+            val = self.ini.getint(self.name, option, fallback=default)
         elif option_type is bool:
-            val = self.ini.getboolean(self.name, option, default)
+            val = self.ini.getboolean(self.name, option, fallback=default)
         elif option_type is str:
-            val = self.ini.get(self.name, option, default)
+            val = self.ini.get(self.name, option, fallback=default)
         else:
             raise ValueError("Internal cosmosis sampler error: "
                 "tried to read ini file option with unknown type %s"%str(option_type))
@@ -101,4 +101,3 @@ class ParallelSampler(Sampler):
 
     def is_master(self):
         return self.pool is None or self.pool.is_master()
-

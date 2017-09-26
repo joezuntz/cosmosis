@@ -67,7 +67,6 @@ class IncludingConfigParser(configparser.ConfigParser):
                         cursect = self._defaults
                     else:
                         cursect = self._dict()
-                        cursect['__name__'] = sectname
                         self._sections[sectname] = cursect
                     # So sections can't start with a continuation line
                     optname = None
@@ -177,8 +176,6 @@ class Inifile(IncludingConfigParser):
                 for key, value in list(vars.items()):
                     d[self.optionxform(key)] = value
             options = list(d.keys())
-            if "__name__" in options:
-                options.remove("__name__")
             if raw:
                 return [(option, d[option])
                         for option in options]
@@ -188,44 +185,44 @@ class Inifile(IncludingConfigParser):
 
 
 
-    def get(self, section, name, default=None):
+    def get(self, section, option, *, raw=False, vars=None, fallback=configparser._UNSET):
         try:
-            return IncludingConfigParser.get(self, section, name)
+            return IncludingConfigParser.get(self, section, option, raw=raw, vars=vars, fallback=fallback)
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
-            if default is None:
-                raise CosmosisConfigurationError("CosmoSIS looked for an option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
+            if fallback is configparser._UNSET:
+                raise CosmosisConfigurationError("CosmoSIS looked for an option called '%s' in the '[%s]' section, but it was not in the ini file"%(option,section))
             else:
-                return default
+                return fallback
 
     # these functions override the default parsers to allow for extra formats
-    def getint(self, section, name, default=None):
+    def getint(self, section, option, *, raw=False, vars=None, fallback=configparser._UNSET):
         try:
-            return IncludingConfigParser.getint(self, section, name)
+            return IncludingConfigParser.getint(self, section, option, raw=raw, vars=vars, fallback=fallback)
         except (configparser.NoSectionError, configparser.NoOptionError, CosmosisConfigurationError) as e:
-            if default is None:
-                raise CosmosisConfigurationError("CosmoSIS looked for an integer option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
-            elif not isinstance(default, int):
+            if fallback is configparser._UNSET:
+                raise CosmosisConfigurationError("CosmoSIS looked for an integer option called '%s' in the '[%s]' section, but it was not in the ini file"%(option,section))
+            elif not isinstance(fallback, int):
                 raise TypeError("Default not integer")
             else:
-                return default
+                return fallback
 
-    def getfloat(self, section, name, default=None):
+    def getfloat(self, section, option, *, raw=False, vars=None, fallback=configparser._UNSET):
         try:
-            return IncludingConfigParser.getfloat(self, section, name)
+            return IncludingConfigParser.getfloat(self, section, option, raw=raw, vars=vars, fallback=fallback)
         except (configparser.NoSectionError, configparser.NoOptionError, CosmosisConfigurationError) as e:
-            if default is None:
-                raise CosmosisConfigurationError("CosmoSIS looked for a float option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
-            elif not isinstance(default, float):
+            if fallback is configparser._UNSET:
+                raise CosmosisConfigurationError("CosmoSIS looked for a float option called '%s' in the '[%s]' section, but it was not in the ini file"%(option,section))
+            elif not isinstance(fallback, float):
                 raise TypeError("Default not float")
             else:
-                return default
+                return fallback
 
-    def getboolean(self, section, name, default=False):
+    def getboolean(self, section, option, *, raw=False, vars=None, fallback=configparser._UNSET):
         try:
-            return IncludingConfigParser.getboolean(self, section, name)
+            return IncludingConfigParser.getboolean(self, section, option, raw=raw, vars=vars, fallback=fallback)
         except ValueError:
             # additional options t/y/n/f
-            value = self.get(section, name).lower()
+            value = self.get(section, option).lower()
             if value in ['y', 'yes', 't','true']:
                 return True
             elif value in ['n', 'no', 'f','false']:
@@ -233,14 +230,14 @@ class Inifile(IncludingConfigParser):
             else:
                 raise ValueError("Unable to parse parameter "
                                  "%s--%s = %s into boolean form"
-                                 % (section, name, value))
+                                 % (section, option, value))
         except (configparser.NoSectionError, configparser.NoOptionError, CosmosisConfigurationError) as e:
-            if default is None:
-                raise CosmosisConfigurationError("CosmoSIS looked for a boolean (T/F) option called '%s' in the '[%s]' section, but it was not in the ini file"%(name,section))
-            elif not isinstance(default, bool):
+            if fallback is configparser._UNSET:
+                raise CosmosisConfigurationError("CosmoSIS looked for a boolean (T/F) option called '%s' in the '[%s]' section, but it was not in the ini file"%(option,section))
+            elif not isinstance(fallback, bool):
                 raise TypeError("Default not boolean")
             else:
-                return default
+                return fallback
 
     def gettyped(self, section, name):
         import re

@@ -51,23 +51,23 @@ class Pipeline(object):
             self.options = config.Inifile(arg)
 
         #This will be set later
-        self.root_directory = self.options.get("runtime", "root", "cosmosis_none_signifier")
+        self.root_directory = self.options.get("runtime", "root", fallback="cosmosis_none_signifier")
         if self.root_directory=="cosmosis_none_signifier":
             self.root_directory=None
 
         base_directory = self.base_directory()
 
-        self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
-        self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
-        self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
-        shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", "")
+        self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", fallback=True)
+        self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", fallback=False)
+        self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", fallback=False)
+        shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", fallback="")
         if shortcut=="": shortcut=None
 
         # initialize modules
         self.modules = []
         if load and PIPELINE_INI_SECTION in self.options.sections():
             module_list = self.options.get(PIPELINE_INI_SECTION,
-                                           "modules", "").split()
+                                           "modules", fallback="").split()
 
             self.modules = [
                 module.Module.from_options(module_name,self.options,base_directory)
@@ -118,7 +118,7 @@ class Pipeline(object):
 
             #We let the user specify additional global sections that are
             #visible to all modules
-            global_sections = self.options.get("runtime", "global", " ")
+            global_sections = self.options.get("runtime", "global", fallback=" ")
             for global_section in global_sections.split():
                 relevant_sections.append(global_section)
 
@@ -269,7 +269,7 @@ class LikelihoodPipeline(Pipeline):
         values_file = self.options.get(PIPELINE_INI_SECTION, "values")
         self.values_filename=values_file
         priors_files = self.options.get(PIPELINE_INI_SECTION,
-                                        "priors", "").split()
+                                        "priors", fallback="").split()
         self.priors_files = priors_files
 
         self.parameters = parameter.Parameter.load_parameters(values_file,
@@ -283,7 +283,7 @@ class LikelihoodPipeline(Pipeline):
 
         #We want to save some parameter results from the run for further output
         extra_saves = self.options.get(PIPELINE_INI_SECTION,
-                                       "extra_output", "")
+                                       "extra_output", fallback="")
 
         self.extra_saves = []
         for extra_save in extra_saves.split():

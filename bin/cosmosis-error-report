@@ -126,7 +126,7 @@ else:
 		print("+++ This may be the cause of your problem +++")
 		print()
 	else:
-		values_file = ini_content.get("pipeline", "values", default="")
+		values_file = ini_content.get("pipeline", "values", fallback="")
 		if values_file == "":
 			print()
 			print("I could not find an entry 'values' in the 'pipeline' section of your ini file")

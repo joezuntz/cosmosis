@@ -162,11 +162,11 @@ class Module(object):
 
         # identify relevant functions
         setup_function = options.get(module_name,
-                                      "setup", "setup")
+                                      "setup", fallback="setup")
         exec_function = options.get(module_name,
-                                     "function", "execute")
+                                     "function", fallback="execute")
         cleanup_function = options.get(module_name,
-                                        "cleanup", "cleanup")
+                                        "cleanup", fallback="cleanup")
 
         m = cls(module_name, filename,
               setup_function, exec_function, cleanup_function,
