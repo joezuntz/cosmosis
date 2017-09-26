@@ -55,7 +55,7 @@ def generate(section_list_filename, language, output_filename):
 		generate_c(section_names, output_filename)
 	elif language == "python":
 		generate_python(section_names, output_filename)
-        elif language == "fortran":
+	elif language == "fortran":
 		generate_fortran(section_names, output_filename)
 	else:
 		print "Unknown language specified: %s" % language
@@ -64,7 +64,7 @@ def generate(section_list_filename, language, output_filename):
 if __name__ == '__main__':
 	# Required syntax is:
 	#   $ python generate_sections.py <template-file> <target-language> <output-file>
-	# 
+	#
 	if len(sys.argv) != 4:
 		print "%s requires 4 arguments" % sys.argv[0]
 		sys.exit(1)
