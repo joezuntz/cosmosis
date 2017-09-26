@@ -185,7 +185,7 @@ class Inifile(IncludingConfigParser):
 
 
 
-    def get(self, section, option, *, raw=False, vars=None, fallback=configparser._UNSET):
+    def get(self, section, option, raw=False, vars=None, fallback=configparser._UNSET):
         try:
             return IncludingConfigParser.get(self, section, option, raw=raw, vars=vars, fallback=fallback)
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
@@ -195,7 +195,7 @@ class Inifile(IncludingConfigParser):
                 return fallback
 
     # these functions override the default parsers to allow for extra formats
-    def getint(self, section, option, *, raw=False, vars=None, fallback=configparser._UNSET):
+    def getint(self, section, option, raw=False, vars=None, fallback=configparser._UNSET):
         try:
             return IncludingConfigParser.getint(self, section, option, raw=raw, vars=vars, fallback=fallback)
         except (configparser.NoSectionError, configparser.NoOptionError, CosmosisConfigurationError) as e:
@@ -206,7 +206,7 @@ class Inifile(IncludingConfigParser):
             else:
                 return fallback
 
-    def getfloat(self, section, option, *, raw=False, vars=None, fallback=configparser._UNSET):
+    def getfloat(self, section, option, raw=False, vars=None, fallback=configparser._UNSET):
         try:
             return IncludingConfigParser.getfloat(self, section, option, raw=raw, vars=vars, fallback=fallback)
         except (configparser.NoSectionError, configparser.NoOptionError, CosmosisConfigurationError) as e:
@@ -217,7 +217,7 @@ class Inifile(IncludingConfigParser):
             else:
                 return fallback
 
-    def getboolean(self, section, option, *, raw=False, vars=None, fallback=configparser._UNSET):
+    def getboolean(self, section, option, raw=False, vars=None, fallback=configparser._UNSET):
         try:
             return IncludingConfigParser.getboolean(self, section, option, raw=raw, vars=vars, fallback=fallback)
         except ValueError:
