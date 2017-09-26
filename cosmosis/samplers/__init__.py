@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from .sampler import Sampler, ParallelSampler, sampler_registry
+from .sampler import Sampler, ParallelSampler
 from .hints import Hints
 from .minuit import minuit_sampler
 from .test import test_sampler

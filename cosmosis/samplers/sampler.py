@@ -1,24 +1,29 @@
+from future.utils import with_metaclass
 from builtins import str
 from builtins import range
 from builtins import object
-sampler_registry = {}
 from cosmosis.runtime.attribution import PipelineAttribution
 from .hints import Hints
 
-class Sampler(object):
+# Sampler metaclass that registers each of its subclasses
+
+class RegisteredSampler(type):
+    registry = {}
+    def __new__(meta, name, bases, class_dict):
+        if name.endswith("Sampler"):
+            meta.registry = {name : cls for name, cls in meta.registry.items() if cls not in bases}
+            config_name = name[:-len("Sampler")].lower()
+            cls = type.__new__(meta, name, bases, class_dict)
+            meta.registry[config_name] = cls
+            return cls
+        else:
+            raise ValueError("Sampler classes must be named [Name]Sampler")
+
+class Sampler(with_metaclass(RegisteredSampler, object)):
     needs_output = True
     sampler_outputs = []
     parallel_output = False
     is_parallel_sampler = False
-    class __metaclass__(type):
-        def __init__(cls, name, b, d):
-            type.__init__(cls, name, b, d)
-            if name in ["Sampler", "ParallelSampler"]:
-                return
-            if not name.endswith("Sampler"):
-                raise ValueError("Sampler classes must be named [Name]Sampler")
-            config_name = name[:-len("Sampler")].lower()
-            sampler_registry[config_name] = cls
     
     def __init__(self, ini, pipeline, output):
         self.ini = ini

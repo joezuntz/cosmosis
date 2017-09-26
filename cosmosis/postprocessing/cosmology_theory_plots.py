@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 from __future__ import division
+from future.utils import with_metaclass
 from builtins import range
 from past.utils import old_div
 from builtins import object
@@ -37,23 +38,21 @@ parser.add_argument("-t", "--type", default="png", help="Image file type suffix"
 # handles finding the data files, working out filenames, and saving plots.  The
 # subclasses are then in charge of the plot contents.
 
-# The Plot class also registers its subclasses so that there is less plumbing to
-# do when adding a new plot.
-plot_list = []
-class Plot(object):
+# The Plot class also uses a metaclass to register its subclasses
+# so that there is less plumbing to do when adding a new plot.
+
+class RegisteredPlot(type):
+    registry = set()
+    def __new__(meta, name, bases, class_dict):
+        cls = type.__new__(meta, name, bases, class_dict)
+        meta.registry.add(cls)
+        meta.registry -= set(bases)
+        return cls
+
+class Plot(with_metaclass(RegisteredPlot, object)):
     #Subclasses should override this to specify the base
     #part of their filename
     filename = "error"
-
-    # This bit does the auto-registering.
-    class __metaclass__(type):
-        def __init__(cls, name, b, d):
-            type.__init__(cls, name, b, d)
-            # The base classes should not be plotted themselves
-            if name in ["Plot", "DistancePlot", "CMBSpectrumPlot"]:
-                return
-            #But otherwise we record it in our list
-            plot_list.append(cls)
 
     def __init__(self, dirname, outdir, prefix, suffix,
              quiet=False, figure=None):
@@ -423,7 +422,7 @@ class LuminositySlopePlot(Plot):
 
 def main(args):
     utils.mkdir(args.output_dir)
-    for cls in plot_list:
+    for cls in Plot.registry:
         try:
             cls.make(args.dirname, args.output_dir, args.prefix, args.type)
         except IOError as err:

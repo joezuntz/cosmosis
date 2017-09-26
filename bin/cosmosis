@@ -13,7 +13,7 @@ from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
 from cosmosis.runtime import process_pool
 from cosmosis.runtime.utils import ParseExtraParameters, stdout_redirected
-from cosmosis.samplers.sampler import sampler_registry, ParallelSampler, Hints
+from cosmosis.samplers.sampler import Sampler, ParallelSampler, Hints
 from cosmosis import output as output_module
 import configparser
 
@@ -100,11 +100,11 @@ def main(args, pool=None):
     sample_methods = ini.get(RUNTIME_INI_SECTION, "sampler", fallback="test").split()
 
     for sample_method in sample_methods:
-        if sample_method not in sampler_registry:
+        if sample_method not in Sampler.registry:
             raise ValueError("Unknown sampler method %s" % (sample_method,))
 
     #Get that sampler from the system.
-    sampler_classes = [sampler_registry[sample_method] for sample_method in sample_methods]
+    sampler_classes = [Sampler.registry[sample_method] for sample_method in sample_methods]
 
     if pool:
         if not any(issubclass(sampler_class,ParallelSampler) for sampler_class in sampler_classes):

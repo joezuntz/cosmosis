@@ -590,7 +590,7 @@ class TestPlots(Plots):
         prefix=self.options.get("prefix","")
         ftype=self.options.get("file_type", "png")
         filenames = []
-        for cls in cosmology_theory_plots.plot_list:
+        for cls in cosmology_theory_plots.Plot.registry:
             fig = None
             try:
                 #may return None
