@@ -309,6 +309,10 @@ class DataBlock(object):
 		if isinstance(value, np.int32) or isinstance(value, np.int64):
 			value = int(value)
 
+		if isinstance(value, basestring):
+			method = (self.get_string,  self.put_string,  self.replace_string)
+			return method[method_type]
+
 		T = type(value)
 
 		method = self._method_for_type(T, method_type)
