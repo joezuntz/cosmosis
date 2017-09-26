@@ -87,9 +87,9 @@ class DataBlock(object):
 	def get_int(self, section, name, default=None):
 		r = ct.c_int()
 		if default is None:
-			status = lib.c_datablock_get_int(self._ptr,section,name,r)
+			status = lib.c_datablock_get_int(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
 		else:
-			status = lib.c_datablock_get_int_default(self._ptr,section,name,default,r)
+			status = lib.c_datablock_get_int_default(self._ptr,section.encode('ascii'),name.encode('ascii'),default,r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
@@ -97,9 +97,9 @@ class DataBlock(object):
 	def get_bool(self, section, name, default=None):
 		r = ct.c_bool()
 		if default is None:
-			status = lib.c_datablock_get_bool(self._ptr,section,name,r)
+			status = lib.c_datablock_get_bool(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
 		else:
-			status = lib.c_datablock_get_bool_default(self._ptr,section,name,default,r)
+			status = lib.c_datablock_get_bool_default(self._ptr,section.encode('ascii'),name.encode('ascii'),default,r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
@@ -107,9 +107,9 @@ class DataBlock(object):
 	def get_double(self, section, name, default=None):
 		r = ct.c_double()
 		if default is None:
-			status = lib.c_datablock_get_double(self._ptr,section,name,r)
+			status = lib.c_datablock_get_double(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
 		else:
-			status = lib.c_datablock_get_double_default(self._ptr,section,name,default,r)
+			status = lib.c_datablock_get_double_default(self._ptr,section.encode('ascii'),name.encode('ascii'),default,r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
@@ -117,9 +117,9 @@ class DataBlock(object):
 	def get_complex(self, section, name, default=None):
 		r = lib.c_complex()
 		if default is None:
-			status = lib.c_datablock_get_complex(self._ptr,section,name,r)
+			status = lib.c_datablock_get_complex(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
 		else:
-			status = lib.c_datablock_get_complex_default(self._ptr,section,name,default,default,r)
+			status = lib.c_datablock_get_complex_default(self._ptr,section.encode('ascii'),name.encode('ascii'),default,r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r.real+1j*r.imag
@@ -127,29 +127,29 @@ class DataBlock(object):
 	def get_string(self, section, name, default=None):
 		r = lib.c_str()
 		if default is None:
-			status = lib.c_datablock_get_string(self._ptr,section,name,r)
+			status = lib.c_datablock_get_string(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
 		else:
-			status = lib.c_datablock_get_string_default(self._ptr,section,name,default,r)
+			status = lib.c_datablock_get_string_default(self._ptr,section.encode('ascii'),name.encode('ascii'),default.encode('ascii'),r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
-		return str(r.value)
+		return r.value.decode('utf-8')
 
 	def get_int_array_1d(self, section, name):
-		n = lib.c_datablock_get_array_length(self._ptr, section, name)
+		n = lib.c_datablock_get_array_length(self._ptr, section.encode('ascii'), name.encode('ascii'))
 		r = np.zeros(n, dtype=np.intc)
 		arr = np.ctypeslib.as_ctypes(r)
 		sz = lib.c_int()
-		status = lib.c_datablock_get_int_array_1d_preallocated(self._ptr, section, name, arr, ct.byref(sz), n)
+		status = lib.c_datablock_get_int_array_1d_preallocated(self._ptr, section.encode('ascii'), name.encode('ascii'), arr, ct.byref(sz), n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
 	def get_double_array_1d(self, section, name):
-		n = lib.c_datablock_get_array_length(self._ptr, section, name)
+		n = lib.c_datablock_get_array_length(self._ptr, section.encode('ascii'), name.encode('ascii'))
 		r = np.zeros(n, dtype=np.double)
 		arr = np.ctypeslib.as_ctypes(r)
 		sz = lib.c_int()
-		status = lib.c_datablock_get_double_array_1d_preallocated(self._ptr, section, name, arr, ct.byref(sz), n)
+		status = lib.c_datablock_get_double_array_1d_preallocated(self._ptr, section.encode('ascii'), name.encode('ascii'), arr, ct.byref(sz), n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r
@@ -160,7 +160,7 @@ class DataBlock(object):
 			raise ValueError("Sorry - cosmosis support for 2D complex and string values is incomplete")
 
 		ndim = lib.c_int()
-		status = lib.c_datablock_get_array_ndim(self._ptr, section, name, ct.byref(ndim))
+		status = lib.c_datablock_get_array_ndim(self._ptr, section.encode('ascii'), name.encode('ascii'), ct.byref(ndim))
 		if status:
 			raise BlockError.exception_for_status(status, section, name)
 
@@ -173,7 +173,7 @@ class DataBlock(object):
 
 		#Get the array extent
 		extent = (ct.c_int * ndim.value)()
-		status = shape_function(self._ptr, section, name, ndim, extent)
+		status = shape_function(self._ptr, section.encode('ascii'), name.encode('ascii'), ndim, extent)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
@@ -183,7 +183,7 @@ class DataBlock(object):
 		arr = r.ctypes.data_as(ct.POINTER(ctype))
 
 		#Fill in with the data
-		status = get_function(self._ptr, section, name, arr, ndim, extent)
+		status = get_function(self._ptr, section.encode('ascii'), name.encode('ascii'), arr, ndim, extent)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 		return r
@@ -233,40 +233,40 @@ class DataBlock(object):
 	#	return self._get_array_2d(section, name, str)
 
 	def put_int(self, section, name, value):
-		status = lib.c_datablock_put_int(self._ptr,section,name,int(value))
+		status = lib.c_datablock_put_int(self._ptr,section.encode('ascii'),name.encode('ascii'),int(value))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_bool(self, section, name, value):
-		status = lib.c_datablock_put_bool(self._ptr,section,name,bool(value))
+		status = lib.c_datablock_put_bool(self._ptr,section.encode('ascii'),name.encode('ascii'),bool(value))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_double(self, section, name, value):
-		status = lib.c_datablock_put_double(self._ptr,section,name,float(value))
+		status = lib.c_datablock_put_double(self._ptr,section.encode('ascii'),name.encode('ascii'),float(value))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_complex(self, section, name, value):
 		value=self.python_to_c_complex(value)
-		status = lib.c_datablock_put_complex(self._ptr,section,name,value)
+		status = lib.c_datablock_put_complex(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_string(self, section, name, value):
-		status = lib.c_datablock_put_string(self._ptr,section,name,str(value))
+		status = lib.c_datablock_put_string(self._ptr,section.encode('ascii'),name.encode('ascii'),str(value).encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_int_array_1d(self, section, name, value):
 		value_ref, value,n=self.python_to_1d_c_array(value, np.intc)
-		status = lib.c_datablock_put_int_array_1d(self._ptr, section, name, value, n)
+		status = lib.c_datablock_put_int_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), value, n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_double_array_1d(self, section, name, value):
 		value_ref, value,n=self.python_to_1d_c_array(value, np.double)
-		status = lib.c_datablock_put_double_array_1d(self._ptr, section, name, value, n)
+		status = lib.c_datablock_put_double_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), value, n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
@@ -338,7 +338,7 @@ class DataBlock(object):
 	
 	def get(self, section, name):
 		type_code_c = lib.c_datatype()
-		status = lib.c_datablock_get_type(self._ptr, section, name, ct.byref(type_code_c))
+		status = lib.c_datablock_get_type(self._ptr, section.encode('ascii'), name.encode('ascii'), ct.byref(type_code_c))
 		if status:
 			raise BlockError.exception_for_status(status, section, name)
 		type_code = type_code_c.value
@@ -359,50 +359,50 @@ class DataBlock(object):
 
 
 	def replace_int(self, section, name, value):
-		status = lib.c_datablock_replace_int(self._ptr,section,name,value)
+		status = lib.c_datablock_replace_int(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_bool(self, section, name, value):
-		status = lib.c_datablock_replace_int(self._ptr,section,name,value)
+		status = lib.c_datablock_replace_int(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_double(self, section, name, value):
 		r = ct.c_double()
-		status = lib.c_datablock_replace_double(self._ptr,section,name,value)
+		status = lib.c_datablock_replace_double(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_complex(self, section, name, value):
 		value=self.python_to_c_complex(value)
-		status = lib.c_datablock_replace_complex(self._ptr,section,name,value)
+		status = lib.c_datablock_replace_complex(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_string(self, section, name, value):
-		status = lib.c_datablock_replace_string(self._ptr,section,name,str(value))
+		status = lib.c_datablock_replace_string(self._ptr,section.encode('ascii'),name.encode('ascii'),str(value).encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_int_array_1d(self, section, name, value):
 		value_ref, value,n=self.python_to_1d_c_array(value, np.intc)
-		status = lib.c_datablock_replace_int_array_1d(self._ptr, section, name, value, n)
+		status = lib.c_datablock_replace_int_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), value, n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_double_array_1d(self, section, name, value):
 		value_ref, value,n=self.python_to_1d_c_array(value, np.double)
-		status = lib.c_datablock_replace_double_array_1d(self._ptr, section, name, value, n)
+		status = lib.c_datablock_replace_double_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), value, n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def has_section(self, section):
-		has = lib.c_datablock_has_section(self._ptr, section)
+		has = lib.c_datablock_has_section(self._ptr, section.encode('ascii'))
 		return bool(has)
 
 	def has_value(self, section, name):
-		has = lib.c_datablock_has_value(self._ptr, section, name)
+		has = lib.c_datablock_has_value(self._ptr, section.encode('ascii'), name.encode('ascii'))
 		return bool(has)
 
 	def __getitem__(self, section_name):
@@ -434,7 +434,7 @@ class DataBlock(object):
 
 	def sections(self):
 		n = lib.c_datablock_num_sections(self._ptr)
-		return [lib.c_datablock_get_section_name(self._ptr, i) for i in range(n)]
+		return [lib.c_datablock_get_section_name(self._ptr, i).decode('utf-8') for i in range(n)]
 
 
 	def keys(self, section=None):
@@ -444,22 +444,22 @@ class DataBlock(object):
 			sections = [section]
 		keys = []
 		for section in sections:
-			n_value = lib.c_datablock_num_values(self._ptr, section)
+			n_value = lib.c_datablock_num_values(self._ptr, section.encode('ascii'))
 			for i in range(n_value):
-				name = lib.c_datablock_get_value_name(self._ptr, section, i)
+				name = lib.c_datablock_get_value_name(self._ptr, section.encode('ascii'), i).decode('utf-8')
 				keys.append((section,name))
 		return keys
 
 
 	def _delete_section(self, section):
 		"Internal use only!"
-		status = lib.c_datablock_delete_section(self._ptr, section)
+		status = lib.c_datablock_delete_section(self._ptr, section.encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, "<tried to delete>")
 
 	def _copy_section(self, source, dest):
 		"Internal use only!"
-		status = lib.c_datablock_copy_section(self._ptr, source, dest)
+		status = lib.c_datablock_copy_section(self._ptr, source.encode('ascii'), dest.encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, dest, "<tried to copy>")
 
@@ -611,27 +611,27 @@ class DataBlock(object):
 		status = lib.c_datablock_get_log_entry(self._ptr, i, smax, ptype, section, name, dtype)
 		if status:
 			raise ValueError("Asked for log entry above maximum or less than zero")
-		return ptype.value, section.value, name.value, dtype.value
+		return ptype.value.decode('utf-8'), section.value.decode('utf-8'), name.value.decode('utf-8'), dtype.value.decode('utf-8')
 
 	def log_access(self, log_type, section, name):
-		status = lib.c_datablock_log_access(self._ptr, log_type, section, name)
+		status = lib.c_datablock_log_access(self._ptr, log_type.encode('ascii'), section.encode('ascii'), name.encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
 	def get_metadata(self, section, name, key):
 		r = lib.c_str()
-		status = lib.c_datablock_get_metadata(self._ptr,section,name,key, r)
+		status = lib.c_datablock_get_metadata(self._ptr,section.encode('ascii'),name.encode('ascii'),key.encode('ascii'), r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
-		return str(r.value)
+		return r.value.decode('utf-8')
 
 	def put_metadata(self, section, name, key, value):
-		status = lib.c_datablock_put_metadata(self._ptr,section,name,key, value)
+		status = lib.c_datablock_put_metadata(self._ptr,section.encode('ascii'),name.encode('ascii'),key.encode('ascii'), value.encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_metadata(self, section, name, key, value):
-		status = lib.c_datablock_replace_metadata(self._ptr,section,name,key, value)
+		status = lib.c_datablock_replace_metadata(self._ptr,section.encode('ascii'),name.encode('ascii'),key.encode('ascii'), value.encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
@@ -736,4 +736,3 @@ def _make_getter(cls, name):
 for name in dir(DataBlock):
 	if name.startswith('get') or name=='__getitem__':
 		setattr(SectionOptions, name, _make_getter(SectionOptions, name))
-
