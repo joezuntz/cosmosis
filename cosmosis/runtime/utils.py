@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import object
 import numpy as np
 import argparse
 import os
@@ -44,7 +45,7 @@ def mkdir(path):
             raise
 
 
-class Timer:
+class Timer(object):
     def __init__(self, msg):
         self.msg = msg
 

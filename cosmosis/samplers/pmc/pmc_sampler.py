@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import zip
+from past.utils import old_div
 from .. import ParallelSampler
 from . import pmc
 import numpy as np
@@ -102,7 +105,7 @@ class PMCSampler(ParallelSampler):
         #No covariance specified - just use 1% of the range of the parameter.
         # This is the std. dev. here and is squared below.
         if covmat_filename == "":
-            covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
+            covmat = np.array([old_div(p.width(),100.0) for p in self.pipeline.varied_params])
         elif not os.path.exists(covmat_filename):
             raise ValueError(
             "Covariance matrix %s not found" % covmat_filename)

@@ -64,7 +64,7 @@ output = tempfile.NamedTemporaryFile(prefix='cosmosis-error-report.', suffix='.t
 print("Saving environment variables")
 
 output.write("COSMOSIS_ERROR_BEGIN_ENVARS\n")
-for key, val in os.environ.items():
+for key, val in list(os.environ.items()):
 	output.write("%s = %s\n" % (key,val))
 
 

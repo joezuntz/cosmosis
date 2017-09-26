@@ -1,5 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import zip
+from builtins import range
 from .text_output import TextColumnOutput
 import numpy as np
 import os

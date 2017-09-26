@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import os
 import argparse
 import numpy as np
@@ -288,7 +292,7 @@ class ShearSpectrumPlot(Plot):
 
     def plot_section(self, section):
         nbin = 0
-        for i in xrange(1,100):
+        for i in range(1,100):
             filename = self.file_path(section,
                               "bin_{0}_{0}".format (i))
             if os.path.exists(filename):
@@ -299,9 +303,9 @@ class ShearSpectrumPlot(Plot):
             IOError("No data for plot: %s"% self.__class__.__name__[:-4])
 
         ell = self.load_file(section, "ell")
-        sz = 1.0/(nbin+2)
-        for i in xrange(1, nbin+1):
-            for j in xrange(1, i+1):
+        sz = old_div(1.0,(nbin+2))
+        for i in range(1, nbin+1):
+            for j in range(1, i+1):
                 rect = (i*sz,j*sz,sz,sz)
                 self.figure.add_axes(rect)
                 #pylab.ploy()
@@ -347,7 +351,7 @@ class ShearCorrelationPlot(Plot):
     def plot(self):
         super(ShearCorrelationPlot, self).plot()
         nbin = 0
-        for i in xrange(1,100):
+        for i in range(1,100):
             filename = self.file_path("shear_xi",
                                       "xiplus_{0}_{0}".format(i))
             if os.path.exists(filename):
@@ -358,9 +362,9 @@ class ShearCorrelationPlot(Plot):
             IOError("No data for plot: %s"% self.__class__.__name__[:-4])
 
         theta = self.load_file("shear_xi", "theta")
-        sz = 1.0/(nbin+2)
-        for i in xrange(1, nbin+1):
-            for j in xrange(1, i+1):
+        sz = old_div(1.0,(nbin+2))
+        for i in range(1, nbin+1):
+            for j in range(1, i+1):
                 rect = (i*sz,j*sz,sz,sz)
                 self.figure.add_axes(rect)
                 #pylab.ploy()

@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import map
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 import pdb
 
@@ -78,16 +83,16 @@ class Fisher(object):
 
         #To improve parallelization we first gather all the data points
         #we use in all the dimensions
-        for p in xrange(self.nparams):
+        for p in range(self.nparams):
             points +=  self.five_points_stencil_points(p)
 
         if self.pool is None:
-            results = map(self.compute_vector, points)
+            results = list(map(self.compute_vector, points))
         else:
             results = self.pool.map(self.compute_vector, points)
 
         #Now get out the results that correspond to each dimension
-        for p in xrange(self.nparams):
+        for p in range(self.nparams):
             results_p = results[4*p:4*(p+1)]
             derivative, inv_cov = self.five_point_stencil_deriv(results_p)
             derivatives.append(derivative)
@@ -120,7 +125,7 @@ class Fisher(object):
     def five_point_stencil_deriv(self, results):
         obs = [r[0] for r in results]
         inv_cov = results[0][1]
-        deriv = (-obs[0] + 8*obs[1] - 8*obs[2] + obs[3])/(12*self.step_size)
+        deriv = old_div((-obs[0] + 8*obs[1] - 8*obs[2] + obs[3]),(12*self.step_size))
         return deriv, inv_cov
 
     def compute_one_sigma(Fmatrix):

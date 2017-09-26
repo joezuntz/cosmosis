@@ -1,3 +1,6 @@
+from builtins import str
+from builtins import range
+from builtins import object
 sampler_registry = {}
 from cosmosis.runtime.attribution import PipelineAttribution
 from .hints import Hints
@@ -36,7 +39,7 @@ class Sampler(object):
         if blinding_header and self.output:
             output.comment("")
             output.comment("Blank lines prevent accidental unblinding")
-            for i in xrange(250):
+            for i in range(250):
                 output.comment("")
 
     def read_ini(self, option, option_type, default=None):

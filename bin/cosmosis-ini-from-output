@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import argparse
-from cStringIO import StringIO
+from io import StringIO
 import collections
 from cosmosis.runtime.config import Inifile
 import sys
@@ -69,7 +72,7 @@ def main(chain, postprocess_text_file):
     ini.readfp(buffer)
 
     new_values = parse_new_values(postprocess_text_file)
-    for (section,param), value in new_values.items():
+    for (section,param), value in list(new_values.items()):
         change_central_value(ini, section, param, value)
 
     ini.write(sys.stdout)

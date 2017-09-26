@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import zip
+from past.utils import old_div
 from .. import ParallelSampler
 import numpy as np
 from . import metropolis
@@ -94,7 +97,7 @@ class MetropolisSampler(ParallelSampler):
         if covmat_filename == "" and self.distribution_hints.has_cov():
                 covmat =  self.distribution_hints.get_cov() 
         elif covmat_filename == "":
-            covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
+            covmat = np.array([old_div(p.width(),100.0) for p in self.pipeline.varied_params])
         elif not os.path.exists(covmat_filename):
             raise ValueError(
             "Covariance matrix %s not found" % covmat_filename)

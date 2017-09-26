@@ -7,6 +7,7 @@ It is for the developers to make header files.
 """
 from __future__ import print_function
 
+from builtins import object
 print(__doc__)
 import sys
 #You don't need to use this file - it is for the developers to 

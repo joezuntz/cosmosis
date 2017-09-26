@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import range
 from cosmosis import DataBlock
 from cosmosis.datablock.cosmosis_py.errors import BlockSectionNotFound
 import numpy as np
@@ -12,8 +13,8 @@ def execute(block, config):
 	nx = len(x)
 	ny = len(y)
 	z = np.zeros([nx,ny])
-	for i in xrange(nx):
-		for j in xrange(ny):
+	for i in range(nx):
+		for j in range(ny):
 			z[i,j] = 10*i+j
 	block.put_grid("py_put", "x", x, "y", y, "z", z)
 

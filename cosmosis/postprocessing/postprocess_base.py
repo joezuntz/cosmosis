@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import str
+from builtins import object
 import abc
 from . import elements
 from . import plots
@@ -8,6 +10,7 @@ from cosmosis import output as output_module
 from ..runtime.config import Inifile
 import imp
 import os
+from future.utils import with_metaclass
 postprocessor_registry = {}
 
 
@@ -18,8 +21,7 @@ class PostProcessMetaclass(abc.ABCMeta):
         if d is None: return
         postprocessor_registry[sampler] = cls
 
-class PostProcessor(object):
-    __metaclass__=PostProcessMetaclass
+class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
     sampler=None
     cosmosis_standard_output=True
     def __init__(self, ini, label, index, **options):
@@ -86,7 +88,7 @@ class PostProcessor(object):
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs
         self.name = "Data"
         for chain in self.metadata:
-            for key,val in chain.items():
+            for key,val in list(chain.items()):
                 self.sampler_options[key] = val
 
     def load_dict(self, inputs):
@@ -94,7 +96,7 @@ class PostProcessor(object):
         filename = output_options['filename']
         self.name = filename
         sampler = inputs['sampler']
-        for key,val in inputs[sampler].items():
+        for key,val in list(inputs[sampler].items()):
             self.sampler_options[key]=str(val)
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs['data']
 
@@ -171,7 +173,7 @@ class PostProcessor(object):
         print("Finalizing:")
         for e in self.steps:
             e.finalize()
-        for f in self.outputs.values():
+        for f in list(self.outputs.values()):
             print("Output: ", f.filename)
             f.finalize()
 
@@ -185,12 +187,12 @@ class PostProcessor(object):
             print("or put '%s' to apply to all plots."%plots.Tweaks._all_filenames)
             return
         elif tweaks.filename==tweaks._all_filenames:
-            filenames = [o.name for o in self.outputs.values() if isinstance(o, plots.PostprocessPlot)]
+            filenames = [o.name for o in list(self.outputs.values()) if isinstance(o, plots.PostprocessPlot)]
         elif isinstance(tweaks.filename, list):
                 filenames = tweaks.filename
         else:
             filenames = [tweaks.filename]
-        for output in self.outputs.values():
+        for output in list(self.outputs.values()):
             if output.name in filenames:
                 output.tweak(tweaks)
 

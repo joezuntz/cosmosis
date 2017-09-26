@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import zip
+from builtins import range
 import os
 import yaml
 import glob
@@ -120,7 +122,7 @@ def rst_table(rows):
 
     # Find the max length of each column
     maxlens = []
-    for i in xrange(ncol):
+    for i in range(ncol):
         col = [row[i] for row in rows]
         maxlen = 0
         for item in col:
@@ -146,7 +148,7 @@ def rst_table(rows):
 
     subrows = []
     for row,maxnline in zip(rows, maxnlines):
-        for i in xrange(maxnline):
+        for i in range(maxnline):
             subrow = []
             for item in row:
                 item = item.splitlines()

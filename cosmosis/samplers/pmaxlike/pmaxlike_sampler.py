@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import map
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from .. import ParallelSampler
 import numpy as np
 
@@ -33,7 +38,7 @@ def posterior_and_gradient(p_in):
     print("Calculating gradient about (normalized) point {}".format(pstr))
     points = [(p_in,0)]
     n = len(p_in)
-    for i in xrange(n):
+    for i in range(n):
         p = p_in.copy()
         p[i] += maxlike_sampler.epsilon
         points.append((p, i+1))
@@ -41,10 +46,10 @@ def posterior_and_gradient(p_in):
     if maxlike_sampler.pool:
         results = maxlike_sampler.pool.map(minus_log_posterior, points)
     else:
-        results = map(minus_log_posterior, points)
+        results = list(map(minus_log_posterior, points))
 
     post=results[0]
-    grad=np.array([(results[i+1]-post)/maxlike_sampler.epsilon  for i in xrange(n)])
+    grad=np.array([old_div((results[i+1]-post),maxlike_sampler.epsilon)  for i in range(n)])
     return post, grad
 
 

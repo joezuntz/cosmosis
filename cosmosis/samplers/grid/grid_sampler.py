@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import zip
+from builtins import map
 import itertools
 import numpy as np
 
@@ -96,13 +98,13 @@ class GridSampler(ParallelSampler):
         if self.pool:
             results = self.pool.map(task, jobs)
         else:
-            results = map(task, jobs)
+            results = list(map(task, jobs))
 
         #Update the count
         self.ndone += len(results)
 
         #Save the results of the sampling
-        for sample, result  in itertools.izip(samples, results):
+        for sample, result  in zip(samples, results):
             #Optionally save all the results calculated by each
             #pipeline run to files
             (prob, extra) = result

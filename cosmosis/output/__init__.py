@@ -27,7 +27,7 @@ def set_verbosity(verb):
 		try:
 			verb = verbosity_levels[verb]
 		except KeyError:
-			valid_levels = ', '.join(verbosity_levels.keys())
+			valid_levels = ', '.join(list(verbosity_levels.keys()))
 			message = """Error specifiying verbosity.
 				You put: '{0}'.
 				We want either an integer 0 (silent) - 50 (everything) 

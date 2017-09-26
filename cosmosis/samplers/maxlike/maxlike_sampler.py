@@ -1,3 +1,4 @@
+from builtins import str
 from .. import Sampler
 import numpy as np
 

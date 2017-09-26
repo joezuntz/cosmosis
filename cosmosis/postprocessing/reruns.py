@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import zip
 from .elements import PostProcessorElement
 from cosmosis.runtime.config import Inifile
 import os

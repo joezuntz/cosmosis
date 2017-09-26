@@ -1,5 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 from .. import ParallelSampler
 import numpy as np
 from .snake import Snake
@@ -8,7 +12,7 @@ def posterior(p_in):
     #Check the normalization
     if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
         print(p_in)
-        return -np.inf, [np.nan for i in xrange(len(snake_pipeline.extra_saves))]
+        return -np.inf, [np.nan for i in range(len(snake_pipeline.extra_saves))]
     p = snake_pipeline.denormalize_vector(p_in)
     like, extra = snake_pipeline.posterior(p)
     return like, extra
@@ -23,7 +27,7 @@ class SnakeSampler(ParallelSampler):
         snake_pipeline=self.pipeline
         if self.is_master():
             threshold = self.read_ini("threshold", float, 4.0)
-            self.grid_size = 1.0/self.read_ini("nsample_dimension", int, 10)
+            self.grid_size = old_div(1.0,self.read_ini("nsample_dimension", int, 10))
             self.maxiter = self.read_ini("maxiter", int, 100000)
 
             

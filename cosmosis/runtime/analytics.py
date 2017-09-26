@@ -1,5 +1,9 @@
 #coding: utf-8
 from __future__ import print_function
+from __future__ import division
+from builtins import zip
+from builtins import object
+from past.utils import old_div
 from cosmosis import output as output_module
 
 import numpy as np
@@ -28,7 +32,7 @@ class Analytics(object):
             num += 1.0
             delta = x - self.means
             old_means = self.means.copy()
-            self.means += delta/num
+            self.means += old_div(delta,num)
             self.m2 += delta*(x - self.means)
             self.cov_times_n += np.outer(x-self.means, x-old_means)
 
@@ -42,7 +46,7 @@ class Analytics(object):
 
     def trace_variances(self):
         if self.total_steps > 1:
-            local_variance = self.m2 / float(self.total_steps-1)
+            local_variance = old_div(self.m2, float(self.total_steps-1))
             if self.pool:
                 return np.array(self.pool.gather(local_variance)).T
             else:
@@ -67,10 +71,10 @@ class Analytics(object):
             B_over_n = np.var(means, ddof=1, axis=1)
             B = B_over_n * self.total_steps
             W = np.mean(variances, axis=1)
-            V = ((1. - 1./self.total_steps) * W +
-                 (1. + 1./self.pool.size) * B_over_n)
+            V = ((1. - old_div(1.,self.total_steps)) * W +
+                 (1. + old_div(1.,self.pool.size)) * B_over_n)
             # TODO: check for 0-values in W
-            Rhat = np.sqrt(V/W)
+            Rhat = np.sqrt(old_div(V,W))
         else:
             Rhat = None
 

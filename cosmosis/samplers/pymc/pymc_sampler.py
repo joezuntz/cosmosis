@@ -1,3 +1,8 @@
+from __future__ import division
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from .. import ParallelSampler
 import numpy as np
 import os
@@ -93,7 +98,7 @@ class PyMCSampler(ParallelSampler):
                            for param in self.pipeline.varied_params]).T
         likes = -0.5 * self.mcmc.trace('deviance')[:]
 
-        for trace, like in itertools.izip(traces, likes):
+        for trace, like in zip(traces, likes):
             self.output.parameters(trace, like)
 
         self.analytics.add_traces(traces)
@@ -144,7 +149,7 @@ class PyMCSampler(ParallelSampler):
         # normalize covariance matrix
         r = np.array([param.width() for param
                       in self.pipeline.varied_params])
-        for i in xrange(covmat.shape[0]):
+        for i in range(covmat.shape[0]):
             covmat[i, :] /= r
             covmat[:, i] /= r
 
@@ -158,9 +163,9 @@ class PyMCSampler(ParallelSampler):
     def reorder_matrix(old_order, new_order, cov):
             n = len(old_order)
             cov2 = np.zeros((n, n))
-            for i in xrange(n):
+            for i in range(n):
                     old_i = old_order.index(new_order[i])
-                    for j in xrange(n):
+                    for j in range(n):
                             old_j = old_order.index(new_order[j])
                             cov2[i, j] = cov[old_i, old_j]
             return cov2
@@ -181,8 +186,8 @@ class PyMCSampler(ParallelSampler):
                                                 value=start_value))
             elif isinstance(prior, GaussianPrior):
                 width = param.width()
-                mu = (prior.mu - param.limits[0]) / width
-                tau = width ** 2 / prior.sigma2
+                mu = old_div((prior.mu - param.limits[0]), width)
+                tau = old_div(width ** 2, prior.sigma2)
 
                 priors.append(self.pymc.Normal(str(param),
                                                mu=mu,
@@ -191,7 +196,7 @@ class PyMCSampler(ParallelSampler):
             elif isinstance(prior, ExponentialPrior):
                 width = param.width()
                 priors.append(self.pymc.Exponential(str(param),
-                                                    beta=width / prior.beta,
+                                                    beta=old_div(width, prior.beta),
                                                     value=start_value))
             else:
                 raise RuntimeError("Unknown prior type in PyMC sampler")

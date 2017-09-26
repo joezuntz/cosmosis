@@ -1,4 +1,10 @@
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from past.builtins import basestring
+from builtins import object
 import ctypes as ct
 from . import lib
 from . import errors
@@ -8,7 +14,7 @@ import numpy as np
 import os
 import collections
 import tarfile
-import StringIO
+import io
 
 option_section = "module_options"
 metadata_prefix = "cosmosis_metadata:"
@@ -172,7 +178,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 
 		#Make the space for it
-		N = tuple([extent[i] for i in xrange(ndim.value)])
+		N = tuple([extent[i] for i in range(ndim.value)])
 		r = np.zeros(N, dtype=ctype)
 		arr = r.ctypes.data_as(ct.POINTER(ctype))
 
@@ -186,7 +192,7 @@ class DataBlock(object):
 		shape = value.shape
 		ndim = len(shape)
 		extent = (ct.c_int * ndim)()
-		for i in xrange(ndim): extent[i] = shape[i]
+		for i in range(ndim): extent[i] = shape[i]
 		value = value.flatten()
 		p, arr, arr_size = self.python_to_1d_c_array(value, dtype)
 		put_function={
@@ -344,7 +350,7 @@ class DataBlock(object):
 	def put(self, section, name, value, **meta):
 		method = self._method_for_value(value,self.PUT)
 		method(section, name, value)
-		for (key, val) in meta.items():
+		for (key, val) in list(meta.items()):
 			self.put_metadata(section, name, str(key), str(val))
 
 	def replace(self, section, name, value):
@@ -428,7 +434,7 @@ class DataBlock(object):
 
 	def sections(self):
 		n = lib.c_datablock_num_sections(self._ptr)
-		return [lib.c_datablock_get_section_name(self._ptr, i) for i in xrange(n)]
+		return [lib.c_datablock_get_section_name(self._ptr, i) for i in range(n)]
 
 
 	def keys(self, section=None):
@@ -439,7 +445,7 @@ class DataBlock(object):
 		keys = []
 		for section in sections:
 			n_value = lib.c_datablock_num_values(self._ptr, section)
-			for i in xrange(n_value):
+			for i in range(n_value):
 				name = lib.c_datablock_get_value_name(self._ptr, section, i)
 				keys.append((section,name))
 		return keys
@@ -493,11 +499,11 @@ class DataBlock(object):
 					print("Flattening %s--%s when saving; shape info in header" % (section,name))
 					value = value.flatten()
 				if name in meta:
-					for key,val in meta[name].items():
+					for key,val in list(meta[name].items()):
 						header+='%s = %s\n' % (key,val)
 
 				#Save this file into the tar file
-				string_output = StringIO.StringIO()
+				string_output = io.StringIO()
 				np.savetxt(string_output, value, header=header.rstrip("\n"))
 				string_output.seek(0)
 				info = tarfile.TarInfo(name=vector_outfile)
@@ -508,11 +514,11 @@ class DataBlock(object):
 			#inside the tar file
 			if scalar_outputs:
 				scalar_outfile = os.path.join(dirname,section,"values.txt")
-				string_output = StringIO.StringIO()
+				string_output = io.StringIO()
 				for s in scalar_outputs:
 					string_output.write("%s = %r\n"%s)
 					if s[0] in meta:
-						for key,val in meta[s[0]].items():
+						for key,val in list(meta[s[0]].items()):
 							string_output.write("#%s %s = %s\n"%(s[0],key,val))
 				string_output.seek(0)
 				info = tarfile.TarInfo(name=scalar_outfile)
@@ -547,7 +553,7 @@ class DataBlock(object):
 					print("Flattening %s--%s when saving; shape info in header" % (section,name))
 					value = value.flatten()
 				if name in meta:
-					for key,val in meta[name].items():
+					for key,val in list(meta[name].items()):
 						header+='%s = %s\n' % (key,val)
 				np.savetxt(vector_outfile, value, header=header.rstrip("\n"))
 
@@ -557,12 +563,12 @@ class DataBlock(object):
 				for s in scalar_outputs:
 					f.write("%s = %r\n"%s)
 					if s[0] in meta:
-						for key,val in meta[s[0]].items():
+						for key,val in list(meta[s[0]].items()):
 							f.write("#%s %s = %s\n"%(s[0],key,val))
 				f.close()
 
 	def _save_paths(self):
-		keys = self.keys()
+		keys = list(self.keys())
 		sections = set(k[0] for k in keys)
 		for section in sections:
 			scalar_outputs = []

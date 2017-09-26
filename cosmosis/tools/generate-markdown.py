@@ -7,6 +7,7 @@ It is not intended for users.
 
 """
 from __future__ import print_function
+from past.builtins import basestring
 import yaml
 import os
 import collections
@@ -132,7 +133,7 @@ def make_list(l):
 
 def make_params(P):
 	lines = []
-	for section, params in P.items():
+	for section, params in list(P.items()):
 		for i,(name,desc) in enumerate(params.items()):
 			sec = section if i==0 else ""
 			lines.append(u"{}|{}|{}".format(sec,name,desc))
@@ -140,7 +141,7 @@ def make_params(P):
 
 def make_page(info):
 	parameter_lines = []
-	for name,desc in info['params'].items():
+	for name,desc in list(info['params'].items()):
 		parameter_lines.append(u"{}|{}".format(name,desc))
 	parameter_lines = '\n'.join(parameter_lines)
 	input_lines = make_params(info['inputs'])

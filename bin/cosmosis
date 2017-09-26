@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
 import sys
 import argparse
 import os
@@ -12,7 +15,7 @@ from cosmosis.runtime import process_pool
 from cosmosis.runtime.utils import ParseExtraParameters, stdout_redirected
 from cosmosis.samplers.sampler import sampler_registry, ParallelSampler, Hints
 from cosmosis import output as output_module
-import ConfigParser
+import configparser
 
 RUNTIME_INI_SECTION = "runtime"
 
@@ -140,7 +143,7 @@ def main(args, pool=None):
             #create the output files and methods.
             try:
                 output_options = dict(ini.items('output'))
-            except ConfigParser.NoSectionError:
+            except configparser.NoSectionError:
                 sys.stderr.write("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
                 sys.exit(1)
             #Additionally we tell the output here if

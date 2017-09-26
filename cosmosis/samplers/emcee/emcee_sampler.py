@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import range
 from .. import ParallelSampler
 import numpy as np
 
@@ -51,7 +53,7 @@ class EmceeSampler(ParallelSampler):
                 iterations_limit = 100000
                 n=0
                 p0 = []
-                for i in xrange(iterations_limit):
+                for i in range(iterations_limit):
                     p = self.emcee.utils.sample_ellipsoid(center, cov)[0]
                     if np.isfinite(self.pipeline.prior(p)):
                         p0.append(p)
@@ -62,7 +64,7 @@ class EmceeSampler(ParallelSampler):
                 self.p0 = np.array(p0)
             elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
-                           for i in xrange(self.nwalkers)]
+                           for i in range(self.nwalkers)]
                 self.output.log_info("Generating random starting positions from within prior")
             else:
                 center_norm = self.pipeline.normalize_vector(self.start_estimate())

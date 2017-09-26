@@ -7,7 +7,10 @@ as it's grown pretty organically.
 
 """
 from __future__ import print_function
+from __future__ import division
 
+from builtins import zip
+from past.utils import old_div
 import matplotlib
 matplotlib.use('Agg')
 #matplotlib.rcParams['text.usetex']=True
@@ -41,7 +44,7 @@ class GridPlotter(Plotter):
 	def from_outputs(cls, options, **kw):
 		column_names, chains, metadata, comments, final_metadata = output_module.input_from_options(options)
 		chains = np.vstack(chains).T
-		chains = dict(zip(column_names,chains))
+		chains = dict(list(zip(column_names,chains)))
 		chain_data = {"Chains":chains}
 		return cls(chain_data, **kw)
 
@@ -51,13 +54,13 @@ class GridPlotter(Plotter):
 		dataset = [(np.loadtxt(filename).T) for filename in filenames]
 		chain_data = collections.OrderedDict()
 		for filename,names,data in zip(filenames,nameset,dataset):
-			chain_datum = dict(zip(names,data))
+			chain_datum = dict(list(zip(names,data)))
 			chain_data[filename] = chain_datum	
 		return cls(chain_data, **kw)
 
 	def _plot_1d(self, name1):
-		cols1 = self.cols_for_name(name1).values()[0]
-		like = self.cols_for_name("LIKE").values()[0]
+		cols1 = list(self.cols_for_name(name1).values())[0]
+		like = list(self.cols_for_name("LIKE").values())[0]
 		vals1 = np.unique(cols1)
 		n1 = len(vals1)
 
@@ -87,7 +90,7 @@ class GridPlotter(Plotter):
 		dx = vals1[1]-vals1[0]
 
 		ax = pylab.gca()
-		pylab.xlim(cols1.min()-dx/2., cols1.max()+dx/2.)
+		pylab.xlim(cols1.min()-old_div(dx,2.), cols1.max()+old_div(dx,2.))
 		pylab.ylim(0,1.05)
 		pylab.plot(vals1, np.exp(like), linewidth=3)
 
@@ -136,9 +139,9 @@ class GridPlotter(Plotter):
 
 	def _plot_2d(self, name1, name2, log_like=True):
 		# Load the columns
-		cols1 = self.cols_for_name(name1).values()[0]
-		cols2 = self.cols_for_name(name2).values()[0]
-		like = self.cols_for_name("LIKE").values()[0]
+		cols1 = list(self.cols_for_name(name1).values())[0]
+		cols2 = list(self.cols_for_name(name2).values())[0]
+		like = list(self.cols_for_name("LIKE").values())[0]
 
 		#Marginalize over all the other parameters by summing
 		#them up
@@ -162,8 +165,8 @@ class GridPlotter(Plotter):
 
 		# Set up the axis ranges, grid, and labels
 		ax = pylab.gca()
-		pylab.xlim(cols1.min()-dx/2., cols1.max()+dx/2.)
-		pylab.ylim(cols2.min()-dy/2., cols2.max()+dy/2.)
+		pylab.xlim(cols1.min()-old_div(dx,2.), cols1.max()+old_div(dx,2.))
+		pylab.ylim(cols2.min()-old_div(dy,2.), cols2.max()+old_div(dy,2.))
 		# pylab.grid()
 		pylab.xlabel("$"+self._display_names[name1]+"$")
 		pylab.ylabel("$"+self._display_names[name2]+"$")
@@ -189,18 +192,18 @@ class GridPlotter(Plotter):
 			#get the color for the point
 			c = colormap(norm(np.exp(L)))
 			#create and apply the square colour patch
-			r = pylab.Rectangle((px-dx/2.,py-dy/2.), dx, dy, color=c)
+			r = pylab.Rectangle((px-old_div(dx,2.),py-old_div(dy,2.)), dx, dy, color=c)
 			ax.add_artist(r)
 			if L>level1:
-				toggle_edge(edges1, px-dx/2., py-dy/2., px-dx/2., py+dy/2.)
-				toggle_edge(edges1, px-dx/2., py-dy/2., px+dx/2., py-dy/2.)
-				toggle_edge(edges1, px-dx/2., py+dy/2., px+dx/2., py+dy/2.)
-				toggle_edge(edges1, px+dx/2., py-dy/2., px+dx/2., py+dy/2.)
+				toggle_edge(edges1, px-old_div(dx,2.), py-old_div(dy,2.), px-old_div(dx,2.), py+old_div(dy,2.))
+				toggle_edge(edges1, px-old_div(dx,2.), py-old_div(dy,2.), px+old_div(dx,2.), py-old_div(dy,2.))
+				toggle_edge(edges1, px-old_div(dx,2.), py+old_div(dy,2.), px+old_div(dx,2.), py+old_div(dy,2.))
+				toggle_edge(edges1, px+old_div(dx,2.), py-old_div(dy,2.), px+old_div(dx,2.), py+old_div(dy,2.))
 			if L>level2:
-				toggle_edge(edges2, px-dx/2., py-dy/2., px-dx/2., py+dy/2.)
-				toggle_edge(edges2, px-dx/2., py-dy/2., px+dx/2., py-dy/2.)
-				toggle_edge(edges2, px-dx/2., py+dy/2., px+dx/2., py+dy/2.)
-				toggle_edge(edges2, px+dx/2., py-dy/2., px+dx/2., py+dy/2.)
+				toggle_edge(edges2, px-old_div(dx,2.), py-old_div(dy,2.), px-old_div(dx,2.), py+old_div(dy,2.))
+				toggle_edge(edges2, px-old_div(dx,2.), py-old_div(dy,2.), px+old_div(dx,2.), py-old_div(dy,2.))
+				toggle_edge(edges2, px-old_div(dx,2.), py+old_div(dy,2.), px+old_div(dx,2.), py+old_div(dy,2.))
+				toggle_edge(edges2, px+old_div(dx,2.), py-old_div(dy,2.), px+old_div(dx,2.), py+old_div(dy,2.))
 
 		for ((x1,y1), (x2,y2)) in edges1:
 			pylab.plot([x1,x2],[y1,y2], '-', linewidth=3, color='black')

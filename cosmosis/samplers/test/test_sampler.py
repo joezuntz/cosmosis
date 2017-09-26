@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import str
 from .. import Sampler
 import numpy as np
 from ...runtime import pipeline
@@ -28,7 +29,7 @@ class TestSampler(Sampler):
                 print("Likelihood = ", like)
                 print("Posterior  = ", like+prior)
         except pipeline.MissingLikelihoodError as error:
-            found_likelihoods = [k[1][:-5] for k in error.pipeline_data.keys() if k[0]=="likelihoods"]            
+            found_likelihoods = [k[1][:-5] for k in list(error.pipeline_data.keys()) if k[0]=="likelihoods"]            
             sys.stderr.write("\n")
             sys.stderr.write("One of the likelihoods you asked for was not found.\n")
             sys.stderr.write("You asked for: %s\n"%error.message)

@@ -1,4 +1,5 @@
 
+from past.builtins import basestring
 TRUE_STRINGS =  ["T","t","True","TRUE","true","y","Y","yes","Yes","YES","1"]
 FALSE_STRINGS = ["F","f","False","FALSE","false","n","N","no","No","NO","0"]
 

@@ -1,5 +1,7 @@
 #coding: utf-8
 from __future__ import print_function
+from builtins import str
+from builtins import range
 from .. import ParallelSampler
 import ctypes as ct
 import os
@@ -120,7 +122,7 @@ class MultinestSampler(ParallelSampler):
         #of parameters which are relatively flat in likelihood
         wrapped_params = self.read_ini("wrapped_params", str, default="")
         wrapped_params = wrapped_params.split()
-        self.wrapping = [0 for i in xrange(self.ndim)]
+        self.wrapping = [0 for i in range(self.ndim)]
         if wrapped_params:
             print("")
         for p in wrapped_params:
@@ -154,17 +156,17 @@ class MultinestSampler(ParallelSampler):
         def likelihood(cube_p, ndim, nparam, context_p):
             nextra = nparam-ndim
             #pull out values from cube
-            cube_vector = np.array([cube_p[i] for i in xrange(ndim)])
+            cube_vector = np.array([cube_p[i] for i in range(ndim)])
             vector = self.pipeline.denormalize_vector_from_prior(cube_vector)
             try:
                 like, extra = self.pipeline.likelihood(vector)
             except KeyboardInterrupt:
                 raise sys.exit(1)
 
-            for i in xrange(ndim):
+            for i in range(ndim):
                 cube_p[i] = vector[i]
 
-            for i in xrange(nextra):
+            for i in range(nextra):
                 cube_p[ndim+i] = extra[i]
 
             return like
@@ -186,7 +188,7 @@ class MultinestSampler(ParallelSampler):
         # only master gets dumper function
         cluster_dimensions = self.ndim if self.cluster_dimensions==-1 else self.cluster_dimensions
         periodic_boundaries = (ct.c_int*self.ndim)()
-        for i in xrange(self.ndim):
+        for i in range(self.ndim):
             periodic_boundaries[i] = self.wrapping[i]
         context=None
         init_mpi=False
@@ -208,7 +210,7 @@ class MultinestSampler(ParallelSampler):
     def output_params(self, n, live, posterior, log_z, ins_log_z, log_z_err):
         self.log_z = ins_log_z if self.importance else log_z
         self.log_z_err = log_z_err
-        data = np.array([posterior[i] for i in xrange(n*(self.npar+2))]).reshape((self.npar+2, n))
+        data = np.array([posterior[i] for i in range(n*(self.npar+2))]).reshape((self.npar+2, n))
         for row in data.T:
             params = row[:self.ndim]
             extra_vals = row[self.ndim:self.npar]

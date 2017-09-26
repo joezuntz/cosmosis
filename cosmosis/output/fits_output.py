@@ -63,7 +63,7 @@ class FitsOutput(OutputBase):
 
     def _flush_metadata(self, metadata):
 
-        for (key,(value,comment)) in metadata.items():
+        for (key,(value,comment)) in list(metadata.items()):
             if key.startswith(comment_indicator):
                 self._hdu.write_comment(value)
             elif comment:

@@ -1,5 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import zip
+from builtins import range
+from builtins import object
 import os
 import ctypes
 import sys
@@ -7,7 +13,7 @@ import string
 import numpy as np
 import time
 import collections
-import ConfigParser
+import configparser
 import traceback
 import signal
 from . import utils
@@ -151,12 +157,12 @@ class Pipeline(object):
             # module_node = pydot.Node(module.name, color='Yellow', style='filled')
             P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline', shape='box')
         P.add_edge("Sampler", norm_name(self.modules[0].name), color='lightskyblue', style='bold', arrowhead='none')
-        for i in xrange(len(self.modules)-1):
+        for i in range(len(self.modules)-1):
             P.add_edge(norm_name(self.modules[i].name),norm_name(self.modules[i+1].name), color='lightskyblue', style='bold', arrowhead='none')
         # D = pydot.Cluster(label="Data", color='red', style='dashed')
         # G.add_subgraph(D)
         # #find
-        log = [data.get_log_entry(i) for i in xrange(data.get_log_count())]
+        log = [data.get_log_entry(i) for i in range(data.get_log_count())]
         known_sections = set()
         for entry in log:
             if entry!="MODULE-START":
@@ -357,10 +363,10 @@ class LikelihoodPipeline(Pipeline):
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
-        for i in xrange(n):
+        for i in range(n):
             pi = self.varied_params[i]
             ri = pi.limits[1] - pi.limits[0]
-            for j in xrange(n):
+            for j in range(n):
                 pj = self.varied_params[j]
                 rj = pj.limits[1] - pj.limits[0]
                 c[i,j] /= (ri*rj)
@@ -370,10 +376,10 @@ class LikelihoodPipeline(Pipeline):
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
-        for i in xrange(n):
+        for i in range(n):
             pi = self.varied_params[i]
             ri = pi.limits[1] - pi.limits[0]
-            for j in xrange(n):
+            for j in range(n):
                 pj = self.varied_params[j]
                 rj = pj.limits[1] - pj.limits[0]
                 if inverse:

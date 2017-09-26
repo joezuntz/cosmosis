@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import numpy as np
 
 class MCMC(object):
@@ -29,7 +34,7 @@ class MCMC(object):
 		samples = []
 		blobs = []
 		#Take n sample mcmc steps
-		for i in xrange(n):
+		for i in range(n):
 			#this function is designed to be called
 			#multiple times.  keep track of overall iteration number
 			self.iterations += 1
@@ -89,12 +94,12 @@ def proposal_distance(ndim):
 #coming back to this and translating it.
 def random_rotation_matrix(n):
     R=np.identity(n)
-    for j in xrange(n):
+    for j in range(n):
         while True:
             v = np.random.normal(size=n)
-            for i in xrange(j):
+            for i in range(j):
                 v -= R[i,:] * np.dot(v,R[i,:])
             L = np.dot(v,v)
             if (L>1e-3): break
-        R[j,:] = v/L**0.5
+        R[j,:] = old_div(v,L**0.5)
     return R

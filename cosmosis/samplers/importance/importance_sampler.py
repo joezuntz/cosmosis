@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import zip
+from builtins import map
 import itertools
 import collections
 import numpy as np
@@ -121,15 +123,15 @@ class ImportanceSampler(ParallelSampler):
         if self.pool:
             results = self.pool.map(task, samples_chunk)
         else:
-            results = map(task, samples_chunk)
+            results = list(map(task, samples_chunk))
 
         #Collect together and output the results
-        for i,(sample, (new_like, extra)) in enumerate(itertools.izip(samples_chunk, results)):
+        for i,(sample, (new_like, extra)) in enumerate(zip(samples_chunk, results)):
             #We already (may) have some extra values from the pipeline
             #as derived parameters.  Add to those any parameters used in the
             #old pipeline but not the new one
             extra = list(extra)
-            for col in self.original_extras.values():
+            for col in list(self.original_extras.values()):
                 extra.append(col[start+i])
             #and then the old and new likelihoods
             old_like = self.original_likelihoods[start+i]

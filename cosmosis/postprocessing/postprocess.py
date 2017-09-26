@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from past.utils import old_div
 from . import plots
 from . import statistics
 from .postprocess_base import PostProcessor, postprocessor_registry
@@ -35,7 +38,7 @@ def additive_blinding(postprocessors, seed):
 			factors[col] = max(factors[col], f)
 
 	#print out scale info
-	for col,f in factors.items():
+	for col,f in list(factors.items()):
 		print("Blinding additive value for %s ~ %.1e" % (col, f))
 
 	for P in postprocessors:
@@ -189,7 +192,7 @@ class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 
 		"""
 		w = self.weight_col()
-		w = w / w.max()
+		w = old_div(w, w.max())
 		u = np.random.uniform(size=w.size)
 		return u<w
 
@@ -265,7 +268,7 @@ class MultinestProcessor(WeightedMetropolisProcessor):
 
 		"""
 		w = self.weight_col()
-		w = w / w.max()
+		w = old_div(w, w.max())
 		u = np.random.uniform(size=w.size)
 		return u<w
 
@@ -307,7 +310,7 @@ class PMCPostProcessor(WeightedMetropolisProcessor):
 
 		"""
 		w = self.weight_col()
-		w = w / w.max()
+		w = old_div(w, w.max())
 		u = np.random.uniform(size=w.size)
 		return u<w
 

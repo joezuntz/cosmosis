@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import zip
+from past.utils import old_div
 import matplotlib
 matplotlib.use('Agg')
 matplotlib.rcParams['font.family']='serif'
@@ -47,7 +50,7 @@ class ChainPlotter(Plotter):
 	#In this case all the chains are assumed to be from a single
 	#run.  So we should concatenate them all for a single 
 		chains = np.vstack(chains).T
-		chains = dict(zip(column_names,chains))
+		chains = dict(list(zip(column_names,chains)))
 		chain_data = {"Chains":chains}
 		return cls(chain_data, **kw)
 
@@ -72,7 +75,7 @@ class ChainPlotter(Plotter):
 
 		chain_data = collections.OrderedDict()
 		for filename,names,data in zip(filenames,nameset,dataset):
-			chain_datum = dict(zip(names,data))
+			chain_datum = dict(list(zip(names,data)))
 			chain_data[filename] = chain_datum	
 		return cls(chain_data, **kw)
 
@@ -118,8 +121,8 @@ class ChainPlotter(Plotter):
 		total_mass = like.sum()
 		like_sorted = np.sort(like.flatten())
 		like_cumsum = like_sorted.cumsum()
-		height1 = np.interp(contour1/total_mass,like_cumsum,like_sorted)
-		height2 = np.interp(contour2/total_mass,like_cumsum,like_sorted)
+		height1 = np.interp(old_div(contour1,total_mass),like_cumsum,like_sorted)
+		height2 = np.interp(old_div(contour2,total_mass),like_cumsum,like_sorted)
 		return height1, height2, total_mass
 
 

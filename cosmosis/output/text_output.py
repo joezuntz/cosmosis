@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import str
 from .output_base import OutputBase
 from . import utils
 import numpy as np
@@ -53,7 +54,7 @@ In the last case you can set lock=F in the [output] section to disable this feat
         self._file.close()
 
     def _flush_metadata(self, metadata):
-        for (key,(value,comment)) in metadata.items():
+        for (key,(value,comment)) in list(metadata.items()):
             if key.startswith(comment_indicator):
                 self._file.write("## %s\n"%value.strip())
             elif comment:

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import str
 from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 import numpy as np

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from builtins import input
+from builtins import str
 import os
 import sys
 import re
@@ -187,7 +189,7 @@ if check:
 	if current_version=="develop":
 		print("  (this may be older than your current bleeding edge version)")
 	while True:
-		answer = raw_input("y/n\n>").strip()
+		answer = input("y/n\n>").strip()
 		if answer: break
 	if answer.lower() !='y':
 		print("Exiting")
