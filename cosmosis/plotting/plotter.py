@@ -1,3 +1,4 @@
+from __future__ import print_function
 import matplotlib
 matplotlib.use('Agg')
 import pylab
@@ -94,7 +95,7 @@ class Plotter(object):
             names = self.all_names
         for name in names:
             if name.lower()=='like' or name.lower()=='like': continue
-            print "Plotting 1D curve for ", name
+            print("Plotting 1D curve for ", name)
             try:
                 self._plot_1d(name)
                 pylab.savefig("%s/%s%s.%s"%(self.root_dir, self.prefix, name, self.filetype))
@@ -102,8 +103,8 @@ class Plotter(object):
                 if self.fatal:
                     raise
                 else:
-                    print "Unable to plot curve - may be only one value?"
-                    print error
+                    print("Unable to plot curve - may be only one value?")
+                    print(error)
             finally:
                 pylab.close()
 
@@ -114,12 +115,12 @@ class Plotter(object):
             for name2 in names:
                 if name1!=name2 and name1<name2:
                     if name1.lower()=='like' or name2.lower()=='like': continue
-                    print "Plotting 2D curve for ", name1, "versus", name2
+                    print("Plotting 2D curve for ", name1, "versus", name2)
                     try:
                         self._plot_2d(name1,name2)
                         pylab.savefig("%s/%s%s_%s.%s"%(self.root_dir, self.prefix, name1,name2,self.filetype))
                     except Exception as error:
-                        print "(No plot)"
-                        print error
+                        print("(No plot)")
+                        print(error)
                     finally:
                         pylab.close()

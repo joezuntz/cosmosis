@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 import argparse
 import os
@@ -33,42 +34,42 @@ def experimental_fault_handling():
 
 def demo_1_special (args):
     if "demo1.ini" in args.inifile:
-        print
-        print "Congratulations: you have just run cosmosis demo one!"
+        print()
+        print("Congratulations: you have just run cosmosis demo one!")
         if os.path.exists("./conda"):
-            print 
-            print "You can make plots of the outputs of this using this command:"
-            print "  postprocess demos/demo1.ini -o plots -p demo1"
-            print
-            print "If you get a message about 'Abort Trap 6' then see the FAQ:"
-            print "https://bitbucket.org/joezuntz/cosmosis/wiki/FAQ"
-            print
-            print "Then you can try out the other demos..."
-            print "... and read the information about plotting their output and what they are doing online."
-            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
+            print() 
+            print("You can make plots of the outputs of this using this command:")
+            print("  postprocess demos/demo1.ini -o plots -p demo1")
+            print()
+            print("If you get a message about 'Abort Trap 6' then see the FAQ:")
+            print("https://bitbucket.org/joezuntz/cosmosis/wiki/FAQ")
+            print()
+            print("Then you can try out the other demos...")
+            print("... and read the information about plotting their output and what they are doing online.")
+            print("Please get in touch with any problems, ideally by filing an Issue. Thanks!")
         else:
-            print "You can make plots of the outputs of this using the command:"
-            print
-            print "postprocess demos/demo1.ini -o plots -p demo1"
-            print
-            print "Then you can try out the other demos..."
-            print "... and read the information about plotting their output and what they are doing online."
-            print "Please get in touch with any problems, ideally by filing an Issue. Thanks!"
-            print
+            print("You can make plots of the outputs of this using the command:")
+            print()
+            print("postprocess demos/demo1.ini -o plots -p demo1")
+            print()
+            print("Then you can try out the other demos...")
+            print("... and read the information about plotting their output and what they are doing online.")
+            print("Please get in touch with any problems, ideally by filing an Issue. Thanks!")
+            print()
 
 
 def demo_10_special (args):
     if   "demo10.ini" in args.inifile   and   not os.getenv ("HALOFIT", ""):
-        print
-        print "Welcome to demo10!"
-        print
-        print "**PLEASE NOTE**:"
-        print
-        print "There are two flavours of this demo, selected through an "
-        print "environment variable called `HALOFIT'; this variable is not "
-        print "currently set, so we are giving it the value `halofit'."
-        print "Please see the wiki for more information: "
-        print "https://bitbucket.org/joezuntz/cosmosis/wiki/Demo10."
+        print()
+        print("Welcome to demo10!")
+        print()
+        print("**PLEASE NOTE**:")
+        print()
+        print("There are two flavours of this demo, selected through an ")
+        print("environment variable called `HALOFIT'; this variable is not ")
+        print("currently set, so we are giving it the value `halofit'.")
+        print("Please see the wiki for more information: ")
+        print("https://bitbucket.org/joezuntz/cosmosis/wiki/Demo10.")
 
         os.environ ["HALOFIT"] = "halofit"
 
@@ -127,8 +128,8 @@ def main(args, pool=None):
         sampler_name = sampler_class.__name__[:-len("Sampler")].lower()
 
         if pool is None or pool.is_master():
-            print "****************************"
-            print "* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name)
+            print("****************************")
+            print("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name))
 
 
         if sampler_class.needs_output and \
@@ -165,7 +166,7 @@ def main(args, pool=None):
             output.metadata("sampler", sample_method)
 
             if ("filename" in output_options):
-                print "* Saving output -> {}".format(output_options['filename'])
+                print("* Saving output -> {}".format(output_options['filename']))
 
 
 
@@ -175,7 +176,7 @@ def main(args, pool=None):
             #a bad idea, because they might over-write something important.
             #so we just give them none.
             output = None
-        print "****************************"
+        print("****************************")
 
         #Initialize our sampler, with the class we got above.
         #It needs an extra pool argument if it is a ParallelSampler.
@@ -272,13 +273,13 @@ try:
         else:
             try:
                 main(args)
-            except StandardError as error:
+            except Exception as error:
                 if args.pdb:
-                    print "There was an exception - starting python debugger because you ran with --pdb"
-                    print error
+                    print("There was an exception - starting python debugger because you ran with --pdb")
+                    print(error)
                     pdb.post_mortem()
                 else:
                     raise
 except CosmosisConfigurationError as e:
-    print e
+    print(e)
     sys.exit (1)

@@ -1,4 +1,5 @@
-from cosmomc_output import CosmoMCOutput
+from __future__ import absolute_import
+from .cosmomc_output import CosmoMCOutput
 import string
 import numpy as np
 import os

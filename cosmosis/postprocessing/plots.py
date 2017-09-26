@@ -1,3 +1,4 @@
+from __future__ import print_function
 from .elements import PostProcessorElement
 from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement, WeightedMCMCPostProcessorElement
 from .elements import Loadable
@@ -107,7 +108,7 @@ class Plots(PostProcessorElement):
         return fig, filename
 
     def run(self):
-        print "I do not know how to generate plots for this kind of data"
+        print("I do not know how to generate plots for this kind of data")
         return []
 
 
@@ -221,10 +222,10 @@ class GridPlots1D(GridPlots):
             like = like_interp
             n1 = n1_interp
         else:
-            print
-            print "Parameter %s has a very wide range in likelihoods " % name1
-            print "So I couldn't do a smooth likelihood interpolation for plotting"
-            print
+            print()
+            print("Parameter %s has a very wide range in likelihoods " % name1)
+            print("So I couldn't do a smooth likelihood interpolation for plotting")
+            print()
 
 
         #normalize
@@ -283,7 +284,7 @@ class GridPlots1D(GridPlots):
 class GridPlots2D(GridPlots):
     def run(self):
         if self.options.get("no_2d", False):
-            print "Not making any 2D plots because you said --no-2d"
+            print("Not making any 2D plots because you said --no-2d")
             return []
         filenames=[]
         nv = self.source.metadata[0]['n_varied']
@@ -434,7 +435,7 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
 
     def make_1d_plot(self, name):
         x = self.reduced_col(name)
-        print " - 1D plot ", name
+        print(" - 1D plot ", name)
         figure,filename = self.figure(name)
         if x.max()-x.min()==0: return
 
@@ -502,15 +503,15 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
         if x.max()-x.min()==0 or y.max()-y.min()==0:
             return
-        print "  (making %s vs %s)" % (name1, name2)
+        print("  (making %s vs %s)" % (name1, name2))
 
 
         #Interpolate using KDE
         try:
             n, x_axis, y_axis, like = self.smooth_likelihood(x, y)
         except np.linalg.LinAlgError:
-            print "  -- these two parameters have singular covariance - probably a linear relation"
-            print "Not making a 2D plot of them"
+            print("  -- these two parameters have singular covariance - probably a linear relation")
+            print("Not making a 2D plot of them")
             return []
 
         figure,filename = self.figure("2D", name1, name2)
@@ -555,10 +556,10 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
     def run(self):
         if self.options.get("no_2d", "False"):
-            print "Not making any 2D plots because you said --no-2d"
+            print("Not making any 2D plots because you said --no-2d")
             return []
         filenames = []
-        print "(Making 2D plots using KDE; this takes a while but is really cool)"
+        print("(Making 2D plots using KDE; this takes a while but is really cool)")
         for name1,name2 in self.parameter_pairs():
                 try:
                     filename = self.make_2d_plot(name1, name2)
@@ -566,7 +567,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
                     raise
                 except: #any other error we just continue
                     import traceback
-                    print "Failed to make plot of {} vs {}.  Here is the error context:".format(name1,name2)
+                    print("Failed to make plot of {} vs {}.  Here is the error context:".format(name1,name2))
                     filename=None
                     print(traceback.format_exc())
                 if filename:
@@ -587,9 +588,9 @@ class TestPlots(Plots):
                 #may return None
                 figure = self.get_output(cls.filename)
                 if figure is None:
-                    print "New plot", cls.filename
+                    print("New plot", cls.filename)
                 else:
-                    print "Old plot", cls.filename
+                    print("Old plot", cls.filename)
                 p=cls(dirname, output_dir, prefix, ftype, figure=None)
                 filename=p.filename
                 fig = p.figure
@@ -604,7 +605,7 @@ class TestPlots(Plots):
                     #Then we got as far as making the figure before
                     #failing.  so remove it
                     pylab.close()
-                print err
+                print(err)
         return filenames
 
 
@@ -682,8 +683,8 @@ class TrianglePlot(MetropolisHastingsPlots):
         try:
             import triangle
         except ImportError:
-            print "Triangle library not available - no corner plot for you"
-            print "Maybe try pip install triangle"
+            print("Triangle library not available - no corner plot for you")
+            print("Maybe try pip install triangle")
             return []
         names = [name for name in self.source.colnames if not name in self.excluded_columns]
         labels = [self.latex(name) for name in names]
@@ -702,8 +703,8 @@ class ColorScatterPlotBase(Plots):
 
     def run(self):
         if (self.x_column is None) or (self.y_column is None) or (self.color_column is None):
-            print "Please specify x_column, y_column, color_column, and scatter_filename"
-            print "in color scatter plots"
+            print("Please specify x_column, y_column, color_column, and scatter_filename")
+            print("in color scatter plots")
             return []
 
         #Get the columns you want to plot
@@ -940,7 +941,7 @@ class Tweaks(Loadable):
         self.info=None
 
     def run(self):
-        print "Please fill in the 'run' method of your tweak to modify a plot"
+        print("Please fill in the 'run' method of your tweak to modify a plot")
 
 def clip_unit(x):
     if x<0:

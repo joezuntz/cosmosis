@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 
 fortran_template = """
@@ -58,7 +59,7 @@ def generate(section_list_filename, language, output_filename):
 	elif language == "fortran":
 		generate_fortran(section_names, output_filename)
 	else:
-		print "Unknown language specified: %s" % language
+		print("Unknown language specified: %s" % language)
 		sys.exit(2)
 
 if __name__ == '__main__':
@@ -66,6 +67,6 @@ if __name__ == '__main__':
 	#   $ python generate_sections.py <template-file> <target-language> <output-file>
 	#
 	if len(sys.argv) != 4:
-		print "%s requires 4 arguments" % sys.argv[0]
+		print("%s requires 4 arguments" % sys.argv[0])
 		sys.exit(1)
 	generate(sys.argv[1], sys.argv[2], sys.argv[3])

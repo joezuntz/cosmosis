@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os
 import argparse
 import numpy as np
@@ -118,7 +119,7 @@ class Plot(object):
     #Need not be over-ridden
     def save(self):
         pylab.figure(self.figure.number)
-        if not self.quiet: print "Saving ", self.outfile
+        if not self.quiet: print("Saving ", self.outfile)
         pylab.savefig(self.outfile)
 
     #Need not be overridden. Called by the main function
@@ -422,7 +423,7 @@ def main(args):
         try:
             cls.make(args.dirname, args.output_dir, args.prefix, args.type)
         except IOError as err:
-            print err
+            print(err)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 class MCMC(object):
@@ -35,10 +36,10 @@ class MCMC(object):
 			# proposal point and its likelihood
 			q = self.propose()
 			if not self.quiet:
-				print "  ".join(str(x) for x in q)
+				print("  ".join(str(x) for x in q))
 			Lq = self.posterior(q)
 			if not self.quiet:
-				print
+				print()
 			#acceptance test
 			if  Lq[0] >= self.Lp[0] or  (Lq[0] - self.Lp[0]) >= np.log(np.random.uniform()):
 				#update if accepted

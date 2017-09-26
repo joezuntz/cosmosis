@@ -1,3 +1,4 @@
+from __future__ import print_function
 from . import lazy_pylab as pylab
 
 
@@ -18,7 +19,7 @@ class PostprocessPlot(PostprocessProduct):
         pylab.close()
 
     def tweak(self, tweak):
-        print "Tweaking", self.name
+        print("Tweaking", self.name)
         pylab.figure(self.value.number)
         tweak.info = self.info
         tweak.run()

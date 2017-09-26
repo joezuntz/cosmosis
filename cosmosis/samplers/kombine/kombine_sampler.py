@@ -1,3 +1,4 @@
+from __future__ import print_function
 from .. import ParallelSampler
 import numpy as np
 
@@ -99,7 +100,7 @@ class KombineSampler(ParallelSampler):
                 pos, post, prop = results
                 extra_info = None
             if self.is_master():
-                print "Burn-in phase complete."
+                print("Burn-in phase complete.")
             self.p0 = pos
             self.lnpost0 = post
             self.lnprop0 = prop

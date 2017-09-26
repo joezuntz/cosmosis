@@ -1,3 +1,4 @@
+from __future__ import print_function
 import itertools
 import numpy as np
 from cosmosis.output.text_output import TextColumnOutput
@@ -6,7 +7,7 @@ from .. import ParallelSampler
 
 def task(p):
     i,p = p
-    print "Running sample from prior: ", p
+    print("Running sample from prior: ", p)
     results = sampler.pipeline.posterior(p, return_data=sampler.save_name)
     #If requested, save the data to file
     if sampler.save_name and results[2] is not None:

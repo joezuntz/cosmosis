@@ -1,11 +1,13 @@
+from __future__ import print_function
+from __future__ import absolute_import
 from .. import ParallelSampler
 import numpy as np
-from snake import Snake
+from .snake import Snake
 
 def posterior(p_in):
     #Check the normalization
     if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
-        print p_in
+        print(p_in)
         return -np.inf, [np.nan for i in xrange(len(snake_pipeline.extra_saves))]
     p = snake_pipeline.denormalize_vector(p_in)
     like, extra = snake_pipeline.posterior(p)
@@ -36,17 +38,17 @@ class SnakeSampler(ParallelSampler):
                 x = self.pipeline.denormalize_vector(x)
                 self.output.parameters(x, extra, post)
             except ValueError:
-                print "The snake is trying to escape its bounds!"
+                print("The snake is trying to escape its bounds!")
 
 
 
     def is_converged(self):
         if self.snake.converged():
-            print "Snake has converged!"
-            print "Best post = %f    Best surface point = %f" %(self.snake.best_like_ever, self.snake.best_fit_like)
+            print("Snake has converged!")
+            print("Best post = %f    Best surface point = %f" %(self.snake.best_like_ever, self.snake.best_fit_like))
             return True
         if self.snake.iterations > self.maxiter:
-            print "Run out of iterations."
-            print "Done %d, max allowed %d" % (self.snake.iterations, self.maxiter)
+            print("Run out of iterations.")
+            print("Done %d, max allowed %d" % (self.snake.iterations, self.maxiter))
             return True
         return False

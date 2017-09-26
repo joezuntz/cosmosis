@@ -1,3 +1,4 @@
+from __future__ import print_function
 from .. import Sampler
 import numpy as np
 from ...runtime import pipeline
@@ -23,9 +24,9 @@ class TestSampler(Sampler):
             prior = self.pipeline.prior(p)
             like, extra, data = self.pipeline.likelihood(p, return_data=True)
             if self.pipeline.likelihood_names:
-                print "Prior      = ", prior
-                print "Likelihood = ", like
-                print "Posterior  = ", like+prior
+                print("Prior      = ", prior)
+                print("Likelihood = ", like)
+                print("Posterior  = ", like+prior)
         except pipeline.MissingLikelihoodError as error:
             found_likelihoods = [k[1][:-5] for k in error.pipeline_data.keys() if k[0]=="likelihoods"]            
             sys.stderr.write("\n")
@@ -39,10 +40,10 @@ class TestSampler(Sampler):
         except Exception as e:
             if self.fatal_errors:
                 raise
-            print "(Could not get a likelihood) Error:"+str(e)
+            print("(Could not get a likelihood) Error:"+str(e))
         if not self.pipeline.likelihood_names:
-            print "(No likelihoods required in ini file)"
-            print
+            print("(No likelihoods required in ini file)")
+            print()
 
         if self.graph:
             self.pipeline.make_graph(data, self.graph)
@@ -55,11 +56,11 @@ class TestSampler(Sampler):
                     else:
                         data.save_to_directory(self.save_dir, clobber=True)
                 else:
-                    print "(There was an error so no output to save)"
+                    print("(There was an error so no output to save)")
         except Exception as e:
             if self.fatal_errors:
                 raise
-            print "Could not save output."
+            print("Could not save output.")
 
         if data is None and self.fatal_errors:
             raise RuntimeError("Pipeline failed at some stage")

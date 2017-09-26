@@ -1,3 +1,4 @@
+from __future__ import print_function
 from .. import ParallelSampler
 import numpy as np
 from ...runtime import prior
@@ -66,8 +67,8 @@ class ABCSampler(ParallelSampler):
         else:
             self.eps = abcpmc.LinearEps(self.niter, self.epimax, self.epimin)
 
-        print "\nRunning ABC PMC"
-        print "with %d particles, %s prior, %s threshold, %d iterations over (%f,%f), %s kernal \n" % (self.npart,self.set_prior,self.threshold,self.niter,self.epimax,self.epimin,self.part_prop)
+        print("\nRunning ABC PMC")
+        print("with %d particles, %s prior, %s threshold, %d iterations over (%f,%f), %s kernal \n" % (self.npart,self.set_prior,self.threshold,self.niter,self.epimax,self.epimin,self.part_prop))
 
 
         #Initial positions for all of the parameters
@@ -137,13 +138,13 @@ class ABCSampler(ParallelSampler):
         elif self.metric_kw == "mean":
             return np.sum(np.abs(np.mean(x, axis=0) - np.mean(y, axis=0)))
         elif self.metric_kw == "other":
-            exec self.metric
+            exec(self.metric)
             return dist_result
 
     def load_data(self):
         #Load the data by running the pipeline once
-        print "Doing and initial ABC run of the pipeline, just to get the data vector from all the likelihood modules."
-        print "This is a slight waste of time (sorry) but the most general way of doing things."
+        print("Doing and initial ABC run of the pipeline, just to get the data vector from all the likelihood modules.")
+        print("This is a slight waste of time (sorry) but the most general way of doing things.")
 
         block = self.pipeline.run_parameters(self.p0)
         if block is None:

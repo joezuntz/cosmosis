@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import yaml
 import glob
@@ -176,8 +177,8 @@ def make_parameter_table(params):
 			rest = textwrap.fill(rest, 60)
 			table.append([pname,dtype,rest,default])
 		except (IndexError, ValueError):
-			print "ERROR: Could not parse in {0}".format(name)
-			print description
+			print("ERROR: Could not parse in {0}".format(name))
+			print(description)
 	return rst_table(table)
 
 

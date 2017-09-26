@@ -1,3 +1,4 @@
+from __future__ import print_function
 import abc
 from . import elements
 from . import plots
@@ -37,7 +38,7 @@ class PostProcessor(object):
     def load_extra_steps(self, filename):
         extra = elements.PostProcessorElement.instances_from_file(filename, self, **self.options)
         for e in extra:
-            print "Adding post-processor step: %s" % (e.__class__.__name__)
+            print("Adding post-processor step: %s" % (e.__class__.__name__))
         self.steps.extend(extra)
 
     def add_rerun_bestfit_step(self, dirname):
@@ -66,9 +67,9 @@ class PostProcessor(object):
         name = os.path.splitext(os.path.split(self.derive_file)[1])[0]
         module = imp.load_source(name, self.derive_file)
         functions = [getattr(module,f) for f in dir(module) if f.startswith('derive_')]
-        print "Deriving new columns from these functions in {}:".format(self.derive_file)
+        print("Deriving new columns from these functions in {}:".format(self.derive_file))
         for f in functions:
-            print "    - ", f.__name__
+            print("    - ", f.__name__)
             new_data = []
             for d in self.data:
                 chain = SingleChainData(d,self.colnames)
@@ -78,7 +79,7 @@ class PostProcessor(object):
                 #save the new chain
                 new_data.append(d)
             self.colnames.insert(-2, code)
-            print "Added a new column called ", code
+            print("Added a new column called ", code)
             self.data = new_data
 
     def load_tuple(self, inputs):
@@ -162,26 +163,26 @@ class PostProcessor(object):
                 raise
             except:
                 import traceback
-                print "Failed in one of the postprocessing steps: ", e
-                print "Here is the error stack:"
+                print("Failed in one of the postprocessing steps: ", e)
+                print("Here is the error stack:")
                 print(traceback.format_exc())
 
     def finalize(self):
-        print "Finalizing:"
+        print("Finalizing:")
         for e in self.steps:
             e.finalize()
         for f in self.outputs.values():
-            print "Output: ", f.filename
+            print("Output: ", f.filename)
             f.finalize()
 
     def apply_tweaks(self, tweaks):
         if tweaks.filename==plots.Tweaks.filename:
-            print tweaks.filename
-            print "Please fill in the 'filename' attribute of your tweaks"
-            print "Put the base name (without the directory, prefix, or suffix)"
-            print "of the filename you want to tweak."
-            print "You can use also use a list for more than one plot,"
-            print "or put '%s' to apply to all plots."%plots.Tweaks._all_filenames
+            print(tweaks.filename)
+            print("Please fill in the 'filename' attribute of your tweaks")
+            print("Put the base name (without the directory, prefix, or suffix)")
+            print("of the filename you want to tweak.")
+            print("You can use also use a list for more than one plot,")
+            print("or put '%s' to apply to all plots."%plots.Tweaks._all_filenames)
             return
         elif tweaks.filename==tweaks._all_filenames:
             filenames = [o.name for o in self.outputs.values() if isinstance(o, plots.PostprocessPlot)]

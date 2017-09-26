@@ -6,6 +6,7 @@ I think I need to re-write the plotting code almost from scratch
 as it's grown pretty organically.
 
 """
+from __future__ import print_function
 
 import matplotlib
 matplotlib.use('Agg')
@@ -26,7 +27,7 @@ import scipy.optimize
 try:
 	from cosmosis import output as output_module
 except ImportError:
-	print "Running without cosmosis: no pretty section names or running on ini files"
+	print("Running without cosmosis: no pretty section names or running on ini files")
 
 
 class GridPlotter(Plotter):
@@ -62,7 +63,7 @@ class GridPlotter(Plotter):
 
 		#check for derived parameters - this is a weak check
 		if len(vals1)==len(cols1) and not len(self.all_names)==2:
-			print "Not grid-plotting %s as it seems to be a derived parameter" % name1
+			print("Not grid-plotting %s as it seems to be a derived parameter" % name1)
 			raise ValueError(name1)
 		like_sum = np.zeros(n1)
 

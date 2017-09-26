@@ -1,3 +1,4 @@
+from __future__ import print_function
 from . import plots
 from . import statistics
 from .postprocess_base import PostProcessor, postprocessor_registry
@@ -35,7 +36,7 @@ def additive_blinding(postprocessors, seed):
 
 	#print out scale info
 	for col,f in factors.items():
-		print "Blinding additive value for %s ~ %.1e" % (col, f)
+		print("Blinding additive value for %s ~ %.1e" % (col, f))
 
 	for P in postprocessors:
 		for c,col in enumerate(P.colnames):
@@ -48,7 +49,7 @@ def additive_blinding(postprocessors, seed):
 def multiplicative_blinding(postprocessors, seed):
 	#print out scale info
 	scale = 0.5
-	print "Blinding all parameters by -50% to +50%"
+	print("Blinding all parameters by -50% to +50%")
 	for P in postprocessors:
 		for c,col in enumerate(P.colnames):
 			col = col.lower()
@@ -169,11 +170,11 @@ class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 			old_w = MetropolisHastingsProcessor.reduced_col(self, "old_weight").copy()
 			old_logw = np.log(old_w)
 			logw += old_logw
-			print "Including old_weight in weight"
+			print("Including old_weight in weight")
 		elif self.has_col("old_log_weight"):
 			old_logw = MetropolisHastingsProcessor.reduced_col(self, "old_log_weight").copy()
 			logw += old_logw
-			print "Including old_log_weight in weight"
+			print("Including old_log_weight in weight")
 		logw-=np.nanmax(logw)
 		self._weight_col = np.exp(logw)
 		return self._weight_col    

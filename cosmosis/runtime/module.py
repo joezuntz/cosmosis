@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import ctypes
 import sys
@@ -59,7 +60,7 @@ class Module(object):
 
         if self.setup_function:
             if not quiet:
-                print '-- Setting up module %s --' % (self.name)
+                print('-- Setting up module %s --' % (self.name))
             self.data = self.setup_function(config)
         else:
             self.data = None

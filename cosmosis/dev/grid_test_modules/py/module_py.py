@@ -1,3 +1,4 @@
+from __future__ import print_function
 from cosmosis import DataBlock
 from cosmosis.datablock.cosmosis_py.errors import BlockSectionNotFound
 import numpy as np
@@ -22,7 +23,7 @@ def execute(block, config):
 		assert (y==y_c).all()
 		assert (z==z_c).all()
 	except BlockSectionNotFound:
-		print "No C in py"
+		print("No C in py")
 
 	try:
 		x_f90, y_f90, z_f90 = block.get_grid("f90_put", "x", "y", "z")
@@ -30,7 +31,7 @@ def execute(block, config):
 		assert (y==y_f90).all()
 		assert (z==z_f90).all()
 	except BlockSectionNotFound as err:
-		print "No f90 in py ", err
+		print("No f90 in py ", err)
 	return 0
 
 def cleanup(config):

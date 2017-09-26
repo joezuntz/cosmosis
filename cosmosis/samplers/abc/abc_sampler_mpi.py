@@ -1,3 +1,4 @@
+from __future__ import print_function
 from .. import ParallelSampler
 try:
     import abcpmc
@@ -52,8 +53,8 @@ class ABCSampler(ParallelSampler):
             else:
                 self.eps = self.abcpmc.LinearEps(self.niter, self.epimax, self.epimin)
 
-            print "\nRunning ABC PMC"
-            print "with %d particles, %s prior, %s threshold, %d iterations over (%f,%f), %s kernal \n" % (self.npart,self.set_prior,self.threshold,self.niter,self.epimax,self.epimin,self.part_prop)
+            print("\nRunning ABC PMC")
+            print("with %d particles, %s prior, %s threshold, %d iterations over (%f,%f), %s kernal \n" % (self.npart,self.set_prior,self.threshold,self.niter,self.epimax,self.epimin,self.part_prop))
 
             #Data file is read for use in dist() for each step
             #parameter covariance used in the prior   
@@ -150,7 +151,7 @@ class ABCSampler(ParallelSampler):
     def generate_data(self,size,std,Max):
         sigma = np.eye(self.ngauss) * std
         means = Max*np.random.random_sample((self.ngauss,))
-        if self.run_multigauss: print "True means: " ,means
+        if self.run_multigauss: print("True means: " ,means)
         np.savetxt("abc_multigauss_means.txt",np.vstack(means))
         data = np.random.multivariate_normal(means, sigma, size)
         return sigma,data

@@ -1,4 +1,6 @@
-from text_output import TextColumnOutput
+from __future__ import print_function
+from __future__ import absolute_import
+from .text_output import TextColumnOutput
 import numpy as np
 import os
 from glob import glob
@@ -80,7 +82,7 @@ class CosmoMCOutput(TextColumnOutput):
 
         data = []
         for datafile in datafiles:
-            print 'LOADING CHAIN FROM FILE: ', datafile
+            print('LOADING CHAIN FROM FILE: ', datafile)
             chain = []
             with open(datafile) as f:
                 for line in f:
@@ -88,6 +90,6 @@ class CosmoMCOutput(TextColumnOutput):
                     for i in range(int(vals[0])):
                         chain.append(vals[1:])
                 chain = np.array(chain)
-            print datafile, chain.shape
+            print(datafile, chain.shape)
             data.append(chain)
         return column_names, data, metadata, comments, final_metadata

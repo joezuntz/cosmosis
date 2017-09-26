@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import argparse
 import os
@@ -53,7 +54,7 @@ class Timer:
 
     def __exit__(self, *args):
         interval = default_timer() - self.start
-        print "Time taken by step '{}': {}".format(self.msg, interval)
+        print("Time taken by step '{}': {}".format(self.msg, interval))
 
 def symmetrized_matrix(U):
     M = U.copy()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from cosmosis.postprocessing.postprocess import postprocessor_for_sampler
 from cosmosis.postprocessing.inputs import read_input
 from cosmosis.postprocessing.plots import Tweaks
@@ -76,7 +77,7 @@ def main(args):
 
 		#We do not know how to postprocess everything.
 		if processor_class is None:
-			print "I do not know how to postprocess output from the %s sampler"%sampler
+			print("I do not know how to postprocess output from the %s sampler"%sampler)
 			sampler = None
 			continue
 

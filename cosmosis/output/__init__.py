@@ -1,3 +1,4 @@
+from __future__ import print_function
 from . import text_output
 from . import cosmomc_output
 from . import null_output
@@ -46,7 +47,7 @@ I do not know what format you meant by '%s' in the [output] ini file section.
 I know about these format names:
 %s
 		""" % (format, known)
-		print message
+		print(message)
 		raise KeyError("Unknown format")
 
 	output_class = output_registry[format]
@@ -64,7 +65,7 @@ I do not know what format you meant by '%s' in the [output] ini file section.
 I know about these format names:
 %s
         """ % (format, known)
-        print message
+        print(message)
         raise KeyError("Unknown format")
 
     output_class = output_registry[format]

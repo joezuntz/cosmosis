@@ -1,3 +1,4 @@
+from __future__ import print_function
 from numpy import pi, dot, exp, einsum
 import numpy as np
 
@@ -66,7 +67,7 @@ class PopulationMonteCarlo(object):
 			count = np.sum(C==i)
 			if count<self.kill_count:
 				self.kill[i] = True
-				print "Component %d less than kill count (%d < %d)" % (i, count, self.kill_count)
+				print("Component %d less than kill count (%d < %d)" % (i, count, self.kill_count))
 		x = np.array([self.components[c].sample() for c in C])
 		return C, x
 
@@ -89,7 +90,7 @@ class PopulationMonteCarlo(object):
 		logw_norm = np.log(w_norm)
 		entropy =  -(w_norm*logw_norm).sum()
 		perplexity = np.exp(entropy) / len(x)
-		print "Perplexity = ", perplexity
+		print("Perplexity = ", perplexity)
 
 
 		Aphi[np.isnan(Aphi)] = 0.0
@@ -105,12 +106,12 @@ class PopulationMonteCarlo(object):
 			try:
 				m.update(w_norm, x, rho_d)
 			except np.linalg.LinAlgError as error:
-				print "Component not fitting the data very well", d, error.message
+				print("Component not fitting the data very well", d, error.message)
 				self.kill[d] = True
 
 		if do_kill:
 			self.components = [c for c,kill in zip(self.components,self.kill) if not kill]
-		print "%d components remain" % len(self.components)
+		print("%d components remain" % len(self.components))
 		return logw
 
 
@@ -140,7 +141,7 @@ class GaussianComponent(object):
 			raise np.linalg.LinAlgError("alpha = %f"%alpha)
 		mu = einsum('i,ij,i->j',w_norm, x, rho_d) / alpha  #scalar
 		delta = x-mu  #n_sample * n_dim
-		print "Updating to mu = ", mu
+		print("Updating to mu = ", mu)
 		sigma = einsum('i,ij,ik,i->jk',w_norm, delta, delta, rho_d) / alpha  #n_dim * n_dim
 		self.set(alpha, mu, sigma)
 

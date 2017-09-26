@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import sys
 import numpy as np
@@ -13,8 +14,8 @@ class Loadable(object):
         try:
             library = __import__(impname)
         except Exception as error:
-            print "Could not find/load extension file %s:" % filepath
-            print "ERROR:", error
+            print("Could not find/load extension file %s:" % filepath)
+            print("ERROR:", error)
             return []
 
         subclasses = []
@@ -57,7 +58,7 @@ class PostProcessorElement(Loadable):
         self.source.outputs[name] = value
 
     def run(self):
-        print "I do not know how to produce some results for this kind of data"
+        print("I do not know how to produce some results for this kind of data")
         return []
 
     def finalize(self):

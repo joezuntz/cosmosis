@@ -1,4 +1,5 @@
 #coding: utf-8
+from __future__ import print_function
 from .. import ParallelSampler
 import ctypes as ct
 import os
@@ -130,9 +131,9 @@ class MultinestSampler(ParallelSampler):
             if P in self.pipeline.varied_params:
                 index = self.pipeline.varied_params.index(P)
                 self.wrapping[index] = 1
-                print "MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p)
+                print("MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p))
             elif P in self.pipeline.parameters:
-                print "MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not fixed in this pipeline, so this will have no effect.".format(p)
+                print("MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not fixed in this pipeline, so this will have no effect.".format(p))
             else:
                 raise ValueError("You asked for an unknown parameter, {} to be wrapped around in the multinest wrapped_params option.".format(p))
         if wrapped_params:
@@ -142,7 +143,7 @@ class MultinestSampler(ParallelSampler):
 
         if self.output:
             def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
-                print "Saving %d samples" % nsample
+                print("Saving %d samples" % nsample)
                 self.output_params(nsample, live, post, logz, ins_logz, log_z_err)
             self.wrapped_output_logger = dumper_type(dumper)
         else:

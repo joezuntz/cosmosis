@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import os
 import ctypes
 import sys
@@ -8,11 +10,11 @@ import collections
 import ConfigParser
 import traceback
 import signal
-import utils
-import config
-import parameter
-import prior
-import module
+from . import utils
+from . import config
+from . import parameter
+from . import prior
+from . import module
 from cosmosis.datablock.cosmosis_py import block
 import cosmosis.datablock.cosmosis_py as cosmosis_py
 try:
@@ -75,20 +77,20 @@ class Pipeline(object):
                     raise ValueError("You tried to set a shortcut in "
                         "the pipeline but I do not know module %s"%shortcut)
                 if index == 0:
-                    print "You set a shortcut in the pipeline but it was the first module."
-                    print "It will make no difference."
+                    print("You set a shortcut in the pipeline but it was the first module.")
+                    print("It will make no difference.")
                 self.shortcut_module = index
 
     def base_directory(self):
         if self.root_directory is None:
             try:
                 self.root_directory = os.environ["COSMOSIS_SRC_DIR"]
-                print "Root directory is ", self.root_directory
+                print("Root directory is ", self.root_directory)
             except KeyError:
                 self.root_directory = os.getcwd()
-                print "WARNING: Could not find environment variable"
-                print "COSMOSIS_SRC_DIR. Module paths assumed to be relative"
-                print "to current directory, ", self.root_directory
+                print("WARNING: Could not find environment variable")
+                print("COSMOSIS_SRC_DIR. Module paths assumed to be relative")
+                print("to current directory, ", self.root_directory)
         return self.root_directory
 
     def find_module_file(self, path):
@@ -137,7 +139,7 @@ class Pipeline(object):
         try:
             import pygraphviz as pgv
         except ImportError:
-            print "Cannot generate a graphical pipeline; please install the python package pygraphviz (e.g. with pip install pygraphviz)"
+            print("Cannot generate a graphical pipeline; please install the python package pygraphviz (e.g. with pip install pygraphviz)")
             return
         P = pgv.AGraph(directed=True)
         # P = pydot.Cluster(label="Pipeline", color='black',  style='dashed')
@@ -232,7 +234,7 @@ class Pipeline(object):
                 return None
 
             if self.shortcut_module and first and module_number==self.shortcut_module-1:
-                print "Saving shortcut data"
+                print("Saving shortcut data")
                 self.shortcut_data = data_package.clone()
 
         if self.timing:
@@ -291,17 +293,17 @@ class LikelihoodPipeline(Pipeline):
         self.setup()
 
     def print_priors(self):
-        print ""
-        print "Parameter Priors"
-        print "----------------"
+        print("")
+        print("Parameter Priors")
+        print("----------------")
         if self.parameters:
             n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
         else:
             n=1
         for param in self.parameters:
             s = "{}--{}".format(param.section,param.name)
-            print "{0:{1}}  ~ {2}" .format(s, n, param.prior)
-        print ""
+            print("{0:{1}}  ~ {2}" .format(s, n, param.prior))
+        print("")
     def reset_fixed_varied_parameters(self):
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]
@@ -486,7 +488,7 @@ class LikelihoodPipeline(Pipeline):
                 for name,pr in priors:
                     data["priors", name] = pr
 
-        except StandardError:
+        except Exception:
             error = True
             # If we are 
             if self.debug:
@@ -533,7 +535,7 @@ class LikelihoodPipeline(Pipeline):
                 L = data.get_double(section_name,likelihood_name+"_like")
                 likelihoods.append(L)
                 if not self.quiet and nlike>1:
-                    print "    Likelihood {} = {}".format(likelihood_name, L)
+                    print("    Likelihood {} = {}".format(likelihood_name, L))
             except block.BlockError:
                 raise MissingLikelihoodError(likelihood_name, data)
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import ctypes as ct
 from . import lib
 from . import errors
@@ -489,7 +490,7 @@ class DataBlock(object):
 				header = "%s\n"%name
 				if value.ndim>2:
 					header += "shape = %s\n"%str(value.shape)
-					print "Flattening %s--%s when saving; shape info in header" % (section,name)
+					print("Flattening %s--%s when saving; shape info in header" % (section,name))
 					value = value.flatten()
 				if name in meta:
 					for key,val in meta[name].items():
@@ -525,7 +526,7 @@ class DataBlock(object):
 			os.mkdir(dirname)
 		except OSError:
 			if not clobber:
-				print "Not clobbering", clobber
+				print("Not clobbering", clobber)
 				raise
 		for (section, scalar_outputs, vector_outputs, meta) in self._save_paths():
 			
@@ -543,7 +544,7 @@ class DataBlock(object):
 				header = "%s\n"%name
 				if value.ndim>2:
 					header += "shape = %s\n"%str(value.shape)
-					print "Flattening %s--%s when saving; shape info in header" % (section,name)
+					print("Flattening %s--%s when saving; shape info in header" % (section,name))
 					value = value.flatten()
 				if name in meta:
 					for key,val in meta[name].items():

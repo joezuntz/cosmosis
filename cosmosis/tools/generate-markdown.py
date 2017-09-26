@@ -6,6 +6,7 @@ for the wiki page documenting the standard modules.
 It is not intended for users.
 
 """
+from __future__ import print_function
 import yaml
 import os
 import collections
@@ -163,5 +164,5 @@ for cat in outputs:
 		try:
 			make_page(outputs[cat][mod])
 		except:
-			print cat, mod
+			print(cat, mod)
 			raise

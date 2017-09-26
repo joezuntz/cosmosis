@@ -4,6 +4,7 @@ Mikkelsen et al
 http://arxiv.org/pdf/1211.3126.pdf
 
 """
+from __future__ import print_function
 
 import numpy as np
 import random
@@ -136,7 +137,7 @@ def test():
 		snake.iterate()
 
 	for p, L in snake.likelihoods.items():
-		print p[0], p[1], L
+		print(p[0], p[1], L)
 	sys.stderr.write("Ran for %d iterations\n"%snake.iterations)
 if __name__ == '__main__':
 	test()
