@@ -1,5 +1,4 @@
 from future.utils import with_metaclass
-from builtins import str
 from builtins import range
 from builtins import object
 from cosmosis.runtime.attribution import PipelineAttribution
@@ -62,7 +61,7 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             val = self.ini.get(self.name, option, fallback=default)
         else:
             raise ValueError("Internal cosmosis sampler error: "
-                "tried to read ini file option with unknown type %s"%str(option_type))
+                "tried to read ini file option with unknown type {}".format(option_type))
         if self.output:
             self.output.metadata(option, str(val))
         return val
