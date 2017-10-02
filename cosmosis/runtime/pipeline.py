@@ -139,12 +139,10 @@ class Pipeline(object):
 
 
     def base_directory(self):
-        u"""Set our `root_directory` according to the environment.
+        u"""Return our `root_directory` according to the environment.
 
         Use the environment variable `COSMOSIS_SRC_DIR` if available,
         otherwise use this processʼs working directory.
-
-        The return value is the value given to `root_directory`.
 
         """
         if self.root_directory is None:
@@ -352,7 +350,7 @@ class Pipeline(object):
 
 class LikelihoodPipeline(Pipeline):
 
-    u"""Very specialized pipeline designed specifically for the prototypical case of Bayesian-updated likelihoods.
+    u"""Very specialized pipeline designed specifically for the prototypical case of Bayes-computed posterior distributions.
 
     The point of a statistical updating pipeline is that the parameters in
     the datablocks passed down the pipe, as well as having currently
@@ -363,31 +361,32 @@ class LikelihoodPipeline(Pipeline):
     simulation, compute the Bayesian evidence, hence log-likelihood.  The
     pipeline itself will aggregate the results and summarize the net
     effect of all the likelihood estimations, and thence compute the
-    Bayesian posterior,
+    Bayesian posterior.
 
     Because of the necessity of working with distributions of values for
     each parameter, rather than just a scalar, the extra information is
-    stored in a parallel array of :class:`Parameter`s to the
-    :class:`DataBlock` which the base pipeline modifies (actually only a
-    subset of them known as the `varied_params`: an array which references
-    the interesting parameters in the full set).  This parallel array
-    (`parameters`) is often referred to simply as `p`, and the two arrays
-    frequently need to be ‘zipped’ together and then ‘unzipped’ after
-    computations have completed.
+    stored in a shadow array—another dictionary with the same keys but a
+    complementary set of values to the original ones—of
+    :class:`parameter`s to the :class:`datablock` which the base pipeline
+    modifies (actually only a subset of them known as the `varied_params`:
+    an array which references the interesting parameters in the full set).
+    this shadow array (`parameters`) is often referred to simply as `p`,
+    and the two arrays frequently need to be ‘zipped’ together and then
+    ‘unzipped’ after computations have completed.
 
     """
 
-    def __init__(self, arg=None, id="",override=None, load=True):
-        u"""Construct a :class:`LikelihoodPipeline`.
+    def __init__(self, arg=none, id="",override=none, load=true):
+        u"""construct a :class:`likelihoodpipeline`.
 
-        The arguments `arg` and `load` are used in the base-class
-        initialization (see above).  The `id` is given to our `id_code`
+        the arguments `arg` and `load` are used in the base-class
+        initialization (see above).  the `id` is given to our `id_code`
         (which doesnʼt seem to have a purpose), and `override` is a
         dictionary of `(section, name)->value` which will override any
         settings for those parametersʼ values in the initialization files.
         
         """
-        super(LikelihoodPipeline, self).__init__(arg=arg, load=load)
+        super(likelihoodpipeline, self).__init__(arg=arg, load=load)
 
         if id:
             self.id_code = "[%s] " % str(id)
@@ -395,13 +394,13 @@ class LikelihoodPipeline(Pipeline):
             self.id_code = ""
         self.n_iterations = 0
 
-        values_file = self.options.get(PIPELINE_INI_SECTION, "values")
+        values_file = self.options.get(pipeline_ini_section, "values")
         self.values_filename=values_file
-        priors_files = self.options.get(PIPELINE_INI_SECTION,
+        priors_files = self.options.get(pipeline_ini_section,
                                         "priors", "").split()
         self.priors_files = priors_files
 
-        self.parameters = parameter.Parameter.load_parameters(values_file,
+        self.parameters = parameter.parameter.load_parameters(values_file,
                                                               priors_files,
                                                               override,
                                                               )
@@ -410,8 +409,8 @@ class LikelihoodPipeline(Pipeline):
 
         self.print_priors()
 
-        #We want to save some parameter results from the run for further output
-        extra_saves = self.options.get(PIPELINE_INI_SECTION,
+        #we want to save some parameter results from the run for further output
+        extra_saves = self.options.get(pipeline_ini_section,
                                        "extra_output", "")
 
         self.extra_saves = []
@@ -421,7 +420,7 @@ class LikelihoodPipeline(Pipeline):
 
         self.number_extra = len(self.extra_saves)
         #pull out all the section names and likelihood names for later
-        self.likelihood_names = self.options.get(PIPELINE_INI_SECTION,
+        self.likelihood_names = self.options.get(pipeline_ini_section,
                                                  "likelihoods").split()
 
         # now that we've set up the pipeline properly, initialize modules
@@ -430,10 +429,10 @@ class LikelihoodPipeline(Pipeline):
 
 
     def print_priors(self):
-        u"""Pretty-print a table of priors for human inspection."""
+        u"""pretty-print a table of priors for human inspection."""
         
         print ""
-        print "Parameter Priors"
+        print "parameter priors"
         print "----------------"
         if self.parameters:
             n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
@@ -447,7 +446,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def reset_fixed_varied_parameters(self):
-        u"""Identify the sub-set of parameters which are fixed, and those which are to be varied."""
+        u"""identify the sub-set of parameters which are fixed, and those which are to be varied."""
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]
         self.fixed_params = [param for param in self.parameters
@@ -456,20 +455,20 @@ class LikelihoodPipeline(Pipeline):
 
 
     def parameter_index(self, section, name):
-        u"""Return the sequence number of the parameter `name` in `section`.
+        u"""return the sequence number of the parameter `name` in `section`.
 
-        If the parameter is not found then :class:`ValueError` will be raised.
+        if the parameter is not found then :class:`valueerror` will be raised.
 
         """
         i = self.parameters.index((section, name))
         if i==-1:
-            raise ValueError("Could not find index of parameter %s in section %s"%(name, section))
+            raise valueerror("could not find index of parameter %s in section %s"%(name, section))
         return i
 
 
 
     def set_varied(self, section, name, lower, upper):
-        u"""Indicate that the parameter (`section`, `name`) is to be varied between the `lower` and `upper` bounds."""
+        u"""indicate that the parameter (`section`, `name`) is to be varied between the `lower` and `upper` bounds."""
         i = self.parameter_index(section, name)
         self.parameters[i].limits = (lower,upper)
         self.reset_fixed_varied_parameters()
@@ -477,7 +476,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def set_fixed(self, section, name, value):
-        u"""Indicate that the parameter (`section`, `name`) must be held fixed at `value`."""
+        u"""indicate that the parameter (`section`, `name`) must be held fixed at `value`."""
         i = self.parameter_index(section, name)
         self.parameters[i].limits = (value, value)
         self.reset_fixed_varied_parameters()
@@ -485,7 +484,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def output_names(self):
-        u"""Return a list of strings, each the name of a non-fixed parameter."""
+        u"""return a list of strings, each the name of a non-fixed parameter."""
         param_names = [str(p) for p in self.varied_params]
         extra_names = ['%s--%s'%p for p in self.extra_saves]
         return param_names + extra_names
@@ -493,9 +492,9 @@ class LikelihoodPipeline(Pipeline):
 
 
     def randomized_start(self):
-        u"""Give each varied parameter an independent random value within the parameterʼs allowed range.
+        u"""give each varied parameter an independent random value within the parameterʼs allowed range.
 
-        The return is a `NumPy` :class:`array` of the random values.
+        the return is a `numpy` :class:`array` of the random values.
 
         """
         
@@ -507,21 +506,21 @@ class LikelihoodPipeline(Pipeline):
 
 
     def is_out_of_range(self, p):
-        u"""Determine if any parameter is not in its allowed range."""
+        u"""determine if any parameter is not in its allowed range."""
         return any([not param.in_range(x) for
                     param, x in zip(self.varied_params, p)])
 
 
 
-    def denormalize_vector(self, p, raise_exception=True):
-        u"""Return an array of values, parallel to the `varied_params`, with values mapped linearly from the range [0.0, 1.0] into the range [lower, upper] for each parameter."""
+    def denormalize_vector(self, p, raise_exception=true):
+        u"""return an array of values, which shadows the `varied_params`, with values mapped linearly from the range [0.0, 1.0] into the range [lower, upper] for each parameter."""
         return np.array([param.denormalize(x, raise_exception) for param, x
                          in zip(self.varied_params, p)])
 
 
 
     def denormalize_vector_from_prior(self, p):
-        u"""Return the value whose prior probability is given in each value in the array `p` (parallel to `varied_params`)."""
+        u"""Return the value whose prior probability is given in each value in the array `p` (an array shadowing `varied_params`)."""
         return np.array([param.denormalize_from_prior(x) for param, x
                          in zip(self.varied_params, p)])
 
@@ -584,8 +583,8 @@ class LikelihoodPipeline(Pipeline):
     def start_vector(self, all_params=False, as_array=True):
         u"""Return a vector of starting values for parameters.
 
-        If `all_params` is specified as `True` then the return parallels
-        all our `parameters`, otherwise it parallels our `varied_params`.
+        If `all_params` is specified as `True` then the return shadows all
+        our `parameters`, otherwise it shadows our `varied_params`.
 
         If `as_array` is specified as `False` then a Python list is
         returned, otherwise, the default, a NumPy array is returned.
@@ -602,11 +601,11 @@ class LikelihoodPipeline(Pipeline):
 
 
     def min_vector(self, all_params=False):
-        u"""Return a NumPy array of lower limits for the parameters in the parallel array `varied_params`.
+        u"""Return a NumPy array of lower limits for the parameters in the shadow array `varied_params`.
 
         If `all_params` is specified as `True` then the return will be a
-        corresponding set of lower limits parallel to our `parameters`
-        array.
+        corresponding set of lower limits corresponding to our
+        `parameters` array.
 
         """
         if all_params:
@@ -619,10 +618,10 @@ class LikelihoodPipeline(Pipeline):
 
 
     def max_vector(self, all_params=False):
-        u"""Return a NumPy array of upper limits for the parameters in the parallel array `varied_params`.
+        u"""Return a NumPy array of upper limits for the parameters in the shadowed array `varied_params`.
 
         If `all_params` is specified as `True` then the return will be a
-        corresponding set of upper limits parallel to our `parameters`
+        corresponding set of upper limits which shadow our `parameters`
         array.
 
         """
@@ -697,13 +696,13 @@ class LikelihoodPipeline(Pipeline):
     def prior(self, p, all_params=False, total_only=True):
         u"""Compute the probability of all values in `p` based on their prior distributions.
 
-        The array `p` is parallel to all of our `parameters` if
-        `all_params` is `True`, parallel to our `varied_params` otherwise.
+        The array `p` is a shadow of all of our `parameters` if
+        `all_params` is `True`, a shadow of our `varied_params` otherwise.
 
         If `total_only` is `True` (the default), then the scalar sum of
-        all the prior probabilities is returned.  Otherwise a parallel
-        array of pairs is returned, with each element a stringified
-        version of the parameter name, and the prior probability.
+        all the prior probabilities is returned.  Otherwise a shadow array
+        of pairs is returned, with each element a stringified version of
+        the parameter name, and the prior probability.
 
         """
         if all_params:
@@ -721,9 +720,9 @@ class LikelihoodPipeline(Pipeline):
     def posterior(self, p, return_data=False, all_params=False):
         u"""Use the above methods to obtain prior and updated log-likelihoods, sum together to get Bayesian posterior log-likelihood.
 
-        The argument `p` is the set of :class:`Parameter`s which parallels
+        The argument `p` is the set of :class:`Parameter`s which shadows
         `self.varied_params`, unless `all_params` is specified as `True`
-        in which case it parallels `self.parameters`.
+        in which case it shadows `self.parameters`.
 
         The method returns two or three values depending on `return_data`:
 
@@ -732,8 +731,7 @@ class LikelihoodPipeline(Pipeline):
         * a vector (NumPy array) of updated parameter values as specified
           in `self.extra_saves`;
 
-        * if `return_data` was specified, the vector of updated parameter
-          values which parallels `p`.
+        * if `return_data` was specified, the updated data block.
 
         If there is a problem anywhere in the computations which does
         *not* cause a run-time exception to be raised—including the case
@@ -794,13 +792,13 @@ class LikelihoodPipeline(Pipeline):
     def likelihood(self, p, return_data=False, all_params=False):
         u"""Run the simulation pipeline, computing various log-likelihood estimates of the new parameter values, and return the sum of these.
 
-        The parameter vector `p` must parallel `self.varied_params`,
-        unless `all_params` is specified as `True` in which case it must
-        parallel `self.parameters', i.e. must correspond to the complete
-        parameter set.
+        The parameter vector `p` must shadow `self.varied_params`, unless
+        `all_params` is specified as `True` in which case it must shadow
+        `self.parameters', i.e. must correspond to the complete parameter
+        set.
 
-        If `return_data` are requested, then the newly computed parameter
-        values will be returned as the third return item.
+        If `return_data` are requested, then the updated data block will
+        be returned as the third return item.
 
         The return will consist of two or three items, depending on
         `return_data`:
@@ -811,8 +809,7 @@ class LikelihoodPipeline(Pipeline):
           * a vector (NumPy array) of updated parameter values as
             specified in `self.extra_saves`;
 
-          * if `return_data` was specified, the vector of updated
-            parameter values which parallels `p`.
+          * if `return_data` was specified, the updated data block.
 
         If anything goes wrong in any of the computation which does *not*
         result in a run-time error being raised (which would include the
