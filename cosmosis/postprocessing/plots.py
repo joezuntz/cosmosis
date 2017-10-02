@@ -59,7 +59,7 @@ class Plots(PostProcessorElement):
 
     def load_latex(self, latex_file):
         latex_names = {}
-        latex_names = configparser.ConfigParser()
+        latex_names = configparser.ConfigParser(strict=False)
         latex_names.read(default_latex_file)
         if latex_file:
             latex_names.read(latex_file)

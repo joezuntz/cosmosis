@@ -139,7 +139,9 @@ class Inifile(IncludingConfigParser):
     def __init__(self, filename, defaults=None, override=None):
         IncludingConfigParser.__init__(self,
                                        defaults=defaults,
-                                       dict_type=collections.OrderedDict)
+                                       dict_type=collections.OrderedDict,
+                                       strict=False)
+        print(self.strict)
         # default read behavior is to ignore unreadable files which
         # is probably not what we want here
         if filename is not None:

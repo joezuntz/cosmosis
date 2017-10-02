@@ -52,7 +52,7 @@ class Plotter(object):
         self._display_names = {}
         latex_names = {}
         if latex_file is not None:
-            latex_names = configparser.ConfigParser()
+            latex_names = configparser.ConfigParser(strict=False)
             latex_names.read(latex_file)
         for i,col_name in enumerate(self.all_names):
             display_name=col_name
