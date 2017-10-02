@@ -92,6 +92,10 @@ class Parameter(object):
         elif isinstance(other, Parameter):
             return (self.section == other.section and
                     self.name == other.name)
+        elif isinstance(other, str):
+            return other==self.__str__()
+        else:
+            raise NotImplementedError("Tried to do parameter==something where something was not a thing I understand.")
 
 
 
@@ -108,7 +112,13 @@ class Parameter(object):
 
 
     def is_fixed(self):
-        u"""Return `True` if the limits allow no variation of the parameter value."""
+        u"""Test whether this parameter is fixed or varied.
+
+        Returns `True` if parameter is fixed to a single value by
+        degenerate definition of the limits, and false if there is room
+        for it to vary.
+
+        """
         return self.limits[0] == self.limits[1]
 
 
