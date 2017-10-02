@@ -376,17 +376,17 @@ class LikelihoodPipeline(Pipeline):
 
     """
 
-    def __init__(self, arg=none, id="",override=none, load=true):
-        u"""construct a :class:`likelihoodpipeline`.
+    def __init__(self, arg=None, id="",override=None, load=True):
+        u"""Construct a :class:`LikelihoodPipeline`.
 
-        the arguments `arg` and `load` are used in the base-class
-        initialization (see above).  the `id` is given to our `id_code`
+        The arguments `arg` and `load` are used in the base-class
+        initialization (see above).  The `id` is given to our `id_code`
         (which doesnʼt seem to have a purpose), and `override` is a
         dictionary of `(section, name)->value` which will override any
         settings for those parametersʼ values in the initialization files.
         
         """
-        super(likelihoodpipeline, self).__init__(arg=arg, load=load)
+        super(LikelihoodPipeline, self).__init__(arg=arg, load=load)
 
         if id:
             self.id_code = "[%s] " % str(id)
@@ -394,13 +394,13 @@ class LikelihoodPipeline(Pipeline):
             self.id_code = ""
         self.n_iterations = 0
 
-        values_file = self.options.get(pipeline_ini_section, "values")
+        values_file = self.options.get(PIPELINE_INI_SECTION, "values")
         self.values_filename=values_file
-        priors_files = self.options.get(pipeline_ini_section,
+        priors_files = self.options.get(PIPELINE_INI_SECTION,
                                         "priors", "").split()
         self.priors_files = priors_files
 
-        self.parameters = parameter.parameter.load_parameters(values_file,
+        self.parameters = parameter.Parameter.load_parameters(values_file,
                                                               priors_files,
                                                               override,
                                                               )
@@ -409,8 +409,8 @@ class LikelihoodPipeline(Pipeline):
 
         self.print_priors()
 
-        #we want to save some parameter results from the run for further output
-        extra_saves = self.options.get(pipeline_ini_section,
+        #We want to save some parameter results from the run for further output
+        extra_saves = self.options.get(PIPELINE_INI_SECTION,
                                        "extra_output", "")
 
         self.extra_saves = []
@@ -420,7 +420,7 @@ class LikelihoodPipeline(Pipeline):
 
         self.number_extra = len(self.extra_saves)
         #pull out all the section names and likelihood names for later
-        self.likelihood_names = self.options.get(pipeline_ini_section,
+        self.likelihood_names = self.options.get(PIPELINE_INI_SECTION,
                                                  "likelihoods").split()
 
         # now that we've set up the pipeline properly, initialize modules
@@ -429,10 +429,10 @@ class LikelihoodPipeline(Pipeline):
 
 
     def print_priors(self):
-        u"""pretty-print a table of priors for human inspection."""
+        u"""Pretty-print a table of priors for human inspection."""
         
         print ""
-        print "parameter priors"
+        print "Parameter Priors"
         print "----------------"
         if self.parameters:
             n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
@@ -446,7 +446,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def reset_fixed_varied_parameters(self):
-        u"""identify the sub-set of parameters which are fixed, and those which are to be varied."""
+        u"""Identify the sub-set of parameters which are fixed, and those which are to be varied."""
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]
         self.fixed_params = [param for param in self.parameters
@@ -455,20 +455,20 @@ class LikelihoodPipeline(Pipeline):
 
 
     def parameter_index(self, section, name):
-        u"""return the sequence number of the parameter `name` in `section`.
+        u"""Return the sequence number of the parameter `name` in `section`.
 
-        if the parameter is not found then :class:`valueerror` will be raised.
+        If the parameter is not found then :class:`ValueError` will be raised.
 
         """
         i = self.parameters.index((section, name))
         if i==-1:
-            raise valueerror("could not find index of parameter %s in section %s"%(name, section))
+            raise ValueError("Could not find index of parameter %s in section %s"%(name, section))
         return i
 
 
 
     def set_varied(self, section, name, lower, upper):
-        u"""indicate that the parameter (`section`, `name`) is to be varied between the `lower` and `upper` bounds."""
+        u"""Indicate that the parameter (`section`, `name`) is to be varied between the `lower` and `upper` bounds."""
         i = self.parameter_index(section, name)
         self.parameters[i].limits = (lower,upper)
         self.reset_fixed_varied_parameters()
@@ -476,7 +476,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def set_fixed(self, section, name, value):
-        u"""indicate that the parameter (`section`, `name`) must be held fixed at `value`."""
+        u"""Indicate that the parameter (`section`, `name`) must be held fixed at `value`."""
         i = self.parameter_index(section, name)
         self.parameters[i].limits = (value, value)
         self.reset_fixed_varied_parameters()
@@ -484,7 +484,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def output_names(self):
-        u"""return a list of strings, each the name of a non-fixed parameter."""
+        u"""Return a list of strings, each the name of a non-fixed parameter."""
         param_names = [str(p) for p in self.varied_params]
         extra_names = ['%s--%s'%p for p in self.extra_saves]
         return param_names + extra_names
@@ -492,9 +492,9 @@ class LikelihoodPipeline(Pipeline):
 
 
     def randomized_start(self):
-        u"""give each varied parameter an independent random value within the parameterʼs allowed range.
+        u"""Give each varied parameter an independent random value within the parameterʼs allowed range.
 
-        the return is a `numpy` :class:`array` of the random values.
+        The return is a `NumPy` :class:`array` of the random values.
 
         """
         
@@ -506,14 +506,14 @@ class LikelihoodPipeline(Pipeline):
 
 
     def is_out_of_range(self, p):
-        u"""determine if any parameter is not in its allowed range."""
+        u"""Determine if any parameter is not in its allowed range."""
         return any([not param.in_range(x) for
                     param, x in zip(self.varied_params, p)])
 
 
 
-    def denormalize_vector(self, p, raise_exception=true):
-        u"""return an array of values, which shadows the `varied_params`, with values mapped linearly from the range [0.0, 1.0] into the range [lower, upper] for each parameter."""
+    def denormalize_vector(self, p, raise_exception=True):
+        u"""Return an array of values, which shadows the `varied_params`, with values mapped linearly from the range [0.0, 1.0] into the range [lower, upper] for each parameter."""
         return np.array([param.denormalize(x, raise_exception) for param, x
                          in zip(self.varied_params, p)])
 
