@@ -718,7 +718,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def posterior(self, p, return_data=False, all_params=False):
-        u"""Use the above methods to obtain prior and updated log-likelihoods, sum together to get Bayesian posterior log-likelihood.
+        u"""Use the above methods to obtain prior and updated log-likelihoods, sum together to get Bayesian posterior.
 
         The argument `p` is the set of :class:`Parameter`s which shadows
         `self.varied_params`, unless `all_params` is specified as `True`
@@ -726,7 +726,7 @@ class LikelihoodPipeline(Pipeline):
 
         The method returns two or three values depending on `return_data`:
 
-        * A scalar updated log-likelihood;
+        * The posterior;
 
         * a vector (NumPy array) of updated parameter values as specified
           in `self.extra_saves`;
@@ -736,7 +736,7 @@ class LikelihoodPipeline(Pipeline):
         If there is a problem anywhere in the computations which does
         *not* cause a run-time exception to be raised—including the case
         where a parameter goes outside of its alloted range—, then
-        `-numpy.inf` will be returned as the final log-likelihood (i.e., zero
+        `-numpy.inf` will be returned as the final posterior (i.e., zero
         probability of this set of parameter values being correct).
 
         """
