@@ -32,7 +32,7 @@ def experimental_fault_handling():
 
 
 def demo_1_special (args):
-    if "demo1.ini" in args.inifile:
+    if   "demo1" == args.inifile   or   "demo1.ini" in args.inifile:
         print
         print "Congratulations: you have just run cosmosis demo one!"
         if os.path.exists("./conda"):
@@ -58,7 +58,7 @@ def demo_1_special (args):
 
 
 def demo_10_special (args):
-    if   "demo10.ini" in args.inifile   and   not os.getenv ("HALOFIT", ""):
+    if   "demo10" in args.inifile   and   not os.getenv ("HALOFIT", ""):
         print
         print "Welcome to demo10!"
         print

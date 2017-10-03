@@ -230,7 +230,7 @@ extern "C" {
     section.
 
     If DBS_SUCCESS is returned, 'val' will be carrying either the value
-    read from the c_datablock, or the user-supplied default.rwise.
+    read from the c_datablock, or the user-supplied default otherwise.
 
     If the return status is no DBS_SUCCESS the value written into 'val'
     is not defined.

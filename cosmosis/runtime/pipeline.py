@@ -1,3 +1,8 @@
+#coding: utf-8
+
+u"""Definition of :class:`Pipeline` and the specialization :class:`LikelihoodPipeline`."""
+
+
 import os
 import ctypes
 import sys
@@ -26,14 +31,66 @@ except ImportError:
 PIPELINE_INI_SECTION = "pipeline"
 
 class MissingLikelihoodError(Exception):
+
+    u"""Class to throw if there are not enough data for a likelihood method.
+
+    This class is specifically designed to be thrown during a
+    `pipeline.likelihood()` call when there are insufficient data so
+    that the test sampler can provide a detailed report to the user
+    about the problem (recall that the typical lifetime of a cosmosis
+    run involves running the test sampler first to weed out such
+    problems, before a full run takes place).
+
+    """
+
     def __init__(self, message, data):
+        u"""Data to provide to the test sampler in case of likelihood data problems.
+
+        The `message` is for the user generally; for use of `data` see
+        the `test_sampler.execute()` method, currently at
+        `samplers/test/test_sampler.py:29`.
+        
+        """
         super(MissingLikelihoodError, self).__init__(message)
         self.pipeline_data = data
 
+
+
 class Pipeline(object):
+
+    u"""A container of :class:`DataBlock`-processing :class:`Module`ʼs.
+
+    Cosmosis consists of a large number of computational modules, which
+    the user can arrange into pipelines in the configuration files
+    before submitting a run.  This class encapsulates the basic concept
+    of a pipeline, and provides methods for setting one up based on
+    options and/or initial parameter vectors, and for running the
+    pipeline to obtain a refinement of a :class:`DataBlock` (the
+    prototypical use-case is Bayesian updating of prior likelihoods,
+    though this is handled by the more specialized
+    :class:`LikelihoodPipeline` defined below).
+
+    Sometimes it will be possible to optimize execution of a pipeline by
+    providing pre-emptive data which can be taken as the result of running
+    the first few modules.  In this case a run will ‘bypass’ those modules
+    and start the run at a `shortcut_module`, using the `shortcut_data` as
+    the initial (i.e., prior) data set.
+
+    """
+
     def __init__(self, arg=None, load=True):
-        """ Initialize with a single filename or a list of them,
-            a ConfigParser, or nothing for an empty pipeline"""
+
+        u"""Pipeline constructor.
+
+        The (poorly named) `arg` needs to be some reference to
+        :class:`Inifile` which includes all the information to form this
+        pipeline: it can be a list of filenames (.ini files and such) to
+        read for the parameters, or a :class:`Inifile` object directly.
+
+        If `load` is `True` then all the modules in the pipelineʼs
+        configuration will be loaded into memory and initialized.
+
+        """
         if arg is None:
             arg = list()
 
@@ -79,7 +136,15 @@ class Pipeline(object):
                     print "It will make no difference."
                 self.shortcut_module = index
 
+
+
     def base_directory(self):
+        u"""Return our `root_directory` according to the environment.
+
+        Use the environment variable `COSMOSIS_SRC_DIR` if available,
+        otherwise use this processʼs working directory.
+
+        """
         if self.root_directory is None:
             try:
                 self.root_directory = os.environ["COSMOSIS_SRC_DIR"]
@@ -91,12 +156,17 @@ class Pipeline(object):
                 print "to current directory, ", self.root_directory
         return self.root_directory
 
+
+
     def find_module_file(self, path):
-        """Find a module file, which is assumed to be 
-        either absolute or relative to COSMOSIS_SRC_DIR"""
+        u"""Find a module file, which is assumed to be either absolute or relative to COSMOSIS_SRC_DIR"""
         return os.path.join(self.base_directory(), path)
 
+
+
     def setup(self):
+        u"""Run all of our modulesʼ `setup()` routines."""
+        
         if self.timing:
             timings = [time.time()]
 
@@ -129,11 +199,23 @@ class Pipeline(object):
             for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
                 sys.stdout.write("%s %f\n" % (name, t2-t1))
 
+
+
     def cleanup(self):
+        u"""Call every `module`ʼs `cleanup` method."""
         for module in self.modules:
             module.cleanup()
 
+
+
     def make_graph(self, data, filename):
+        u"""Put a graphic in `filename` illustrating the composition of this pipeline.
+
+        The :class:`DataBlock` `data`ʼs attached log is used to determine
+        the state of each module, and colourization is used in the graphic
+        to indicate this.
+
+        """
         try:
             import pygraphviz as pgv
         except ImportError:
@@ -183,7 +265,24 @@ class Pipeline(object):
 
         P.write(filename)
 
+
+
     def run(self, data_package):
+        u"""Run every module, in sequence, on `data_package`.
+
+        Apart from that the function goes to a lot of effort to provide
+        run-time diagnostic information to the user.
+
+        However, if any module returns anything but a null status, the
+        whole pipeline will cease to run and a :class:`ValueError` will be
+        raised.
+
+        Bear in mind the note on short-cuts in the class description
+        above: if `shortcut_data` and `shortcut_module` are defined, then
+        the pipeline will start at `shortcut_module` with `shortcut_data`
+        as the initial parameter vector.
+
+        """
         modules = self.modules
         first = (self.shortcut_data is None)
         if self.timing:
@@ -248,8 +347,45 @@ class Pipeline(object):
         return True
 
 
+
 class LikelihoodPipeline(Pipeline):
+
+    u"""Very specialized pipeline designed specifically for the prototypical case of Bayes-computed posterior distributions.
+
+    The point of a statistical updating pipeline is that the parameters in
+    the datablocks passed down the pipe, as well as having currently
+    estimated values, also have allowable ranges and possibly other
+    constraints which the user may want to tinker before each run.  Thus
+    there is a specialized layout of initialization files in the file
+    system, and there is a modified expectation on the modules to perform
+    simulation, compute the Bayesian evidence, hence log-likelihood.  The
+    pipeline itself will aggregate the results and summarize the net
+    effect of all the likelihood estimations, and thence compute the
+    Bayesian posterior.
+
+    Because of the necessity of working with distributions of values for
+    each parameter, rather than just a scalar, the extra information is
+    stored in a shadow array—another dictionary with the same keys but a
+    complementary set of values to the original ones—of
+    :class:`parameter`s to the :class:`datablock` which the base pipeline
+    modifies (actually only a subset of them known as the `varied_params`:
+    an array which references the interesting parameters in the full set).
+    this shadow array (`parameters`) is often referred to simply as `p`,
+    and the two arrays frequently need to be ‘zipped’ together and then
+    ‘unzipped’ after computations have completed.
+
+    """
+
     def __init__(self, arg=None, id="",override=None, load=True):
+        u"""Construct a :class:`LikelihoodPipeline`.
+
+        The arguments `arg` and `load` are used in the base-class
+        initialization (see above).  The `id` is given to our `id_code`
+        (which doesnʼt seem to have a purpose), and `override` is a
+        dictionary of `(section, name)->value` which will override any
+        settings for those parametersʼ values in the initialization files.
+        
+        """
         super(LikelihoodPipeline, self).__init__(arg=arg, load=load)
 
         if id:
@@ -290,7 +426,11 @@ class LikelihoodPipeline(Pipeline):
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
 
+
+
     def print_priors(self):
+        u"""Pretty-print a table of priors for human inspection."""
+        
         print ""
         print "Parameter Priors"
         print "----------------"
@@ -302,56 +442,106 @@ class LikelihoodPipeline(Pipeline):
             s = "{}--{}".format(param.section,param.name)
             print "{0:{1}}  ~ {2}" .format(s, n, param.prior)
         print ""
+
+
+
     def reset_fixed_varied_parameters(self):
+        u"""Identify the sub-set of parameters which are fixed, and those which are to be varied."""
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]
         self.fixed_params = [param for param in self.parameters
-                             if param.is_fixed()]     
+                             if param.is_fixed()]
+
+
 
     def parameter_index(self, section, name):
+        u"""Return the sequence number of the parameter `name` in `section`.
+
+        If the parameter is not found then :class:`ValueError` will be raised.
+
+        """
         i = self.parameters.index((section, name))
         if i==-1:
             raise ValueError("Could not find index of parameter %s in section %s"%(name, section))
         return i
 
+
+
     def set_varied(self, section, name, lower, upper):
+        u"""Indicate that the parameter (`section`, `name`) is to be varied between the `lower` and `upper` bounds."""
         i = self.parameter_index(section, name)
         self.parameters[i].limits = (lower,upper)
         self.reset_fixed_varied_parameters()
 
+
+
     def set_fixed(self, section, name, value):
+        u"""Indicate that the parameter (`section`, `name`) must be held fixed at `value`."""
         i = self.parameter_index(section, name)
         self.parameters[i].limits = (value, value)
         self.reset_fixed_varied_parameters()
 
 
+
     def output_names(self):
+        u"""Return a list of strings, each the name of a non-fixed parameter."""
         param_names = [str(p) for p in self.varied_params]
         extra_names = ['%s--%s'%p for p in self.extra_saves]
         return param_names + extra_names
 
+
+
     def randomized_start(self):
+        u"""Give each varied parameter an independent random value within the parameterʼs allowed range.
+
+        The return is a `NumPy` :class:`array` of the random values.
+
+        """
+        
         # should have different randomization strategies
         # (uniform, gaussian) possibly depending on prior?
+        
         return np.array([p.random_point() for p in self.varied_params])
 
+
+
     def is_out_of_range(self, p):
+        u"""Determine if any parameter is not in its allowed range."""
         return any([not param.in_range(x) for
                     param, x in zip(self.varied_params, p)])
 
+
+
     def denormalize_vector(self, p, raise_exception=True):
+        u"""Return an array of values, which shadows the `varied_params`, with values mapped linearly from the range [0.0, 1.0] into the range [lower, upper] for each parameter."""
         return np.array([param.denormalize(x, raise_exception) for param, x
                          in zip(self.varied_params, p)])
 
+
+
     def denormalize_vector_from_prior(self, p):
+        u"""Return the value whose prior probability is given in each value in the array `p` (an array shadowing `varied_params`)."""
         return np.array([param.denormalize_from_prior(x) for param, x
                          in zip(self.varied_params, p)])
 
+
+
     def normalize_vector(self, p):
+        u"""Return an array of varied parameter values, each in the range [0.0, 1.0] according to the place between lower and upper limits for that parameter."""
         return np.array([param.normalize(x) for param, x
                          in zip(self.varied_params, p)])
 
+
+
     def normalize_matrix(self, c):
+        u"""Roughly, return a correlation matrix corresponding to the covariance matrix `c`, of `varied_params` values.
+
+        Except that the elements of `c` are not probabilities but
+        dimensional values, and the ‘normalization’ is relative to the
+        range of values the ‘covariance’s can take given the lower and
+        upper limits on the variates.
+
+        """
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
@@ -364,7 +554,15 @@ class LikelihoodPipeline(Pipeline):
                 c[i,j] /= (ri*rj)
         return c
 
+
+
     def denormalize_matrix(self, c, inverse=False):
+        u"""Perform the inverse operation to the function above.
+
+        Note that if `inverse` is `True` the action is *exactly* the same
+        as the function above, i.e. it *normalizes* the matrix.
+
+        """
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
@@ -381,7 +579,17 @@ class LikelihoodPipeline(Pipeline):
         return c
 
 
+
     def start_vector(self, all_params=False, as_array=True):
+        u"""Return a vector of starting values for parameters.
+
+        If `all_params` is specified as `True` then the return shadows all
+        our `parameters`, otherwise it shadows our `varied_params`.
+
+        If `as_array` is specified as `False` then a Python list is
+        returned, otherwise, the default, a NumPy array is returned.
+
+        """
         if all_params:
             p = [param.start for param in self.parameters]
         else:            
@@ -390,7 +598,16 @@ class LikelihoodPipeline(Pipeline):
             p = np.array(p)
         return p
 
+
+
     def min_vector(self, all_params=False):
+        u"""Return a NumPy array of lower limits for the parameters in the shadow array `varied_params`.
+
+        If `all_params` is specified as `True` then the return will be a
+        corresponding set of lower limits corresponding to our
+        `parameters` array.
+
+        """
         if all_params:
             return np.array([param.limits[0] for
                  param in self.parameters])
@@ -398,16 +615,37 @@ class LikelihoodPipeline(Pipeline):
             return np.array([param.limits[0] for
                          param in self.varied_params])
 
+
+
     def max_vector(self, all_params=False):
+        u"""Return a NumPy array of upper limits for the parameters in the shadowed array `varied_params`.
+
+        If `all_params` is specified as `True` then the return will be a
+        corresponding set of upper limits which shadow our `parameters`
+        array.
+
+        """
         if all_params:
             return np.array([param.limits[1] for
                  param in self.parameters])
         else:
             return np.array([param.limits[1] for
                          param in self.varied_params])
+
 
 
     def run_parameters(self, p, check_ranges=False, all_params=False):
+        u"""Assemble :class:`BlockData` data based on parameter values in `p`, and run the pipeline on those data.
+
+        If `check_ranges` is indicated, the function will return `None` if
+        **any** of our parameters are out of their indicated range.
+
+        If `all_params` is indicated, then the `p` run data will be
+        collated with all the parameters we hold, otherwise (the default)
+        the data are collated with the subset marked as ‘varied’, and all
+        of our ‘fixed’ parameters are added to the run-set.
+
+        """
         if check_ranges:
             if self.is_out_of_range(p):
                 return None
@@ -435,8 +673,10 @@ class LikelihoodPipeline(Pipeline):
             sys.stderr.write("Pipeline failed on these parameters: {}\n".format(p))
             return None
 
+
+
     def create_ini(self, p, filename):
-        "Dump the specified parameters as a new ini file"
+        u"""Dump the parameters `p` as a new ini file at `filename`"""
         output = collections.defaultdict(list)
         for param, x in zip(self.varied_params, p):
             output[param.section].append("%s  =  %r    %r    %r\n" % (
@@ -452,7 +692,19 @@ class LikelihoodPipeline(Pipeline):
         ini.close()
 
 
+
     def prior(self, p, all_params=False, total_only=True):
+        u"""Compute the probability of all values in `p` based on their prior distributions.
+
+        The array `p` is a shadow of all of our `parameters` if
+        `all_params` is `True`, a shadow of our `varied_params` otherwise.
+
+        If `total_only` is `True` (the default), then the scalar sum of
+        all the prior probabilities is returned.  Otherwise a shadow array
+        of pairs is returned, with each element a stringified version of
+        the parameter name, and the prior probability.
+
+        """
         if all_params:
             params = self.parameters
         else:
@@ -463,7 +715,32 @@ class LikelihoodPipeline(Pipeline):
         else:
             return priors
 
+
+
     def posterior(self, p, return_data=False, all_params=False):
+        u"""Use the above methods to obtain prior and updated log-likelihoods, sum together to get Bayesian posterior.
+
+        The argument `p` is the set of :class:`Parameter`s which shadows
+        `self.varied_params`, unless `all_params` is specified as `True`
+        in which case it shadows `self.parameters`.
+
+        The method returns two or three values depending on `return_data`:
+
+        * The posterior;
+
+        * a vector (NumPy array) of updated parameter values as specified
+          in `self.extra_saves`;
+
+        * if `return_data` was specified, the updated data block.
+
+        If there is a problem anywhere in the computations which does
+        *not* cause a run-time exception to be raised—including the case
+        where a parameter goes outside of its alloted range—, then
+        `-numpy.inf` will be returned as the final posterior (i.e., zero
+        probability of this set of parameter values being correct).
+
+        """
+
         priors = self.prior(p, all_params=all_params, total_only=False)
         # The total prior
         prior = sum(pr[1] for pr in priors)
@@ -511,12 +788,36 @@ class LikelihoodPipeline(Pipeline):
             return prior + like, extra
 
 
-
         
     def likelihood(self, p, return_data=False, all_params=False):
-        #Set the parameters by name from the parameter vector
-        #If one is out of range then return -infinity as the log-likelihood
-        #i.e. likelihood is zero.  Or if something else goes wrong do the same
+        u"""Run the simulation pipeline, computing various log-likelihood estimates of the new parameter values, and return the sum of these.
+
+        The parameter vector `p` must shadow `self.varied_params`, unless
+        `all_params` is specified as `True` in which case it must shadow
+        `self.parameters', i.e. must correspond to the complete parameter
+        set.
+
+        If `return_data` are requested, then the updated data block will
+        be returned as the third return item.
+
+        The return will consist of two or three items, depending on
+        `return_data`:
+
+          * A scalar holding the sum of all computed log-likelihoods of
+            the updated parameter value vector;
+
+          * a vector (NumPy array) of updated parameter values as
+            specified in `self.extra_saves`;
+
+          * if `return_data` was specified, the updated data block.
+
+        If anything goes wrong in any of the computation which does *not*
+        result in a run-time error being raised (which would include the
+        case of a parameter going outside of its stipulated limits), then
+        the returned log-likelihood will be `-np.inf`.
+
+        """
+
         data = self.run_parameters(p, all_params=all_params)
         if data is None:
             if return_data:
@@ -564,7 +865,9 @@ class LikelihoodPipeline(Pipeline):
             return like, extra_saves
 
 
+
 def config_to_block(relevant_sections, options):
+    u"""Compose :class:`DataBlock` of parameters only in `relevant_sections` of complete set of `options`."""
     config_block = block.DataBlock()
 
     for (section, name), value in options:
