@@ -74,7 +74,7 @@ class Pipeline(object):
     providing pre-emptive data which can be taken as the result of running
     the first few modules.  In this case a run will ‘bypass’ those modules
     and start the run at a `shortcut_module`, using the `shortcut_data` as
-    the initial (i.e., prior) data set.
+    the initial data set.
 
     """
 
@@ -82,7 +82,7 @@ class Pipeline(object):
 
         u"""Pipeline constructor.
 
-        The (poorly named) `arg` needs to be some reference to
+        The (poorly named) `arg` needs to be some reference to a parameter 
         :class:`Inifile` which includes all the information to form this
         pipeline: it can be a list of filenames (.ini files and such) to
         read for the parameters, or a :class:`Inifile` object directly.
@@ -209,7 +209,11 @@ class Pipeline(object):
 
 
     def make_graph(self, data, filename):
-        u"""Put a graphic in `filename` illustrating the composition of this pipeline.
+        u"""Put a description of a graphical model in the graphviz format
+        of a completed datablock `data' that was run on the pipeline, 
+        in `filename`, illustrating the data flow of this pipeline.
+
+        Graphviz tools can then be used to generate an actual image.
 
         The :class:`DataBlock` `data`ʼs attached log is used to determine
         the state of each module, and colourization is used in the graphic
@@ -268,12 +272,12 @@ class Pipeline(object):
 
 
     def run(self, data_package):
-        u"""Run every module, in sequence, on `data_package`.
+        u"""Run every module, in sequence, on DataBlock `data_package`.
 
         Apart from that the function goes to a lot of effort to provide
         run-time diagnostic information to the user.
 
-        However, if any module returns anything but a null status, the
+        However, if any module returns anything but a zero status, the
         whole pipeline will cease to run and a :class:`ValueError` will be
         raised.
 
@@ -492,7 +496,8 @@ class LikelihoodPipeline(Pipeline):
 
 
     def randomized_start(self):
-        u"""Give each varied parameter an independent random value within the parameterʼs allowed range.
+        u"""Give each varied parameter an independent random value distributed according
+        to the parameter prior.
 
         The return is a `NumPy` :class:`array` of the random values.
 
@@ -513,28 +518,41 @@ class LikelihoodPipeline(Pipeline):
 
 
     def denormalize_vector(self, p, raise_exception=True):
-        u"""Return an array of values, which shadows the `varied_params`, with values mapped linearly from the range [0.0, 1.0] into the range [lower, upper] for each parameter."""
+        u"""Convert an array of normalized parameter values, one for each varied parameter,
+        in the range [0.0,1.0] into their original values using only the lower and upper limits of the parameter.
+    
+        Use denormalize_vector_from_prior to convert according to the prior instead.
+
+        """
         return np.array([param.denormalize(x, raise_exception) for param, x
                          in zip(self.varied_params, p)])
 
 
 
     def denormalize_vector_from_prior(self, p):
-        u"""Return the value whose prior probability is given in each value in the array `p` (an array shadowing `varied_params`)."""
+        u"""Convert an array of normalized parameter values, one for each varied parameter,
+        in the range [0.0,1.0] into their original values according to the prior for each parameter.
+
+        i.e. 
+        v -> x  such that \int_{-inf}^{x} p(x') dx' = v
+
+        """
         return np.array([param.denormalize_from_prior(x) for param, x
                          in zip(self.varied_params, p)])
 
 
 
     def normalize_vector(self, p):
-        u"""Return an array of varied parameter values, each in the range [0.0, 1.0] according to the place between lower and upper limits for that parameter."""
+        u"""Convert an array of parameter values, one for each varied parameter,
+         into a normalized form all in the range [0.0,1.0] using only the lower and upper limits for each parameter."""
         return np.array([param.normalize(x) for param, x
                          in zip(self.varied_params, p)])
 
 
 
     def normalize_matrix(self, c):
-        u"""Roughly, return a correlation matrix corresponding to the covariance matrix `c`, of `varied_params` values.
+        u"""Roughly, return a correlation matrix corresponding to the 
+        covariance matrix `c`, of `varied_params` values.
 
         Except that the elements of `c` are not probabilities but
         dimensional values, and the ‘normalization’ is relative to the
@@ -557,7 +575,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def denormalize_matrix(self, c, inverse=False):
-        u"""Perform the inverse operation to the function above.
+        u"""Perform the inverse operation to the normalize_matrix function above.
 
         Note that if `inverse` is `True` the action is *exactly* the same
         as the function above, i.e. it *normalizes* the matrix.
@@ -583,8 +601,8 @@ class LikelihoodPipeline(Pipeline):
     def start_vector(self, all_params=False, as_array=True):
         u"""Return a vector of starting values for parameters.
 
-        If `all_params` is specified as `True` then the return shadows all
-        our `parameters`, otherwise it shadows our `varied_params`.
+        If `all_params` is specified as `True` then the return will include all
+        our `parameters`, otherwise only the varying ones are included.
 
         If `as_array` is specified as `False` then a Python list is
         returned, otherwise, the default, a NumPy array is returned.
@@ -601,11 +619,11 @@ class LikelihoodPipeline(Pipeline):
 
 
     def min_vector(self, all_params=False):
-        u"""Return a NumPy array of lower limits for the parameters in the shadow array `varied_params`.
+        u"""Return a NumPy array of lower limits for the parameters in the pipeline.
 
-        If `all_params` is specified as `True` then the return will be a
-        corresponding set of lower limits corresponding to our
-        `parameters` array.
+        If `all_params` is specified as `True` then the return will 
+        include all parameters, including fixed ones. Otherwise it will just be the 
+        varying parameters.
 
         """
         if all_params:
@@ -618,11 +636,11 @@ class LikelihoodPipeline(Pipeline):
 
 
     def max_vector(self, all_params=False):
-        u"""Return a NumPy array of upper limits for the parameters in the shadowed array `varied_params`.
+        u"""Return a NumPy array of upper limits for the parameters in the pipeline.
 
-        If `all_params` is specified as `True` then the return will be a
-        corresponding set of upper limits which shadow our `parameters`
-        array.
+        If `all_params` is specified as `True` then the return will 
+        include all parameters, including fixed ones. Otherwise it will just be the 
+        varying parameters.
 
         """
         if all_params:
@@ -635,14 +653,14 @@ class LikelihoodPipeline(Pipeline):
 
 
     def run_parameters(self, p, check_ranges=False, all_params=False):
-        u"""Assemble :class:`BlockData` data based on parameter values in `p`, and run the pipeline on those data.
+        u"""Assemble :class:`DataBlock` data based on parameter values in `p`, and run the pipeline on those data.
 
         If `check_ranges` is indicated, the function will return `None` if
         **any** of our parameters are out of their indicated range.
 
         If `all_params` is indicated, then the `p` run data will be
-        collated with all the parameters we hold, otherwise (the default)
-        the data are collated with the subset marked as ‘varied’, and all
+        assumed to match all the pipeline parameter, including fixed ones.
+        Otherwise (the default) it should match the list ‘varied_params’, and all
         of our ‘fixed’ parameters are added to the run-set.
 
         """
@@ -696,13 +714,14 @@ class LikelihoodPipeline(Pipeline):
     def prior(self, p, all_params=False, total_only=True):
         u"""Compute the probability of all values in `p` based on their prior distributions.
 
-        The array `p` is a shadow of all of our `parameters` if
-        `all_params` is `True`, a shadow of our `varied_params` otherwise.
+        The array `p` should match the length of of all of our `parameters` if
+        `all_params` is `True`, and our `varied_params` otherwise.
 
         If `total_only` is `True` (the default), then the scalar sum of
-        all the prior probabilities is returned.  Otherwise a shadow array
+        all the prior probabilities is returned.  Otherwise a list
         of pairs is returned, with each element a stringified version of
-        the parameter name, and the prior probability.
+        the parameter name, and the prior probability:
+        [(name1, prior1), (name2,prior2), ...]
 
         """
         if all_params:
@@ -790,10 +809,11 @@ class LikelihoodPipeline(Pipeline):
 
         
     def likelihood(self, p, return_data=False, all_params=False):
-        u"""Run the simulation pipeline, computing various log-likelihood estimates of the new parameter values, and return the sum of these.
+        u"""Run the simulation pipeline, computing any log-likelihoods in the pipeline 
+        given the given input parameter values, and return the sum of these.
 
-        The parameter vector `p` must shadow `self.varied_params`, unless
-        `all_params` is specified as `True` in which case it must shadow
+        The parameter vector `p` must match the length of `self.varied_params`, unless
+        `all_params` is specified as `True` in which case it must match
         `self.parameters', i.e. must correspond to the complete parameter
         set.
 

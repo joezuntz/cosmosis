@@ -42,41 +42,33 @@ class Module(object):
     :class:`Module` as a cosmosis Module (capital ‘M’ for distinction) as
     opposed to a Python module!
 
-    A :class:`Module` is an object in the sense of the classical
-    Object-Oriented paradigm: a software component with definite
-    lifetime delimited by a self-contained constructor, destructor, and
-    prescribed procedural interface (plus implicitly understood lifetime
-    semantics).  The interface in fact consists of a single method, to
-    perform a single step of the computational pipeline: take in a
-    :class:`DataBlock` object and update it according to the model which
-    the Module is supposed to implement; this may include updating or
-    re-computing statistical parameters (evidence and likelihood) as
-    part of the Bayesian parameter search methodology, as well as
-    physical cosmology model parameters.
-    
-    This Python class, then, manages the lifetime of a Module written in
-    either Python or C, and provides a high-level fully abstracted
-    interface to the module to the rest of the application.
+    A :class:`Module` represents a single discrete step in an overall 
+    computational pipelinem consuming some inputs from and providing some
+    outputs to a :class:`DataBlock`.
 
-    An abstract wrapper around an abstract object ought be the thinnest
-    veneer of software; most of the implementation details here deal
-    with the differences between C and Python Modules, and endeavour to
-    hide the differences from the rest of the application.  There is
-    also some effort put into instantiating this wrapper based on
-    user-supplied instructions brought in from the applicationʼs .ini
-    files.
+    :class:`Module`s are made from either a python file or a shared library,
+    and must have a setup function, to be run once when the module is first
+    created, and an execute function, to be run whenever a new calculation 
+    is to be computed.
+    
+    This Python class manages the lifetime of a Module, 
+    and provides a high-level interface to the module to the rest of the application.
+
+    Unless you are doing something fairly complicated you are unlikely to use
+    a module in your own scripts - more generally you would use a :class:`Pipeline`,
+    which collects a sequence of modules together.
 
     The Module /setup/ function, if present, takes in a configuration
-    object (it will find the moduleʼs parameters in a “module_options”
+    :class:`DataBlock` object (it will find the moduleʼs parameters in a “module_options”
     section), and may return some object which will subsequently be passed
     to the Moduleʼs /execute/ function.
 
     The /execute/ function itself (which MUST be present in the linked
-    library) is also called with the configuration, and if /setup/
+    library) is also called with a :class:`DataBlock`, and if /setup/
     provided data back to the wrapper, then the /execute/ function MUST
     accept this type of object as its second argument.
 
-    The /cleanup/ function is also passed the /setup/ʼs `data` object
+    The optional /cleanup/ function is also passed the /setup/ʼs `data` object
     (only), and so may free any resources which that object clings on to.
 
     """

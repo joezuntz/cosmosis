@@ -25,7 +25,7 @@ class CosmosisConfigurationError(ConfigParser.Error):
 
 class IncludingConfigParser(ConfigParser.ConfigParser):
 
-    u"""Extension of :class:`ConfigParser` to \%include other files.
+    u"""Extension of built-in python :class:`ConfigParser` to \%include other files.
 
     Use the line: %include filename.ini This is assumed to end a section,
     and the last section in the included file is assumed to end as well
@@ -213,7 +213,18 @@ class Inifile(IncludingConfigParser):
 
 
     def items(self, section, raw=False, vars=None, defaults=True):
-        u"""[Doc. needed: what is this method trying to accomplish?]."""
+        u"""Return a list of pairs (key, value) from all the options in a given `section`.
+
+        If raw is set, do not replace values which are set using the ini file 
+        interpolation syntax %(name)s.
+
+        If vars is set to a dictionary, use it as an additional source of options.
+
+        If defaults is True (the default), parameters in the [DEFAULT] section are included
+        in all other sections.
+
+
+        """
         if defaults:
             return IncludingConfigParser.items(self, section, raw=raw, vars=vars)
         else:
@@ -335,16 +346,16 @@ class Inifile(IncludingConfigParser):
 
 
     def gettyped(self, section, name):
-        u"""Try to read and interpret a value as a *homogeneous* array.
+        u"""Best-guess the type of a parameter and return it as that type.
 
-        The value is taken as a space-separated list (possibly of only one
-        item) and the items are attempted to be interpreted as integers,
-        floats, complex numbers or a single boolean.  If all fail, a
-        simple string will be returned.
+        The method will try parsing the value as, in this order:
+            an integer or list of integers,
+            a float or list of floats,
+            a complex number or list of complex numbers,
+            a boolean,
+            a string.
 
-        If there is only one interpreted value, it will be returned as a
-        scalar, otherwise a Python list will be returned.
-
+        The string value is the fallback if all else fails.
         """
 
         import re
