@@ -203,7 +203,7 @@ class DataBlock(object):
 		}.get((dtype,mode))
 		if put_function is None:
 			raise ValueError("I do not know how to save %s in %s of type %s"% (section,name, dtype))
-		status = put_function(self._ptr, section, name, arr, ndim, extent)
+		status = put_function(self._ptr, section.encode('ascii'), name.encode('ascii'), arr, ndim, extent)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
