@@ -1,5 +1,6 @@
 from __future__ import print_function
 from builtins import zip
+from builtins import str
 from .. import ParallelSampler
 from . import pmc
 import numpy as np
@@ -121,4 +122,3 @@ class PMCSampler(ParallelSampler):
                     "but there are %d varied parameters." %
                     (covmat.shape[0], covmat.shape[1], nparams))
         return covmat
-

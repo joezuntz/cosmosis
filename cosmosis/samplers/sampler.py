@@ -1,4 +1,5 @@
 from future.utils import with_metaclass
+from builtins import str
 from builtins import range
 from builtins import object
 from cosmosis.runtime.attribution import PipelineAttribution

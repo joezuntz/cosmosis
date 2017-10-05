@@ -1,5 +1,6 @@
 from builtins import zip
 from builtins import range
+from builtins import str
 from .. import ParallelSampler
 import numpy as np
 
