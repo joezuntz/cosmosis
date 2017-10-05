@@ -1,6 +1,4 @@
 from __future__ import print_function
-from __future__ import division
-from past.utils import old_div
 from .. import ParallelSampler
 import numpy as np
 from ...runtime import prior
@@ -167,7 +165,7 @@ class ABCSampler(ParallelSampler):
         if self.diag_cov:
             diag = np.diag(covs)
             covs = np.diag(diag)
-            inv = old_div(1.,diag)
+            inv = 1./diag
             invcovs = np.diag(inv)
 
         return  data, covs,invcovs

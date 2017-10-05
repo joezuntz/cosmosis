@@ -1,10 +1,8 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import map
 from builtins import zip
 from builtins import range
 from builtins import object
-from past.utils import old_div
 from numpy import pi, dot, exp, einsum
 import numpy as np
 
@@ -33,9 +31,9 @@ class PopulationMonteCarlo(object):
 		mu = np.random.multivariate_normal(start, sigma, size=n)
 
 		if student:
-			self.components = [StudentsTComponent(old_div(1.0,n), m, sigma, nu) for m in mu]	
+			self.components = [StudentsTComponent(1.0/n, m, sigma, nu) for m in mu]
 		else:
-			self.components = [GaussianComponent(old_div(1.0,n), m, sigma) for m in mu]	
+			self.components = [GaussianComponent(1.0/n, m, sigma) for m in mu]
 		self.pool = pool
 		self.quiet=quiet #not currently used
 
@@ -84,18 +82,18 @@ class PopulationMonteCarlo(object):
 		log_Aphi = np.array([np.log(m.alpha) + m.log_phi(x) for m in self.components]) #n-component * n_sample
 		Aphi = np.array([m.alpha*m.phi(x) for m in self.components]) #n-component * n_sample
 		post = np.exp(log_post)
-		w = old_div(post,Aphi.sum(0)) #n_sample
+		w = post/Aphi.sum(0) #n_sample
 		logw = log_post - np.log(Aphi.sum(0))
 
 
 		if not update:
 			return logw
 
-		w_norm = old_div(w,w.sum())  #n_sample
+		w_norm = w/w.sum()  #n_sample
 
 		logw_norm = np.log(w_norm)
 		entropy =  -(w_norm*logw_norm).sum()
-		perplexity = old_div(np.exp(entropy), len(x))
+		perplexity = np.exp(entropy) / len(x)
 		print("Perplexity = ", perplexity)
 
 
@@ -104,7 +102,7 @@ class PopulationMonteCarlo(object):
 		A = [m.alpha for m in self.components]
 		#rho_top = einsum('i,ij->ij', A, phi)  #n_component * n_sample
 		rho_bottom = Aphi.sum(0) #n_sample
-		rho = [old_div(rho_t,rho_bottom) for rho_t in Aphi]
+		rho = [rho_t/rho_bottom for rho_t in Aphi]
 
 
 
@@ -137,7 +135,7 @@ class GaussianComponent(object):
 		ndim = len(self.mu)
 		self.sigma = sigma
 		self.sigma_inv = np.linalg.inv(self.sigma)
-		self.A = (2*pi)**(old_div(-ndim,2.0)) * np.linalg.det(self.sigma)**-0.5
+		self.A = (2*pi)**(-ndim/2.0) * np.linalg.det(self.sigma)**-0.5
 		self.logA = np.log(self.A)
 
 	def update(self, w_norm, x, rho_d):
@@ -145,10 +143,10 @@ class GaussianComponent(object):
 		alpha = dot(w_norm, rho_d)  #scalar
 		if not alpha>0:
 			raise np.linalg.LinAlgError("alpha = %f"%alpha)
-		mu = old_div(einsum('i,ij,i->j',w_norm, x, rho_d), alpha)  #scalar
+		mu = einsum('i,ij,i->j',w_norm, x, rho_d) / alpha  #scalar
 		delta = x-mu  #n_sample * n_dim
 		print("Updating to mu = ", mu)
-		sigma = old_div(einsum('i,ij,ik,i->jk',w_norm, delta, delta, rho_d), alpha)  #n_dim * n_dim
+		sigma = einsum('i,ij,ik,i->jk',w_norm, delta, delta, rho_d) / alpha  #n_dim * n_dim
 		self.set(alpha, mu, sigma)
 
 	def phi(self, x):
@@ -195,7 +193,7 @@ class StudentsTComponent(object):
 		nu=self.nu
 		self.sigma = sigma
 		self.sigma_inv = np.linalg.inv(self.sigma)
-		self.A = gamma(old_div((nu+p),2.))/gamma(old_div(nu,2.)) / (pi*nu)**(old_div(p,2.)) * np.linalg.det(self.sigma)**-0.5
+		self.A = gamma((nu+p)/2.)/gamma(nu/2.) / (pi*nu)**(p/2.) * np.linalg.det(self.sigma)**-0.5
 
 	def update(self, w_norm, x, rho_d):
 		"Update the parameters according to the samples and rho values"
@@ -204,7 +202,7 @@ class StudentsTComponent(object):
 			raise np.linalg.LinAlgError("alpha = %f"%alpha)
 		nu=self.nu
 		p=self.ndim
-		gamma = old_div((nu+p),(nu+self.chi2))  #size n_sampl
+		gamma = (nu+p)/(nu+self.chi2)  #size n_sampl
 		mu = einsum('i,ij,i,i->j',w_norm, x, rho_d,gamma)  #scalar
 		mu /= einsum('i,i,i',w_norm,rho_d,gamma)
 		delta = x-mu  #n_sample * n_dim
@@ -222,21 +220,21 @@ class StudentsTComponent(object):
 		#result size n_sample
 		nu=self.nu
 		p=self.ndim
-		return self.A * (1.0+old_div(chi2,nu))**(old_div(-(nu+p),2.0))
+		return self.A * (1.0+chi2/nu)**(-(nu+p)/2.0)
 
 	def sample(self):
 		"Draw a sample from the distribution"
 		y = np.random.multivariate_normal(np.zeros_like(self.mu), self.sigma)
 		z = np.random.chisquare(self.nu)
-		return self.mu + y*(old_div(self.nu,z))**0.5
+		return self.mu + y*(self.nu/z)**0.5
 
 
 
 def test_like(p):
 	x,y=p
-	a = old_div((x+y),np.sqrt(2))
-	b = old_div((x-y),np.sqrt(2))
-	return 0.2*exp(-0.5*(a**2+old_div(b**2,25.0))) + 0.8*exp(-0.5*(old_div(a**2,25.0)+b**2))
+	a = (x+y)/np.sqrt(2)
+	b = (x-y)/np.sqrt(2)
+	return 0.2*exp(-0.5*(a**2+b**2/25.0)) + 0.8*exp(-0.5*(a**2/25.0+b**2))
 
 
 def test():

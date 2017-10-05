@@ -1,9 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from __future__ import division
 from builtins import zip
 from builtins import range
-from past.utils import old_div
 from .. import ParallelSampler
 import numpy as np
 from .snake import Snake
@@ -27,7 +25,7 @@ class SnakeSampler(ParallelSampler):
         snake_pipeline=self.pipeline
         if self.is_master():
             threshold = self.read_ini("threshold", float, 4.0)
-            self.grid_size = old_div(1.0,self.read_ini("nsample_dimension", int, 10))
+            self.grid_size = 1.0/self.read_ini("nsample_dimension", int, 10)
             self.maxiter = self.read_ini("maxiter", int, 100000)
 
             

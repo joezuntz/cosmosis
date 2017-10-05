@@ -1,12 +1,10 @@
 from __future__ import print_function
-from __future__ import division
 from future import standard_library
 standard_library.install_aliases()
 from builtins import zip
 from builtins import hex
 from builtins import range
 from builtins import object
-from past.utils import old_div
 from .elements import PostProcessorElement
 from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement, WeightedMCMCPostProcessorElement
 from .elements import Loadable
@@ -136,8 +134,8 @@ class Plots(PostProcessorElement):
             light_col = col
         else:
             #use dark and light variants of the same color
-            d1 = old_div(100.0,255.)
-            d2 = old_div(50.0,255.)
+            d1 = 100.0/255.
+            d2 = 50.0/255.
             col  = clip_rgb((col[0]+d1, col[1]+d1, col[2]+d1))
             light_col  = clip_rgb((col[0]+d2, col[1]+d2, col[2]+d2))
         return col, light_col
@@ -260,7 +258,7 @@ class GridPlots1D(GridPlots):
             pylab.plot([x[1],x[1]], [0, l[1]], ':', color='black')
 
         #Set the x and y limits
-        pylab.xlim(cols1.min()-old_div(dx,2.), cols1.max()+old_div(dx,2.))
+        pylab.xlim(cols1.min()-dx/2., cols1.max()+dx/2.)
         pylab.ylim(0,1.05)
         #Add label
         pylab.xlabel(self.latex(name1))
@@ -402,8 +400,8 @@ class SnakePlots2D(GridPlots2D):
         left2 = vals2.min()
         right1 = vals1.max()
         right2 = vals2.max()
-        n1 = int(np.round(old_div((right1-left1),dx1)))+1
-        n2 = int(np.round(old_div((right2-left2),dx2)))+1
+        n1 = int(np.round((right1-left1)/dx1))+1
+        n2 = int(np.round((right2-left2)/dx2))+1
 
         like = like - like.max()
 
@@ -412,8 +410,8 @@ class SnakePlots2D(GridPlots2D):
         like_sum = np.zeros((n1,n2))
         for k,(v1, v2) in enumerate(itertools.product(vals1, vals2)):
             w = np.where((cols1==v1)&(cols2==v2))
-            i = int(np.round(old_div((v1-left1),dx1)))
-            j = int(np.round(old_div((v2-left2),dx2)))
+            i = int(np.round((v1-left1)/dx1))
+            j = int(np.round((v2-left2)/dx2))
             like_sum[i,j] = np.log(np.exp(like[w]).sum())
         like = like_sum.flatten()
 

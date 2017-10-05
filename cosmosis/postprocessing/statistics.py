@@ -1,11 +1,9 @@
 #coding: utf-8
 from __future__ import print_function
-from __future__ import division
 from builtins import zip
 from builtins import str
 from builtins import range
 from builtins import object
-from past.utils import old_div
 from .elements import PostProcessorElement, MCMCPostProcessorElement, WeightedMCMCPostProcessorElement, MultinestPostProcessorElement
 import numpy as np
 from .utils import std_weight, mean_weight, median_weight, percentile_weight, find_asymmetric_errorbars
@@ -126,7 +124,7 @@ class ConstrainingStatistics(Statistics):
     @staticmethod
     def find_median(x, P):
         C = [0] + P.cumsum()
-        return np.interp(old_div(C[-1],2.0),C,x)
+        return np.interp(C[-1]/2.0,C,x)
 
     @staticmethod
     def find_percentile(x, P, p):
@@ -208,7 +206,7 @@ class ConstrainingStatistics(Statistics):
         #off by the edges        
         if marge_like.min()==0: return
 
-        like_ratio = old_div(marge_like.max(), marge_like.min())
+        like_ratio = marge_like.max() / marge_like.min()
         if like_ratio < 20:
             print()
             print("L_max/L_min = %f for %s." % (like_ratio, name))
@@ -367,7 +365,7 @@ class GridStatistics(ConstrainingStatistics):
         #Sum the likelihood over all the axes other than this one
         #to get the marginalized likelihood
         marge_like = self.like.sum(tuple(j for j in range(self.ndim) if j!=i))
-        marge_like = old_div(marge_like, marge_like.sum())
+        marge_like = marge_like / marge_like.sum()
         
         #Find the grid points with this value
         vals = self.grid[i]
@@ -390,7 +388,7 @@ class GridStatistics(ConstrainingStatistics):
         col = self.source.get_col(name)
         try:like = self.source.get_col("post")
         except:like = self.source.get_col("like")
-        like = old_div(like, like.sum())
+        like = like / like.sum()
         mu = (col*like).sum()
         sigma2 = ((col-mu)**2*like).sum()
         median = self.find_median(col, like)
@@ -424,9 +422,9 @@ class GelmanRubinStatistic(MetropolisHastingsStatistics):
         B_over_n = np.var(means, ddof=1)
         B = B_over_n * steps
         W = np.mean(variances)
-        V = W + (1. + old_div(1.,number_chains)) * B_over_n
+        V = W + (1. + 1./number_chains) * B_over_n
         # TODO: check for 0-values in W
-        Rhat = np.sqrt(old_div(V,W))
+        Rhat = np.sqrt(V/W)
         return Rhat - 1.0
 
     def run(self):
@@ -507,10 +505,10 @@ class DunkleyTest(MetropolisHastingsStatistics):
 
         #Get the power spectrum of the chain
         n=len(x)
-        p = abs(np.fft.rfft(x)[1:(old_div(n,2)+1)])**2
+        p = abs(np.fft.rfft(x)[1:(n/2+1)])**2
         #And the k-axis
         j = np.arange(p.size)+1.
-        k = old_div(j, (2*np.pi*n))
+        k = j / (2*np.pi*n)
         #fitting is done on the log of the power 
         #spectrum
         logp = np.log(p)
@@ -519,15 +517,15 @@ class DunkleyTest(MetropolisHastingsStatistics):
         #See Dunkley et al for info on the 
         #constant
         def template(k, L0, a, kstar):
-            K = (old_div(kstar, k))**a
+            K = (kstar / k)**a
             euler_mascheroni = 0.5772156649015
-            return L0 + np.log(old_div(K,(1.+K))) - euler_mascheroni
+            return L0 + np.log(K/(1.+K)) - euler_mascheroni
 
         #Starting guess values for parameters.
         #These are usually fine.
         L0 = logp[0:10].mean()
         a  = 1.0
-        kstar = old_div(0.1,n)
+        kstar = 0.1/n
 
         #Fit curve with LevMar least-squares
         start_params = [L0, a, kstar]
@@ -573,7 +571,7 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
 
 
         weight = self.weight_col()
-        w = old_div(weight,weight.max())
+        w = weight/weight.max()
         n_eff = w.sum()
 
         print("Effective number samples = ", n_eff)
@@ -666,7 +664,7 @@ class CovarianceMatrixEllipseAreas(Statistics):
                 #Get the 2x2 sub-matrix
                 C = covmat_estimate[:,[i,j]][[i,j],:]
                 area = np.pi * np.linalg.det(C)
-                fom = old_div(1.0,area)
+                fom = 1.0/area
                 f.write("{0}  {1}  {2}  {3}\n".format(p1, p2, area, fom))
 
         return [filename]

@@ -1,9 +1,7 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import map
 from builtins import range
 from builtins import object
-from past.utils import old_div
 import numpy as np
 import pdb
 
@@ -125,7 +123,7 @@ class Fisher(object):
     def five_point_stencil_deriv(self, results):
         obs = [r[0] for r in results]
         inv_cov = results[0][1]
-        deriv = old_div((-obs[0] + 8*obs[1] - 8*obs[2] + obs[3]),(12*self.step_size))
+        deriv = (-obs[0] + 8*obs[1] - 8*obs[2] + obs[3])/(12*self.step_size)
         return deriv, inv_cov
 
     def compute_one_sigma(Fmatrix):

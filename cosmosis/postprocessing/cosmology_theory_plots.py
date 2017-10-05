@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from __future__ import division
 from future.utils import with_metaclass
 from builtins import range
-from past.utils import old_div
 from builtins import object
 import os
 import argparse
@@ -302,7 +300,7 @@ class ShearSpectrumPlot(Plot):
             IOError("No data for plot: %s"% self.__class__.__name__[:-4])
 
         ell = self.load_file(section, "ell")
-        sz = old_div(1.0,(nbin+2))
+        sz = 1.0/(nbin+2)
         for i in range(1, nbin+1):
             for j in range(1, i+1):
                 rect = (i*sz,j*sz,sz,sz)
@@ -361,7 +359,7 @@ class ShearCorrelationPlot(Plot):
             IOError("No data for plot: %s"% self.__class__.__name__[:-4])
 
         theta = self.load_file("shear_xi", "theta")
-        sz = old_div(1.0,(nbin+2))
+        sz = 1.0/(nbin+2)
         for i in range(1, nbin+1):
             for j in range(1, i+1):
                 rect = (i*sz,j*sz,sz,sz)

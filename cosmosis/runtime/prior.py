@@ -1,5 +1,3 @@
-from __future__ import division
-from past.utils import old_div
 from builtins import object
 from . import config
 import numpy as np
@@ -122,8 +120,8 @@ class TruncatedGaussianPrior(Prior):
         self.mu = mu
         self.sigma = sigma
         self.sigma2 = sigma**2
-        self.a = old_div((lower-mu),sigma)
-        self.b = old_div((upper-mu),sigma)
+        self.a = (lower-mu)/sigma
+        self.b = (upper-mu)/sigma
         self.phi_a = normal_cdf(self.a)
         self.phi_b = normal_cdf(self.b)
         self.norm = np.log(self.phi_b - self.phi_a) + 0.5*np.log(2*np.pi*self.sigma2)
@@ -158,7 +156,7 @@ class ExponentialPrior(Prior):
     def __call__(self, x):
         if x<0.0:
             return -np.inf
-        return old_div(-x,self.beta) - self.log_beta
+        return -x/self.beta - self.log_beta
     
     def sample(self,n):
         if n is None:
@@ -186,8 +184,8 @@ class TruncatedExponentialPrior(Prior):
             lower = 0.0
         self.lower = lower
         self.upper = upper
-        self.a = old_div(lower,beta)
-        self.b = old_div(upper,beta)
+        self.a = lower/beta
+        self.b = upper/beta
         self.phi_a = exponential_cdf(self.a)
         self.phi_b = exponential_cdf(self.b)
         self.norm = np.log(self.phi_b - self.phi_a) + self.log_beta
@@ -199,7 +197,7 @@ class TruncatedExponentialPrior(Prior):
             return -np.inf
         if x>self.upper:
             return -np.inf
-        return old_div(-x,self.beta) - self.norm
+        return -x/self.beta - self.norm
     
     def denormalize_from_prior(self, y):
         x_normal = truncated_exponential_ppf(y, self.a, self.b)
@@ -251,7 +249,7 @@ def inverse_function(f, y, xmin, xmax, *args, **kwargs):
 SQRT2 = np.sqrt(2.)
 def normal_cdf(x):
 #    return 0.5*math.erf(x) + 0.5
-    return 0.5*(math.erf(old_div(x,SQRT2)) + 1)
+    return 0.5*(math.erf(x/SQRT2) + 1)
 
 
 def normal_ppf(y):
@@ -269,7 +267,7 @@ def truncated_normal_cdf(x, a, b):
     phi_a = normal_cdf(a)
     phi_b = normal_cdf(b)
     phi_x = normal_cdf(x)
-    return old_div((phi_x - phi_a), (phi_b - phi_a))
+    return (phi_x - phi_a) / (phi_b - phi_a)
 
 def truncated_normal_ppf(y, a, b):
     if y<0:
@@ -291,7 +289,7 @@ def truncated_exponential_cdf(x, a, b):
     phi_a = exponential_cdf(a)
     phi_b = exponential_cdf(b)
     phi_x = exponential_cdf(x)
-    return old_div((phi_x - phi_a), (phi_b - phi_a))
+    return (phi_x - phi_a) / (phi_b - phi_a)
 
 def exponential_ppf(y):
     #y = 1 - exp(-x)

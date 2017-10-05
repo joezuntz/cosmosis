@@ -1,7 +1,5 @@
-from __future__ import division
 from builtins import zip
 from builtins import range
-from past.utils import old_div
 import scipy.stats
 import numpy as np
 from functools import wraps
@@ -29,7 +27,7 @@ class KDE(scipy.stats.kde.gaussian_kde):
             col_mean = column.mean()
             col_std = column.std()
             self.norms.append((col_mean,col_std))
-            normalized_points.append(old_div((column-col_mean),col_std))
+            normalized_points.append((column-col_mean)/col_std)
         super(KDE,self).__init__(normalized_points)
 
     def covariance_factor(self):
@@ -41,7 +39,7 @@ class KDE(scipy.stats.kde.gaussian_kde):
         slices = [slice(xmin,xmax,n*1j) for (xmin,xmax) in ranges]
         grids = np.mgrid[slices]
         axes = [ax.squeeze() for ax in np.ogrid[slices]]
-        flats = [old_div((grid.flatten()-norm[0]),norm[1]) 
+        flats = [(grid.flatten()-norm[0])/norm[1]
                  for (grid,norm) in zip(grids,self.norms)]
 
         shape = grids[0].shape
@@ -53,7 +51,7 @@ class KDE(scipy.stats.kde.gaussian_kde):
         return axes,like
 
     def normalize_and_evaluate(self, points):
-        points = np.array([old_div((p-norm[0]),norm[1]) for norm, p in zip(self.norms, points)])
+        points = np.array([(p-norm[0])/norm[1] for norm, p in zip(self.norms, points)])
         return self.evaluate(points)
 
     def evaluate(self, points):
@@ -100,7 +98,7 @@ class KDE(scipy.stats.kde.gaussian_kde):
             for i in range(self.n):
                 diff = self.dataset[:, i, np.newaxis] - points
                 tdiff = np.dot(self.inv_cov, diff)
-                energy = old_div(np.sum(diff*tdiff,axis=0), 2.0)
+                energy = np.sum(diff*tdiff,axis=0) / 2.0
                 result = result + weights[i]*np.exp(-energy)
         else:
             weights = self.weights
@@ -110,10 +108,10 @@ class KDE(scipy.stats.kde.gaussian_kde):
             for i in range(m):
                 diff = self.dataset - points[:, i, np.newaxis]
                 tdiff = np.dot(self.inv_cov, diff)
-                energy = old_div(np.sum(diff * tdiff, axis=0), 2.0)
-                result[i] = old_div(np.sum(weights*np.exp(-energy), axis=0),np.sum(weights))
+                energy = np.sum(diff * tdiff, axis=0) / 2.0
+                result[i] = np.sum(weights*np.exp(-energy), axis=0)/np.sum(weights)
 
-        result = old_div(result, self._norm_factor)
+        result = result / self._norm_factor
 
         return result
 
@@ -151,5 +149,5 @@ class KDE(scipy.stats.kde.gaussian_kde):
             self._data_inv_cov = np.linalg.inv(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2
-        self.inv_cov = old_div(self._data_inv_cov, self.factor**2)
+        self.inv_cov = self._data_inv_cov / self.factor**2
         self._norm_factor = np.sqrt(np.linalg.det(2*np.pi*self.covariance)) * self.n

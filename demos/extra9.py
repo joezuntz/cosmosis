@@ -78,9 +78,7 @@ to plot and what the filename should be.
 The second example, NestPlot, shows a completely custom
 plot where the run method is over-ridden.
 """
-from __future__ import division
 
-from past.utils import old_div
 from cosmosis.postprocessing import plots
 from cosmosis.postprocessing import lazy_pylab as pylab
 import numpy as np
@@ -101,7 +99,7 @@ class NestPlot(plots.Plots, plots.MultinestPostProcessorElement):
         #Get the columns we need, in reduced form 
         #since this is not MCMC
         weight = self.weight_col()
-        weight = old_div(weight,weight.max())
+        weight = weight/weight.max()
         #Sort the final 500 samples, since they 
         #are otherwise un-ordered
         weight[-500:] = np.sort(weight[-500:])
@@ -113,7 +111,7 @@ class NestPlot(plots.Plots, plots.MultinestPostProcessorElement):
         figure, filename = self.figure("nest_weight")
 
         #Do the plotting, and set the limits and labels
-        pylab.plot(x, old_div(weight,weight.max()))
+        pylab.plot(x, weight/weight.max())
         #pylab.xlim(-353, -341.5)
         pylab.xlim(0,8000)
         pylab.xlabel("Iteration number $i$")

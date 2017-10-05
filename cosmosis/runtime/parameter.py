@@ -1,7 +1,5 @@
 from __future__ import absolute_import
-from __future__ import division
 from builtins import object
-from past.utils import old_div
 import random
 from . import config
 from . import prior as priors # to avoid breaking other stuff below
@@ -87,7 +85,7 @@ class Parameter(object):
         if self.is_fixed():
             return 0.0
         else:
-            return old_div((p - self.limits[0]), (self.limits[1] - self.limits[0]))
+            return (p - self.limits[0]) / (self.limits[1] - self.limits[0])
 
     def denormalize(self, p, raise_exception=True):
         if 0.0 <= p <= 1.0:

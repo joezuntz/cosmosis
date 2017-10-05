@@ -1,8 +1,6 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import str
 from builtins import range
-from past.utils import old_div
 from builtins import object
 import numpy as np
 
@@ -101,5 +99,5 @@ def random_rotation_matrix(n):
                 v -= R[i,:] * np.dot(v,R[i,:])
             L = np.dot(v,v)
             if (L>1e-3): break
-        R[j,:] = old_div(v,L**0.5)
+        R[j,:] = v/L**0.5
     return R

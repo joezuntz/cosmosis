@@ -1,8 +1,6 @@
-from __future__ import division
 from builtins import zip
 from builtins import str
 from builtins import range
-from past.utils import old_div
 from .. import ParallelSampler
 import numpy as np
 import os
@@ -186,8 +184,8 @@ class PyMCSampler(ParallelSampler):
                                                 value=start_value))
             elif isinstance(prior, GaussianPrior):
                 width = param.width()
-                mu = old_div((prior.mu - param.limits[0]), width)
-                tau = old_div(width ** 2, prior.sigma2)
+                mu = (prior.mu - param.limits[0]) / width
+                tau = width ** 2 / prior.sigma2
 
                 priors.append(self.pymc.Normal(str(param),
                                                mu=mu,
@@ -196,7 +194,7 @@ class PyMCSampler(ParallelSampler):
             elif isinstance(prior, ExponentialPrior):
                 width = param.width()
                 priors.append(self.pymc.Exponential(str(param),
-                                                    beta=old_div(width, prior.beta),
+                                                    beta=width / prior.beta,
                                                     value=start_value))
             else:
                 raise RuntimeError("Unknown prior type in PyMC sampler")

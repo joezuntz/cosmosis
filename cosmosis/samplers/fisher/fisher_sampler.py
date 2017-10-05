@@ -1,7 +1,5 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import map
-from past.utils import old_div
 from builtins import object
 from .. import ParallelSampler
 from . import fisher
@@ -85,7 +83,7 @@ class FisherSampler(ParallelSampler):
                 print("This will be assumed to be centered at the parameter center regardless of what the ini file says")
                 print("The limits of the parameter will also not be respected.") 
                 print()
-                P[i,i] = old_div(1.,param.prior.sigma**2)
+                P[i,i] = 1./param.prior.sigma**2
             elif isinstance(param.prior, prior.ExponentialPrior) or isinstance(param.prior, prior.TruncatedExponentialPrior):
                 print("There is an exponential prior applied to parameter {0}".format(param))
                 print("This is *not* accounted for in the Fisher matrix")

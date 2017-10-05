@@ -1,9 +1,7 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import map
 from builtins import str
 from builtins import range
-from past.utils import old_div
 from .. import ParallelSampler
 import numpy as np
 
@@ -49,7 +47,7 @@ def posterior_and_gradient(p_in):
         results = list(map(minus_log_posterior, points))
 
     post=results[0]
-    grad=np.array([old_div((results[i+1]-post),maxlike_sampler.epsilon)  for i in range(n)])
+    grad=np.array([(results[i+1]-post)/maxlike_sampler.epsilon  for i in range(n)])
     return post, grad
 
 

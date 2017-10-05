@@ -1,7 +1,5 @@
 from __future__ import print_function
-from __future__ import division
 from builtins import zip
-from past.utils import old_div
 import matplotlib
 matplotlib.use('Agg')
 matplotlib.rcParams['font.family']='serif'
@@ -121,8 +119,8 @@ class ChainPlotter(Plotter):
 		total_mass = like.sum()
 		like_sorted = np.sort(like.flatten())
 		like_cumsum = like_sorted.cumsum()
-		height1 = np.interp(old_div(contour1,total_mass),like_cumsum,like_sorted)
-		height2 = np.interp(old_div(contour2,total_mass),like_cumsum,like_sorted)
+		height1 = np.interp(contour1/total_mass,like_cumsum,like_sorted)
+		height2 = np.interp(contour2/total_mass,like_cumsum,like_sorted)
 		return height1, height2, total_mass
 
 

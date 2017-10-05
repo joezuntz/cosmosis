@@ -7,10 +7,8 @@ as it's grown pretty organically.
 
 """
 from __future__ import print_function
-from __future__ import division
 
 from builtins import zip
-from past.utils import old_div
 import matplotlib
 matplotlib.use('Agg')
 #matplotlib.rcParams['text.usetex']=True
@@ -90,7 +88,7 @@ class GridPlotter(Plotter):
 		dx = vals1[1]-vals1[0]
 
 		ax = pylab.gca()
-		pylab.xlim(cols1.min()-old_div(dx,2.), cols1.max()+old_div(dx,2.))
+		pylab.xlim(cols1.min()-dx/2., cols1.max()+dx/2.)
 		pylab.ylim(0,1.05)
 		pylab.plot(vals1, np.exp(like), linewidth=3)
 
@@ -165,8 +163,8 @@ class GridPlotter(Plotter):
 
 		# Set up the axis ranges, grid, and labels
 		ax = pylab.gca()
-		pylab.xlim(cols1.min()-old_div(dx,2.), cols1.max()+old_div(dx,2.))
-		pylab.ylim(cols2.min()-old_div(dy,2.), cols2.max()+old_div(dy,2.))
+		pylab.xlim(cols1.min()-dx/2., cols1.max()+dx/2.)
+		pylab.ylim(cols2.min()-dy/2., cols2.max()+dy/2.)
 		# pylab.grid()
 		pylab.xlabel("$"+self._display_names[name1]+"$")
 		pylab.ylabel("$"+self._display_names[name2]+"$")
@@ -192,18 +190,18 @@ class GridPlotter(Plotter):
 			#get the color for the point
 			c = colormap(norm(np.exp(L)))
 			#create and apply the square colour patch
-			r = pylab.Rectangle((px-old_div(dx,2.),py-old_div(dy,2.)), dx, dy, color=c)
+			r = pylab.Rectangle((px-dx/2.,py-dy/2.), dx, dy, color=c)
 			ax.add_artist(r)
 			if L>level1:
-				toggle_edge(edges1, px-old_div(dx,2.), py-old_div(dy,2.), px-old_div(dx,2.), py+old_div(dy,2.))
-				toggle_edge(edges1, px-old_div(dx,2.), py-old_div(dy,2.), px+old_div(dx,2.), py-old_div(dy,2.))
-				toggle_edge(edges1, px-old_div(dx,2.), py+old_div(dy,2.), px+old_div(dx,2.), py+old_div(dy,2.))
-				toggle_edge(edges1, px+old_div(dx,2.), py-old_div(dy,2.), px+old_div(dx,2.), py+old_div(dy,2.))
+				toggle_edge(edges1, px-dx/2., py-dy/2., px-dx/2., py+dy/2.)
+				toggle_edge(edges1, px-dx/2., py-dy/2., px+dx/2., py-dy/2.)
+				toggle_edge(edges1, px-dx/2., py+dy/2., px+dx/2., py+dy/2.)
+				toggle_edge(edges1, px+dx/2., py-dy/2., px+dx/2., py+dy/2.)
 			if L>level2:
-				toggle_edge(edges2, px-old_div(dx,2.), py-old_div(dy,2.), px-old_div(dx,2.), py+old_div(dy,2.))
-				toggle_edge(edges2, px-old_div(dx,2.), py-old_div(dy,2.), px+old_div(dx,2.), py-old_div(dy,2.))
-				toggle_edge(edges2, px-old_div(dx,2.), py+old_div(dy,2.), px+old_div(dx,2.), py+old_div(dy,2.))
-				toggle_edge(edges2, px+old_div(dx,2.), py-old_div(dy,2.), px+old_div(dx,2.), py+old_div(dy,2.))
+				toggle_edge(edges2, px-dx/2., py-dy/2., px-dx/2., py+dy/2.)
+				toggle_edge(edges2, px-dx/2., py-dy/2., px+dx/2., py-dy/2.)
+				toggle_edge(edges2, px-dx/2., py+dy/2., px+dx/2., py+dy/2.)
+				toggle_edge(edges2, px+dx/2., py-dy/2., px+dx/2., py+dy/2.)
 
 		for ((x1,y1), (x2,y2)) in edges1:
 			pylab.plot([x1,x2],[y1,y2], '-', linewidth=3, color='black')

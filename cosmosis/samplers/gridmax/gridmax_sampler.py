@@ -1,8 +1,6 @@
-from __future__ import division
 from builtins import zip
 from builtins import map
 from builtins import range
-from past.utils import old_div
 from .. import ParallelSampler
 import numpy as np
 
@@ -80,12 +78,12 @@ class GridMaxSampler(ParallelSampler):
             #as the upper, and the half-way point as the new start
             low = 0.0
             high = normed_points[1][d]
-            start = old_div(high,2.0)
+            start = high/2.0
         elif best==self.nsteps-1:
             #if on the upper edge, do the mirror image
             low = normed_points[-1][d]
             high = 1.0
-            start = old_div((normed_points[-1][d] + 1.0), 2.0)
+            start = (normed_points[-1][d] + 1.0) / 2.0
         else:
             #but the usual case is to just bracket the
             #best-fit point

@@ -1,14 +1,12 @@
-from __future__ import division
-from past.utils import old_div
 import numpy as np
 
 def std_weight(x, w):
     mu = mean_weight(x,w)
     r = x-mu
-    return np.sqrt(old_div((w*r**2).sum(), w.sum()))
+    return np.sqrt((w*r**2).sum() / w.sum())
 
 def mean_weight(x, w):
-    return old_div((x*w).sum(), w.sum())
+    return (x*w).sum() / w.sum()
 
 def median_weight(x, w):
 	a = np.argsort(x)
@@ -24,7 +22,7 @@ def percentile_weight(x, w, p):
 	x = x[a]
 	wc = np.cumsum(w)
 	wc/=wc[-1]
-	return np.interp(old_div(p,100.), wc, x)
+	return np.interp(p/100., wc, x)
 
 
 
@@ -36,12 +34,12 @@ def find_asymmetric_errorbars(levels, v, weights=None):
     #Generate and normalize weights
     if weights is None:
         weights = np.ones(N)
-    weights = old_div(weights, weights.sum())
+    weights = weights / weights.sum()
 
     #Normalize the parameter values
     mu = mean_weight(v,weights)
     sigma = std_weight(v,weights)
-    x = old_div((v-mu),sigma)
+    x = (v-mu)/sigma
 
     #Build the P(x) estimator
     K=KDE(x, weights=weights)
