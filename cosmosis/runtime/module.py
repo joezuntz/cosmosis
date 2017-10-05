@@ -74,8 +74,8 @@ class Module(object):
     """
 
     def __init__(self, module_name, file_path,
-                 setup_function, execute_function,
-                 cleanup_function, rootpath="."):
+                 setup_function="setup", execute_function="execute",
+                 cleanup_function="cleanup", rootpath="."):
         u"""Create an object of type `module_name` from dynamic load library at `file_path`, with interface specified by the `*_function`s.
 
         The `rootpath` is the directory to search for the linkable
