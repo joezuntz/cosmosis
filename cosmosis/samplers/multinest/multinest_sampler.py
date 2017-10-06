@@ -198,7 +198,7 @@ class MultinestSampler(ParallelSampler):
                   self.tolerance, self.efficiency, self.ndim,
                   self.npar, cluster_dimensions, self.max_modes,
                   self.update_interval, self.mode_ztolerance,
-                  self.multinest_outfile_root, self.random_seed,
+                  self.multinest_outfile_root.encode('ascii'), self.random_seed,
                   periodic_boundaries, self.feedback, self.resume,
                   self.multinest_outfile_root!="", init_mpi,
                   self.log_zero, self.max_iterations, 
@@ -222,4 +222,3 @@ class MultinestSampler(ParallelSampler):
 
     def is_converged(self):
         return self.converged
-

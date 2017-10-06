@@ -171,7 +171,7 @@ class MinuitSampler(ParallelSampler):
 
         param_names = [str(p) for p in self.pipeline.varied_params]
         param_names_array = (ct.c_char_p * len(param_names))()
-        param_names_array[:] = param_names
+        param_names_array[:] = [p.encode('ascii') for p in param_names]
 
         master = 1 if self.pool is None or self.pool.is_master() else 0
         
@@ -186,7 +186,7 @@ class MinuitSampler(ParallelSampler):
         options = MinuitOptionsStruct(
             #allow for more loops
             max_evals=self.maxiter-self.neval, strategy=self.strategy, 
-            algorithm=self.algorithm, save_cov=self.save_cov, 
+            algorithm=self.algorithm, save_cov=self.save_cov.encode('ascii'),
             tolerance=self.tolerance, width_estimate=self.width_estimate,
             do_master_output = master
             )
