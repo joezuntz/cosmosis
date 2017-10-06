@@ -70,9 +70,11 @@ class ListSampler(ParallelSampler):
             except ValueError:
                 print "Not including column %s as not in values file" % column_name
 
-        #Create a collection of sample vectors at the start position
-        v0 = self.pipeline.start_vector(all_params=True)
-        sample_vectors = np.tile(v0, (len(samples),1))
+        #Create a collection of sample vectors at the start position.
+        #This has to be a list, not an array, as it can contain integer parameters,
+        #unlike most samplers
+        v0 = self.pipeline.start_vector(all_params=True, as_array=False)
+        sample_vectors = [v0[:] for i in xrange(len(samples))]
         #Fill in the varied parameters. We are not using the
         #standard parameter vector in the pipeline with its 
         #split according to the ini file

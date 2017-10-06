@@ -1,0 +1,7 @@
+astropy
+Cython
+matplotlib
+numpy
+PyYAML
+scikit-learn
+scipy

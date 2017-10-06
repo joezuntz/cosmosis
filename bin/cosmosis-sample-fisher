@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+#sample_fisher.py
+import sys
+from cosmosis.output.text_output import TextColumnOutput
+from cosmosis.runtime.pipeline import LikelihoodPipeline
+from cosmosis.runtime.parameter import Parameter
+import numpy as np
+import argparse
+
+parser = argparse.ArgumentParser(description="Generate samples from a cosmosis-output fisher matrix")
+parser.add_argument("fisher_file")
+parser.add_argument("values_file")
+parser.add_argument("priors_file")
+parser.add_argument("number_samples", type=int)
+parser.add_argument("output_file")
+args = parser.parse_args()
+params = Parameter.load_parameters(args.values_file, priors_files=[args.priors_file])
+varied_params = [p for p in params if p.is_varied()]
+
+output_info = TextColumnOutput.load_from_options({"filename":args.fisher_file})
+column_names, data, metadata, comments, final_metadata = output_info
+metadata = metadata[0]
+data = data[0]
+if metadata['sampler']!='fisher':
+	raise ValueError("File {} is not output from cosmosis fisher sampler".format(filename))
+nparam = metadata['n_varied']
+means = [metadata['mu_{}'.format(i)] for i in xrange(nparam)]
+covmat = np.linalg.inv(data)
+L = np.linalg.cholesky(covmat)
+
+
+def in_prior(row):
+	return all(np.isfinite(param.evaluate_prior(x)) for (param,x) in zip(varied_params,row) )
+
+n=0
+samples = []
+while n<args.number_samples:
+	sample = means+np.dot(L,np.random.normal(size=nparam))
+	if in_prior(sample):
+		samples.append(sample)
+		n+=1
+
+np.savetxt(args.output_file, samples)

@@ -1,3 +1,8 @@
+#coding: utf-8
+
+u"""Definition of :class:`Pipeline` and the specialization :class:`LikelihoodPipeline`."""
+
+
 import os
 import ctypes
 import sys
@@ -27,9 +32,29 @@ except ImportError:
 PIPELINE_INI_SECTION = "pipeline"
 
 class MissingLikelihoodError(Exception):
+
+    u"""Class to throw if there are not enough data for a likelihood method.
+
+    This class is specifically designed to be thrown during a
+    `pipeline.likelihood()` call when there are insufficient data so
+    that the test sampler can provide a detailed report to the user
+    about the problem (recall that the typical lifetime of a cosmosis
+    run involves running the test sampler first to weed out such
+    problems, before a full run takes place).
+
+    """
+
     def __init__(self, message, data):
+        u"""Data to provide to the test sampler in case of likelihood data problems.
+
+        The `message` is for the user generally; for use of `data` see
+        the `test_sampler.execute()` method, currently at
+        `samplers/test/test_sampler.py:29`.
+        
+        """
         super(MissingLikelihoodError, self).__init__(message)
         self.pipeline_data = data
+
 
 class LimitedSizeDict(collections.OrderedDict):
     "From http://stackoverflow.com/questions/2437617/limiting-the-size-of-a-python-dictionary"
@@ -114,7 +139,7 @@ class SlowSubspaceCache(object):
 
         self.cache[self.current_hash] = block.clone()
 
-    def analyze_pipeline(self, pipeline, all_params=False):
+    def analyze_pipeline(self, pipeline, all_params=False, grid=False):
         """
         Analyze the pipeline to determine how best to split it into two parts,
         a slow beginning and a faster end, so that we can vary parameters
@@ -126,16 +151,19 @@ class SlowSubspaceCache(object):
         #Use the pipeline starting parameter since that is
         #likely more typical than any random starting position
         start = pipeline.start_vector()
-        print
-        print "Analyzing pipeline to determine fast and slow parameters (because fast_slow=T in [pipeline] section)"
-        print
-        print "Running pipeline once to make sure everything is initialized before timing."
-        print
-        pipeline.posterior(start)
-        print
-        print
-        print "Running the pipeline again to determine timings and fast-slow split"
-        print
+
+        if pipeline.has_run:
+            print("Pipeline has been run once already so no further initialization steps")
+        else:
+            print("")
+            print("Analyzing pipeline to determine fast and slow parameters (because fast_slow=T in [pipeline] section)")
+            print("")
+            print("Running pipeline once to make sure everything is initialized before timing.")
+            print("")
+            pipeline.posterior(start)
+        print("")
+        print("Running the pipeline again to determine timings and fast-slow split")
+        print("")
         #Run with timing but make sure to re-set back to the original setting
         #of timing after it finishes
         #This will also print out the timing, which is handy.
@@ -172,53 +200,116 @@ class SlowSubspaceCache(object):
         # Now we have a count of the number of parameters and amount of 
         # time used before each module in the pipeline
         # So we can divide up the parameters into fast and slow.
-        self.split_index = self._choose_fast_slow_split(first_use_count, timings)
+        self.split_index = self._choose_fast_slow_split(first_use_count, timings, grid)
+
+        full_time = sum(timings)
+        slow_time = sum(timings[:self.split_index])
+        fast_time = sum(timings[self.split_index:])
+
+        print("Time for full pipeline:  {:.2f}s".format(full_time))
+        print("Time for slow pipeline:  {:.2f}s".format(slow_time))
+        print("Time for fast pipeline:  {:.2f}s".format(fast_time))
+        time_save_percent = 100-100*fast_time/full_time
+        print("Time saving: {:.2f}%".format(time_save_percent))
+
+        worth_splitting = time_save_percent > 10.
+
+        if not worth_splitting:
+            print("")
+            print("No significant time saving (<10%) from a fast-slow split.")
+            print("Not splitting pipeline into fast and slow parts.")
+            print("")
+            self.split_index = len(timings)
+
         self.slow_modules = self.split_index
         self.fast_modules = len(pipeline.modules) - self.slow_modules
         self.slow_params = sum(first_use.values()[:self.split_index], [])
         self.fast_params = sum(first_use.values()[self.split_index:], [])
 
-        print
-        print "Based on this we have decided: "
-        print "   Slow modules ({}):".format(self.slow_modules)
-        for module in pipeline.modules[:self.split_index]:
-            print "        %s"% module.name
-        print "   Fast modules ({}):".format(self.fast_modules)
-        for module in pipeline.modules[self.split_index:]:
-            print "        {}".format(module.name)
-        print "   Slow parameters ({}):".format(len(self.slow_params))
-        for param in self.slow_params:
-            print "        {}--{}".format(*param)
-        print "   Fast parameters ({}):".format(len(self.fast_params))
-        for param in self.fast_params:
-            print "        {}--{}".format(*param)
-        print
-        full_time = sum(timings)
-        slow_time = sum(timings[:self.split_index])
-        fast_time = sum(timings[self.split_index:])
-        print "Time for full pipeline:  {:.2f}s".format(full_time)
-        print "Time for slow pipeline:  {:.2f}s".format(slow_time)
-        print "Time for fast pipeline:  {:.2f}s".format(fast_time)
-        print "Time saving: {:.2f}%".format(100-100*fast_time/full_time)
-        print
+        if worth_splitting:
+            print("")
+            print("Based on this we have decided: ")
+            print("   Slow modules ({}):".format(self.slow_modules))
+            for module in pipeline.modules[:self.split_index]:
+                print("        %s"% module.name)
+            print("   Fast modules ({}):".format(self.fast_modules))
+            for module in pipeline.modules[self.split_index:]:
+                print("        {}".format(module.name))
+            print("   Slow parameters ({}):".format(len(self.slow_params)))
+            for param in self.slow_params:
+                print("        {}--{}".format(*param))
+            print("   Fast parameters ({}):".format(len(self.fast_params)))
+            for param in self.fast_params:
+                print("        {}--{}".format(*param))
+            print("")
+            print("")
         self.analyzed = True
 
-    def _choose_fast_slow_split(self, slow_count, slow_time):
+    def _choose_fast_slow_split(self, first_use_count, timings, grid_mode):
         #some kind of algorithm to loop through the modules
         #and work out the time saving if we did the fast/slow from there.
         #at the moment just return the last module where there are any 
         #parameters
-        n = len(slow_count)
-        for i in xrange(n-1,-1,-1):
-            if slow_count[i]:
-                return i
-        return 0
+        #n = len(slow_count)
+        n_step = len(timings)
+        n_total = sum(first_use_count)
+        T_total = sum(timings)
+
+        if grid_mode:
+            print("Analyzing the fast/slow for grid sampler - different rule used for time saving")
+
+        T = np.zeros(n_step)
+        for i in xrange(n_step):
+            T_slow = sum(timings[:i])
+            n_slow = sum(first_use_count[:i])
+            T_fast = T_total - T_slow
+            n_fast = n_total - n_slow
+            if n_fast==0:
+                T[i] = T_total
+            elif grid_mode:
+                T[i] = (T_slow/T_total)*10**(-n_fast) + (T_fast/T_total)*(1-10**(-n_fast))
+            else:
+                T[i] = (T_fast*n_fast)/(T_total*n_total) + (T_slow*n_slow)/(n_total*T_total)
+
+        return T.argmin()
+
 
 
 class Pipeline(object):
+
+    u"""A container of :class:`DataBlock`-processing :class:`Module`ʼs.
+
+    Cosmosis consists of a large number of computational modules, which
+    the user can arrange into pipelines in the configuration files
+    before submitting a run.  This class encapsulates the basic concept
+    of a pipeline, and provides methods for setting one up based on
+    options and/or initial parameter vectors, and for running the
+    pipeline to obtain a refinement of a :class:`DataBlock` (the
+    prototypical use-case is Bayesian updating of prior likelihoods,
+    though this is handled by the more specialized
+    :class:`LikelihoodPipeline` defined below).
+
+    Sometimes it will be possible to optimize execution of a pipeline by
+    providing pre-emptive data which can be taken as the result of running
+    the first few modules.  In this case a run will ‘bypass’ those modules
+    and start the run at a `shortcut_module`, using the `shortcut_data` as
+    the initial data set.
+
+    """
+
     def __init__(self, arg=None, load=True):
-        """ Initialize with a single filename or a list of them,
-            a ConfigParser, or nothing for an empty pipeline"""
+
+        u"""Pipeline constructor.
+
+        The (poorly named) `arg` needs to be some reference to a parameter 
+        :class:`Inifile` which includes all the information to form this
+        pipeline: it can be a list of filenames (.ini files and such) to
+        read for the parameters, or a :class:`Inifile` object directly.
+
+        If `load` is `True` then all the modules in the pipelineʼs
+        configuration will be loaded into memory and initialized.
+
+        """
         if arg is None:
             arg = list()
 
@@ -234,6 +325,7 @@ class Pipeline(object):
 
         module_list = self.options.get(PIPELINE_INI_SECTION,
                                        "modules", "").split()
+        base_directory = self.base_directory()
 
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
@@ -251,28 +343,22 @@ class Pipeline(object):
         self.modules = []
         if load and PIPELINE_INI_SECTION in self.options.sections():
 
-            for module_name in module_list:
-                # identify module file
+            self.modules = [
+                module.Module.from_options(module_name,self.options,base_directory)
+                for module_name in module_list
+            ]
 
-                filename = self.find_module_file(
-                    self.options.get(module_name, "file"))
+        self.has_run = False
 
-                # identify relevant functions
-                setup_function = self.options.get(module_name,
-                                                  "setup", "setup")
-                exec_function = self.options.get(module_name,
-                                                 "function", "execute")
-                cleanup_function = self.options.get(module_name,
-                                                    "cleanup", "cleanup")
 
-                self.modules.append(module.Module(module_name,
-                                                  filename,
-                                                  setup_function,
-                                                  exec_function,
-                                                  cleanup_function,
-                                                  self.root_directory))
 
     def base_directory(self):
+        u"""Return our `root_directory` according to the environment.
+
+        Use the environment variable `COSMOSIS_SRC_DIR` if available,
+        otherwise use this processʼs working directory.
+
+        """
         if self.root_directory is None:
             try:
                 self.root_directory = os.environ["COSMOSIS_SRC_DIR"]
@@ -284,12 +370,17 @@ class Pipeline(object):
                 print "to current directory, ", self.root_directory
         return self.root_directory
 
+
+
     def find_module_file(self, path):
-        """Find a module file, which is assumed to be 
-        either absolute or relative to COSMOSIS_SRC_DIR"""
+        u"""Find a module file, which is assumed to be either absolute or relative to COSMOSIS_SRC_DIR"""
         return os.path.join(self.base_directory(), path)
 
+
+
     def setup(self):
+        u"""Run all of our modulesʼ `setup()` routines."""
+        
         if self.timing:
             timings = [time.time()]
 
@@ -307,16 +398,7 @@ class Pipeline(object):
             for global_section in global_sections.split():
                 relevant_sections.append(global_section)
 
-
-            config_block = block.DataBlock()
-
-            for (section, name), value in self.options:
-                if section in relevant_sections:
-                    # add back a default section?
-                    val = self.options.gettyped(section, name)
-                    if val is not None:
-                        config_block.put(section, name, val)
-
+            config_block = config_to_block(relevant_sections, self.options)
             module.setup(config_block, quiet=self.quiet)
 
             if self.timing:
@@ -331,10 +413,11 @@ class Pipeline(object):
             for name, t2, t1 in zip(self.modules, timings[1:], timings[:-1]):
                 sys.stdout.write("%s %f\n" % (name, t2-t1))
 
-    def setup_fast_subspaces(self, all_params=False):
+
+    def setup_fast_subspaces(self, all_params=False, grid=False):
         if self.do_fast_slow:
             self.slow_subspace_cache = SlowSubspaceCache()
-            self.slow_subspace_cache.analyze_pipeline(self, all_params=all_params)
+            self.slow_subspace_cache.analyze_pipeline(self, all_params=all_params, grid=grid)
             # This looks a bit weird but makes sure that self.fast_params
             # and self.slow_params contain objects of type Parameter
             # not just the (section,name) tuples.
@@ -353,11 +436,26 @@ class Pipeline(object):
         else:
             self.slow_subspace_cache = None
 
+
     def cleanup(self):
+        u"""Call every `module`ʼs `cleanup` method."""
         for module in self.modules:
             module.cleanup()
 
+
+
     def make_graph(self, data, filename):
+        u"""Put a description of a graphical model in the graphviz format
+        of a completed datablock `data' that was run on the pipeline, 
+        in `filename`, illustrating the data flow of this pipeline.
+
+        Graphviz tools can then be used to generate an actual image.
+
+        The :class:`DataBlock` `data`ʼs attached log is used to determine
+        the state of each module, and colourization is used in the graphic
+        to indicate this.
+
+        """
         try:
             import pygraphviz as pgv
         except ImportError:
@@ -407,8 +505,26 @@ class Pipeline(object):
 
         P.write(filename)
 
+
+
     def run(self, data_package):
+        u"""Run every module, in sequence, on DataBlock `data_package`.
+
+        Apart from that the function goes to a lot of effort to provide
+        run-time diagnostic information to the user.
+
+        However, if any module returns anything but a zero status, the
+        whole pipeline will cease to run and a :class:`ValueError` will be
+        raised.
+
+        Bear in mind the note on short-cuts in the class description
+        above: if `shortcut_data` and `shortcut_module` are defined, then
+        the pipeline will start at `shortcut_module` with `shortcut_data`
+        as the initial parameter vector.
+
+        """
         modules = self.modules
+
         timings = []
         if self.shortcut:
             shortcut_module_index = modules.index(self.shortcut)
@@ -420,6 +536,9 @@ class Pipeline(object):
             first_module = self.slow_subspace_cache.start_pipeline(data_package)
         else:
             first_module = 0
+
+        if self.timing:
+            start_time = time.time()
 
         for module_number, module in enumerate(modules):
             if module_number<first_module:
@@ -433,6 +552,11 @@ class Pipeline(object):
 
             status = module.execute(data_package)
 
+            if status is None:
+                raise ValueError(("A module you ran, '{}', did not return a proper status value.\n"+
+                    "It should return an integer, 0 if everything worked.\n"+
+                    "Sorry to be picky but this kind of thing is important.").format(module))
+
             if self.debug:
                 sys.stdout.write("Done %.20s status = %d \n" % (module,status))
                 sys.stdout.flush()
@@ -440,7 +564,7 @@ class Pipeline(object):
             if self.timing:
                 t2 = time.time()
                 timings.append(t2-t1)
-                sys.stdout.write("%s took: %f seconds\n"% (module,t2-t1))
+                sys.stdout.write("%s took: %.3f seconds\n"% (module,t2-t1))
 
             if status:
                 if self.debug:
@@ -464,11 +588,9 @@ class Pipeline(object):
             if self.slow_subspace_cache and first_module==0:
                 self.slow_subspace_cache.next_module_results(module_number, data_package)
 
-            if self.shortcut and (self.shortcut_data is None) and (module_number==shortcut_module_index):
-                self.shortcut_data = data
-                print "* Saving shortcut data *"
-
         if self.timing:
+            end_time = time.time()
+            sys.stdout.write("Total pipeline time: {:.3} seconds\n".format(end_time-start_time))
             self.timings = timings
 
         if not self.quiet:
@@ -476,6 +598,7 @@ class Pipeline(object):
 
         data_package.log_access("MODULE-START", "Results", "")
         # return something
+        self.has_run = True
         return True
 
     def clear_cache(self):
@@ -483,8 +606,45 @@ class Pipeline(object):
 
 
 
+
 class LikelihoodPipeline(Pipeline):
+
+    u"""Very specialized pipeline designed specifically for the prototypical case of Bayes-computed posterior distributions.
+
+    The point of a statistical updating pipeline is that the parameters in
+    the datablocks passed down the pipe, as well as having currently
+    estimated values, also have allowable ranges and possibly other
+    constraints which the user may want to tinker before each run.  Thus
+    there is a specialized layout of initialization files in the file
+    system, and there is a modified expectation on the modules to perform
+    simulation, compute the Bayesian evidence, hence log-likelihood.  The
+    pipeline itself will aggregate the results and summarize the net
+    effect of all the likelihood estimations, and thence compute the
+    Bayesian posterior.
+
+    Because of the necessity of working with distributions of values for
+    each parameter, rather than just a scalar, the extra information is
+    stored in a shadow array—another dictionary with the same keys but a
+    complementary set of values to the original ones—of
+    :class:`parameter`s to the :class:`datablock` which the base pipeline
+    modifies (actually only a subset of them known as the `varied_params`:
+    an array which references the interesting parameters in the full set).
+    this shadow array (`parameters`) is often referred to simply as `p`,
+    and the two arrays frequently need to be ‘zipped’ together and then
+    ‘unzipped’ after computations have completed.
+
+    """
+
     def __init__(self, arg=None, id="",override=None, load=True):
+        u"""Construct a :class:`LikelihoodPipeline`.
+
+        The arguments `arg` and `load` are used in the base-class
+        initialization (see above).  The `id` is given to our `id_code`
+        (which doesnʼt seem to have a purpose), and `override` is a
+        dictionary of `(section, name)->value` which will override any
+        settings for those parametersʼ values in the initialization files.
+        
+        """
         super(LikelihoodPipeline, self).__init__(arg=arg, load=load)
 
         if id:
@@ -525,65 +685,136 @@ class LikelihoodPipeline(Pipeline):
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
 
+
+
     def print_priors(self):
+        u"""Pretty-print a table of priors for human inspection."""
+        
         print ""
         print "Parameter Priors"
         print "----------------"
-        n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
+        if self.parameters:
+            n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
+        else:
+            n=1
         for param in self.parameters:
             s = "{}--{}".format(param.section,param.name)
             print "{0:{1}}  ~ {2}" .format(s, n, param.prior)
         print ""
+
+
+
     def reset_fixed_varied_parameters(self):
+        u"""Identify the sub-set of parameters which are fixed, and those which are to be varied."""
         self.varied_params = [param for param in self.parameters
                               if param.is_varied()]
         self.fixed_params = [param for param in self.parameters
-                             if param.is_fixed()]     
+                             if param.is_fixed()]
+
+
 
     def parameter_index(self, section, name):
+        u"""Return the sequence number of the parameter `name` in `section`.
+
+        If the parameter is not found then :class:`ValueError` will be raised.
+
+        """
         i = self.parameters.index((section, name))
         if i==-1:
             raise ValueError("Could not find index of parameter %s in section %s"%(name, section))
         return i
 
+
+
     def set_varied(self, section, name, lower, upper):
+        u"""Indicate that the parameter (`section`, `name`) is to be varied between the `lower` and `upper` bounds."""
         i = self.parameter_index(section, name)
         self.parameters[i].limits = (lower,upper)
         self.reset_fixed_varied_parameters()
 
+
+
     def set_fixed(self, section, name, value):
+        u"""Indicate that the parameter (`section`, `name`) must be held fixed at `value`."""
         i = self.parameter_index(section, name)
         self.parameters[i].limits = (value, value)
         self.reset_fixed_varied_parameters()
 
 
+
     def output_names(self):
+        u"""Return a list of strings, each the name of a non-fixed parameter."""
         param_names = [str(p) for p in self.varied_params]
         extra_names = ['%s--%s'%p for p in self.extra_saves]
         return param_names + extra_names
 
+
+
     def randomized_start(self):
+        u"""Give each varied parameter an independent random value distributed according
+        to the parameter prior.
+
+        The return is a `NumPy` :class:`array` of the random values.
+
+        """
+        
         # should have different randomization strategies
         # (uniform, gaussian) possibly depending on prior?
+        
         return np.array([p.random_point() for p in self.varied_params])
 
+
+
     def is_out_of_range(self, p):
+        u"""Determine if any parameter is not in its allowed range."""
         return any([not param.in_range(x) for
                     param, x in zip(self.varied_params, p)])
 
+
+
     def denormalize_vector(self, p, raise_exception=True):
+        u"""Convert an array of normalized parameter values, one for each varied parameter,
+        in the range [0.0,1.0] into their original values using only the lower and upper limits of the parameter.
+    
+        Use denormalize_vector_from_prior to convert according to the prior instead.
+
+        """
         return np.array([param.denormalize(x, raise_exception) for param, x
                          in zip(self.varied_params, p)])
 
+
+
     def denormalize_vector_from_prior(self, p):
+        u"""Convert an array of normalized parameter values, one for each varied parameter,
+        in the range [0.0,1.0] into their original values according to the prior for each parameter.
+
+        i.e. 
+        v -> x  such that \int_{-inf}^{x} p(x') dx' = v
+
+        """
         return np.array([param.denormalize_from_prior(x) for param, x
                          in zip(self.varied_params, p)])
 
+
+
     def normalize_vector(self, p):
+        u"""Convert an array of parameter values, one for each varied parameter,
+         into a normalized form all in the range [0.0,1.0] using only the lower and upper limits for each parameter."""
         return np.array([param.normalize(x) for param, x
                          in zip(self.varied_params, p)])
 
+
+
     def normalize_matrix(self, c):
+        u"""Roughly, return a correlation matrix corresponding to the 
+        covariance matrix `c`, of `varied_params` values.
+
+        Except that the elements of `c` are not probabilities but
+        dimensional values, and the ‘normalization’ is relative to the
+        range of values the ‘covariance’s can take given the lower and
+        upper limits on the variates.
+
+        """
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
@@ -596,7 +827,15 @@ class LikelihoodPipeline(Pipeline):
                 c[i,j] /= (ri*rj)
         return c
 
+
+
     def denormalize_matrix(self, c, inverse=False):
+        u"""Perform the inverse operation to the normalize_matrix function above.
+
+        Note that if `inverse` is `True` the action is *exactly* the same
+        as the function above, i.e. it *normalizes* the matrix.
+
+        """
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
@@ -613,15 +852,35 @@ class LikelihoodPipeline(Pipeline):
         return c
 
 
-    def start_vector(self, all_params=False):
+
+    def start_vector(self, all_params=False, as_array=True):
+        u"""Return a vector of starting values for parameters.
+
+        If `all_params` is specified as `True` then the return will include all
+        our `parameters`, otherwise only the varying ones are included.
+
+        If `as_array` is specified as `False` then a Python list is
+        returned, otherwise, the default, a NumPy array is returned.
+
+        """
         if all_params:
-            return np.array([param.start for
-                 param in self.parameters])
+            p = [param.start for param in self.parameters]
         else:            
-            return np.array([param.start for
-                         param in self.varied_params])
+            p =[param.start for param in self.varied_params]
+        if as_array:
+            p = np.array(p)
+        return p
+
+
 
     def min_vector(self, all_params=False):
+        u"""Return a NumPy array of lower limits for the parameters in the pipeline.
+
+        If `all_params` is specified as `True` then the return will 
+        include all parameters, including fixed ones. Otherwise it will just be the 
+        varying parameters.
+
+        """
         if all_params:
             return np.array([param.limits[0] for
                  param in self.parameters])
@@ -629,16 +888,37 @@ class LikelihoodPipeline(Pipeline):
             return np.array([param.limits[0] for
                          param in self.varied_params])
 
+
+
     def max_vector(self, all_params=False):
+        u"""Return a NumPy array of upper limits for the parameters in the pipeline.
+
+        If `all_params` is specified as `True` then the return will 
+        include all parameters, including fixed ones. Otherwise it will just be the 
+        varying parameters.
+
+        """
         if all_params:
             return np.array([param.limits[1] for
                  param in self.parameters])
         else:
             return np.array([param.limits[1] for
                          param in self.varied_params])
+
 
 
     def run_parameters(self, p, check_ranges=False, all_params=False):
+        u"""Assemble :class:`DataBlock` data based on parameter values in `p`, and run the pipeline on those data.
+
+        If `check_ranges` is indicated, the function will return `None` if
+        **any** of our parameters are out of their indicated range.
+
+        If `all_params` is indicated, then the `p` run data will be
+        assumed to match all the pipeline parameter, including fixed ones.
+        Otherwise (the default) it should match the list ‘varied_params’, and all
+        of our ‘fixed’ parameters are added to the run-set.
+
+        """
         if check_ranges:
             if self.is_out_of_range(p):
                 return None
@@ -660,10 +940,13 @@ class LikelihoodPipeline(Pipeline):
         if self.run(data):
             return data
         else:
+            sys.stderr.write("Pipeline failed on these parameters: {}\n".format(p))
             return None
 
+
+
     def create_ini(self, p, filename):
-        "Dump the specified parameters as a new ini file"
+        u"""Dump the parameters `p` as a new ini file at `filename`"""
         output = collections.defaultdict(list)
         for param, x in zip(self.varied_params, p):
             output[param.section].append("%s  =  %r    %r    %r\n" % (
@@ -679,16 +962,59 @@ class LikelihoodPipeline(Pipeline):
         ini.close()
 
 
-    def prior(self, p, all_params=False):
+
+    def prior(self, p, all_params=False, total_only=True):
+        u"""Compute the probability of all values in `p` based on their prior distributions.
+
+        The array `p` should match the length of of all of our `parameters` if
+        `all_params` is `True`, and our `varied_params` otherwise.
+
+        If `total_only` is `True` (the default), then the scalar sum of
+        all the prior probabilities is returned.  Otherwise a list
+        of pairs is returned, with each element a stringified version of
+        the parameter name, and the prior probability:
+        [(name1, prior1), (name2,prior2), ...]
+
+        """
         if all_params:
             params = self.parameters
         else:
             params = self.varied_params
-        return sum([param.evaluate_prior(x) for param, x in
-                    zip(params, p)])
+        priors = [(str(param),param.evaluate_prior(x)) for param,x in zip(params,p)]
+        if total_only:
+            return sum(pr[1] for pr in priors)
+        else:
+            return priors
+
+
 
     def posterior(self, p, return_data=False, all_params=False):
-        prior = self.prior(p, all_params=all_params)
+        u"""Use the above methods to obtain prior and updated log-likelihoods, sum together to get Bayesian posterior.
+
+        The argument `p` is the set of :class:`Parameter`s which shadows
+        `self.varied_params`, unless `all_params` is specified as `True`
+        in which case it shadows `self.parameters`.
+
+        The method returns two or three values depending on `return_data`:
+
+        * The posterior;
+
+        * a vector (NumPy array) of updated parameter values as specified
+          in `self.extra_saves`;
+
+        * if `return_data` was specified, the updated data block.
+
+        If there is a problem anywhere in the computations which does
+        *not* cause a run-time exception to be raised—including the case
+        where a parameter goes outside of its alloted range—, then
+        `-numpy.inf` will be returned as the final posterior (i.e., zero
+        probability of this set of parameter values being correct).
+
+        """
+
+        priors = self.prior(p, all_params=all_params, total_only=False)
+        # The total prior
+        prior = sum(pr[1] for pr in priors)
         if prior == -np.inf:
             if not self.quiet:
                 sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
@@ -705,6 +1031,8 @@ class LikelihoodPipeline(Pipeline):
             
             if return_data:
                 data = results[2]
+                for name,pr in priors:
+                    data["priors", name] = pr
 
         except StandardError:
             error = True
@@ -721,7 +1049,7 @@ class LikelihoodPipeline(Pipeline):
             sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
 
             # Replace with bad values
-            like = np.nan
+            like = -np.inf
             data = None
             extra = np.repeat(np.nan, self.number_extra)
 
@@ -731,12 +1059,37 @@ class LikelihoodPipeline(Pipeline):
             return prior + like, extra
 
 
-
         
     def likelihood(self, p, return_data=False, all_params=False):
-        #Set the parameters by name from the parameter vector
-        #If one is out of range then return -infinity as the log-likelihood
-        #i.e. likelihood is zero.  Or if something else goes wrong do the same
+        u"""Run the simulation pipeline, computing any log-likelihoods in the pipeline 
+        given the given input parameter values, and return the sum of these.
+
+        The parameter vector `p` must match the length of `self.varied_params`, unless
+        `all_params` is specified as `True` in which case it must match
+        `self.parameters', i.e. must correspond to the complete parameter
+        set.
+
+        If `return_data` are requested, then the updated data block will
+        be returned as the third return item.
+
+        The return will consist of two or three items, depending on
+        `return_data`:
+
+          * A scalar holding the sum of all computed log-likelihoods of
+            the updated parameter value vector;
+
+          * a vector (NumPy array) of updated parameter values as
+            specified in `self.extra_saves`;
+
+          * if `return_data` was specified, the updated data block.
+
+        If anything goes wrong in any of the computation which does *not*
+        result in a run-time error being raised (which would include the
+        case of a parameter going outside of its stipulated limits), then
+        the returned log-likelihood will be `-np.inf`.
+
+        """
+
         data = self.run_parameters(p, all_params=all_params)
         if data is None:
             if return_data:
@@ -747,10 +1100,13 @@ class LikelihoodPipeline(Pipeline):
         # loop through named likelihoods and sum their values
         likelihoods = []
         section_name = cosmosis_py.section_names.likelihoods
+        nlike = len(self.likelihood_names)
         for likelihood_name in self.likelihood_names:
             try:
                 L = data.get_double(section_name,likelihood_name+"_like")
                 likelihoods.append(L)
+                if not self.quiet and nlike>1:
+                    print "    Likelihood {} = {}".format(likelihood_name, L)
             except block.BlockError:
                 raise MissingLikelihoodError(likelihood_name, data)
 
@@ -780,3 +1136,16 @@ class LikelihoodPipeline(Pipeline):
         else:
             return like, extra_saves
 
+
+
+def config_to_block(relevant_sections, options):
+    u"""Compose :class:`DataBlock` of parameters only in `relevant_sections` of complete set of `options`."""
+    config_block = block.DataBlock()
+
+    for (section, name), value in options:
+        if section in relevant_sections:
+            # add back a default section?
+            val = options.gettyped(section, name)
+            if val is not None:
+                config_block.put(section, name, val)
+    return config_block
