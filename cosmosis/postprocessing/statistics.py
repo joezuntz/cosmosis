@@ -334,6 +334,26 @@ class GridStatistics(ConstrainingStatistics):
         files = self.report_file()
         return files
 
+    def report_screen(self):
+        self.report_screen_mean()
+        #self.report_screen_asym()
+        # self.report_screen_asym95()
+        self.report_screen_median()
+        self.report_screen_mode()
+        #self.report_screen_limits()
+
+    def report_file(self):
+        #Get the filenames to make
+        return [
+            self.report_file_mean(),
+            self.report_file_median(),
+            self.report_file_mode(),
+            self.report_file_l95(),
+            self.report_file_u95(),
+#            self.report_file_l68(),
+#            self.report_file_u68(),
+            ]
+
     def compute_stats(self):
         #1D stats
         self.mu = np.zeros(self.ncol)
@@ -345,7 +365,7 @@ class GridStatistics(ConstrainingStatistics):
         except:like = self.source.get_col("like")
         self.best_fit_index = np.argmax(like)
         #Loop through colums
-        for i, name in enumerate(self.source.colnames[:-1]):
+        for i, name in enumerate(self.source.colnames[:self.ncol]):
             if i in self.grid_columns:
                 self.mu[i], self.median[i], self.sigma[i], self.l95[i], self.u95[i] = self.compute_grid_stats(i)
             else:
