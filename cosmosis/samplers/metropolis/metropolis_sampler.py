@@ -12,6 +12,7 @@ pipeline=None
 METROPOLIS_INI_SECTION = "metropolis"
 
 def posterior(p):
+    p = pipeline.denormalize_vector(p, raise_exception=False)
     return pipeline.posterior(p)
 
 
@@ -28,8 +29,8 @@ class MetropolisSampler(ParallelSampler):
         self.Rconverge = self.read_ini("Rconverge", float, -1.0)
         self.oversampling = self.read_ini("oversampling", int, 5)
         tuning_frequency = self.read_ini("tuning_frequency", int, -1)
-        tuning_grace = self.read_ini("tuning_grace", int, 10000000000)
-        tuning_end = self.read_ini("tuning_end", int, 10000)
+        tuning_grace = self.read_ini("tuning_grace", int, 5000)
+        tuning_end = self.read_ini("tuning_end", int, 100000)
         self.n = self.read_ini("nsteps", int, default=100)
         self.split = None #work out later
         if self.Rconverge==-1.0:
@@ -49,9 +50,11 @@ class MetropolisSampler(ParallelSampler):
 
         #Sampler object itself.
         quiet = self.pipeline.quiet
-        self.sampler = metropolis.MCMC(start, posterior, covmat, 
+        start_norm = self.pipeline.normalize_vector(start)
+        covmat_norm = self.pipeline.normalize_matrix(covmat)
+        self.sampler = metropolis.MCMC(start_norm, posterior, covmat_norm, 
             quiet=quiet, 
-            tuning_frequency=tuning_frequency, 
+            tuning_frequency=tuning_frequency * self.oversampling, 
             tuning_grace=tuning_grace,
             tuning_end=tuning_end)
         self.analytics = Analytics(self.pipeline.varied_params, self.pool)
