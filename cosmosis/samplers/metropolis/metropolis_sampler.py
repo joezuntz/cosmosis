@@ -32,6 +32,7 @@ class MetropolisSampler(ParallelSampler):
         tuning_grace = self.read_ini("tuning_grace", int, 5000)
         tuning_end = self.read_ini("tuning_end", int, 100000)
         self.n = self.read_ini("nsteps", int, default=100)
+        self.exponential_probability = self.read_ini("exponential_probability", float, default=0.333)
         self.split = None #work out later
         if self.Rconverge==-1.0:
             self.Rconverge=None
@@ -56,7 +57,8 @@ class MetropolisSampler(ParallelSampler):
             quiet=quiet, 
             tuning_frequency=tuning_frequency * self.oversampling, 
             tuning_grace=tuning_grace,
-            tuning_end=tuning_end)
+            tuning_end=tuning_end,
+            exponential_probability=self.exponential_probability)
         self.analytics = Analytics(self.pipeline.varied_params, self.pool)
         self.fast_slow_done = False
 

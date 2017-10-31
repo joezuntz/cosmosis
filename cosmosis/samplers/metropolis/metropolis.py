@@ -11,8 +11,7 @@ class Proposal(object):
         self.scaling = scaling
         self.exponential_probability = exponential_probability
 
-    @staticmethod
-    def proposal_distance(ndim, scaling):
+    def proposal_distance(self, ndim, scaling):
         #from CosmoMC
         if np.random.uniform()<self.exponential_probability:
             r = np.random.exponential()
@@ -58,6 +57,8 @@ class FastSlowProposal(Proposal):
 
         self.slow_rotation = np.identity(self.nslow)
         self.scaling = scaling
+        self.exponential_probability = exponential_probability
+
 
 
     def propose(self, p):
