@@ -88,6 +88,7 @@ class MetropolisSampler(ParallelSampler):
         traces = np.empty((self.n,len(self.pipeline.varied_params)))
         likes = np.empty((self.n))
         for i, (vector, like, extra) in enumerate(samples):
+            vector = self.pipeline.denormalize_vector(vector)
             self.output.parameters(vector, extra, like)
             traces[i,:] = vector
         self.analytics.add_traces(traces)	
