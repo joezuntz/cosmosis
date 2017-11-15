@@ -39,7 +39,7 @@ def set_verbosity(verb):
 
 def output_from_options(options):
 	# figure out the type of output required
-	format = options['format']
+	format = options.get('format', 'text')
 	if format not in output_registry:
 		known = '\n'.join('    %s - %s' % (f,output_registry[f].__name__) for f in output_registry)
 		message = """

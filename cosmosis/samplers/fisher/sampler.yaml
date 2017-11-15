@@ -20,10 +20,11 @@ explanation: >
 
     For a general distribution the Fisher matrix can be rather fiddly to calculate; 
     this sampler does not do that.  Instead it assumes a Gaussian likelihood, in which
-    case the fisher matrix can be computed from to the derivatives v of the observable
-    quantities with respect to the parameters p, and their covariance matrix C:
+    case the fisher matrix can be computed from to the derivatives of the observable
+    quantities :math:`v` with respect to the parameters :math:`p`, and their covariance matrix :math:`C` :
 
-    F_{ij} = \sum_{mn} \frac{\partial v_m}{\partial p_i} [C^{-1}]_{mn} \frac{\partial v_n}{\partial p_j}
+    .. math::
+        F_{ij} = \sum_{mn} \frac{\partial v_m}{\partial p_i} [C^{-1}]_{mn} \frac{\partial v_n}{\partial p_j}
     
     There is an additional term that arises when the covariance matrix C depends on
     the parameters p, which we do not currently calculate here, as it is usually fixed in 
@@ -34,7 +35,7 @@ explanation: >
 
     Unlike most other CosmoSIS samplers which depend only likelihood of a parameter set,
     the fisher sampler requires the predicted observables from a pipeline too.  They are
-    expected to be saved to a section of the data block, called "data_theory", with 
+    expected to be saved to a section of the data block, called "data_vector", with 
     keys, name+"_theory" and name+"_inverse_covariance" where "name" is the name of the likelihood,
     for example, to save a cmb data vector you could save "cmb_theory" and "cmb_inverse_covariance"
     in the "data_vector" section.

@@ -1,5 +1,5 @@
 The Minuit sampler
-------------------
+--------------------------------------------------------------------
 
 Find the maximum posterior using the MINUIT library
 

@@ -1,3 +1,7 @@
+#coding: utf-8
+
+u"""Definition of the :class:`DataBlock` class."""
+
 from __future__ import print_function
 from future import standard_library
 standard_library.install_aliases()
@@ -20,10 +24,55 @@ option_section = "module_options"
 metadata_prefix = "cosmosis_metadata:"
 
 class DataBlock(object):
+	u"""A map of (section,name)->value of parameters.
+
+	At the heart of Cosmosis is a data-containing object which is passed
+	down a pipeline of processing stages, which shape and massage those
+	data as they go through.  The :class:`DataBlock` class is the
+	realization of this object as seen by Python modules.
+
+	The main methods a Cosmosis module programmer is interested in given
+	one of these objects are the implicitly-called `__getitem__` and
+	`__setitem__`: these retrieve parameter values from the map, and put
+	new ones in or replace existing ones, respectively.
+
+	Most of the implementation detail of this class is a complete
+	orthogonal set of methods which get, put and replace parameters with
+	integer, boolean, string, floating-point, complex values, either as
+	scalars or 1-, 2-dimensional arrays or ‘grids’, then refinement of
+	these into generic :func:`get`, :func:`set` and :func:`replace`
+	methods, and finally the ultimate refinement to the
+	:func:`__getitem__` and :func:`__setitem__` methods themselves.
+
+	The *grid* concept is where a two-dimensional array is flanked by two
+	one-dimensional ones giving labels to the ‘rows’ and ‘columns’; these
+	labels are used to address the data directly.
+
+	"""
+
 	GET=0
 	PUT=1
 	REPLACE=2
 	def __init__(self, ptr=None, own=None):
+		u"""Construct an empty parameter map, or possibly shadow an existing one.
+
+		In implementation, this Python object is actually a wrapper around
+		a C object.  The constructor allows for an existing object to be
+		specified through the `ptr`, and then to dictate that the Python
+		object is ultimately responsible for the lifetime of the
+		underlying object, via the boolean-valued `own`.
+
+		Note that it is also possible to not specify `ptr` and to specify
+		`own` as `False`, in which case a new C object will be created but
+		it will be left to the application to ensure proper destruction at
+		the end of its lifetime.
+
+		"""
+
+		# Doc: Need to find out the use-case for this latter option,
+		#      and if it is being used in Cosmosis now; if not, it
+		#      should be removed!
+
 		self.owns=own
 		if ptr is None:
 			ptr = lib.make_c_datablock()
@@ -34,6 +83,11 @@ class DataBlock(object):
 	#TODO: add destructor.  destroy block if owned
 
 	def __del__(self):
+		u"""Destroy this object.
+
+		Also destroy the underlying C object if we are deemed to own it.
+
+		"""
 		try:
 			if self.owns:
 				lib.destroy_c_datablock(self._ptr)
@@ -41,12 +95,32 @@ class DataBlock(object):
 			pass
 				
 	def clone(self):
+		u"""Make a brand-new, completely independent object, a deep copy of the existing one.
+
+		A new object will be returned from this method which has its own
+		underlying implementation, a deep copy of the parameter map we
+		are holding.  This WILL entail the attempted requisition of
+		enough new memory to hold the complete parameter structure.
+
+		"""
 		ptr = lib.clone_c_datablock(self._ptr)
 		return DataBlock(ptr,own=True)
 
 
 	@staticmethod
 	def python_to_c_complex(value):
+		u"""Interpret an arbitrary Python object as a lib.c_complex type.
+
+		This convenience function will take an actual lib.c_complex
+		`value` (no-op), a Python complex `value`, the first two
+		components of a Python tuple `value`, or a real scalar `value` and
+		return the equivalent lib.c_complex (i.e. a type which can be
+		passed to a C subroutine representing a complex number).
+
+		In the case of the scalar input, this is taken as the real part of
+		the complex number and the imaginary part will be zero.
+
+		"""
 		if isinstance(value, lib.c_complex):
 			return value
 		elif isinstance(value, complex):
@@ -58,6 +132,13 @@ class DataBlock(object):
 
 	@staticmethod
 	def python_to_1d_c_array(value, numpy_type):
+		u"""Create a C object equivalent to the `value` array, interpreted as `numpy_type`.
+
+		The object will be a contiguous list—this may entail that a value
+		array with strides be copied to a compressed version—of C type
+		most appropriate to the representation of the Python `numpy_type`.
+
+		"""
 		value = np.array(value, dtype=numpy_type)
 		#This function is for 1D arrays only
 		assert value.ndim==1
@@ -85,6 +166,16 @@ class DataBlock(object):
 
 
 	def get_int(self, section, name, default=None):
+		u"""Retrieve an integer value from the parameter set.
+
+		The `name`ʼd parameter in the given `section` will be interpreted
+		as an integer and returned to the caller.  If such parameter is
+		not found in the map, then the `default` will be returned if it
+		was given, or else a specialized :class:`BlockError` (see
+		errors.py) will be thrown.  The :class:`BlockError` may also be
+		thrown if a variable is found, but is not of integer type.
+
+		"""
 		r = ct.c_int()
 		if default is None:
 			status = lib.c_datablock_get_int(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
@@ -95,6 +186,16 @@ class DataBlock(object):
 		return r.value
 
 	def get_bool(self, section, name, default=None):
+		u"""Retrieve a boolean value from the parameter set.
+
+		The `name`ʼd parameter in the given `section` will be interpreted
+		as a boolean and returned to the caller.  If such parameter is not
+		found in the map, then the `default` will be returned if it was
+		given, or else a specialized :class:`BlockError` (see errors.py)
+		will be thrown.  The :class:`BlockError` may also be thrown if a
+		variable is found, but is not of boolean type.
+
+		"""
 		r = ct.c_bool()
 		if default is None:
 			status = lib.c_datablock_get_bool(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
@@ -105,6 +206,17 @@ class DataBlock(object):
 		return r.value
 
 	def get_double(self, section, name, default=None):
+		u"""Retrieve a floating-point value from the parameter set.
+
+		The `name`ʼd parameter in the given `section` will be interpreted
+		as a floating-point value and returned to the caller.  If such
+		parameter is not found in the map, then the `default` will be
+		returned if it was given, or else a specialized
+		:class:`BlockError` (see errors.py) will be thrown.  The
+		:class:`BlockError` may also be thrown if a variable is found, but
+		is not of floating-point type.
+
+		"""
 		r = ct.c_double()
 		if default is None:
 			status = lib.c_datablock_get_double(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
@@ -115,6 +227,16 @@ class DataBlock(object):
 		return r.value
 
 	def get_complex(self, section, name, default=None):
+		u"""Retrieve a complex value from the parameter set.
+
+		The `name`ʼd parameter in the given `section` will be interpreted
+		as a complex value and returned to the caller.  If such parameter
+		is not found in the map, then the `default` will be returned if it
+		was given, or else a specialized :class:`BlockError` (see
+		errors.py) will be thrown.  The :class:`BlockError` may also be
+		thrown if a variable is found, but is not of complex type.
+
+		"""
 		r = lib.c_complex()
 		if default is None:
 			status = lib.c_datablock_get_complex(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
@@ -125,6 +247,16 @@ class DataBlock(object):
 		return r.real+1j*r.imag
 
 	def get_string(self, section, name, default=None):
+		u"""Retrieve a string value from the parameter set.
+
+		The `name`ʼd parameter in the given `section` will be interpreted
+		as a string value and returned to the caller.  If such parameter
+		is not found in the map, then the `default` will be returned if it
+		was given, or else a specialized :class:`BlockError` (see
+		errors.py) will be thrown.  The :class:`BlockError` may also be
+		thrown if a variable is found, but is not of string type.
+
+		"""
 		r = lib.c_str()
 		if default is None:
 			status = lib.c_datablock_get_string(self._ptr,section.encode('ascii'),name.encode('ascii'),r)
@@ -135,6 +267,14 @@ class DataBlock(object):
 		return r.value.decode('utf-8')
 
 	def get_int_array_1d(self, section, name):
+		u"""Retrieve an integer array from the parameter set.
+
+		The `name`ʼd parameter in the given `section` will be understood
+		as being of integer array type and returned to the caller as a
+		NumPy array.  If such a parameter is not found in the map, then a
+		specialized :class:`BlockError` (see errors.py) will be thrown.
+
+		"""
 		n = lib.c_datablock_get_array_length(self._ptr, section.encode('ascii'), name.encode('ascii'))
 		r = np.zeros(n, dtype=np.intc)
 		arr = np.ctypeslib.as_ctypes(r)
@@ -145,6 +285,15 @@ class DataBlock(object):
 		return r
 
 	def get_double_array_1d(self, section, name):
+		u"""Retrieve a floating-point array from the parameter set.
+
+		The `name`ʼd parameter in the given `section` will be understood
+		as being of floating-point array type and returned to the caller
+		as a *NumPy* array.  If such a parameter is not found in the map,
+		then a specialized :class:`BlockError` (see errors.py) will be
+		thrown.
+
+		"""
 		n = lib.c_datablock_get_array_length(self._ptr, section.encode('ascii'), name.encode('ascii'))
 		r = np.zeros(n, dtype=np.double)
 		arr = np.ctypeslib.as_ctypes(r)
@@ -209,21 +358,69 @@ class DataBlock(object):
 
 
 	def put_double_array_nd(self, section, name, value):
+		u"""Add a floating-point array parameter to the data set.
+
+		The `value` must be an array of values which can be interpreted as
+		floating-point numbers, otherwise a :class:`ValueError` will be
+		raised.  If the parameter does not exist in the data set, a
+		:class:`BlockError` will be raised.  The array can be any shape.
+
+		"""
 		self._put_replace_array_nd(section, name, value, np.double, self.PUT)
 
 	def put_int_array_nd(self, section, name, value):
+		u"""Add an integer array parameter to the data set.
+
+		The value must be an array of values which can be interpreted as
+		integer numbers, otherwise a :class:`ValueError` will be raised.
+		If the parameter does not exist in the data set, a
+		:class:`BlockError` will be raised.  The array can be any shape.
+
+		"""
 		self._put_replace_array_nd(section, name, value, np.intc, self.PUT)
 
 	def replace_double_array_nd(self, section, name, value):
+		u"""Replace a floating-point array parameter in the data set.
+
+		The value must be an array of values which can be interpreted as
+		floating-point numbers, otherwise a :class:`ValueError` will be
+		raised.  If the parameter already exists in the data set, a
+		:class:`BlockError` will be raised.  The new array can be any
+		shape, independent of the shape of the original value in this data
+		set.
+
+		"""
 		self._put_replace_array_nd(section, name, value, np.double, self.REPLACE)
 
 	def replace_int_array_nd(self, section, name, value):
+		u"""Replace an integer array parameter in the data set.
+
+		The value must be an array of values which can be interpreted as
+		integer numbers, otherwise a :class:`ValueError` will be raised.
+		If the parameter already exists in the data set, a
+		:class:`BlockError` will be raised.  The new array can be any
+		shape, independent of the shape of the original value in this data
+		set.
+
+		"""
 		self._put_replace_array_nd(section, name, value, np.intc, self.REPLACE)
 
 	def get_double_array_nd(self, section, name):
+		u"""Get a floating-point array of *a priori* unspecified shape.
+
+		Expect :class:`BlockError` or :class:`ValueError` to be raised if
+		there are extenuating circumstances.
+
+		"""
 		return self._get_array_nd(section, name, float)
 
 	def get_int_array_nd(self, section, name):
+		u"""Get an integer-valued array of *a priori* unspecified shape.
+
+		Expect :class:`BlockError` or :class:`ValueError` to be raised if
+		there are extenuating circumstances.
+
+		"""
 		return self._get_array_nd(section, name, int)
 
 	#def get_complex_array_2d(self, section, name):
@@ -233,38 +430,93 @@ class DataBlock(object):
 	#	return self._get_array_2d(section, name, str)
 
 	def put_int(self, section, name, value):
+		u"""Add an integer parameter to the map.
+
+		A new parameter will be added to the current map, at (`section`,
+		`name`), and will have the `value` interpreted as an integer type.
+		It is an error to try to add a parameter which is already there,
+		and in this case a specialized :class:`BlockError` will be raised.
+
+		"""
 		status = lib.c_datablock_put_int(self._ptr,section.encode('ascii'),name.encode('ascii'),int(value))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_bool(self, section, name, value):
+		u"""Add a boolean parameter to the map.
+
+		A new parameter will be added to the current map, at (`section`,
+		`name`), and will have the `value` interpreted as a boolean type.
+		It is an error to try to add a parameter which is already there,
+		and in this case a :class:`BlockError` will be raised.
+
+		"""
 		status = lib.c_datablock_put_bool(self._ptr,section.encode('ascii'),name.encode('ascii'),bool(value))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_double(self, section, name, value):
+		u"""Add a floating-point parameter to the map.
+
+		A new parameter will be added to the current map, at (`section`,
+		`name`), and will have the `value` interpreted as a floating-point
+		type.  It is an error to try to add a parameter which is already
+		there, and in this case a :class:`BlockError` will be raised.
+
+		"""
 		status = lib.c_datablock_put_double(self._ptr,section.encode('ascii'),name.encode('ascii'),float(value))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_complex(self, section, name, value):
+		u"""Add a complex parameter to the map.
+
+		A new parameter will be added to the current map, at (`section`,
+		`name`), and will have the `value` interpreted as a complex type.
+		It is an error to try to add a parameter which is already there,
+		and in this case a :class:`BlockError` will be raised.
+
+		"""
 		value=self.python_to_c_complex(value)
 		status = lib.c_datablock_put_complex(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_string(self, section, name, value):
+		u"""Add a string parameter to the map.
+
+		A new parameter will be added to the current map, at (`section`,
+		`name`), and will have the `value` interpreted as a string type.
+		It is an error to try to add a parameter which is already there,
+		and in this case a :class:`BlockError` will be raised.
+
+		"""
 		status = lib.c_datablock_put_string(self._ptr,section.encode('ascii'),name.encode('ascii'),str(value).encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_int_array_1d(self, section, name, value):
+		u"""Add a one-dimensional integer array to the map.
+
+		A parameter called `name` is added to `section`, and holds `value`
+		interpreted as a simple array of integers.  If this interpretation
+		cannot be made then a :class:`BlockError` will be raised.
+
+		"""
 		value_ref, value,n=self.python_to_1d_c_array(value, np.intc)
 		status = lib.c_datablock_put_int_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), value, n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_double_array_1d(self, section, name, value):
+		u"""Add a one-dimensional floating-point array to the map.
+
+		A parameter called `name` is added to `section`, and holds `value`
+		interpreted as a simple array of floating-point values.  If this
+		interpretation cannot be made then a :class:`BlockError` will be
+		raised.
+
+		"""
 		value_ref, value,n=self.python_to_1d_c_array(value, np.double)
 		status = lib.c_datablock_put_double_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), value, n)
 		if status!=0:
@@ -341,6 +593,15 @@ class DataBlock(object):
 		raise ValueError("I do not know how to handle this type %r %r"%(value,type(value)))
 	
 	def get(self, section, name):
+		u"""Get the value of parameter with `name` in `section`.
+
+		The type value returned from this method will reflect the type of
+		value held in the underlying map implementation.  In circumstances
+		where this either cannot be ascertained or cannot be converted
+		simply to a native Python type, then either a :class:`BlockError`
+		or :class:`ValueError` will be raised.
+
+		"""
 		type_code_c = lib.c_datatype()
 		status = lib.c_datablock_get_type(self._ptr, section.encode('ascii'), name.encode('ascii'), ct.byref(type_code_c))
 		if status:
@@ -352,64 +613,164 @@ class DataBlock(object):
 		raise ValueError("Cosmosis internal error; unknown type of data")
 
 	def put(self, section, name, value, **meta):
+		u"""Add a parameter with `value` at (`section`, `name`) in the map.
+
+		The parameter stored in the map will have a type which
+		reflects the type of `value`.
+
+		If provided, `meta` should be a map of key/value pairs, and
+		these will be appended to the inserted parameter as meta-data,
+		converted to string type.
+
+		It is an error to insert a parameter when there already is an
+		entry at (`section`, `name`), in which case a :class:`BlockError`
+		specialization will be raised.
+
+		"""
 		method = self._method_for_value(value,self.PUT)
 		method(section, name, value)
 		for (key, val) in list(meta.items()):
 			self.put_metadata(section, name, str(key), str(val))
 
 	def replace(self, section, name, value):
+		u"""Replace the value of a parameter at (`section`, `name`) in the map with `value`.
+
+		The parameter newly stored in the map will have a type which
+		reflects the type of `value`.
+
+		It is an error to attempt to replace a parameter not already
+		present in the map, in which case a :class:`BlockError`
+		specialization will be raised.
+
+		"""
 		method = self._method_for_value(value,self.REPLACE)
 		method(section, name, value)
 
 
 	def replace_int(self, section, name, value):
+		u"""Change the value of an integer parameter in the map.
+
+		The parameter at (`section`, `name`) will be given the new
+		`value`.  It is an error to attempt to replace a value which is
+		not already in the map, and a :class:`BlockError` will be raised
+		in this case.
+
+		"""
 		status = lib.c_datablock_replace_int(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_bool(self, section, name, value):
+		u"""Change the value of a boolean parameter in the map.
+
+		The parameter at (`section`, `name`) will be given the new
+		`value`.  It is an error to attempt to replace a value which is
+		not already in the map, and a :class:`BlockError` will be raised
+		in this case.
+
+		"""
 		status = lib.c_datablock_replace_int(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_double(self, section, name, value):
+		u"""Change the value of a floating-point parameter in the map.
+
+		The parameter at (`section`, `name`) will be given the new
+		`value`.  It is an error to attempt to replace a value which is
+		not already in the map, and a :class:`BlockError` will be raised
+		in this case.
+
+		"""
 		r = ct.c_double()
 		status = lib.c_datablock_replace_double(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_complex(self, section, name, value):
+		u"""Change the value of a complex parameter in the map.
+
+		The parameter at (`section`, `name`) will be given the new
+		`value`.  It is an error to attempt to replace a value which is
+		not already in the map, and a :class:`BlockError` will be raised
+		in this case.
+
+		"""
 		value=self.python_to_c_complex(value)
 		status = lib.c_datablock_replace_complex(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_string(self, section, name, value):
+		u"""Change the value of a string parameter in the map.
+
+		The parameter at (`section`, `name`) will be given the new
+		`value`.  It is an error to attempt to replace a value which is
+		not already in the map, and a :class:`BlockError` will be raised
+		in this case.
+
+		"""
 		status = lib.c_datablock_replace_string(self._ptr,section.encode('ascii'),name.encode('ascii'),str(value).encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_int_array_1d(self, section, name, value):
+		u"""Replace the value of a parameter with a simple integer array.
+
+		The parameter at (`section`, `name`) is replaced with `value`,
+		interpreted as a one-dimensional array.
+
+		If this cannot be done then a :class:`BlockError` specialization
+		will be raised.
+
+		"""
 		value_ref, value,n=self.python_to_1d_c_array(value, np.intc)
 		status = lib.c_datablock_replace_int_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), value, n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_double_array_1d(self, section, name, value):
+		u"""Replace the value of a parameter with a simple floating-point array.
+
+		The parameter at (`section`, `name`) is replaced with `value`,
+		interpreted as a one-dimensional array.
+
+		If this cannot be done then a :class:`BlockError` specialization
+		will be raised.
+
+		"""
 		value_ref, value,n=self.python_to_1d_c_array(value, np.double)
 		status = lib.c_datablock_replace_double_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), value, n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def has_section(self, section):
+		u"""Indicate whether or not there is a given `section` in the data set.
+
+		The `section` should be a string holding the name of the section.
+
+		"""
 		has = lib.c_datablock_has_section(self._ptr, section.encode('ascii'))
 		return bool(has)
 
 	def has_value(self, section, name):
+		u"""Indicate whether or not a parameter is in the map.
+
+		Both `section` and `name` should be strings.
+
+		"""
 		has = lib.c_datablock_has_value(self._ptr, section.encode('ascii'), name.encode('ascii'))
 		return bool(has)
 
 	def __getitem__(self, section_name):
+		u"""Get the value of a parameter with `section`, name in the tuple section_name.
+
+		Implicit use of this method is the recommended way to get the
+		value of a parameter in the map.  If the argument cannot be
+		interpreted as at least a two-item tuple then a
+		:class:`ValueError` will be raised.
+
+		"""
 		try:
 			(section,name) = section_name
 		except ValueError:
@@ -417,6 +778,14 @@ class DataBlock(object):
 		return self.get(section, name)
 
 	def __setitem__(self, section_name, value):
+		u"""Set a parameter with value in the map.
+
+		The section_name must be a tuple with the parameterʼs section and
+		name as the first two items (else a :class:`ValueError` will be
+		raised).  Implicit use of this method is the recommended way to
+		both insert parameters into the map, or to introduce new ones.
+
+		"""
 
 		try:
 			(section,name) = section_name
@@ -428,6 +797,15 @@ class DataBlock(object):
 			self.put(section, name, value)
 
 	def __contains__(self, section_name):
+		u"""Indicate whether there is a parameter with given section/name in the database.
+
+		The section and name must be specified as the first two items of a
+		tuple, or else a :class:`ValueError` will be raised.  Normally a
+		boolean is returned to indicate prescence of said parameter.
+		Implicit use of this method is the recommended way to determine if
+		a parameter is present in the data set.
+
+		"""
 		if isinstance(section_name, basestring):
 			return self.has_section(section_name)
 		try:
@@ -437,11 +815,23 @@ class DataBlock(object):
 		return self.has_value(section, name)
 
 	def sections(self):
+		u"""Return a list of strings with the names of all sections in the data set.
+
+		"""
 		n = lib.c_datablock_num_sections(self._ptr)
 		return [lib.c_datablock_get_section_name(self._ptr, i).decode('utf-8') for i in range(n)]
 
 
 	def keys(self, section=None):
+		u"""Return all keys in the collection, or, if `section` is specified, all keys under that section.
+
+		If `section` is specified, it must be a string naming a section
+		for whose keys are requested.
+
+		In all cases a list of pairs of strings will be returned, the
+		elements of each being the `section` and name of each parameter.
+
+		"""
 		if section is None:
 			sections = self.sections()
 		else:
@@ -479,6 +869,14 @@ class DataBlock(object):
 		return name, meta
 
 	def save_to_file(self, dirname, clobber=False):
+		u"""Effectively :func:`save_to_directory` with the result tarʼd and compressed to a single file.
+
+		The `dirname` argument here is actually a file name without an
+		extension; the path to the file will be created in the file system
+		if necessary (:class:`ValueError` will be raised if this cannot be
+		accomplished), and “.tgz” will be appended to the file name.
+
+		"""
 		filename = dirname + ".tgz"
 
 		base_dirname,base_filename=os.path.split(filename)
@@ -532,6 +930,17 @@ class DataBlock(object):
 
 
 	def save_to_directory(self, dirname, clobber=False):
+		u"""Save the entire contents of this parameter map in the filesystem under `dirname`.
+
+		The data are all written out long-hand in ASCII.  Each unique
+		section will go to its own sub-directory, in which all the
+		scalar parameters in that section go into a single file
+		(‘values.txt’), and of the ‘composite’ data each go into their
+		own file, named after the parameter key.
+
+		The path, including `dirname`, will be created if necessary.
+
+		"""
 		try:
 			os.mkdir(dirname)
 		except OSError:
@@ -594,19 +1003,41 @@ class DataBlock(object):
 
 
 	def report_failures(self):
+		u"""Dump a human-readable list of failed-action log entries to the standard error channel.
+
+		The entries appear one per line, with space-separated items
+		corresponding to the verb, section and name, and data-type of the
+		parameter.
+
+		"""
 		status = lib.c_datablock_report_failures(self._ptr)
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
 	def print_log(self):
+		u"""Dump a human-readable list of log entries to standard output.
+
+		The entries appear one per line, with space-separated items
+		corresponding to the verb, section and name, and data-type of the
+		parameter.
+
+		"""
 		status = lib.c_datablock_print_log(self._ptr)
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
 	def get_log_count(self):
+		u"""Return the number of entries in the log."""
 		return lib.c_datablock_get_log_count(self._ptr)
 
 	def get_log_entry(self, i):
+		u"""Get the `i`ʼth log entry.
+
+		The return is a tuple of four strings indicating the verb (i.e.,
+		logged action), section and name of the parameter, and the data
+		type held by the parameter.
+
+		"""
 		smax = 128
 		ptype = ct.create_string_buffer(smax)
 		section = ct.create_string_buffer(smax)
@@ -618,11 +1049,26 @@ class DataBlock(object):
 		return ptype.value.decode('utf-8'), section.value.decode('utf-8'), name.value.decode('utf-8'), dtype.value.decode('utf-8')
 
 	def log_access(self, log_type, section, name):
+		u"""Add an entry to the end of this :class:`DataBlock`ʼs access log.
+
+		The `log_type` describes the action performed on the parameter at
+		(`section`, `name`).  It should be one of the strings displayed in
+		*datablock_logging.cc*, viz: "READ-OK", "WRITE-OK", "READ-FAIL",
+		"WRITE-FAIL", "READ-DEFAULT", "REPLACE-OK", "REPLACE-FAIL",
+		"CLEAR", "DELETE", or "MODULE-START".
+
+		"""
 		status = lib.c_datablock_log_access(self._ptr, log_type.encode('ascii'), section.encode('ascii'), name.encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
 	def get_metadata(self, section, name, key):
+		u"""Get the metadata called `key` attached to parameter `name` under `section`.
+
+		If the data do not exist at the requested address, then a
+		:class:`BlockError` will be raised.
+
+		"""
 		r = lib.c_str()
 		status = lib.c_datablock_get_metadata(self._ptr,section.encode('ascii'),name.encode('ascii'),key.encode('ascii'), r)
 		if status!=0:
@@ -630,19 +1076,61 @@ class DataBlock(object):
 		return r.value.decode('utf-8')
 
 	def put_metadata(self, section, name, key, value):
+		u"""Associate `value` with the meta-`key` attached to parameter `name` under `section`.
+
+		If there is no parameter under (`section`, `name`) then a
+		:class:`BlockError` will be raised.
+
+		"""
 		status = lib.c_datablock_put_metadata(self._ptr,section.encode('ascii'),name.encode('ascii'),key.encode('ascii'), value.encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def replace_metadata(self, section, name, key, value):
+		u"""Associate `value` with the meta-`key` attached to parameter `name` under `section`.
+
+		If there is no parameter under (`section`, `name`) then a
+		:class:`BlockError` will be raised.
+
+		"""
 		status = lib.c_datablock_replace_metadata(self._ptr,section.encode('ascii'),name.encode('ascii'),key.encode('ascii'), value.encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
 	def put_grid(self, section, name_x, x, name_y, y, name_z, z):
+		u"""Put a grid into the map.
+
+		The grid is put into `section`, using keys `name_x`, `name_y` and
+		`name_z` to locate the data.  The data comprise the array `x`
+		holding a set of ‘labels’ for the x-axis, an array `y` holding
+		labels for the y-axis, and then a two-dimensional array`z`, whose
+		sizes must correspond with the `x`- and `y`-sizes, which holds the
+		actual data inside the grid.
+
+		If there are any problems, most notably with the sizes of the
+		arrays not being compatible, then a :class:`ValueError` will be
+		raised.
+
+		"""
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, False)
 
 	def get_grid(self, section, name_x, name_y, name_z):
+		u"""Return a triple of arrays, representing a grid of data.
+
+		The strings `name_x`, `name_y` and `name_z` must be keys under
+		`section` which index data making up a grid; they must be the same
+		set used in a call to :func:`replace_grid` or :func:`put_grid`
+		used to establish the grid in the first place (except that the x-
+		and y-axes are allowed to be transposed).
+
+		The return is a triple of arrays: the first two elements hold the
+		labels along the axes and the third element is a two-dimensional
+		array holding the data deemed to be inside the grid itself.
+
+		If the `name_*`ʼs do not correspond correctly with those of an
+		established grid then a :class:`BlockError` will be raised.
+
+		"""
 		name_x = name_x.lower()
 		name_y = name_y.lower()
 		name_z = name_z.lower()
@@ -664,6 +1152,20 @@ class DataBlock(object):
 
 
 	def replace_grid(self, section, name_x, x, name_y, y, name_z, z):
+		u"""Put a grid into the map.
+
+		The grid is put into `section`, using keys `name_x`, `name_y` and
+		`name_z` to locate the data.  The data comprise the array `x`
+		holding a set of ‘labels’ for the x-axis, an array `y` holding
+		labels for the y-axis, and then a two-dimensional array`z`, whose
+		sizes must correspond with the `x`- and `y`-sizes, which holds the
+		actual data inside the grid.
+
+		If there are any problems, most notably with the sizes of the
+		arrays not being compatible, then a :class:`ValueError` will be
+		raised.
+
+		"""
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, True)
 
 	def _grid_put_replace(self, section, name_x, x, name_y, y, name_z, z, replace):

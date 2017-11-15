@@ -65,7 +65,7 @@ Parameter | Type | Meaning | Default
 """
 
 rst_template = u"""The {name} sampler
-------------------
+--------------------------------------------------------------------
 
 {purpose}
 
@@ -230,21 +230,22 @@ Some are designed to actually explore likelihood spaces; others are useful for t
 
 
 def main():
-	#get the base dir to work from
-	src=os.environ['COSMOSIS_SRC_DIR']
-	sampler_dir=os.path.join(src, "cosmosis", "samplers")
-	#Find and parse all the files
-	search_path = "{}/*/sampler.yaml".format(sampler_dir)
-	yaml_files = glob.glob(search_path)
-	infos = [yaml.load(open(f)) for f in yaml_files]
-	#Make the ordering the same every time
-	try:
-		os.mkdir('wiki')
-	except OSError:
-		pass
-	generate_links(infos)
-	for info in infos:
-		generate_sampler_wiki(info)
+    #get the base dir to work from
+    src=os.environ['COSMOSIS_SRC_DIR']
+    sampler_dir=os.path.join(src, "cosmosis", "samplers")
+    #Find and parse all the files
+    search_path = "{}/*/sampler.yaml".format(sampler_dir)
+    yaml_files = glob.glob(search_path)
+    print yaml_files
+    infos = [yaml.load(open(f)) for f in yaml_files]
+    #Make the ordering the same every time
+    try:
+    	os.mkdir('wiki')
+    except OSError:
+    	pass
+    generate_links(infos)
+    for info in infos:
+        generate_sampler_wiki(info)
 
 
 if __name__ == '__main__':

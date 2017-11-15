@@ -1,5 +1,5 @@
 The Metropolis sampler
-------------------
+--------------------------------------------------------------------
 
 Classic Metropolis-Hastings sampling
 
