@@ -29,6 +29,7 @@ except ImportError:
 
 
 PIPELINE_INI_SECTION = "pipeline"
+NO_LIKELIHOOD_NAMES = "no_likelihood_names_sentinel"
 
 class MissingLikelihoodError(Exception):
 
@@ -424,8 +425,13 @@ class LikelihoodPipeline(Pipeline):
 
         self.number_extra = len(self.extra_saves)
         #pull out all the section names and likelihood names for later
-        self.likelihood_names = self.options.get(PIPELINE_INI_SECTION,
-                                                 "likelihoods").split()
+
+        likelihood_names = self.options.get(PIPELINE_INI_SECTION,
+                                            "likelihoods", NO_LIKELIHOOD_NAMES)
+        if likelihood_names==NO_LIKELIHOOD_NAMES:
+            self.likelihood_names = NO_LIKELIHOOD_NAMES
+        else:
+            self.likelihood_names = likelihood_names.split()
 
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
@@ -806,6 +812,56 @@ class LikelihoodPipeline(Pipeline):
         else:
             return prior + like, extra
 
+    def _set_likelihood_names_from_block(self, data):
+        likelihood_names = []
+        for _,key in data.keys(cosmosis_py.section_names.likelihoods):
+            if key.endswith("_like"):
+                name = key[:-5]
+                likelihood_names.append(name)
+        self.likelihood_names = likelihood_names
+
+    def _extract_likelihoods(self, data):
+        "Extract the likelihoods from the block"
+
+        section_name = cosmosis_py.section_names.likelihoods
+
+        # First run.  If we have not set the likelihood names in the parameter
+        # file then get them from the block
+        if self.likelihood_names == NO_LIKELIHOOD_NAMES:
+            self._set_likelihood_names_from_block(data)
+
+            if not self.quiet:
+                # Tell the suer what we found
+                print("Likelihoods not set in parameter file, so checking what is generated:")
+                for name in self.likelihood_names:
+                    print("Found likelihood named {}".format(name))
+                if not self.likelihood_names:
+                    print("No likelihoods found")
+
+        # loop through named likelihoods and sum their values
+        likelihoods = []
+        for likelihood_name in self.likelihood_names:
+            try:
+                L = data.get_double(section_name,likelihood_name+"_like")
+                likelihoods.append(L)
+                if not self.quiet:
+                    print "    Likelihood {} = {}".format(likelihood_name, L)
+            # Complain if not found
+            except block.BlockError:
+                raise MissingLikelihoodError(likelihood_name, data)
+
+        # Total likelihood
+        like = sum(likelihoods)
+
+        # DM: Issue #181: Zuntz: replace NaN's with -inf's in posteriors and
+        #                 likelihoods.
+        if np.isnan(like):
+            like = -np.inf
+
+        if not self.quiet and self.likelihood_names:
+            sys.stdout.write("Likelihood total = {}\n".format(like))
+
+        return like
 
         
     def likelihood(self, p, return_data=False, all_params=False):
@@ -845,28 +901,7 @@ class LikelihoodPipeline(Pipeline):
             else:
                 return -np.inf, np.repeat(np.nan, self.number_extra)
 
-        # loop through named likelihoods and sum their values
-        likelihoods = []
-        section_name = cosmosis_py.section_names.likelihoods
-        nlike = len(self.likelihood_names)
-        for likelihood_name in self.likelihood_names:
-            try:
-                L = data.get_double(section_name,likelihood_name+"_like")
-                likelihoods.append(L)
-                if not self.quiet and nlike>1:
-                    print "    Likelihood {} = {}".format(likelihood_name, L)
-            except block.BlockError:
-                raise MissingLikelihoodError(likelihood_name, data)
-
-        like = sum(likelihoods)
-
-        # DM: Issue #181: Zuntz: replace NaN's with -inf's in posteriors and
-        #                 likelihoods.
-        if np.isnan (like):
-            like = -np.inf
-
-        if not self.quiet and self.likelihood_names:
-            sys.stdout.write("Likelihood %e\n" % (like,))
+        like = self._extract_likelihoods(data)
 
         extra_saves = []
         for option in self.extra_saves:
