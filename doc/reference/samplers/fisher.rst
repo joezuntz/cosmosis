@@ -23,9 +23,13 @@ The Fisher information matrix characterizes the curvature of a distribution, typ
 
 Fisher matrices can be used to approximate the full likelihood shape one would derive from a sampling process, but much faster as only a handful of likelihood evaluations are needed.  This approximation is exact for perfectly Gaussian posteriors but not otherwise; in particular for distributions with "Banana-like" degeneracies or cut-offs near the peak it is a poor approximation.
 
-For a general distribution the Fisher matrix can be rather fiddly to calculate;  this sampler does not do that.  Instead it assumes a Gaussian likelihood, in which case the fisher matrix can be computed from to the derivatives v of the observable quantities with respect to the parameters p, and their covariance matrix C:
+For a general distribution the Fisher matrix can be rather fiddly to calculate;  this sampler does not do that.  Instead it assumes a Gaussian likelihood, in which case the fisher matrix can be computed from to the derivatives of the observable quantities :math:`v` with respect to the parameters :math:`p`, and their covariance matrix :math:`C` :
 
-F_{ij} = \sum_{mn} \frac{\partial v_m}{\partial p_i} [C^{-1}]_{mn} \frac{\partial v_n}{\partial p_j}
+.. math::
+
+    F_{ij} = \sum_{mn} \frac{\partial v_m}{\partial p_i} [C^{-1}]_{mn} \frac{\partial v_n}{\partial p_j}
+
+
 
 There is an additional term that arises when the covariance matrix C depends on the parameters p, which we do not currently calculate here, as it is usually fixed in  cosmology. We plan to implement this shortly, however.
 
