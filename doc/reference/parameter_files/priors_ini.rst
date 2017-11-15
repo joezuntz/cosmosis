@@ -1,2 +1,2 @@
-Prior Files
-===========
+Priors Files
+============

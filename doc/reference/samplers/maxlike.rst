@@ -1,5 +1,5 @@
 The Maxlike sampler
-------------------
+--------------------------------------------------------------------
 
 Find the maximum likelihood using various methods in scipy
 

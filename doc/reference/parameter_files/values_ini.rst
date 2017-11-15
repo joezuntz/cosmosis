@@ -3,7 +3,7 @@ Values Files
 
 The values file defines the parameters that the sampler varies over, and other fixed parameters that are put into the likelihood pipeline at the start.  All the values in the values file will be added to the data block before any modules are run.
 
-Like the other parameter files it is in the :code:`ini` format.  All parameters should be in named :code:`section`s.
+Like the other parameter files it is in the :code:`ini` format.  All parameters should be in named :code:`[section]s`.
 
 Fixed parameters
 -----------------

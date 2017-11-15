@@ -97,7 +97,9 @@ Module Options
 
 Every entry found in the :code:`modules` option in the :code:`pipeline` section (see above) must have a section with the same name in the parameter file.
 
-That section must have at least one mandatory parameter in it, :code:`file`::
+That section must have at least one mandatory parameter in it, :code:`file`:
+
+.. code-block:: ini
 
     [pipeline]
     ; We must include two sections below with these names:

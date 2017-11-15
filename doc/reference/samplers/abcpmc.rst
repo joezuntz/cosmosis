@@ -1,5 +1,5 @@
 The Abcpmc sampler
-------------------
+--------------------------------------------------------------------
 
 Approximate Bayesian Computing (ABC) Population Monte Carlo (PMC) 
 
