@@ -6,6 +6,7 @@ import sys
 try:
     import configparser
     from future import standard_library
+    import builtins
 except ImportError:
     sys.stderr.write("Updates to cosmosis mean that you now need to install some new packages.\n")
     sys.stderr.write("Please install with: pip install configparser future\n")
