@@ -52,6 +52,9 @@ class MetropolisSampler(ParallelSampler):
     def worker(self):
         while not self.is_converged():
             self.execute()
+            if self.output:
+                self.output.flush()
+
 
     def execute(self):
         #Run the MCMC  sampler.
