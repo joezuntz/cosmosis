@@ -1,4 +1,4 @@
-include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 
 USER_CFLAGS=$(PEDANTIC_C_FLAGS) -Werror
 USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)

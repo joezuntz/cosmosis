@@ -57,7 +57,7 @@ MODULES = $(patsubst %.o,%.so,$(OBJ_MODULES))
 TESTS = $(basename $(OBJ_TESTS))
 EXE_TARGETS = $(basename $(OBJ_TARGETS))
 
-include $(COSMOSIS_DIR)/config/compilers.mk
+include $(COSMOSIS_DIR)/cosmosis/compilers.mk
 
 LDLIBS=$(USER_LDLIBS) -l$(LIBNAME)
 

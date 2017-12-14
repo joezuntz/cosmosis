@@ -17,7 +17,7 @@ module_makefile_text = """
 # If you already have your own Makefile you can 
 # replace all of this, but you need to keep this line
 # at the top:
-include ${COSMOSIS_SRC_DIR}/config/compilers.mk
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 
 
 #For python, leave this as is.  For C/C++/Fortran, 

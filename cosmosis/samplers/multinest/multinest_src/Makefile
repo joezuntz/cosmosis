@@ -1,4 +1,4 @@
-include ../../../../config/compilers.mk
+include ../../../../cosmosis/compilers.mk
 
 MPI = $(shell which $(MPIFC) 2> /dev/null)
 

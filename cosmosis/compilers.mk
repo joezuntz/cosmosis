@@ -22,7 +22,7 @@ PEDANTIC_C_FLAGS=-Wall -Wextra -pedantic
 CXXFLAGS=$(COMMON_C_FLAGS) $(USER_CXXFLAGS) -std=c++1y
 CFLAGS=$(COMMON_C_FLAGS) $(USER_CFLAGS) -std=c99
 FFLAGS=$(COMMON_FLAGS) -I${COSMOSIS_SRC_DIR}/cosmosis/datablock $(USER_FFLAGS) -std=gnu -ffree-line-length-none
-LDFLAGS=$(USER_LDFLAGS) -L${COSMOSIS_SRC_DIR}/cosmosis/datablock
+LDFLAGS=$(USER_LDFLAGS) -L${COSMOSIS_SRC_DIR}/cosmosis/datablock -Wl,-rpath,"${COSMOSIS_SRC_DIR}/cosmosis/datablock"
 PYTHON=python
 MAKEFLAGS += --print-directory
 

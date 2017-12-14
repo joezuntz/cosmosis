@@ -1,5 +1,18 @@
-include config/compilers.mk
-include config/subdirs.mk
+ifneq (clean,$(MAKECMDGOALS))
+include cosmosis/compilers.mk
+else
+ifeq (${COSMOSIS_SRC_DIR},)
+COSMOSIS_SRC_DIR=${PWD}
+$(info here we are)
+export COSMOSIS_SRC_DIR
+else
+COSMOSIS_SRC_DIR=${COSMOSIS_SRC_DIR}
+endif
+endif
+
+include cosmosis/subdirs.mk
+
+
 
 all:: config/first
 
@@ -11,12 +24,4 @@ config/first:
 	@echo
 	@touch config/first
 
-SUBDIRS=cosmosis example-modules cosmosis-standard-library modules
-
-
-ifneq ($(wildcard cosmosis-des-library/*),)
-SUBDIRS+=cosmosis-des-library
-$(info )
-$(info    Compiling DES code in cosmosis-des-library)
-$(info )
-endif
+SUBDIRS=cosmosis
