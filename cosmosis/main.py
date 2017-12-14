@@ -18,13 +18,13 @@ from builtins import zip
 import argparse
 import os
 import pdb
-from cosmosis.runtime.config import Inifile, CosmosisConfigurationError
-from cosmosis.runtime.pipeline import LikelihoodPipeline
-from cosmosis.runtime import mpi_pool
-from cosmosis.runtime import process_pool
-from cosmosis.runtime.utils import ParseExtraParameters, stdout_redirected
-from cosmosis.samplers.sampler import Sampler, ParallelSampler, Hints
-from cosmosis import output as output_module
+from .runtime.config import Inifile, CosmosisConfigurationError
+from .runtime.pipeline import LikelihoodPipeline
+from .runtime import mpi_pool
+from .runtime import process_pool
+from .runtime.utils import ParseExtraParameters, stdout_redirected
+from .samplers.sampler import Sampler, ParallelSampler, Hints
+from . import output as output_module
 
 
 RUNTIME_INI_SECTION = "runtime"

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from cosmosis.postprocessing.postprocess import postprocessor_for_sampler
-from cosmosis.postprocessing.inputs import read_input
-from cosmosis.postprocessing.plots import Tweaks
-from cosmosis.runtime.utils import mkdir
+from .postprocessing.postprocess import postprocessor_for_sampler
+from .postprocessing.inputs import read_input
+from .postprocessing.plots import Tweaks
+from .runtime.utils import mkdir
 import sys
 import argparse
 import os
