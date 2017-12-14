@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
 import cosmosis.postprocess
 import sys
-return cosmosis.postprocess.main(sys.argv[1:])
+cosmosis.postprocess.main(sys.argv[1:])

@@ -2,6 +2,7 @@
 #from distutils.core import Extension
 from setuptools import setup, find_packages, Extension
 import os
+import sys
 
 cc_files = [
     "cosmosis/datablock/c_datablock.cc",
@@ -13,10 +14,10 @@ cc_files = [
 
 
 f90_files = [
-    "cosmosis_section_names.F90",
-    "cosmosis_types.F90",
-    "cosmosis_wrappers.F90",
-    "cosmosis_modules.F90",
+    "cosmosis/datablock/cosmosis_section_names.F90",
+    "cosmosis/datablock/cosmosis_types.F90",
+    "cosmosis/datablock/cosmosis_wrappers.F90",
+    "cosmosis/datablock/cosmosis_modules.F90",
 ]
 
 scripts = [
@@ -47,34 +48,28 @@ cc_headers = [
     "cosmosis/datablock/datablock.hh",
     "cosmosis/datablock/exceptions.hh",
     "cosmosis/datablock/mdarraygen.hh",
-    "cosmosis/datablock/section.h"
+    "cosmosis/datablock/section.hh"
 ]
+
+if sys.platform == 'darwin':
+    from distutils import sysconfig
+    vars = sysconfig.get_config_vars()
+    vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-dynamiclib')
 
 
 f90_objects = [f[:-4]+".o" for f in f90_files]
 f90_headers = [f[:-4]+".mod" for f in f90_files]
 
-def compile_fortran():
-    compiler = os.environ.get("FC", "gfortran")
-    flags = os.environ.get("FFLAGS", "-O3 -g -fPIC") + " -std=gnu -ffree-line-length-none"
-    include = "-I."
-    os.chdir('cosmosis/datablock/cosmosis_f90')
+def compile_library():
+    os.chdir('cosmosis/datablock/')
     try:
-        for filename in f90_files:
-            output = filename[:-4]+".o"
-            cmd = "{compiler} {flags} {include}  -c {filename}".format(**locals())
-            os.system(cmd)
+        os.system("make")
     finally:
-        os.chdir('../../..')
-compile_fortran()
+        os.chdir('../../')
 
-ext1 = Extension(
-    name = 'libcosmosis', 
-    sources = cc_files,
-    extra_compile_args=['-std=c++1y'],
-    extra_objects = f90_objects,
-    extra_link_args = ['-lgfortran', '-lstdc++']
-)
+
+compile_library()
+
 
 
 if __name__ == "__main__":
@@ -82,7 +77,6 @@ if __name__ == "__main__":
           description       = "Joe Test",
           author            = "Joe Zuntz",
           author_email      = "joezuntz@googlemail.com",
-          ext_modules = [ext1],
           packages = find_packages(),
           include_package_data = True,
           scripts = scripts,

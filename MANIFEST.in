@@ -1,3 +1,4 @@
+include cosmosis/datablock/libcosmosis.so
 include cosmosis/datablock/clamp.hh
 include cosmosis/datablock/entry.hh
 include cosmosis/datablock/fakearray.hh
@@ -5,14 +6,16 @@ include cosmosis/datablock/ndarray.hh
 include cosmosis/datablock/datablock.hh
 include cosmosis/datablock/exceptions.hh
 include cosmosis/datablock/mdarraygen.hh
-include cosmosis/datablock/section.
+include cosmosis/datablock/section.hh
 include cosmosis/datablock/c_datablock.h
 include cosmosis/datablock/datablock_logging.h
 include cosmosis/datablock/datablock_types.h
 include cosmosis/datablock/cosmosis_constants.h
 include cosmosis/datablock/datablock_status.h
 include cosmosis/datablock/section_names.h
-include cosmosis/datablock/cosmosis_f90/cosmosis_section_names.mod
-include cosmosis/datablock/cosmosis_f90/cosmosis_types.mod
-include cosmosis/datablock/cosmosis_f90/cosmosis_wrappers.mod
-include cosmosis/datablock/cosmosis_f90/cosmosis_modules.mod
+include cosmosis/datablock/cosmosis_section_names.mod
+include cosmosis/datablock/cosmosis_types.mod
+include cosmosis/datablock/cosmosis_wrappers.mod
+include cosmosis/datablock/cosmosis_modules.mod
+include cosmosis/compilers.mk
+include cosmosis/subdirs.mk

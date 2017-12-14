@@ -20,7 +20,7 @@ else
   MEMCHECK_CMD=
 endif
 
-all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t entry_t \
+all: libcosmosis.so  c_datablock_t datablock_t section_t entry_t \
 	c_datablock_int_array_t c_datablock_double_array_t c_datablock_complex_array_t \
 	c_datablock_multidim_double_array_t \
 	c_datablock_multidim_int_array_t \
@@ -29,20 +29,19 @@ all: libcosmosis.so libcosmosis_fortran.so c_datablock_t datablock_t section_t e
 	fake_array_t \
 	fortran_t \
 	cosmosis_py/section_names.py \
-	cosmosis_f90/cosmosis_section_names.F90 \
+	cosmosis_section_names.F90 \
 	section_names.h
 
 lib: libcosmosis.so cosmosis_py/section_names.py
 
 clean:
-	rm -f *.o *.d *.so *.log *.mod cosmosis_f90/*.mod cosmosis_f90/*.o
+	rm -f *.o *.d *.so *.log *.mod *.mod 
 	rm -f c_datablock_complex_array_t c_datablock_double_array_t c_datablock_int_array_t
 	rm -f c_datablock_t
 	rm -f c_datablock_multidim_double_array_t
 	rm -f c_datablock_multidim_int_array_t
 	rm -f c_datablock_multidim_complex_array_t
 	rm -f datablock_t entry_t fortran_t ndarray_t section_t
-	rm -f section_names.h cosmosis_py/section_names.py cosmosis_f90/cosmosis_section_names.F90
 	rm -rf  *.dSYM/
 
 verify_setup:
@@ -118,7 +117,7 @@ test_entry: entry_t
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
 
-test_fortran: fortran_t libcosmosis_fortran.so
+test_fortran: fortran_t libcosmosis.so
 	@/bin/echo -n "Running $< "
 	@LD_LIBRARY_PATH=.:${LD_LIBRARY_PATH} $(MEMCHECK_CMD) ./$< > $<.log
 	@/bin/echo  ... passed
@@ -131,8 +130,8 @@ test_python:
 section_names.h: section_names.txt generate_sections.py
 	python generate_sections.py section_names.txt c section_names.h
 
-cosmosis_f90/cosmosis_section_names.F90: section_names.txt generate_sections.py
-	python generate_sections.py section_names.txt fortran cosmosis_f90/cosmosis_section_names.F90
+cosmosis_section_names.F90: section_names.txt generate_sections.py
+	python generate_sections.py section_names.txt fortran cosmosis_section_names.F90
 
 cosmosis_py/section_names.py: section_names.txt generate_sections.py 
 	python generate_sections.py section_names.txt python cosmosis_py/section_names.py
@@ -147,14 +146,16 @@ cosmosis_py/section_names.py: section_names.txt generate_sections.py
 # problem of generating dependencies for the Fortran modules within
 # libcomsosis_fortran.so. The tradeoff is worthwhile, unless so many source
 # files are added that the build time is excessive.
-libcosmosis_fortran.so: cosmosis_f90/cosmosis_section_names.F90 cosmosis_f90/cosmosis_types.F90 cosmosis_f90/cosmosis_wrappers.F90 cosmosis_f90/cosmosis_modules.F90 libcosmosis.so
-	$(FC) $(FFLAGS) -shared -o $@ $+
+libcosmosis.so: cosmosis_section_names.o cosmosis_types.o cosmosis_wrappers.o cosmosis_modules.o datablock.o entry.o section.o c_datablock.o datablock_logging.o
+	$(FC) $(FFLAGS) -shared -o $@ $+ -lstdc++ -lgfortran
 
-fortran_t: libcosmosis_fortran.so  cosmosis_f90/cosmosis_test.F90
-	$(FC) $(FFLAGS)  -o $@ cosmosis_f90/cosmosis_test.F90  -L. -lcosmosis_fortran -lcosmosis
+fortran_t: libcosmosis.so  cosmosis_test.F90
+	$(FC) $(FFLAGS)  -o $@ cosmosis_test.F90  -L. -lcosmosis -lcosmosis
 
-libcosmosis.so: datablock.o entry.o section.o c_datablock.o datablock_logging.o
-	$(CXX) $(CXXFLAGS) -shared -o $@ $+
+%.o : %.F90
+	$(FC) -c $(FFLAGS)  $< -o $@
+
+
 
 datablock_t: datablock_test.cc datablock.hh libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ datablock_test.cc -L . -lcosmosis
