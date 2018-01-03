@@ -298,7 +298,11 @@ class GridPlots2D(GridPlots):
         for name1, name2 in self.parameter_pairs():
             if (name1 not in varied_params) or (name2 not in varied_params):
                 continue
-            filename=self.plot_2d(name1, name2)
+            try:
+                filename=self.plot_2d(name1, name2)
+            except ValueError:
+                print("Could not make plot {} vs {} - error in contour".format(name1,name2))
+                continue
             if filename: filenames.append(filename)
         return filenames
 
@@ -334,6 +338,7 @@ class GridPlots2D(GridPlots):
 
     def plot_2d(self, name1, name2):
         extent, like = self.get_grid_like(name1, name2) 
+        print(like.shape)
 
         #Choose a color mapping
         norm = pylab.matplotlib.colors.Normalize(like.min(), like.max())
@@ -417,8 +422,8 @@ class SnakePlots2D(GridPlots2D):
 
         #Normalize the log-likelihood to peak=0
         like -= like.max()
-        like = np.exp(like).reshape((n1,n2))
-        extent=(left2, right2, left1, right1)
+        like = np.exp(like).reshape((n1,n2)).T
+        extent=(left1, right1, left2, right2)
 
         return extent, like
 

@@ -96,19 +96,21 @@ class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
         filename = output_options['filename']
         self.name = filename
         sampler = inputs['sampler']
-        for key,val in list(inputs[sampler].items()):
-            self.sampler_options[key]=str(val)
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs['data']
+        for chain in self.metadata:
+            for key,val in list(chain.items()):
+                self.sampler_options[key] = val
 
     def load_ini(self, inputs):
         output_options = dict(inputs.items('output'))
         filename = output_options['filename']
         self.name = filename
         sampler = inputs.get("runtime", "sampler")
-        for key,val in inputs.items(sampler):
-            self.sampler_options[key]=str(val)        
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = \
             output_module.input_from_options(output_options)
+        for chain in self.metadata:
+            for key,val in list(chain.items()):
+                self.sampler_options[key] = val
 
 
     def sampler_option(self, key, default=None):
@@ -165,9 +167,14 @@ class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
                 raise
             except:
                 import traceback
-                print("Failed in one of the postprocessing steps: ", e)
-                print("Here is the error stack:")
-                print(traceback.format_exc())
+                if self.options.get("pdb", False):
+                    print()
+                    import pdb
+                    pdb.post_mortem()
+                else:                    
+                    print("Failed in one of the postprocessing steps: ", e)
+                    print("Here is the error stack:")
+                    print(traceback.format_exc())
 
     def finalize(self):
         print("Finalizing:")
