@@ -44,6 +44,8 @@ class ListSampler(ParallelSampler):
                 p.limits = (-np.inf, np.inf)
                 if self.output is not None:
                     self.output.add_column(str(p), float)
+            for p in self.pipeline.extra_saves:
+                self.output.add_column('{}--{}'.format(*p), float)
             if self.output is not None:
                 for p,ptype in self.sampler_outputs:
                     self.output.add_column(p, ptype)
