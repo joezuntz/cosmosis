@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import range
 import scipy.stats
 import numpy as np
 from functools import wraps
@@ -10,30 +12,6 @@ def not_with_weights(f):
             raise ValueError("The standard KDE functions have not been updated to use weights on points")
     return wrapper
 
-def weighted_cov_2d(x, y, w):
-    w_sum = w.sum()
-    mu_x = (x*w).sum() / w_sum
-    mu_y = (y*w).sum() / w_sum
-    x = x - mu_x
-    y = y - mu_y
-    wxy = (w*x*y).sum()
-    wxx = (w*x**2).sum()
-    wyy = (w*y**2).sum()
-    N = len(x)
-    C = np.array([[wxx, wxy],[wxy, wyy]])/w_sum
-    C *= (N/(N+1.0))
-    return C
-
-def weighted_cov_1d(x, w):
-    w_sum = w.sum()
-    mu_x = (x*w).sum() / w_sum
-    x = x - mu_x
-    wxx = (w*x**2).sum()
-    N = len(x)
-    C = np.array([[wxx]])/w_sum
-    C *= (N/(N+1.0))
-    return C
-
 
 class KDE(scipy.stats.kde.gaussian_kde):
     def __init__(self, points, factor=1.0, weights=None):
@@ -44,7 +22,7 @@ class KDE(scipy.stats.kde.gaussian_kde):
         self.norms = []
         self.weights=weights
         normalized_points = []
-        assert d<=2, "KDE is for 1D 2D only"
+        #assert d<=2, "KDE is for 1D 2D only"
         for column in points:
             col_mean = column.mean()
             col_std = column.std()
@@ -61,7 +39,7 @@ class KDE(scipy.stats.kde.gaussian_kde):
         slices = [slice(xmin,xmax,n*1j) for (xmin,xmax) in ranges]
         grids = np.mgrid[slices]
         axes = [ax.squeeze() for ax in np.ogrid[slices]]
-        flats = [(grid.flatten()-norm[0])/norm[1] 
+        flats = [(grid.flatten()-norm[0])/norm[1]
                  for (grid,norm) in zip(grids,self.norms)]
 
         shape = grids[0].shape
@@ -72,6 +50,9 @@ class KDE(scipy.stats.kde.gaussian_kde):
             axes = axes[0]
         return axes,like
 
+    def normalize_and_evaluate(self, points):
+        points = np.array([(p-norm[0])/norm[1] for norm, p in zip(self.norms, points)])
+        return self.evaluate(points)
 
     def evaluate(self, points):
         """Evaluate the estimated pdf on a set of points.
@@ -96,7 +77,6 @@ class KDE(scipy.stats.kde.gaussian_kde):
 
         """
         points = np.atleast_2d(points)
-
         d, m = points.shape
         if d != self.d:
             if d == 1 and m == self.d:
@@ -164,19 +144,8 @@ class KDE(scipy.stats.kde.gaussian_kde):
         self.factor = self.covariance_factor()
         # Cache covariance and inverse covariance of the data
         if not hasattr(self, '_data_inv_cov'):
-
             #JAZ this is the overridden bit
-            if self.weights is None:
-                self._data_covariance = np.atleast_2d(np.cov(self.dataset, rowvar=1,
-                                               bias=False))
-            else:
-                if self.d==1:
-                    self._data_covariance = np.atleast_2d(weighted_cov_1d(self.dataset[0], 
-                         self.weights))
-                else:
-                    self._data_covariance = np.atleast_2d(weighted_cov_2d(self.dataset[0], 
-                        self.dataset[1], self.weights))
-
+            self._data_covariance = np.atleast_2d(np.cov(self.dataset, aweights=self.weights, bias=False))
             self._data_inv_cov = np.linalg.inv(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2

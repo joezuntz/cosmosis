@@ -4,7 +4,12 @@ Mikkelsen et al
 http://arxiv.org/pdf/1211.3126.pdf
 
 """
+from __future__ import print_function
 
+from builtins import zip
+from builtins import map
+from builtins import range
+from builtins import object
 import numpy as np
 import random
 import heapq
@@ -17,7 +22,7 @@ class Snake(object):
 		self.spacing=np.array(spacing)
 		self.ndim = len(origin)
 		self.threshold = threshold
-		self.best_fit=tuple([0 for i in xrange(self.ndim)])
+		self.best_fit=tuple([0 for i in range(self.ndim)])
 		#Temporarily set the pool to None because we have
 		#to evaluate the starting point
 		self.pool = None
@@ -40,7 +45,7 @@ class Snake(object):
 		points = []
 		#Loop through each dimension, checking
 		#if adjacent points in each direction have been evaluated.
-		for i in xrange(self.ndim):
+		for i in range(self.ndim):
 			dx = np.zeros(self.ndim, dtype=int)
 			dx[i] = 1
 			# Check point in the +ve direction
@@ -92,7 +97,7 @@ class Snake(object):
 			blobs = [L[1] for L in outputs]
 		else:
 			likelihoods = [L for L in outputs]
-			blobs = [None for i in xrange(len(outputs))]
+			blobs = [None for i in range(len(outputs))]
 
 		for (p,L) in zip(P, likelihoods):
 			self.likelihoods[p] = L
@@ -120,7 +125,7 @@ class Snake(object):
 	def evaluate(self, indices):
 		points = [self.origin + np.array(index)*self.spacing for index in indices]
 		if self.pool is None:
-			output = map(self.posterior, points)
+			output = list(map(self.posterior, points))
 		else:
 			output = self.pool.map(self.posterior, points)
 		return points, output
@@ -135,8 +140,8 @@ def test():
 	while not snake.converged():
 		snake.iterate()
 
-	for p, L in snake.likelihoods.items():
-		print p[0], p[1], L
+	for p, L in list(snake.likelihoods.items()):
+		print(p[0], p[1], L)
 	sys.stderr.write("Ran for %d iterations\n"%snake.iterations)
 if __name__ == '__main__':
 	test()

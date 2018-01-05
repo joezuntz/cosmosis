@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import argparse
 import os
 import sys
@@ -37,8 +38,8 @@ args = parser.parse_args()
 try:
 	cosmosis_dir=os.environ['COSMOSIS_SRC_DIR']
 except KeyError:
-	print "Please run the config/setup-cosmosis or similar script before running this script"
-	print "Or otherwise define the COSMOSIS_SRC_DIR variable"
+	print("Please run the config/setup-cosmosis or similar script before running this script")
+	print("Or otherwise define the COSMOSIS_SRC_DIR variable")
 	sys.exit(1)
 
 # decide repo and dir name
@@ -51,24 +52,24 @@ else:
 
 dirname = cosmosis_dir+"/modules/{0}".format(projname)
 
-print "Downloading to {0}".format(dirname)
+print("Downloading to {0}".format(dirname))
 
 # check if named repo already exists
 if os.path.exists(dirname) and os.path.isdir(dirname):
-	print "You already have a directory called {0}".format(dirname)
-	print "Is it possible you already downloaded this module?"
-	print "Or you could specify a name for the directory you want this "
-	print 'to go into instead of just using the default.  Use the '
-	print "-d or --dirname flag on the command line"
+	print("You already have a directory called {0}".format(dirname))
+	print("Is it possible you already downloaded this module?")
+	print("Or you could specify a name for the directory you want this ")
+	print('to go into instead of just using the default.  Use the ')
+	print("-d or --dirname flag on the command line")
 	sys.exit(1)
 elif os.path.exists(dirname):
-	print "There is already a file called {0}".format(dirname)
-	print "I was going to create a new directory there."
-	print "Please remove or rename that file if you want me to do this"
-	print 
-	print "Or you could specify a name for the directory you want this "
-	print 'to go into instead of just using the default.  Use the '
-	print "-d or --dirname flat on the command line"
+	print("There is already a file called {0}".format(dirname))
+	print("I was going to create a new directory there.")
+	print("Please remove or rename that file if you want me to do this")
+	print() 
+	print("Or you could specify a name for the directory you want this ")
+	print('to go into instead of just using the default.  Use the ')
+	print("-d or --dirname flat on the command line")
 	sys.exit(1)
 
 # check if remote repo exists
@@ -78,28 +79,28 @@ else:
 	program='git'
 
 cmd = '{0} clone {1} {2}'.format(program, args.url, dirname)
-print "I will now run this command:"
-print cmd
-print
+print("I will now run this command:")
+print(cmd)
+print()
 status = os.system(cmd)
-print
+print()
 if status:
-	print "Something went wrong there - sorry.  Maybe the URL doesn't exist?"
-	print "The error message above might give some clues"
+	print("Something went wrong there - sorry.  Maybe the URL doesn't exist?")
+	print("The error message above might give some clues")
 	sys.exit(status)
 else:
-	print "It worked!  Your module is now in {0}".format(dirname)
+	print("It worked!  Your module is now in {0}".format(dirname))
 
 if os.path.exists("{0}/Makefile") or os.path.exists("{0}/makefile"):
-	print "Because there is a Makefile in there I will add this project to your"
-	print "modules/Makefile.modules file so it will be made when you run make from the main dir"
+	print("Because there is a Makefile in there I will add this project to your")
+	print("modules/Makefile.modules file so it will be made when you run make from the main dir")
 
 	parent_makefile=os.path.join(cosmosis_dir,"modules","Makefile.modules")
 	parent_include= "SUBDIRS+={0}".format(projname)
 	open(parent_makefile,"a").write(parent_include+"\n")
 else:
-	print "Because there is no Makefile in there I won't add this project to Makefile.modules"
-	print "But if you add one later and want it to be included when you type 'make' in the main dir"
-	print "Then just add a line:"
-	print "SUBDIRS+={0}".format(projname)
-	print "to modules/Makefile.modules"
+	print("Because there is no Makefile in there I won't add this project to Makefile.modules")
+	print("But if you add one later and want it to be included when you type 'make' in the main dir")
+	print("Then just add a line:")
+	print("SUBDIRS+={0}".format(projname))
+	print("to modules/Makefile.modules")

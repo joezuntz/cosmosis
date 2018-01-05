@@ -40,6 +40,9 @@ gal_matter_power_lin
 linear_cdm_transfer
 sigma_r_lin
 sigma_r_nl
+galaxy_xi
+galaxy_shear_xi
+galaxy_intrinsic_xi
 
 #nuisance parameters
 planck

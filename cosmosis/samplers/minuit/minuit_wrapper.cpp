@@ -54,7 +54,6 @@ void save_covmat(char * filename, MnUserCovariance &cov, int nparam){
 		fprintf(f, "\n");
 	}
 	fclose(f);
-	std::cout << "Saved covariance matrix: " << filename << std::endl;
 
 }
 
@@ -89,6 +88,8 @@ int cosmosis_minuit2_wrapper(
 	double * upper,
 	likelihood_function f, 
 	const char ** param_names,
+	double * cov_output,
+	int * made_cov,
 	minuit_options options
 	)
 {
@@ -125,7 +126,7 @@ int cosmosis_minuit2_wrapper(
 			break;
 		default:
 			fprintf(stderr, "Internal error running the minimizer - wrong strategy %d (this should not be possible).\n", options.strategy);
-			fprintf(stderr, "Please open an issue with cosmosis to report this.\n");
+			fprintf(stderr, "Try running 'make' again but if that doesn't fix it please open an issue with cosmosis to report this.\n");
 			exit(1);
 
 	}
@@ -182,17 +183,30 @@ int cosmosis_minuit2_wrapper(
 
 
 	if ((status==0) && options.do_master_output){
+		if (min.HasCovariance()){
+			MnUserCovariance cov = min.UserState().Covariance();
+			std::cout << "Posterior covariance matrix has been calculated and will be stored for any later sampling steps." << std::endl;				
+			*made_cov = 1;
+			int p=0;
+			for (int i=0; i<nparam; i++){
+				for (int j=0; j<nparam; j++){
+					cov_output[p] = cov(i,j);
+					p++;
+				}
+			}
+		}
+		else {
+			*made_cov = 0;
+			std::cout << "Posterior covariance matrix could not be calculated." << std::endl;				
+		}
+
+
 		if (options.save_cov && strlen(options.save_cov)){
 			if (min.HasCovariance()){
 				MnUserCovariance cov = min.UserState().Covariance();
+				std::cout << "Saving posterior covariance matrix estimate to file:" << options.save_cov << std::endl;				
 				save_covmat(options.save_cov, cov, nparam);
 			}
-			else{
-				std::cerr << "Sorry - no covariance available." << std::endl;
-			}
-		}
-		else{
-			std::cout << "Not saving cov mat - set save_cov=filename.txt to do so." << std::endl;
 		}
 	}
 

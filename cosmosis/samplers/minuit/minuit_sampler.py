@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import str
 from .. import ParallelSampler
 import numpy as np
 import ctypes as ct
@@ -92,7 +95,7 @@ class MinuitSampler(ParallelSampler):
                 sys.exit(1)
             self.iterations += 1
             if self.verbose:
-                print self.iterations, like, "   ",  "    ".join(str(v) for v in vector)
+                print(self.iterations, like, "   ",  "    ".join(str(v) for v in vector))
             return -like
 
         self.wrapped_likelihood = wrapped_likelihood
@@ -100,33 +103,39 @@ class MinuitSampler(ParallelSampler):
 
     def execute(self):
         #Run an iteration of minuit
-        param_vector, param_names, like, data, status = self.sample()
+        param_vector, param_names, like, data, status, made_cov, cov_vector = self.sample()
+
 
         #update the current parameters
         self.param_vector = param_vector.copy()
         self.neval += status
 
         if status == 0:
-            print 
-            print "SUCCESS: Minuit has converged!"
+            print() 
+            print("SUCCESS: Minuit has converged!")
+            print()
             self.save_results(param_vector, param_names, like, data)
             self.converged = True
-            print
+            self.distribution_hints.set_peak(param_vector)
+
+            if made_cov:
+                cov_matrix = cov_vector.reshape((self.ndim, self.ndim))
+                self.distribution_hints.set_cov(cov_matrix)
         elif self.neval > self.maxiter:
-            print
-            print "MINUIT has failed to converge properly in the max number of iterations.  Sorry."
-            print "Saving the best fitting parameters of the ones we trid, though beware: these are probably not the best-fit"
-            print
+            print()
+            print("MINUIT has failed to converge properly in the max number of iterations.  Sorry.")
+            print("Saving the best fitting parameters of the ones we trid, though beware: these are probably not the best-fit")
+            print()
             self.save_results(param_vector, param_names, like, data)
             #we actually just use self.converged to indicate that the 
             #sampler should stop now
             self.converged = True
 
         else:
-            print
-            print "Minuit did not converge this run; trying again"
-            print "until we run out of iterations."
-            print
+            print()
+            print("Minuit did not converge this run; trying again")
+            print("until we run out of iterations.")
+            print()
             
 
 
@@ -134,9 +143,9 @@ class MinuitSampler(ParallelSampler):
         section = None
 
         if self.pool is not None:
-            print
-            print "Note that the # of function calls printed above is not the total count for all cores, just for one core."
-            print
+            print()
+            print("Note that the # of function calls printed above is not the total count for all cores, just for one core.")
+            print()
 
         if self.output_ini:
           self.pipeline.create_ini(param_vector, self.output_ini)
@@ -145,15 +154,15 @@ class MinuitSampler(ParallelSampler):
         for name, value in zip(param_names, param_vector):
             sec,name=name.split('--')
             if section!=sec:
-                print
-                print "[%s]" % sec
+                print()
+                print("[%s]" % sec)
                 section=sec
-            print "%s = %g" % (name,value)
-        print
-        print "Likelihood = ", like
+            print("%s = %g" % (name,value))
+        print()
+        print("Likelihood = ", like)
 
         if self.save_dir:
-            print "Saving best-fit model cosmology to ", self.save_dir
+            print("Saving best-fit model cosmology to ", self.save_dir)
             data.save_to_directory(self.save_dir, clobber=True)
 
         self.converged = True
@@ -162,7 +171,7 @@ class MinuitSampler(ParallelSampler):
 
         param_names = [str(p) for p in self.pipeline.varied_params]
         param_names_array = (ct.c_char_p * len(param_names))()
-        param_names_array[:] = param_names
+        param_names_array[:] = [p.encode('ascii') for p in param_names]
 
         master = 1 if self.pool is None or self.pool.is_master() else 0
         
@@ -171,10 +180,13 @@ class MinuitSampler(ParallelSampler):
 
         param_vector = self.param_vector.copy()
 
+        cov_vector = np.zeros(self.ndim*self.ndim)
+        made_cov = ct.c_int()
+
         options = MinuitOptionsStruct(
             #allow for more loops
             max_evals=self.maxiter-self.neval, strategy=self.strategy, 
-            algorithm=self.algorithm, save_cov=self.save_cov, 
+            algorithm=self.algorithm, save_cov=self.save_cov.encode('ascii'),
             tolerance=self.tolerance, width_estimate=self.width_estimate,
             do_master_output = master
             )
@@ -185,13 +197,15 @@ class MinuitSampler(ParallelSampler):
             param_max.ctypes.data_as(ct.POINTER(ct.c_double)), 
             self.wrapped_likelihood, 
             param_names_array,
+            cov_vector.ctypes.data_as(ct.POINTER(ct.c_double)),
+            ct.byref(made_cov),
             options
             )
 
         #Run the pipeline one last time ourselves, so we can save the 
         #likelihood and cosmology
         like, _, data = self.pipeline.likelihood(param_vector, return_data=True)
-        return param_vector, param_names, like, data, status
+        return param_vector, param_names, like, data, status, made_cov, cov_vector
 
     def worker(self):
         self.sample()

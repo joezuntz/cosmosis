@@ -1,3 +1,7 @@
+from __future__ import print_function
+from builtins import map
+from builtins import range
+from builtins import object
 import numpy as np
 import pdb
 
@@ -63,40 +67,45 @@ class Fisher(object):
             self.new_onesigma = compute_one_sigma(self.new_Fmatrix)
 
             if self.converged():
-                print 'Fisher has converged!'
+                print('Fisher has converged!')
                 return new_Fmatrix
 
             if self.iterations > self.maxiter:
-                print "Run out of iterations."
-                print "Done %d, max allowed %d" % (self.iterations, self.maxiter)
+                print("Run out of iterations.")
+                print("Done %d, max allowed %d" % (self.iterations, self.maxiter))
                 return None
 
-    def compute_fisher_matrix(self):
+    def compute_derivatives(self):
         derivatives = []
         points = []
 
         #To improve parallelization we first gather all the data points
         #we use in all the dimensions
-        for p in xrange(self.nparams):
+        for p in range(self.nparams):
             points +=  self.five_points_stencil_points(p)
 
         if self.pool is None:
-            results = map(self.compute_vector, points)
+            results = list(map(self.compute_vector, points))
         else:
             results = self.pool.map(self.compute_vector, points)
 
         #Now get out the results that correspond to each dimension
-        for p in xrange(self.nparams):
+        for p in range(self.nparams):
             results_p = results[4*p:4*(p+1)]
             derivative, inv_cov = self.five_point_stencil_deriv(results_p)
             derivatives.append(derivative)
         derivatives = np.array(derivatives)
+        return derivatives, inv_cov
+
+
+    def compute_fisher_matrix(self):
+        derivatives, inv_cov = self.compute_derivatives()
 
         if not np.allclose(inv_cov, inv_cov.T):
-            print "WARNING: The inverse covariance matrix produced by your pipeline"
-            print "         is not symmetric. This probably indicates a mistake somewhere."
-            print "         If you are only using cosmosis-standard-library likelihoods please "
-            print "         open an issue about this on the cosmosis site."
+            print("WARNING: The inverse covariance matrix produced by your pipeline")
+            print("         is not symmetric. This probably indicates a mistake somewhere.")
+            print("         If you are only using cosmosis-standard-library likelihoods please ")
+            print("         open an issue about this on the cosmosis site.")
         fisher_matrix = np.einsum("il,lk,jk->ij", derivatives, inv_cov, derivatives)
         return fisher_matrix
 
@@ -119,8 +128,21 @@ class Fisher(object):
 
     def compute_one_sigma(Fmatrix):
         sigma = np.sqrt(np.linalg.inv(Fmatrix))
-
         return sigma
+
+class NumDiffToolsFisher(Fisher):
+    def compute_derivatives(self):
+        import numdifftools as nd
+        def wrapper(param_vector):
+            print("Running pipeline:", param_vector)
+            return self.compute_vector(param_vector)[0]
+        jacobian_calculator = nd.Jacobian(wrapper, step=self.step_size)
+        derivatives = jacobian_calculator(self.current_params)
+        _, inv_cov = self.compute_vector(self.current_params)
+        print(derivatives.shape, inv_cov.shape)
+        return derivatives.T, inv_cov
+    
+
 
 def test():
     def theory_prediction(x):
@@ -132,7 +154,7 @@ def test():
     best_fit_params = np.array([0.1, 1.0, 2.0, 4.0])
     fisher_calculator = Fisher(theory_prediction, best_fit_params, 0.01, 0.0, 1)
     F = fisher_calculator.compute_fisher_matrix()
-    print F
+    print(F)
     return F
 
 if __name__ == '__main__':

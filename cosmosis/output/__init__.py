@@ -1,3 +1,4 @@
+from __future__ import print_function
 from . import text_output
 from . import cosmomc_output
 from . import null_output
@@ -26,7 +27,7 @@ def set_verbosity(verb):
 		try:
 			verb = verbosity_levels[verb]
 		except KeyError:
-			valid_levels = ', '.join(verbosity_levels.keys())
+			valid_levels = ', '.join(list(verbosity_levels.keys()))
 			message = """Error specifiying verbosity.
 				You put: '{0}'.
 				We want either an integer 0 (silent) - 50 (everything) 
@@ -38,7 +39,7 @@ def set_verbosity(verb):
 
 def output_from_options(options):
 	# figure out the type of output required
-	format = options['format']
+	format = options.get('format', 'text')
 	if format not in output_registry:
 		known = '\n'.join('    %s - %s' % (f,output_registry[f].__name__) for f in output_registry)
 		message = """
@@ -46,7 +47,7 @@ I do not know what format you meant by '%s' in the [output] ini file section.
 I know about these format names:
 %s
 		""" % (format, known)
-		print message
+		print(message)
 		raise KeyError("Unknown format")
 
 	output_class = output_registry[format]
@@ -64,7 +65,7 @@ I do not know what format you meant by '%s' in the [output] ini file section.
 I know about these format names:
 %s
         """ % (format, known)
-        print message
+        print(message)
         raise KeyError("Unknown format")
 
     output_class = output_registry[format]

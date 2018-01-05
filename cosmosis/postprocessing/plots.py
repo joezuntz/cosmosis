@@ -1,3 +1,10 @@
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import hex
+from builtins import range
+from builtins import object
 from .elements import PostProcessorElement
 from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement, WeightedMCMCPostProcessorElement
 from .elements import Loadable
@@ -5,7 +12,7 @@ from .outputs import PostprocessPlot
 from ..plotting.kde import KDE
 from .utils import std_weight, mean_weight
 from . import cosmology_theory_plots
-import ConfigParser
+import configparser
 import numpy as np
 import scipy.optimize
 from . import lazy_pylab as pylab
@@ -41,16 +48,16 @@ class Plots(PostProcessorElement):
 
     def finalize(self):
         super(Plots, self).finalize()
-        legend = self.options.get("legend", False)
+        legend = self.options.get("legend", "")
         if legend:
             legend_loc = legend_locations[self.options.get("legend_loc", "best").upper()]
-            for fig in self.figures.values():
+            for fig in list(self.figures.values()):
                 pylab.figure(fig.number)
                 pylab.legend(loc=legend_loc)
 
     def load_latex(self, latex_file):
         latex_names = {}
-        latex_names = ConfigParser.ConfigParser()
+        latex_names = configparser.ConfigParser(strict=False)
         latex_names.read(default_latex_file)
         if latex_file:
             latex_names.read(latex_file)
@@ -60,7 +67,7 @@ class Plots(PostProcessorElement):
                 section,name = col_name.lower().split('--')
                 try:
                     display_name = latex_names.get(section,name)
-                except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+                except (configparser.NoOptionError, configparser.NoSectionError):
                     pass
 
             else:
@@ -71,7 +78,7 @@ class Plots(PostProcessorElement):
                 else:
                     try:
                         display_name = latex_names.get("misc",col_name)
-                    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+                    except (configparser.NoOptionError, configparser.NoSectionError):
                         pass
             if display_name != col_name:
                 self._latex[col_name]=display_name
@@ -100,19 +107,19 @@ class Plots(PostProcessorElement):
         fig = self.get_output(name)
         if fig is None:
             fig = pylab.figure()
-            self.set_output(name, PostprocessPlot(name,filename,fig))
+            self.set_output(name, PostprocessPlot(name,filename,fig, info=names[:]))
         else:
             fig = fig.value
         self.figures[name] = fig
         return fig, filename
 
     def run(self):
-        print "I do not know how to generate plots for this kind of data"
+        print("I do not know how to generate plots for this kind of data")
         return []
 
 
     def line_color(self):
-        possible_colors = ['b','g','r', 'k', 'c' 'm','y']
+        possible_colors = ['b','g','r', 'k', 'c', 'm','y']
         col = possible_colors[self.plot_set%len(possible_colors)]
         return col
 
@@ -221,10 +228,10 @@ class GridPlots1D(GridPlots):
             like = like_interp
             n1 = n1_interp
         else:
-            print
-            print "Parameter %s has a very wide range in likelihoods " % name1
-            print "So I couldn't do a smooth likelihood interpolation for plotting"
-            print
+            print()
+            print("Parameter %s has a very wide range in likelihoods " % name1)
+            print("So I couldn't do a smooth likelihood interpolation for plotting")
+            print()
 
 
         #normalize
@@ -283,7 +290,7 @@ class GridPlots1D(GridPlots):
 class GridPlots2D(GridPlots):
     def run(self):
         if self.options.get("no_2d", False):
-            print "Not making any 2D plots because you said --no-2d"
+            print("Not making any 2D plots because you said --no-2d")
             return []
         filenames=[]
         nv = self.source.metadata[0]['n_varied']
@@ -291,7 +298,11 @@ class GridPlots2D(GridPlots):
         for name1, name2 in self.parameter_pairs():
             if (name1 not in varied_params) or (name2 not in varied_params):
                 continue
-            filename=self.plot_2d(name1, name2)
+            try:
+                filename=self.plot_2d(name1, name2)
+            except ValueError:
+                print("Could not make plot {} vs {} - error in contour".format(name1,name2))
+                continue
             if filename: filenames.append(filename)
         return filenames
 
@@ -327,6 +338,7 @@ class GridPlots2D(GridPlots):
 
     def plot_2d(self, name1, name2):
         extent, like = self.get_grid_like(name1, name2) 
+        print(like.shape)
 
         #Choose a color mapping
         norm = pylab.matplotlib.colors.Normalize(like.min(), like.max())
@@ -362,14 +374,14 @@ class GridPlots2D(GridPlots):
         #three cases
         if do_image:
             colors = None #auto colors from the contourf
-            pylab.contour(like, levels = [level1, level2], extent=extent, linewidths=[3,1], colors=colors)
+            pylab.contour(like, levels = [level2, level1], extent=extent, linewidths=[1,3], colors=colors)
         elif do_fill:
             dark, light = self.shade_colors()
-            pylab.contourf(like, levels = [level2, level0], extent=extent, linewidths=[3,1], colors=[light])
-            pylab.contourf(like, levels = [level1, level0], extent=extent, linewidths=[3,1], colors=[dark])
+            pylab.contourf(like, levels = [level2, level0], extent=extent, linewidths=[1,3], colors=[light])
+            pylab.contourf(like, levels = [level1, level0], extent=extent, linewidths=[1,3], colors=[dark])
         else:
             colors = [self.line_color(), self.line_color()]
-            pylab.contour(like, levels = [level1, level2], extent=extent, linewidths=[3,1], colors=colors)
+            pylab.contour(like, levels = [level2, level1], extent=extent, linewidths=[1,3], colors=colors)
             
         pylab.xlabel(self.latex(name1))
         pylab.ylabel(self.latex(name2))
@@ -410,8 +422,8 @@ class SnakePlots2D(GridPlots2D):
 
         #Normalize the log-likelihood to peak=0
         like -= like.max()
-        like = np.exp(like).reshape((n1,n2))
-        extent=(left2, right2, left1, right1)
+        like = np.exp(like).reshape((n1,n2)).T
+        extent=(left1, right1, left2, right2)
 
         return extent, like
 
@@ -434,7 +446,7 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
 
     def make_1d_plot(self, name):
         x = self.reduced_col(name)
-        print " - 1D plot ", name
+        print(" - 1D plot ", name)
         figure,filename = self.figure(name)
         if x.max()-x.min()==0: return
 
@@ -502,15 +514,15 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
         if x.max()-x.min()==0 or y.max()-y.min()==0:
             return
-        print "  (making %s vs %s)" % (name1, name2)
+        print("  (making %s vs %s)" % (name1, name2))
 
 
         #Interpolate using KDE
         try:
             n, x_axis, y_axis, like = self.smooth_likelihood(x, y)
         except np.linalg.LinAlgError:
-            print "  -- these two parameters have singular covariance - probably a linear relation"
-            print "Not making a 2D plot of them"
+            print("  -- these two parameters have singular covariance - probably a linear relation")
+            print("Not making a 2D plot of them")
             return []
 
         figure,filename = self.figure("2D", name1, name2)
@@ -555,10 +567,10 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
     def run(self):
         if self.options.get("no_2d", "False"):
-            print "Not making any 2D plots because you said --no-2d"
+            print("Not making any 2D plots because you said --no-2d")
             return []
         filenames = []
-        print "(Making 2D plots using KDE; this takes a while but is really cool)"
+        print("(Making 2D plots using KDE; this takes a while but is really cool)")
         for name1,name2 in self.parameter_pairs():
                 try:
                     filename = self.make_2d_plot(name1, name2)
@@ -566,7 +578,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
                     raise
                 except: #any other error we just continue
                     import traceback
-                    print "Failed to make plot of {} vs {}.  Here is the error context:".format(name1,name2)
+                    print("Failed to make plot of {} vs {}.  Here is the error context:".format(name1,name2))
                     filename=None
                     print(traceback.format_exc())
                 if filename:
@@ -581,29 +593,30 @@ class TestPlots(Plots):
         prefix=self.options.get("prefix","")
         ftype=self.options.get("file_type", "png")
         filenames = []
-        for cls in cosmology_theory_plots.plot_list:
+        for cls in cosmology_theory_plots.Plot.registry:
             fig = None
             try:
                 #may return None
                 figure = self.get_output(cls.filename)
                 if figure is None:
-                    print "New plot", cls.filename
+                    print("New plot", cls.filename)
                 else:
-                    print "Old plot", cls.filename
+                    print("Old plot", cls.filename)
                 p=cls(dirname, output_dir, prefix, ftype, figure=None)
                 filename=p.filename
                 fig = p.figure
                 p.figure=fig
                 p.plot()
                 if figure is None:
-                    self.set_output(cls.filename, PostprocessPlot(p.filename,p.outfile,fig))
+                    self.set_output(cls.filename,
+                                     PostprocessPlot(p.filename,p.outfile,fig))
                 filenames.append(filename)
             except IOError as err:
                 if fig is not None:
                     #Then we got as far as making the figure before
                     #failing.  so remove it
                     pylab.close()
-                print err
+                print(err)
         return filenames
 
 
@@ -681,8 +694,8 @@ class TrianglePlot(MetropolisHastingsPlots):
         try:
             import triangle
         except ImportError:
-            print "Triangle library not available - no corner plot for you"
-            print "Maybe try pip install triangle"
+            print("Triangle library not available - no corner plot for you")
+            print("Maybe try pip install triangle")
             return []
         names = [name for name in self.source.colnames if not name in self.excluded_columns]
         labels = [self.latex(name) for name in names]
@@ -701,8 +714,8 @@ class ColorScatterPlotBase(Plots):
 
     def run(self):
         if (self.x_column is None) or (self.y_column is None) or (self.color_column is None):
-            print "Please specify x_column, y_column, color_column, and scatter_filename"
-            print "in color scatter plots"
+            print("Please specify x_column, y_column, color_column, and scatter_filename")
+            print("in color scatter plots")
             return []
 
         #Get the columns you want to plot
@@ -761,7 +774,7 @@ class CovarianceMatrixGaussians(Plots):
     def run(self):
         filenames = []
         Sigma = np.linalg.inv(self.source.data[0]).diagonal()**0.5
-        Mu = [float(self.source.metadata[0]['mu_{0}'.format(i)]) for i in xrange(Sigma.size)]
+        Mu = [float(self.source.metadata[0]['mu_{0}'.format(i)]) for i in range(Sigma.size)]
 
         for name, mu, sigma in zip(self.source.colnames, Mu, Sigma):
             filename = self.plot_1d(name, mu, sigma)
@@ -773,7 +786,7 @@ class CovarianceMatrixGaussians(Plots):
         xmax = mu + 4*sigma
         sigma2 = sigma**2
         x = np.linspace(xmin, xmax, 200)
-        p = np.exp(-0.5 * (x-mu)**2 / sigma2) / np.sqrt(2*np.pi*sigma2)
+        p = np.exp(-0.5 * (x-mu)**2 / sigma2)# / np.sqrt(2*np.pi*sigma2)
         figure,filename = self.figure(name)
         pylab.figure(figure.number)
         pylab.plot(x, p, label=self.source.label)
@@ -893,15 +906,53 @@ class CovarianceMatrixEllipse(Plots):
         pylab.gca().add_patch(ellip)
         return ellip
 
+class StarPlots(Plots):
+    excluded_columns=["post","like"]
+
+    def star_plot(self, i, name, log):
+        n = self.source.metadata[0]['nsample_dimension']
+        x = self.source.get_col(name)[i*n:(i+1)*n]
+        y = self.source.get_col("post")[i*n:(i+1)*n]
+        if log:
+            figure,filename = self.figure(name+"_log")
+        else:
+            figure,filename = self.figure(name)
+            y = np.exp(y-y.max())
+        pylab.figure(figure.number)
+        pylab.plot(x, y)
+        pylab.xlabel(self.latex(name))
+        if log:
+            pylab.ylabel("Log Posterior")
+        else:
+            pylab.ylabel("Posterior")
+        return filename
+
+    def run(self):
+        filenames = []
+
+        i=0
+        for name in self.source.colnames:
+            if name.lower() in self.excluded_columns: continue
+            # Do both log and non-log variants
+            filename = self.star_plot(i,name, True)
+            filenames.append(filename)
+            filename = self.star_plot(i,name, False)
+            filenames.append(filename)
+            i+=1
+        return filenames
+
+
+
 
 class Tweaks(Loadable):
     filename="default_nonexistent_filename_ignore"
     _all_filenames='all plots'
     def __init__(self):
         self.has_run=False
+        self.info=None
 
     def run(self):
-        print "Please fill in the 'run' method of your tweak to modify a plot"
+        print("Please fill in the 'run' method of your tweak to modify a plot")
 
 def clip_unit(x):
     if x<0:

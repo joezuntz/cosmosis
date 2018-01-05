@@ -1,3 +1,7 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
+from builtins import object
 import numpy as np
 
 class MCMC(object):
@@ -28,17 +32,17 @@ class MCMC(object):
 		samples = []
 		blobs = []
 		#Take n sample mcmc steps
-		for i in xrange(n):
+		for i in range(n):
 			#this function is designed to be called
 			#multiple times.  keep track of overall iteration number
 			self.iterations += 1
 			# proposal point and its likelihood
 			q = self.propose()
 			if not self.quiet:
-				print "  ".join(str(x) for x in q)
+				print("  ".join(str(x) for x in q))
 			Lq = self.posterior(q)
 			if not self.quiet:
-				print
+				print()
 			#acceptance test
 			if  Lq[0] >= self.Lp[0] or  (Lq[0] - self.Lp[0]) >= np.log(np.random.uniform()):
 				#update if accepted
@@ -88,10 +92,10 @@ def proposal_distance(ndim):
 #coming back to this and translating it.
 def random_rotation_matrix(n):
     R=np.identity(n)
-    for j in xrange(n):
+    for j in range(n):
         while True:
             v = np.random.normal(size=n)
-            for i in xrange(j):
+            for i in range(j):
                 v -= R[i,:] * np.dot(v,R[i,:])
             L = np.dot(v,v)
             if (L>1e-3): break

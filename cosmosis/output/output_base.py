@@ -1,7 +1,10 @@
+from past.builtins import basestring
+from builtins import object
 import abc
 import logging
 import numpy as np
 import fcntl
+from future.utils import with_metaclass
 
 output_registry = {}
 LOG_LEVEL_NOISY = 15
@@ -37,9 +40,7 @@ class CommentFileWrapper(object):
     def write(self, text):
         self.obj.comment(text)
 
-class OutputBase(object):
-    __metaclass__ = OutputMetaclass
-
+class OutputBase(with_metaclass(OutputMetaclass, object)):
     def __init__(self):
         super(OutputBase,self).__init__()
         self._columns = []

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 import sys
 
 """
@@ -29,13 +31,13 @@ class _LazyPylab(object):
             import matplotlib
 
         except ImportError:
-            print
-            print "No matplotlib: plotting unavailable."
-            print "If you are using postprocess you can disable"
-            print "plotting with the --no-plots option"
-            print
-            print "Unable to continue cleanly so quitting now."
-            print
+            print()
+            print("No matplotlib: plotting unavailable.")
+            print("If you are using postprocess you can disable")
+            print("plotting with the --no-plots option")
+            print()
+            print("Unable to continue cleanly so quitting now.")
+            print()
             import sys
             sys.exit(1)
         #Some options are only available in newer
