@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# This little wrapper around postprocess
+# fixes a bug with libraries on OSX.
+
+if [ "${COSMOSIS_SRC_DIR}" == "" ]
+	then
+	echo "Please set up cosmosis (or set the environment variable COSMOSIS_SRC_DIR) before postprocessing"
+	exit 1
+fi
+
+osname=`uname`
+#Check if we are under UPS, on a mac
+if [ $osname == "Darwin" ] && [ "$UPS_DIR" != "" ]
+	then
+	NEW_DYLD_PATH=$(dropit -p ${DYLD_LIBRARY_PATH} ${GCC_FQ_DIR}/lib)
+	DYLD_LIBRARY_PATH="$NEW_DYLD_PATH" python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py $@
+else
+	python ${COSMOSIS_SRC_DIR}/bin/postprocess-exe.py "$@"
+fi
+

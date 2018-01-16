@@ -39,7 +39,7 @@ export CFITSIO_INC=$CFITSIO_DIR/include
 export CFITSIO_LIB=$CFITSIO_DIR/lib
 
 # Environment variables for runtime
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/cosmosis/datablock:$COSMOSIS_SRC_DIR/cosmosis-standard-library/likelihood/planck2015/plc-2.0/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/cosmosis/datablock:$COSMOSIS_SRC_DIR/cosmosis-standard-library/likelihood/planck2015/plc-2.0/:$CFITSIO_LIB:$GSL_LIB:$FFTW_LIBRARY
 export PYTHONPATH=${COSMOSIS_SRC_DIR}:$PYTHONPATH
 export PATH=$COSMOSIS_SRC_DIR/bin:$PATH
 

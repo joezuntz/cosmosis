@@ -1,10 +1,42 @@
+#coding: utf-8
+
+
+u"""Definition of the :class:`Parameter` class."""
+from __future__ import absolute_import
+from builtins import object
 import random
-import config
-import prior as priors # to avoid breaking other stuff below
+from . import config
+from . import prior as priors # to avoid breaking other stuff below
 import numpy as np
 
+
+
 class Parameter(object):
+
+    u"""Distribution meta-data for a :class:`Pipeline` parameter.
+    
+    While pipeline modules deal with a dictionary of scalar parameters,
+    the pipeline infrastructure (i.e., the :class:`Pipeline` class) must
+    track meta-data for each parameter: the allowable range of values the
+    parameter is allowed to take, and the (prior) distribution from which
+    the values should be sampled.  These data, *but not the parameter
+    values themselves*, are stored in this class and kept by the
+    :class:`Pipeline` class in an array which parallels the
+    :class:`DataBlock` or :class:`Config` which holds the values.
+
+    """
+
     def __init__(self, section, name, start, limits=None, prior=None):
+        u"""Store meta-data for parameter at `(section, name)`.
+
+        If `prior` is not supplied, a uniform distribution is assumed.
+
+        If `limits` are not supplied, the parameter will be considered
+        fixed at the `start` value.
+
+        For the available priors, see the :module:Priors module.
+
+        """
         if not limits:
             self.limits = (start, start)
         else:
@@ -23,22 +55,33 @@ class Parameter(object):
                 # Parameter has no setting in the priors file and is fixed
                 prior = priors.DeltaFunctionPrior(start)
             else:
-                # Parameter has no setting in the priors file and is variable
+                # Parameter has no setting in the priors file and is
+                # variable
                 prior = priors.UniformPrior(limits[0], limits[1])
         else:
             if limits is None:
-                # Parameter does have setting in the priors file but is fixed - just fix value
+                # Parameter does have setting in the priors file but is
+                # fixed - just fix value
                 prior = priors.DeltaFunctionPrior(start)
             else:
-                # Parameter does have setting in the priors file and is variable - truncate prior to limits
+                # Parameter does have setting in the priors file and is
+                # variable - truncate prior to limits
                 prior = prior.truncate(limits[0], limits[1])
 
         self.prior = prior
 
-
         # TODO: check consistency of prior with limits
 
+
+
     def __eq__(self, other):
+        u"""Return `True` if `other` stands for the same data block entry as us.
+
+        The same entry means that the `(section, name)` pairs are the
+        same.  Note that this is NOT a test of equality of the
+        `Parameter`sʼ values!
+
+        """
         if isinstance(other, (list, tuple)):
             try:
                 section, name = other
@@ -54,38 +97,78 @@ class Parameter(object):
         else:
             raise NotImplementedError("Tried to do parameter==something where something was not a thing I understand.")
 
+
+
     def __str__(self):
+        u"""Return our ID "section--name" as stringified version."""
         return self.section + "--" + self.name
 
+
+
     def __repr__(self):
+        u"""Return __str__."""
         return self.__str__()
 
-    def is_fixed(self):
-        """Test whether this parameter is fixed or varied.
 
-        Returns: Boolean, true if parameter is fixed to a single value and false if it can vary.
+
+    def is_fixed(self):
+        u"""Test whether this parameter is fixed or varied.
+
+        Returns `True` if parameter is fixed to a single value by
+        degenerate definition of the limits, and false if there is room
+        for it to vary.
+
         """
         return self.limits[0] == self.limits[1]
 
+
+
     def is_varied(self):
+        u"""The opposite of :func:`is_fixed`."""
         return not self.is_fixed()
 
+
+
     def in_range(self, p):
+        u"""Check that the value `p` is in this parameterʼs allowed range."""
         return self.limits[0] <= p <= self.limits[1]
 
+
+
     def width(self):
+        u"""Return the difference between the upper and lower limits."""
         return self.limits[1] - self.limits[0]
 
+
+
     def random_point(self):
+        u"""Return a random number taken from the 'prior' distribution."""
         return self.prior.sample()
 
+
+
     def normalize(self, p):
+        u"""Return the relative position of `p` between the allowable limits: a value fron 0.0 to 1.0.
+
+        But the return value will go beyond the unit interval if `p` is
+        actually outside the limits.
+
+        """
         if self.is_fixed():
             return 0.0
         else:
             return (p - self.limits[0]) / (self.limits[1] - self.limits[0])
 
+
+
     def denormalize(self, p, raise_exception=True):
+        u"""Return the value at the relative position `p` between the lower and upper limits.
+
+        If `p` is outside the range [0.0, 1.0], then if `raise_exception`
+        is `True` a ValueError will be raised, otherwise a value extrapolated
+        outside the range of the limits will be returned.
+
+        """
         if 0.0 <= p <= 1.0:
             return p*(self.limits[1]-self.limits[0]) + self.limits[0]
         elif not raise_exception:
@@ -93,14 +176,19 @@ class Parameter(object):
         else:
             raise ValueError("parameter value {} for {} not normalized".format(p,self))
 
+
+
     def denormalize_from_prior(self, p):
+        u"""Take `p` as a probability, and find the value which has that (cumulated) probability in the prior distribution."""
         if 0.0 <= p <= 1.0:
             return self.prior.denormalize_from_prior(p)
         else:
             raise ValueError("parameter value {} for {} not normalized".format(p,self))
 
 
+
     def evaluate_prior(self, p):
+        u"""Get the probability of `p` coming from the prior distribution."""
         if p < self.limits[0] or p > self.limits[1]:
             return -np.inf
         elif self.prior:
@@ -108,8 +196,25 @@ class Parameter(object):
         else:
             return 0.0
 
+
+
     @staticmethod
     def load_parameters(value_file, priors_files=None, override=None):
+        u"""Return array of :class:`Parameters` as directed by the input files.
+
+        Every key in the `value_file` will produce an entry in the
+        returned array, with the inferred starting value, and lower and
+        upper limits (space-separated list).
+
+        Where a key is also found in a given file in `priors_files` then a
+        :class:`Prior` object will be constructed and attached to the
+        parameter.
+
+        If `override` contains a corresponding `(section, name)` key, then
+        it will provide the start and limit values for the parameter,
+        regardless of the file contents.
+
+        """
         if isinstance(value_file, config.Inifile):
             values_ini = value_file
         else:
@@ -138,8 +243,26 @@ class Parameter(object):
 
         return parameters
 
+
+
     @staticmethod
     def parse_parameter(line):
+        u"""Interpret a `line` of one to three numbers as the start and range of a parameter.
+
+        In all cases, the return will be a scalar start value and 2-tuple
+        of limits.
+
+        With one number, the start value will be taken and `None` returned
+        as the limits tuple, indicating that the parameter is to be kept
+        constant, equivalently a delta-function distribution.
+
+        With two numbers, they will be taken as the limits and the
+        starting value will be half way between the two.
+
+        With three numbers, they will be taken directly as the start
+        value, lower limit, and upper limit.
+
+        """
         try:
             values = [float(p) for p in line.split()]
             if len(values) == 1:

@@ -1,3 +1,8 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import map
+from builtins import str
+from builtins import range
 import itertools
 import numpy as np
 from cosmosis.output.text_output import TextColumnOutput
@@ -39,6 +44,8 @@ class ListSampler(ParallelSampler):
                 p.limits = (-np.inf, np.inf)
                 if self.output is not None:
                     self.output.add_column(str(p), float)
+            for p in self.pipeline.extra_saves:
+                self.output.add_column('{}--{}'.format(*p), float)
             if self.output is not None:
                 for p,ptype in self.sampler_outputs:
                     self.output.add_column(p, ptype)
@@ -58,7 +65,7 @@ class ListSampler(ParallelSampler):
             try:
                 section,name = column_name.split('--')
             except ValueError:
-                print "Not including column %s as not a cosmosis name" % column_name
+                print("Not including column %s as not a cosmosis name" % column_name)
                 continue
             section = section.lower()
             name = name.lower()
@@ -68,13 +75,13 @@ class ListSampler(ParallelSampler):
                 j = self.pipeline.parameters.index((section,name))
                 replaced_params.append((i,j))
             except ValueError:
-                print "Not including column %s as not in values file" % column_name
+                print("Not including column %s as not in values file" % column_name)
 
         #Create a collection of sample vectors at the start position.
         #This has to be a list, not an array, as it can contain integer parameters,
         #unlike most samplers
         v0 = self.pipeline.start_vector(all_params=True, as_array=False)
-        sample_vectors = [v0[:] for i in xrange(len(samples))]
+        sample_vectors = [v0[:] for i in range(len(samples))]
         #Fill in the varied parameters. We are not using the
         #standard parameter vector in the pipeline with its 
         #split according to the ini file
@@ -84,7 +91,7 @@ class ListSampler(ParallelSampler):
 
         #Turn this into a list of jobs to be run 
         #by the function above
-        sample_index = range(len(sample_vectors))
+        sample_index = list(range(len(sample_vectors)))
         jobs = list(zip(sample_index, sample_vectors))
 
         #Run all the parameters
@@ -97,11 +104,11 @@ class ListSampler(ParallelSampler):
         if self.pool:
             results = self.pool.map(task, jobs)
         else:
-            results = map(task, jobs)
+            results = list(map(task, jobs))
 
         #Save the results of the sampling
         #We now need to abuse the output code a little.
-        for sample, result  in itertools.izip(sample_vectors, results):
+        for sample, result  in zip(sample_vectors, results):
             #Optionally save all the results calculated by each
             #pipeline run to files
             (prob, extra) = result

@@ -1,3 +1,8 @@
+from __future__ import print_function
+from builtins import map
+from builtins import zip
+from builtins import range
+from builtins import object
 from numpy import pi, dot, exp, einsum
 import numpy as np
 
@@ -26,9 +31,9 @@ class PopulationMonteCarlo(object):
 		mu = np.random.multivariate_normal(start, sigma, size=n)
 
 		if student:
-			self.components = [StudentsTComponent(1.0/n, m, sigma, nu) for m in mu]	
+			self.components = [StudentsTComponent(1.0/n, m, sigma, nu) for m in mu]
 		else:
-			self.components = [GaussianComponent(1.0/n, m, sigma) for m in mu]	
+			self.components = [GaussianComponent(1.0/n, m, sigma) for m in mu]
 		self.pool = pool
 		self.quiet=quiet #not currently used
 
@@ -41,7 +46,7 @@ class PopulationMonteCarlo(object):
 
 		#calculate likelihoods
 		if self.pool is None:
-			samples = map(self.posterior, x)
+			samples = list(map(self.posterior, x))
 		else:
 			samples = self.pool.map(self.posterior, x)
 
@@ -66,7 +71,7 @@ class PopulationMonteCarlo(object):
 			count = np.sum(C==i)
 			if count<self.kill_count:
 				self.kill[i] = True
-				print "Component %d less than kill count (%d < %d)" % (i, count, self.kill_count)
+				print("Component %d less than kill count (%d < %d)" % (i, count, self.kill_count))
 		x = np.array([self.components[c].sample() for c in C])
 		return C, x
 
@@ -89,7 +94,7 @@ class PopulationMonteCarlo(object):
 		logw_norm = np.log(w_norm)
 		entropy =  -(w_norm*logw_norm).sum()
 		perplexity = np.exp(entropy) / len(x)
-		print "Perplexity = ", perplexity
+		print("Perplexity = ", perplexity)
 
 
 		Aphi[np.isnan(Aphi)] = 0.0
@@ -105,12 +110,12 @@ class PopulationMonteCarlo(object):
 			try:
 				m.update(w_norm, x, rho_d)
 			except np.linalg.LinAlgError as error:
-				print "Component not fitting the data very well", d, error.message
+				print("Component not fitting the data very well", d, error.message)
 				self.kill[d] = True
 
 		if do_kill:
 			self.components = [c for c,kill in zip(self.components,self.kill) if not kill]
-		print "%d components remain" % len(self.components)
+		print("%d components remain" % len(self.components))
 		return logw
 
 
@@ -140,7 +145,7 @@ class GaussianComponent(object):
 			raise np.linalg.LinAlgError("alpha = %f"%alpha)
 		mu = einsum('i,ij,i->j',w_norm, x, rho_d) / alpha  #scalar
 		delta = x-mu  #n_sample * n_dim
-		print "Updating to mu = ", mu
+		print("Updating to mu = ", mu)
 		sigma = einsum('i,ij,ik,i->jk',w_norm, delta, delta, rho_d) / alpha  #n_dim * n_dim
 		self.set(alpha, mu, sigma)
 
@@ -234,7 +239,7 @@ def test_like(p):
 
 def test():
 	pmc = PopulationMonteCarlo(test_like, 2, [0.0, 0.0], [1.0, 1.0])
-	for i in xrange(50):
+	for i in range(50):
 		s = pmc.sample(4000)
 	import pylab
 	x = s[:,0]
@@ -245,7 +250,7 @@ def test():
 	ymin=y.min()
 	ymax=y.max()
 	Y,X=np.mgrid[ymin:ymax:100j,xmin:xmax:100j]
-	r = np.array(zip(X.flatten(),Y.flatten()))
+	r = np.array(list(zip(X.flatten(),Y.flatten())))
 	P = np.array([test_like((xi,yi) ) for (xi,yi) in r])
 	P = P.reshape(X.shape)
 	for c in pmc.components:

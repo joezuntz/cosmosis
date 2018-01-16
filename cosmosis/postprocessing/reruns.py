@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import zip
 from .elements import PostProcessorElement
 from cosmosis.runtime.config import Inifile
 import os
@@ -111,9 +113,9 @@ class BestFitRerunner(Rerunner):
 	def run(self):
 		best_fit_index = self.source.get_col("post").argmax()
 		sample = self.source.get_row(best_fit_index)
-		print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-		print "Re-running maximum-posterior sample and saving results to {}".format(self.rerun_dirname)
-		print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+		print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+		print("Re-running maximum-posterior sample and saving results to {}".format(self.rerun_dirname))
+		print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
 		self.test_run_sample(sample)
 
 

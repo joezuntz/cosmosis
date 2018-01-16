@@ -1,3 +1,7 @@
+from __future__ import print_function
+from builtins import map
+from builtins import str
+from builtins import range
 from .. import ParallelSampler
 import numpy as np
 
@@ -15,24 +19,24 @@ def minus_log_posterior(p_in):
     if (not np.all(p_in>=0)) or (not np.all(p_in<=1.0)):
         nfail += 1
         pstr = '   '.join(str(x) for x in p_in)
-        print "[Proc {}] Posterior = NaN for out-of-bounds: (normalized) point = {}".format(rank, pstr)
-        print "[Proc {}] fails= {}".format(rank, nfail)
+        print("[Proc {}] Posterior = NaN for out-of-bounds: (normalized) point = {}".format(rank, pstr))
+        print("[Proc {}] fails= {}".format(rank, nfail))
         return np.inf
     neval +=1 
     p = maxlike_sampler.pipeline.denormalize_vector(p_in)
     post, extra = maxlike_sampler.pipeline.posterior(p)
     pstr = '   '.join(str(x) for x in p)
-    print "[Proc {} (evals={})] Posterior = {} for {} (derivative:{})".format(rank, neval, post, pstr,index)
+    print("[Proc {} (evals={})] Posterior = {} for {} (derivative:{})".format(rank, neval, post, pstr,index))
     return -post
 
 
 
 def posterior_and_gradient(p_in):
     pstr = '   '.join(str(x) for x in p_in)
-    print "Calculating gradient about (normalized) point {}".format(pstr)
+    print("Calculating gradient about (normalized) point {}".format(pstr))
     points = [(p_in,0)]
     n = len(p_in)
-    for i in xrange(n):
+    for i in range(n):
         p = p_in.copy()
         p[i] += maxlike_sampler.epsilon
         points.append((p, i+1))
@@ -40,10 +44,10 @@ def posterior_and_gradient(p_in):
     if maxlike_sampler.pool:
         results = maxlike_sampler.pool.map(minus_log_posterior, points)
     else:
-        results = map(minus_log_posterior, points)
+        results = list(map(minus_log_posterior, points))
 
     post=results[0]
-    grad=np.array([(results[i+1]-post)/maxlike_sampler.epsilon  for i in xrange(n)])
+    grad=np.array([(results[i+1]-post)/maxlike_sampler.epsilon  for i in range(n)])
     return post, grad
 
 

@@ -16,7 +16,7 @@ You need :code:`git` and :code:`curl` to run the bootstrap installer.  You can c
     curl --help
     git --help
 
-If either gives you a message like "Command not found" then you can install them from `the git website <http://git-scm.com/>`_ or `the git website <http://curl.haxx.se>`_.
+If either gives you a message like "Command not found" then you can install them from `the git website <http://git-scm.com/>`_ or `the curl website <http://curl.haxx.se>`_.
 
 You also need to be running the bash shell.  Check with::
 
@@ -38,7 +38,7 @@ Otherwise, first check if you have XCode by running::
 
     which -a gcc
 
-if it includes :code:`/usr/bin/gcc` then you have it already. Otherwise, install XCode `from the apple website< https://developer.apple.com/xcode/>`_ or from the the Mac App Store (it is free).
+if it includes :code:`/usr/bin/gcc` then you have it already. Otherwise, install XCode from `the apple website <https://developer.apple.com/xcode/>`_ or from the the Mac App Store (it is free).
 
 Next, install the XCode command line tools.  This requires :code:`sudo` powers::
 

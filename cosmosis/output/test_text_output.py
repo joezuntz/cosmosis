@@ -1,3 +1,4 @@
+from builtins import range
 from .text_output import TextColumnOutput
 import string
 import numpy as np
@@ -12,11 +13,11 @@ def populate_table(out, nparam, ns):
 	out.metadata('NS',ns)
 	out.metadata('TIME','1:30pm')
 
-	for i in xrange(nparam):
+	for i in range(nparam):
 		p = string.ascii_uppercase[i]
 		out.add_column(p, float, 'The parameter called %s'%p)
 
-	for i in xrange(ns):
+	for i in range(ns):
 		x = np.arange(nparam, dtype=int)+i
 		out.parameters(x)
 	out.final("FINISH",True)
@@ -46,7 +47,7 @@ def test_text():
 
 	#or with our own method
 	names, cols, meta, final = TextColumnOutput.load(filename)
-	assert names == [string.ascii_uppercase[i] for i in xrange(nparam)]
+	assert names == [string.ascii_uppercase[i] for i in range(nparam)]
 	assert len(cols)==nparam
 	assert len(cols[0])==ns
 	assert meta['NP']==nparam

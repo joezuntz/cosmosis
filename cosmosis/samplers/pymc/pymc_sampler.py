@@ -1,3 +1,6 @@
+from builtins import zip
+from builtins import str
+from builtins import range
 from .. import ParallelSampler
 import numpy as np
 import os
@@ -93,7 +96,7 @@ class PyMCSampler(ParallelSampler):
                            for param in self.pipeline.varied_params]).T
         likes = -0.5 * self.mcmc.trace('deviance')[:]
 
-        for trace, like in itertools.izip(traces, likes):
+        for trace, like in zip(traces, likes):
             self.output.parameters(trace, like)
 
         self.analytics.add_traces(traces)
@@ -144,7 +147,7 @@ class PyMCSampler(ParallelSampler):
         # normalize covariance matrix
         r = np.array([param.width() for param
                       in self.pipeline.varied_params])
-        for i in xrange(covmat.shape[0]):
+        for i in range(covmat.shape[0]):
             covmat[i, :] /= r
             covmat[:, i] /= r
 
@@ -158,9 +161,9 @@ class PyMCSampler(ParallelSampler):
     def reorder_matrix(old_order, new_order, cov):
             n = len(old_order)
             cov2 = np.zeros((n, n))
-            for i in xrange(n):
+            for i in range(n):
                     old_i = old_order.index(new_order[i])
-                    for j in xrange(n):
+                    for j in range(n):
                             old_j = old_order.index(new_order[j])
                             cov2[i, j] = cov[old_i, old_j]
             return cov2

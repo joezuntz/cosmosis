@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import range
 import os
 import yaml
 import glob
@@ -62,7 +65,7 @@ Parameter | Type | Meaning | Default
 """
 
 rst_template = u"""The {name} sampler
-------------------
+--------------------------------------------------------------------
 
 {purpose}
 
@@ -119,7 +122,7 @@ def rst_table(rows):
 
     # Find the max length of each column
     maxlens = []
-    for i in xrange(ncol):
+    for i in range(ncol):
         col = [row[i] for row in rows]
         maxlen = 0
         for item in col:
@@ -145,7 +148,7 @@ def rst_table(rows):
 
     subrows = []
     for row,maxnline in zip(rows, maxnlines):
-        for i in xrange(maxnline):
+        for i in range(maxnline):
             subrow = []
             for item in row:
                 item = item.splitlines()
@@ -176,8 +179,8 @@ def make_parameter_table(params):
 			rest = textwrap.fill(rest, 60)
 			table.append([pname,dtype,rest,default])
 		except (IndexError, ValueError):
-			print "ERROR: Could not parse in {0}".format(name)
-			print description
+			print("ERROR: Could not parse in {0}".format(name))
+			print(description)
 	return rst_table(table)
 
 
@@ -227,21 +230,22 @@ Some are designed to actually explore likelihood spaces; others are useful for t
 
 
 def main():
-	#get the base dir to work from
-	src=os.environ['COSMOSIS_SRC_DIR']
-	sampler_dir=os.path.join(src, "cosmosis", "samplers")
-	#Find and parse all the files
-	search_path = "{}/*/sampler.yaml".format(sampler_dir)
-	yaml_files = glob.glob(search_path)
-	infos = [yaml.load(open(f)) for f in yaml_files]
-	#Make the ordering the same every time
-	try:
-		os.mkdir('wiki')
-	except OSError:
-		pass
-	generate_links(infos)
-	for info in infos:
-		generate_sampler_wiki(info)
+    #get the base dir to work from
+    src=os.environ['COSMOSIS_SRC_DIR']
+    sampler_dir=os.path.join(src, "cosmosis", "samplers")
+    #Find and parse all the files
+    search_path = "{}/*/sampler.yaml".format(sampler_dir)
+    yaml_files = glob.glob(search_path)
+    print yaml_files
+    infos = [yaml.load(open(f)) for f in yaml_files]
+    #Make the ordering the same every time
+    try:
+    	os.mkdir('wiki')
+    except OSError:
+    	pass
+    generate_links(infos)
+    for info in infos:
+        generate_sampler_wiki(info)
 
 
 if __name__ == '__main__':

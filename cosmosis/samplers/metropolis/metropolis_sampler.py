@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import str
 from .. import ParallelSampler
 import numpy as np
 from . import metropolis
@@ -33,9 +36,9 @@ class MetropolisSampler(ParallelSampler):
 
         #start values from prior
         start = self.define_parameters(random_start)
-        print "MCMC starting point:"
+        print("MCMC starting point:")
         for param, x in zip(self.pipeline.varied_params, start):
-            print "    ", param, x
+            print("    ", param, x)
         self.n = self.read_ini("nsteps", int, default=100)
 
         #Covariance matrix
@@ -49,6 +52,9 @@ class MetropolisSampler(ParallelSampler):
     def worker(self):
         while not self.is_converged():
             self.execute()
+            if self.output:
+                self.output.flush()
+
 
     def execute(self):
         #Run the MCMC  sampler.
@@ -66,8 +72,8 @@ class MetropolisSampler(ParallelSampler):
         self.analytics.add_traces(traces)	
 
         rate = self.sampler.accepted * 100.0 / self.sampler.iterations
-        print "Accepted %d / %d samples (%.2f%%)\n" % \
-            (self.sampler.accepted, self.sampler.iterations, rate)
+        print("Accepted %d / %d samples (%.2f%%)\n" % \
+            (self.sampler.accepted, self.sampler.iterations, rate))
         self.sampler.tune()
 
     def is_converged(self):
@@ -75,12 +81,12 @@ class MetropolisSampler(ParallelSampler):
         if self.interrupted:
             return True
         if self.num_samples >= self.samples:
-            print "Full number of samples generated; sampling complete"
+            print("Full number of samples generated; sampling complete")
             return True
         elif self.num_samples > 0 and \
                 self.pool is not None and \
                 self.Rconverge is not None:
-            R = self.analytics.gelman_rubin(quiet=self.pipeline.quiet)
+            R = self.analytics.gelman_rubin(quiet=False)
             R1 = abs(R - 1)
             return np.all(R1 <= self.Rconverge)
         else:

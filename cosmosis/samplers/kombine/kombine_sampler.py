@@ -1,3 +1,7 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import range
+from builtins import str
 from .. import ParallelSampler
 import numpy as np
 
@@ -62,7 +66,7 @@ class KombineSampler(ParallelSampler):
                 self.output.log_info("Loaded starting position from %s", start_file)
             elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
-                           for i in xrange(self.nwalkers)]
+                           for i in range(self.nwalkers)]
             else:
                 center_norm = self.pipeline.normalize_vector(self.pipeline.start_vector())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
@@ -99,7 +103,7 @@ class KombineSampler(ParallelSampler):
                 pos, post, prop = results
                 extra_info = None
             if self.is_master():
-                print "Burn-in phase complete."
+                print("Burn-in phase complete.")
             self.p0 = pos
             self.lnpost0 = post
             self.lnprop0 = prop

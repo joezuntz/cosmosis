@@ -1,3 +1,4 @@
+from __future__ import print_function
 from cosmosis.output.text_output import TextColumnOutput
 from cosmosis.output.fits_output import FitsOutput
 from cosmosis.runtime.config import Inifile
@@ -26,8 +27,8 @@ def read_input(filename, force_text=False, weighted=False):
         metadata=output_info[2][0]
         sampler = metadata.get("sampler")
         if sampler is None:
-            print "This is not a cosmosis output file."
-            print "So I will assume it is a generic MCMC file"
+            print("This is not a cosmosis output file.")
+            print("So I will assume it is a generic MCMC file")
             if weighted:
                 sampler = "weighted_metropolis"
             else:
@@ -40,8 +41,8 @@ def read_input(filename, force_text=False, weighted=False):
         metadata=output_info[2][0]
         sampler = metadata.get("sampler")
         if sampler is None:
-            print "This is not a cosmosis output file."
-            print "So I will assume it is a generic MCMC file"
+            print("This is not a cosmosis output file.")
+            print("So I will assume it is a generic MCMC file")
             if weighted:
                 sampler = "weighted_metropolis"
             else:

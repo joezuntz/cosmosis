@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 from cosmosis.runtime.config import Inifile
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 import numpy as np
@@ -40,7 +42,7 @@ for omega_m in [0.2, 0.25, 0.3, 0.35, 0.4]:
 
     #Make a plot for this value
     pylab.loglog(ell, np.abs(cl), label=str(omega_m))
-    print "Done ", omega_m
+    print("Done ", omega_m)
 
 #Save our plot.
 pylab.legend()

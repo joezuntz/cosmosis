@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import str
 from .. import ParallelSampler
 from . import pmc
 import numpy as np
@@ -30,14 +33,14 @@ class PMCSampler(ParallelSampler):
         #Student's t mode
         student = self.read_ini("student", bool, default=False)
         if student:
-            print
-            print "WARNING"
-            print
-            print "Student's t mode probably not working yet"
-            print "Unless you are testing you should probably set"
-            print "student=F"
-            print
-            print
+            print()
+            print("WARNING")
+            print()
+            print("Student's t mode probably not working yet")
+            print("Unless you are testing you should probably set")
+            print("student=F")
+            print()
+            print()
             nu = self.read_ini("nu", float, default=2.0)
         else:
             nu = None
@@ -78,16 +81,16 @@ class PMCSampler(ParallelSampler):
         for (vector, like, extra, component, weight) in zip(*results):
             self.output.parameters(vector, extra, (component, like,weight))
 
-        print "Done %d iterations, %d samples" % (self.iterations, self.samples)
+        print("Done %d iterations, %d samples" % (self.iterations, self.samples))
 
 
     def is_converged(self):
          # user has pressed Ctrl-C
         if self.interrupted:
-            print "Interrupted..."
+            print("Interrupted...")
             return True
         if self.iterations >= self.n_iterations+1:
-            print "Full number of samples generated; sampling complete"
+            print("Full number of samples generated; sampling complete")
             self.output.final("nsample", self.final_samples)
 
             return True
@@ -119,4 +122,3 @@ class PMCSampler(ParallelSampler):
                     "but there are %d varied parameters." %
                     (covmat.shape[0], covmat.shape[1], nparams))
         return covmat
-

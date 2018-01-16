@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 import scipy.interpolate
 import scipy.integrate
 import numpy as np
@@ -39,7 +41,7 @@ class GaussianLikelihood(object):
             if include_norm:
                 # We have no datablock here so we don't want to call any subclass method
                 self.log_det_constant = GaussianLikelihood.extract_covariance_log_determinant(self,None)
-                print "Including -0.5*|C| normalization in {} likelihood where |C| = {}".format(self.like_name, self.log_det_constant)
+                print("Including -0.5*|C| normalization in {} likelihood where |C| = {}".format(self.like_name, self.log_det_constant))
             else:
                 self.log_det_constant = 0.0
 
@@ -265,7 +267,7 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
                 file".format(self.like_name))
         if options.has_value("like_name"):
             self.like_name = options["like_name"]
-        print 'Likelihood "{0}" will be Gaussian {1} +/- {2} '.format(self.like_name, self.mean, self.sigma)
+        print('Likelihood "{0}" will be Gaussian {1} +/- {2} '.format(self.like_name, self.mean, self.sigma))
         self.data_y = np.array([mean])
         self.cov = np.array([[sigma**2]])
         self.inv_cov = np.array([[sigma**-2]])
@@ -274,7 +276,7 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
         if include_norm:
             # We have no datablock here so we don't want to call any subclass method
             self.log_det_constant = GaussianLikelihood.extract_covariance_log_determinant(self,None)
-            print "Including -0.5*|C| normalization in {} likelihood where log|C| = {}".format(self.like_name, self.log_det_constant)
+            print("Including -0.5*|C| normalization in {} likelihood where log|C| = {}".format(self.like_name, self.log_det_constant))
         else:
             self.log_det_constant = 0.0
             

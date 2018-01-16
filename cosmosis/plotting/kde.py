@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import range
 import scipy.stats
 import numpy as np
 from functools import wraps
@@ -37,7 +39,7 @@ class KDE(scipy.stats.kde.gaussian_kde):
         slices = [slice(xmin,xmax,n*1j) for (xmin,xmax) in ranges]
         grids = np.mgrid[slices]
         axes = [ax.squeeze() for ax in np.ogrid[slices]]
-        flats = [(grid.flatten()-norm[0])/norm[1] 
+        flats = [(grid.flatten()-norm[0])/norm[1]
                  for (grid,norm) in zip(grids,self.norms)]
 
         shape = grids[0].shape

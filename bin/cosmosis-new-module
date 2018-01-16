@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os
 import sys
 import shutil
@@ -117,7 +118,7 @@ def create_repository(library_name, *module_names):
 
 
 	os.chdir(project_dir)
-	print "Setting up repository:"
+	print("Setting up repository:")
 	system("git init")
 	system("git add -A")
 	system("git commit -m 'Initial commit of %s'"%library_name)
@@ -126,8 +127,8 @@ def create_repository(library_name, *module_names):
 	parent_makefile=os.path.join(cosmosis_dir,"modules","Makefile.modules")
 	parent_include="SUBDIRS+={0}".format(library_name)
 	open(parent_makefile,"a").write(parent_include+"\n")
-	print "Modifying: ", parent_makefile
-	print final_help % (project_dir, new_makefile)
+	print("Modifying: ", parent_makefile)
+	print(final_help % (project_dir, new_makefile))
 
 import argparse
 parser = argparse.ArgumentParser(description="Set up a new repository for cosmosis modules.  You need to choose a name for the overall collection, and can optionally create modules within that collection (you can always create more of these later).")

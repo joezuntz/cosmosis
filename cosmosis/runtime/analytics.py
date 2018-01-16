@@ -1,4 +1,7 @@
 #coding: utf-8
+from __future__ import print_function
+from builtins import zip
+from builtins import object
 from cosmosis import output as output_module
 
 import numpy as np
@@ -76,11 +79,11 @@ class Analytics(object):
         Rhat = self.pool.bcast(Rhat)
 
         if not quiet and self.pool.is_master():
-            print
-            print "Gelman-Rubin:"
+            print()
+            print("Gelman-Rubin:")
             for (p,R) in zip(self.params, Rhat):
-                print "    ", p, "   ", R
-            print "Worst = ", Rhat.max()
-            print
+                print("    ", p, "   ", R)
+            print("Worst = ", Rhat.max())
+            print()
 
         return Rhat

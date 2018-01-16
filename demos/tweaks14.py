@@ -1,3 +1,4 @@
+from builtins import range
 from cosmosis.postprocessing.plots import Tweaks
 import pylab
 
@@ -12,6 +13,6 @@ class ThinLabels(Tweaks):
     def run(self):
         ax=pylab.gca()
         labels = ax.get_xticks().tolist()
-        for i in xrange(0,len(labels),2):
+        for i in range(0,len(labels),2):
             labels[i] = ''
         ax.set_xticklabels(labels)

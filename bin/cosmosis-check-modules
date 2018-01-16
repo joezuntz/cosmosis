@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os
 import sys
 
@@ -6,9 +7,9 @@ status = 0
 
 src = os.environ.get('COSMOSIS_SRC_DIR')
 if src is None:
-	print "Please make sure the environment variable COSMOSIS_SRC_DIR"
-	print "is defined before running this program, for example by running"
-	print "the CosmoSIS setup script."
+	print("Please make sure the environment variable COSMOSIS_SRC_DIR")
+	print("is defined before running this program, for example by running")
+	print("the CosmoSIS setup script.")
 	sys.exit(1)
 	
 pwd = os.getcwd()
@@ -31,12 +32,12 @@ for repo_dir in repo_dirs:
 		no_remote_repo_dirs.append(repo_dir)
 
 if no_remote_repo_dirs:
-	print "These directory have repositories in, but they are not set up to save"
-	print "To a remote website or similar:"
+	print("These directory have repositories in, but they are not set up to save")
+	print("To a remote website or similar:")
 	for repo_dir in no_remote_repo_dirs:
-		print "    ", repo_dir
+		print("    ", repo_dir)
 		status += 1
-print
+print()
 repo_dirs = remote_repo_dirs
 
 
@@ -49,14 +50,14 @@ for repo_dir in repo_dirs:
 		changed_repos.append(repo_dir)
 
 if changed_repos:
-	print "These directories have unsaved changes in; you need to git commit in them"
-	print "(and then git push to save to a web repository)"
+	print("These directories have unsaved changes in; you need to git commit in them")
+	print("(and then git push to save to a web repository)")
 	for repo_dir in changed_repos:
-		print "    ", repo_dir
+		print("    ", repo_dir)
 		status += 1
 else:
-	print "All your modified files are saved locally."
-	print "(Though I don't know if there are files you mean to add but haven't yet.  I'm not psychic.)"
+	print("All your modified files are saved locally.")
+	print("(Though I don't know if there are files you mean to add but haven't yet.  I'm not psychic.)")
 
 unsaved_repos = []
 for repo_dir in repo_dirs:
@@ -67,11 +68,11 @@ for repo_dir in repo_dirs:
 		unsaved_repos.append(repo_dir)
 
 if unsaved_repos:
-	print
-	print "These directories have changes saved locally but not yet pushed to the web"
-	print "(You might want to run 'git push' in them):"
+	print()
+	print("These directories have changes saved locally but not yet pushed to the web")
+	print("(You might want to run 'git push' in them):")
 	for repo_dir in unsaved_repos:
-		print "    ", repo_dir
+		print("    ", repo_dir)
 		status += 1
 
 
@@ -83,15 +84,15 @@ for repo_dir in repo_dirs:
 	if unsaved_commits:
 		unsaved_repos.append(repo_dir)
 
-print
+print()
 if unsaved_repos:
-	print "These directories may have changes saved locally in *branches* other than the current one"
-	print "(You might want to 'git push <BRANCH_NAME>' in them - you'll need to figure out the branch name first.):"
+	print("These directories may have changes saved locally in *branches* other than the current one")
+	print("(You might want to 'git push <BRANCH_NAME>' in them - you'll need to figure out the branch name first.):")
 	for repo_dir in unsaved_repos:
-		print "    ", repo_dir
+		print("    ", repo_dir)
 		status += 1
 
 sys.exit(status)
 
 
-print
+print()

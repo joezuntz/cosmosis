@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-for (( D=1 ; D<=9 ; D++ ))
+for (( D=1 ; D<=19 ; D++ ))
 do
 	cosmosis demos/demo$D.ini
 	if [ $? -ne 0 ]

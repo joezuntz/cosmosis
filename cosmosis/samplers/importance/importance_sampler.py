@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import map
 import itertools
 import collections
 import numpy as np
@@ -25,8 +28,8 @@ class ImportanceSampler(ParallelSampler):
         global importance_pipeline
         importance_pipeline = self.pipeline
         self.input_filename = self.ini.get(INI_SECTION, "input")
-        self.nstep = self.ini.getint(INI_SECTION, "nstep", 128)
-        self.add_to_likelihood = self.ini.getboolean(INI_SECTION, "add_to_likelihood", False)
+        self.nstep = self.ini.getint(INI_SECTION, "nstep", fallback=128)
+        self.add_to_likelihood = self.ini.getboolean(INI_SECTION, "add_to_likelihood", fallback=False)
         self.converged = False
         if self.is_master():
             self.load_samples(self.input_filename)
@@ -50,7 +53,7 @@ class ImportanceSampler(ParallelSampler):
         self.samples = []
         self.varied_params = []
         self.number_samples = len(cols[0])
-        print "Have %d samples from old chain." % self.number_samples
+        print("Have %d samples from old chain." % self.number_samples)
         for code,col in zip(col_names, cols[0].T):
             #we have already handled the likelihood
             if code=='post':continue
@@ -61,26 +64,26 @@ class ImportanceSampler(ParallelSampler):
                 #No parameter should be varied in the old chain
                 #but listed as fixed here
                 if (section,name) in self.pipeline.fixed_params:
-                    print "WARNING: %s varied in old chain now fixed.  I will fix it <--------- Read this warning." % name
+                    print("WARNING: %s varied in old chain now fixed.  I will fix it <--------- Read this warning." % name)
                 elif (section,name) in self.pipeline.varied_params:
                     #Record the values of this parameter for later importance
                     #sampling
-                    print "Found column in both pipelines:", code
+                    print("Found column in both pipelines:", code)
                     self.samples.append(col)
                     self.varied_params.append(bits)
                 else:
-                    print "Found column just in old pipeline:", code
+                    print("Found column just in old pipeline:", code)
                     #This parameter was varied in the old code but is not
                     #here.  So we just save it for output
                     self.original_extras[code] = col
                     self.output.add_column(code, float)
             # anything here must be a sampler-specific 
             else:
-                print "Found non-parameter column:", code
+                print("Found non-parameter column:", code)
                 self.original_extras[code] = col
                 if code=="weight":
                     code="old_weight"
-                    print "Renaming weight -> old_weight"
+                    print("Renaming weight -> old_weight")
                 self.output.add_column(code, float)
 
         #Now finally add our actual two sampler outputs, old_like and like
@@ -120,15 +123,15 @@ class ImportanceSampler(ParallelSampler):
         if self.pool:
             results = self.pool.map(task, samples_chunk)
         else:
-            results = map(task, samples_chunk)
+            results = list(map(task, samples_chunk))
 
         #Collect together and output the results
-        for i,(sample, (new_like, extra)) in enumerate(itertools.izip(samples_chunk, results)):
+        for i,(sample, (new_like, extra)) in enumerate(zip(samples_chunk, results)):
             #We already (may) have some extra values from the pipeline
             #as derived parameters.  Add to those any parameters used in the
             #old pipeline but not the new one
             extra = list(extra)
-            for col in self.original_extras.values():
+            for col in list(self.original_extras.values()):
                 extra.append(col[start+i])
             #and then the old and new likelihoods
             old_like = self.original_likelihoods[start+i]

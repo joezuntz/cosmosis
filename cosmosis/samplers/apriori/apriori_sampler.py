@@ -1,3 +1,8 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import map
+from builtins import range
+from builtins import str
 import itertools
 import numpy as np
 from cosmosis.output.text_output import TextColumnOutput
@@ -6,7 +11,7 @@ from .. import ParallelSampler
 
 def task(p):
     i,p = p
-    print "Running sample from prior: ", p
+    print("Running sample from prior: ", p)
     results = sampler.pipeline.posterior(p, return_data=sampler.save_name)
     #If requested, save the data to file
     if sampler.save_name and results[2] is not None:
@@ -43,17 +48,17 @@ class AprioriSampler(ParallelSampler):
 
         while n < self.nsample:
             if self.pool:
-                jobs = [(n+i,sample_from_prior()) for i in xrange(chunk_size)]
+                jobs = [(n+i,sample_from_prior()) for i in range(chunk_size)]
                 results = self.pool.map(task, jobs)
                 n += chunk_size
             else:
                 jobs = [(n,sample_from_prior())]
-                results = map(task, jobs)
+                results = list(map(task, jobs))
                 n += 1
 
             #Save the results of the sampling
             #We now need to abuse the output code a little.
-            for sample, result  in itertools.izip(jobs, results):
+            for sample, result  in zip(jobs, results):
                 i, sample=sample
                 #Optionally save all the results calculated by each
                 #pipeline run to files

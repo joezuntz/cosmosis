@@ -75,4 +75,4 @@ Each time you start a new terminal shell then you need to repeat this step::
 
     source setup-cosmosis
 
-Then test your install is working by :doc:`running demo 1 </tutorials/demos/Demo1>`.
+Then test your install is working by :doc:`following our first tutorial </tutorials/tutorials/tutorial1>`.

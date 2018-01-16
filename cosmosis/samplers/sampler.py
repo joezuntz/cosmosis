@@ -1,21 +1,29 @@
-sampler_registry = {}
+from future.utils import with_metaclass
+from builtins import str
+from builtins import range
+from builtins import object
 from cosmosis.runtime.attribution import PipelineAttribution
 from .hints import Hints
 
-class Sampler(object):
+# Sampler metaclass that registers each of its subclasses
+
+class RegisteredSampler(type):
+    registry = {}
+    def __new__(meta, name, bases, class_dict):
+        if name.endswith("Sampler"):
+            meta.registry = {name : cls for name, cls in meta.registry.items() if cls not in bases}
+            config_name = name[:-len("Sampler")].lower()
+            cls = type.__new__(meta, name, bases, class_dict)
+            meta.registry[config_name] = cls
+            return cls
+        else:
+            raise ValueError("Sampler classes must be named [Name]Sampler")
+
+class Sampler(with_metaclass(RegisteredSampler, object)):
     needs_output = True
     sampler_outputs = []
     parallel_output = False
     is_parallel_sampler = False
-    class __metaclass__(type):
-        def __init__(cls, name, b, d):
-            type.__init__(cls, name, b, d)
-            if name in ["Sampler", "ParallelSampler"]:
-                return
-            if not name.endswith("Sampler"):
-                raise ValueError("Sampler classes must be named [Name]Sampler")
-            config_name = name[:-len("Sampler")].lower()
-            sampler_registry[config_name] = cls
     
     def __init__(self, ini, pipeline, output):
         self.ini = ini
@@ -32,11 +40,11 @@ class Sampler(object):
             output.metadata("n_varied", len(self.pipeline.varied_params))
 
             self.attribution.write_output(self.output)
-        blinding_header = self.ini.getboolean("output","blinding-header", False)
+        blinding_header = self.ini.getboolean("output","blinding-header", fallback=False)
         if blinding_header and self.output:
             output.comment("")
             output.comment("Blank lines prevent accidental unblinding")
-            for i in xrange(250):
+            for i in range(250):
                 output.comment("")
 
     def read_ini(self, option, option_type, default=None):
@@ -45,16 +53,16 @@ class Sampler(object):
         and also save to the output file if it exists
         """
         if option_type is float:
-            val = self.ini.getfloat(self.name, option, default)
+            val = self.ini.getfloat(self.name, option, fallback=default)
         elif option_type is int:
-            val = self.ini.getint(self.name, option, default)
+            val = self.ini.getint(self.name, option, fallback=default)
         elif option_type is bool:
-            val = self.ini.getboolean(self.name, option, default)
+            val = self.ini.getboolean(self.name, option, fallback=default)
         elif option_type is str:
-            val = self.ini.get(self.name, option, default)
+            val = self.ini.get(self.name, option, fallback=default)
         else:
             raise ValueError("Internal cosmosis sampler error: "
-                "tried to read ini file option with unknown type %s"%str(option_type))
+                "tried to read ini file option with unknown type {}".format(option_type))
         if self.output:
             self.output.metadata(option, str(val))
         return val
@@ -98,4 +106,3 @@ class ParallelSampler(Sampler):
 
     def is_master(self):
         return self.pool is None or self.pool.is_master()
-
