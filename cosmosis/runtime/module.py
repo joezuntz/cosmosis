@@ -45,7 +45,7 @@ class Module(object):
     opposed to a Python module!
 
     A :class:`Module` represents a single discrete step in an overall 
-    computational pipelinem consuming some inputs from and providing some
+    computational pipeline, consuming some inputs from and providing some
     outputs to a :class:`DataBlock`.
 
     :class:`Module`s are made from either a python file or a shared library,
@@ -164,8 +164,8 @@ class Module(object):
                                                      self.execute_function,
                                                      module_type)
         if self.execute_function is None:
-            raise ValueError("Could not find a function 'execute' in module ‘"
-                                 +  self.name + "’")
+            raise ValueError("Could not find a function 'execute' in module '"
+                                 +  self.name + "'")
         
 
 
