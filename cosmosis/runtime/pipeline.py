@@ -435,7 +435,8 @@ class LikelihoodPipeline(Pipeline):
         #pull out all the section names and likelihood names for later
 
         likelihood_names = self.options.get(PIPELINE_INI_SECTION,
-                                            "likelihoods", NO_LIKELIHOOD_NAMES)
+                                            "likelihoods",
+                                            fallback=NO_LIKELIHOOD_NAMES)
         if likelihood_names==NO_LIKELIHOOD_NAMES:
             self.likelihood_names = NO_LIKELIHOOD_NAMES
         else:
