@@ -185,7 +185,7 @@ def extract_section(lines, section):
 
 def save_section(lines, section, prefix):
     """Save a group of lines to a file"""
-    filename = "{}_{}.ini".format(prefix, section).lower()
+    filename = "{}_{}.ini".format(prefix, section)
     open(filename,'w').writelines(lines)
 
 def extract_params(chain, prefix):
@@ -211,23 +211,9 @@ def tempdir_safe_docker():
             TemporaryDirectory = backports.tempfile.TemporaryDirectory
         except ImportError:
             raise ImportError("In python 2 the PriorFunction code "+
-                "requires you to install backports.temp.  It can be done with pip")
-    # I've found an issue when running under Docker on a mac
-    # where errors ocurr when the name of the directory
-    # returned by tempfile contains capital letters
-    for i in xrange(100):
-        T = TemporaryDirectory()
-        if T.name == T.name.lower():
-            return T
-        else:
-            T.cleanup()
-    else:
-        raise ValueError("""
-        A complicated and obscure error means that the capital letter you
-        probably have in your $TMPDIR dir name causes problems for this function.
-        Please open an issue with cosmosis to have it fixed.
-        """)
+                "requires you to install backports.tempfile.  It can be done with pip")
 
+    return TemporaryDirectory()
 
 
 class PriorFunction(object):
