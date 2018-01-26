@@ -837,7 +837,7 @@ class LikelihoodPipeline(Pipeline):
             self._set_likelihood_names_from_block(data)
 
             if not self.quiet:
-                # Tell the suer what we found
+                # Tell the user what we found.
                 print("Likelihoods not set in parameter file, so checking what is generated:")
                 for name in self.likelihood_names:
                     print("Found likelihood named {}".format(name))
@@ -874,10 +874,9 @@ class LikelihoodPipeline(Pipeline):
         u"""Run the simulation pipeline, computing any log-likelihoods in the pipeline 
         given the given input parameter values, and return the sum of these.
 
-        The parameter vector `p` must match the length of `self.varied_params`, unless
-        `all_params` is specified as `True` in which case it must match
-        `self.parameters', i.e. must correspond to the complete parameter
-        set.
+        The parameter vector `p` must match the length of `self.varied_params`,
+        unless `all_params` is specified as `True` in which case it must match
+        `self.parameters', i.e. must correspond to the complete parameter set.
 
         If `return_data` are requested, then the updated data block will
         be returned as the third return item.
