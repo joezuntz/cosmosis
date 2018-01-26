@@ -34,6 +34,13 @@ len(start_vector) will give you the number of parameters we are varying, which i
 
 '''
 
+class FisherParameterError(Exception):
+    def __init__(self, parameter_index):
+        message = "Fisher Matrix likelihood function returned None for parameter: {}".format(parameter_index)
+        super(Exception,self).__init__(self, message)
+        self.parameter_index = parameter_index
+
+
 class Fisher(object):
     def __init__(self, compute_vector, start_vector, step_size, tolerance, maxiter, pool=None):
         
@@ -92,7 +99,7 @@ class Fisher(object):
         #Now get out the results that correspond to each dimension
         for p in range(self.nparams):
             results_p = results[4*p:4*(p+1)]
-            derivative, inv_cov = self.five_point_stencil_deriv(results_p)
+            derivative, inv_cov = self.five_point_stencil_deriv(results_p, p)
             derivatives.append(derivative)
         derivatives = np.array(derivatives)
         return derivatives, inv_cov
@@ -120,7 +127,10 @@ class Fisher(object):
         ]
         return points        
 
-    def five_point_stencil_deriv(self, results):
+    def five_point_stencil_deriv(self, results, param_index):
+        for r in results:
+            if r is None:
+                raise FisherParameterError(param_index)
         obs = [r[0] for r in results]
         inv_cov = results[0][1]
         deriv = (-obs[0] + 8*obs[1] - 8*obs[2] + obs[3])/(12*self.step_size)
