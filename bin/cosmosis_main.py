@@ -87,10 +87,26 @@ def demo_10_special (args):
         os.environ ["HALOFIT"] = "halofit"
 
 
+def demo_20a_special (args):
+    if  "demo20a.ini" in args.inifile:
+        print ()
+        print ("You have completed demo20a, now run demo20b and compare")
+        print ("results with demo5!")
+
+
+def demo_20b_special (args):
+    if   "demo20b.ini" in args.inifile   and   not os.path.isfile ("./demo20a.txt"):
+        print ()
+        print ("********************************************************")
+        print ("*** YOU MUST RUN demo20a BEFORE YOU CAN RUN demo20b. ***")
+        print ("********************************************************")
+        
+
 def run_cosmosis(args, pool=None):
 
     # In case we need to hand-hold a naive demo-10 user.
     demo_10_special (args)
+    demo_20b_special (args)
 
     # Load configuration.
     ini = Inifile(args.inifile, override=args.params)
@@ -259,6 +275,8 @@ def run_cosmosis(args, pool=None):
 
     # Extra-special actions we take to mollycoddle a brand-new user!
     demo_1_special (args)
+    demo_20a_special (args)
+
 
 def main():
     try:
