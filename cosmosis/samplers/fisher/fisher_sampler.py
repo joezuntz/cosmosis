@@ -117,7 +117,32 @@ class FisherSampler(ParallelSampler):
         fisher_calc = fisher_class(compute_fisher_vector, start_vector, 
             self.step_size, self.tolerance, self.maxiter, pool=self.pool)
 
-        fisher_matrix = fisher_calc.compute_fisher_matrix()
+        try:
+            fisher_matrix = fisher_calc.compute_fisher_matrix()
+        except fisher.FisherParameterError as error:
+            param = str(self.pipeline.varied_params[error.parameter_index])
+            if error.parameter_index==0:
+                message = """
+There was an error running the pipeline for the Fisher Matrix for parameter:
+{}
+Since this is the first parameter this might indicate a general error in the pipeline.
+You might want to check with the "test" sampler.
+
+It might also indicate that the parameter lower or upper limit is too close to its
+starting value so the points used to calculate the derivative are outside the range.
+If that is the case you should try calculating the Fisher Matrix at a different starting point.
+""".format(param)
+            else:
+                message = """
+There was an error running the pipeline for the Fisher Matrix for parameter:
+{}
+
+This probably indicates that the parameter lower or upper limit is too close to its
+starting value, so the points used to calculate the derivative are outside the range.
+If that is the case you should try calculating the Fisher Matrix at a different starting point.
+""".format(param)
+            raise ValueError(message)
+
         fisher_matrix = self.pipeline.denormalize_matrix(fisher_matrix,inverse=True)
 
         P = self.compute_prior_matrix()
