@@ -180,6 +180,10 @@ class GaussianLikelihood(object):
         else:
             like -= 0.5*self.log_det_constant
 
+        # Numpy has started returning a 0D array in recent versions (1.14).
+        # Convert this to a float.
+        like = float(like)
+
         #Now save the resulting likelihood
         block[names.likelihoods, self.like_name+"_LIKE"] = like
 
