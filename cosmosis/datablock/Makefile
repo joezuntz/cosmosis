@@ -12,25 +12,8 @@ USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 #CXXFLAGS+=-I../../
 #CFLAGS+=-I../../
 
-ifdef MEMCHECK
-  MEMCHECK_CMD=valgrind --error-exitcode=1 --leak-check=yes \
-               --errors-for-leak-kinds=definite --track-origins=yes \
-               --suppressions=cosmosis_tests.supp
-else
-  MEMCHECK_CMD=
-endif
 
-all: libcosmosis.so  c_datablock_t datablock_t section_t entry_t \
-	c_datablock_int_array_t c_datablock_double_array_t c_datablock_complex_array_t \
-	c_datablock_multidim_double_array_t \
-	c_datablock_multidim_int_array_t \
-	c_datablock_multidim_complex_array_t \
-	ndarray_t \
-	fake_array_t \
-	fortran_t \
-	cosmosis_py/section_names.py \
-	cosmosis_section_names.F90 \
-	section_names.h
+all: libcosmosis.so 
 
 lib: libcosmosis.so cosmosis_py/section_names.py
 

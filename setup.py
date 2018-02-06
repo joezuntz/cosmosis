@@ -1,8 +1,12 @@
 #from numpy.distutils.core import Extension
 #from distutils.core import Extension
 from setuptools import setup, find_packages, Extension
+from distutils.command.install import install
+from distutils.command.build import build
 import os
 import sys
+
+version = '0.0.2'
 
 cc_files = [
     "cosmosis/datablock/c_datablock.cc",
@@ -76,9 +80,12 @@ def setup_compilers():
         fc = os.environ['FC']
         cxx = os.environ['CXX']
     except KeyError:
-        sys.stderr.write("For the avoidance of confusion you need to set\n")
-        sys.stderr.write("These environment variables before installing cosmosis:\n")
-        sys.stderr.write("CC, FC, CXX for the C compiler, fortran compiler, and C++ compiler.\n\n")
+        sys.stderr.write("\n")
+        sys.stderr.write("    For the avoidance of later problems you need to set\n")
+        sys.stderr.write("    these environment variables before installing cosmosis:\n")
+        sys.stderr.write("    CC, FC, CXX for the C compiler, fortran compiler, and C++ compiler.\n\n")
+        sys.stderr.write("    Your compilers need to be recent enough to compile cosmosis.\n\n")
+        sys.stderr.write("\n")
         sys.exit(1)
     f = open("./cosmosis/compilers.py", "w")
     f.write("compilers = '''\n".format(cc))
@@ -89,21 +96,36 @@ def setup_compilers():
     f.write("'''\n")
     f.close()
 
-setup_compilers()
-compile_library()
+def check_compilers():
+    pass
+
+class my_build(build):
+    def run(self):
+        check_compilers()
+        setup_compilers()
+        compile_library()
+        build.run(self)
 
 
+class my_install(install):
+    def run(self):
+        check_compilers()
+        setup_compilers()
+        compile_library()
+        install.run(self)
 
 
 
 if __name__ == "__main__":
-    setup(name = 'cosmosis',
-          description       = "Joe Test",
+    setup(name = 'cosmosis-standalone',
+          description       = "A testbed stand-alone installation of the CosmoSIS project. Not ready for primetime!",
           author            = "Joe Zuntz",
           author_email      = "joezuntz@googlemail.com",
           packages = find_packages(),
           include_package_data = True,
           scripts = scripts,
-          install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy']
+          install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy'],
+          cmdclass={"install":my_install, "build":my_build},
+          version=version,
           )
 
