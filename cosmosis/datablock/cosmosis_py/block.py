@@ -905,26 +905,26 @@ class DataBlock(object):
 						header+='%s = %s\n' % (key,val)
 
 				#Save this file into the tar file
-				string_output = io.StringIO()
+				string_output = io.BytesIO()
 				np.savetxt(string_output, value, header=header.rstrip("\n"))
 				string_output.seek(0)
 				info = tarfile.TarInfo(name=vector_outfile)
-				info.size=len(string_output.buf)
+				info.size=len(string_output.getbuffer())
 				tar.addfile(tarinfo=info, fileobj=string_output)
 
 			#Save all the scalar outputs together as a single file
 			#inside the tar file
 			if scalar_outputs:
 				scalar_outfile = os.path.join(dirname,section,"values.txt")
-				string_output = io.StringIO()
+				string_output = io.BytesIO()
 				for s in scalar_outputs:
-					string_output.write("%s = %r\n"%s)
+					string_output.write(bytes("%s = %r\n"%s, encoding="utf-8"))
 					if s[0] in meta:
 						for key,val in list(meta[s[0]].items()):
-							string_output.write("#%s %s = %s\n"%(s[0],key,val))
+							string_output.write(bytes("#%s %s = %s\n"%(s[0],key,val), encoding="utf-8"))
 				string_output.seek(0)
 				info = tarfile.TarInfo(name=scalar_outfile)
-				info.size=len(string_output.buf)
+				info.size=len(string_output.getbuffer())
 				tar.addfile(tarinfo=info, fileobj=string_output)
 		tar.close()
 
