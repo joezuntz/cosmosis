@@ -181,11 +181,7 @@ class Pipeline(object):
 
         for module in self.modules:
             # identify parameters needed for module setup
-            relevant_sections = [PIPELINE_INI_SECTION,
-                                 "general",
-                                 "logging",
-                                 "debug",
-                                 module.name]
+            relevant_sections = self.options.sections()
 
             #We let the user specify additional global sections that are
             #visible to all modules
