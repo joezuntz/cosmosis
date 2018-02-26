@@ -10,7 +10,7 @@ then
 	module load gsl/2.1
 	module load cray-fftw/3.3.6.2
 	module load cfitsio/3.410
-	export PATH=/global/projecta/projectdirs/lsst/groups/WL/software/cosmosis/miniconda2/bin:$PATH
+	module load python/2.7-anaconda-4.4
 elif [ $NERSC_HOST == "edison" ]
 then
 	module swap PrgEnv-intel PrgEnv-gnu
@@ -59,8 +59,7 @@ else
 	# Might need to revisit this.
 
 	# Create the environment with some basic conda stuff in
-	conda create -p env --file config/nersc-conda-req.txt
-	
+	conda create -p env python=2.7  --file config/nersc-conda-req.txt
 	#Activate it
 	source activate $COSMOSIS_SRC_DIR/env
 
