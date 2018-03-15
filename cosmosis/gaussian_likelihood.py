@@ -165,6 +165,7 @@ class GaussianLikelihood(object):
         #gaussian likelihood
         d = x-mu
         chi2 = np.einsum('i,ij,j', d, self.inv_cov, d)
+        chi2 = float(chi2)
         like = -0.5*chi2
 
         #It can be useful to save the chi^2 as well as the likelihood,
@@ -179,6 +180,10 @@ class GaussianLikelihood(object):
             like -= 0.5 * log_det
         else:
             like -= 0.5*self.log_det_constant
+
+        # Numpy has started returning a 0D array in recent versions (1.14).
+        # Convert this to a float.
+        like = float(like)
 
         #Now save the resulting likelihood
         block[names.likelihoods, self.like_name+"_LIKE"] = like

@@ -7,9 +7,10 @@ export COSMOSIS_SRC_DIR="$cosmosis_dir"
 if [ $NERSC_HOST == "cori" ]
 then
 	module swap PrgEnv-intel PrgEnv-gnu
-	module load gsl
-	module load python
-	module load fftw/3.3.4.11
+	module load gsl/2.1
+	module load cray-fftw/3.3.6.2
+	module load cfitsio/3.410
+	module load python/2.7-anaconda-4.4
 elif [ $NERSC_HOST == "edison" ]
 then
 	module swap PrgEnv-intel PrgEnv-gnu
@@ -34,7 +35,6 @@ export GSL_INC=$GSL_DIR/include
 export GSL_LIB=$GSL_DIR/lib
 export FFTW_INCLUDE_DIR=$FFTW_INC
 export FFTW_LIBRARY=$FFTW_DIR
-export CFITSIO_DIR=/project/projectdirs/des/zuntz/cfitsio
 export CFITSIO_INC=$CFITSIO_DIR/include
 export CFITSIO_LIB=$CFITSIO_DIR/lib
 
@@ -59,8 +59,7 @@ else
 	# Might need to revisit this.
 
 	# Create the environment with some basic conda stuff in
-	conda create -p env --file config/nersc-conda-req.txt
-	
+	conda create -p env python=2.7  --file config/nersc-conda-req.txt
 	#Activate it
 	source activate $COSMOSIS_SRC_DIR/env
 
