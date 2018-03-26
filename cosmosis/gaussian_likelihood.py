@@ -176,10 +176,13 @@ class GaussianLikelihood(object):
         #account for this in the likelihood.
         if not self.constant_covariance:
             log_det = self.extract_covariance_log_determinant(block)
-            block[names.data_vector, self.like_name+"_LOG_DET"] = log_det
-            like -= 0.5 * log_det
         else:
-            like -= 0.5*self.log_det_constant
+            log_det = self.log_det_constant            
+
+        norm = -0.5 * log_det
+        like += norm
+        block[names.data_vector, self.like_name+"_LOG_DET"] = log_det
+        block[names.data_vector, self.like_name+"_NORM"] = norm
 
         # Numpy has started returning a 0D array in recent versions (1.14).
         # Convert this to a float.
@@ -191,6 +194,7 @@ class GaussianLikelihood(object):
         #And also the predicted data points - the vector of observables 
         # that in a fisher approch we want the derivatives of.
         #and inverse cov mat which also goes into the fisher matrix.
+        block[names.data_vector, self.like_name + "_norm"] = self.
         block[names.data_vector, self.like_name + "_theory"] = x
         block[names.data_vector, self.like_name + "_data"] = mu
         block[names.data_vector, self.like_name + "_inverse_covariance"] = self.inv_cov
