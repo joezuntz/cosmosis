@@ -181,8 +181,8 @@ class GaussianLikelihood(object):
 
         norm = -0.5 * log_det
         like += norm
-        block[names.data_vector, self.like_name+"_LOG_DET"] = log_det
-        block[names.data_vector, self.like_name+"_NORM"] = norm
+        block[names.data_vector, self.like_name+"_LOG_DET"] = float(log_det)
+        block[names.data_vector, self.like_name+"_NORM"] = float(norm)
 
         # Numpy has started returning a 0D array in recent versions (1.14).
         # Convert this to a float.
