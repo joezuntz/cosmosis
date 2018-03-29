@@ -153,9 +153,11 @@ If that is the case you should try calculating the Fisher Matrix at a different 
         if self.converged:
             for row in fisher_matrix:
                 self.output.parameters(row)
-
-        covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
-        self.distribution_hints.set_cov(covariance_matrix)
+        try:
+            covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
+            self.distribution_hints.set_cov(covariance_matrix)
+        except ValueError:
+            sys.stderr.write("Generated covariance matrix was not positive definite - beware! ")
 
     def is_converged(self):
         return self.converged
