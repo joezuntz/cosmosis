@@ -63,6 +63,7 @@ class PMaxlikeSampler(ParallelSampler):
         self.output_ini = self.read_ini("output_ini", str, "")
         self.output_cov = self.read_ini("output_covmat", str, "")
         self.epsilon = self.read_ini("gradient_epsilon",float,1e-9)
+        self.gradient_tolerance = self.read_ini("gradient_tolerance",float,1e-5)
         self.converged = False
         global maxlike_sampler
         maxlike_sampler = self
@@ -78,7 +79,7 @@ class PMaxlikeSampler(ParallelSampler):
 
         result = scipy.optimize.minimize(posterior_and_gradient, start_vector, method='CG',
           jac=True, tol=self.tolerance,  #bounds=bounds, 
-          options={'maxiter':self.maxiter, 'disp':True})
+          options={'maxiter':self.maxiter, 'disp':True, 'eps':self.epsilon, 'gtol':self.gradient_tolerance})
 
         opt_norm = result.x
         opt = self.pipeline.denormalize_vector(opt_norm)
