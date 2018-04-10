@@ -48,6 +48,7 @@ def posterior_and_gradient(p_in):
 
     post=results[0]
     grad=np.array([(results[i+1]-post)/maxlike_sampler.epsilon  for i in range(n)])
+    print("Norm of gradient: {:.2e}".format(np.linalg.norm(grad)))
     return post, grad
 
 
