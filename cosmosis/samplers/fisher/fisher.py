@@ -90,7 +90,7 @@ class Fisher(object):
         #we use in all the dimensions
         for p in range(self.nparams):
             points +=  self.five_points_stencil_points(p)
-
+        print("Calculating derivatives using {} total models".format(len(points)))
         if self.pool is None:
             results = list(map(self.compute_vector, points))
         else:
