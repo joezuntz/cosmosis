@@ -36,40 +36,40 @@ dumper_type = ct.CFUNCTYPE(None, #void
 
 
 polychord_args = [
-    loglike_type, #loglike,
-    prior_type,   #prior,
-    dumper_type,  #dumper,
-    ct.c_int,     #nlive
-    ct.c_int,     #nrepeats
-    ct.c_int,     #nprior
-    ct.c_bool,    #do_clustering
-    ct.c_int,     #feedback
-    ct.c_double,  #precision_criterion
-    ct.c_double,  #logzero
-    ct.c_int,     #max_ndead
-    ct.c_double,  #boost_posterior
-    ct.c_bool,    #posteriors
-    ct.c_bool,    #equals
-    ct.c_bool,    #cluster_posteriors
-    ct.c_bool,    #write_resume 
-    ct.c_bool,    #write_paramnames
-    ct.c_bool,    #read_resume
-    ct.c_bool,    #write_stats
-    ct.c_bool,    #write_live
-    ct.c_bool,    #write_dead
-    ct.c_bool,    #write_prior
-    ct.c_double,  #compression_factor
-    ct.c_int,     #nDims
-    ct.c_int,     #nDerived 
-    ct.c_char_p,  #base_dir
-    ct.c_char_p,  #file_root
-    ct.c_int,     #nGrade
-    ct.c_double_p,#grade_frac
-    ct.c_int_p,   #grade_dims
-    ct.c_int,     #n_nlives
-    ct.c_double_p,#loglikes
-    ct.c_int_p,   #nlives
-    ct.c_int,     #seed
+    loglike_type,           #loglike,
+    prior_type,             #prior,
+    dumper_type,            #dumper,
+    ct.c_int,               #nlive
+    ct.c_int,               #nrepeats
+    ct.c_int,               #nprior
+    ct.c_bool,              #do_clustering
+    ct.c_int,               #feedback
+    ct.c_double,            #precision_criterion
+    ct.c_double,            #logzero
+    ct.c_int,               #max_ndead
+    ct.c_double,            #boost_posterior
+    ct.c_bool,              #posteriors
+    ct.c_bool,              #equals
+    ct.c_bool,              #cluster_posteriors
+    ct.c_bool,              #write_resume 
+    ct.c_bool,              #write_paramnames
+    ct.c_bool,              #read_resume
+    ct.c_bool,              #write_stats
+    ct.c_bool,              #write_live
+    ct.c_bool,              #write_dead
+    ct.c_bool,              #write_prior
+    ct.c_double,            #compression_factor
+    ct.c_int,               #nDims
+    ct.c_int,               #nDerived 
+    ct.c_char_p,            #base_dir
+    ct.c_char_p,            #file_root
+    ct.c_int,               #nGrade
+    ct.POINTER(ct.c_double),#grade_frac
+    ct.POINTER(ct.c_int),   #grade_dims
+    ct.c_int,               #n_nlives
+    ct.POINTER(ct.c_double),#loglikes
+    ct.POINTER(ct.c_int),   #nlives
+    ct.c_int,               #seed
 ]
 
 
@@ -88,7 +88,7 @@ class PolyChordSampler(ParallelSampler):
             libname = "libchord.so"
 
         dirname = os.path.split(__file__)[0]
-        libname = os.path.join(dirname, "polychord", libname)
+        libname = os.path.join(dirname, "polychord_src", libname)
             
         try:
             libchord = ct.cdll.LoadLibrary(libname)
@@ -114,12 +114,12 @@ class PolyChordSampler(ParallelSampler):
         self.feedback               = self.read_ini("feedback", int, 1)
         self.resume                 = self.read_ini("resume", bool, False)
         self.polychord_outfile_root = self.read_ini("polychord_outfile_root", str, "")
-        self.compression_factor     = self.read_ini("compression_factor", double, np.exp(-1))
+        self.compression_factor     = self.read_ini("compression_factor", float, np.exp(-1))
 
         #General run options
         self.max_iterations = self.read_ini("max_iterations", int, -1)
-        self.num_repeats = self.read_ini("num_repeats", int, self.ndims*5)
-        self.nprior = self.read_ini("nprior", int, self.nlive*10)
+        self.num_repeats = self.read_ini("num_repeats", int, self.ndim*5)
+        self.nprior = self.read_ini("nprior", int, self.live_points*10)
         self.random_seed = self.read_ini("random_seed", int, -1)
         self.tolerance   = self.read_ini("tolerance", float, 0.1)
         self.log_zero    = self.read_ini("log_zero", float, -1e6)
@@ -134,13 +134,20 @@ class PolyChordSampler(ParallelSampler):
                 pass
             self.wrapped_output_logger = dumper_type(dumper)
 
-        def prior(cube, theta, nDims):
-            theta = self.pipeline.denormalize_vector_from_prior(cube) 
+        def prior(cube, theta, ndim):
+            cube_vector = np.array([cube[i] for i in range(ndim)])
+            theta_vector = self.pipeline.denormalize_vector_from_prior(cube_vector) 
+            for i in range(ndim):
+                theta[i] = theta_vector[i]
+
         self.wrapped_prior = prior_type(prior)
 
-        def likelihood(theta, nDims, phi, nDerived):
+        def likelihood(theta, ndim, phi, nderived):
             try:
-                like, phi = self.pipeline.likelihood(theta)
+                theta_vector = np.array([theta[i] for i in range(ndim)])
+                like, phi_vector = self.pipeline.likelihood(theta_vector)
+                for i in range(nderived):
+                    phi[i] = phi_vector[i]
             except KeyboardInterrupt:
                 raise sys.exit(1)
 
@@ -161,10 +168,20 @@ class PolyChordSampler(ParallelSampler):
 
     def sample(self):
 
+        n_grade = 1
+        grade_dims = (ct.c_int*n_grade)()
+        grade_frac = (ct.c_double*n_grade)()
+        grade_dims[0] = self.ndim
+        grade_frac[0] = 1.
+
+        n_nlives = 0
+        loglikes = (ct.c_double*n_nlives)()
+        nlives = (ct.c_int*n_nlives)()
+
         self._run(
                 self.wrapped_likelihood,      #loglike,
                 self.wrapped_prior,           #prior,
-                self.wrapped_dumper,          #dumper,
+                self.wrapped_output_logger,   #dumper,
                 self.live_points,             #nlive
                 self.num_repeats,             #nrepeats
                 self.nprior,                  #nprior
@@ -189,22 +206,22 @@ class PolyChordSampler(ParallelSampler):
                 self.nderived,                #nDerived 
                 "",                           #base_dir
                 self.polychord_outfile_root,  #file_root
-                1,                            #nGrade
-                [1.],                         #grade_frac
-                [self.ndim],                  #grade_dims
-                0,                            #n_nlives
-                [],                           #loglikes
-                [],                           #nlives
+                n_grade,                      #nGrade
+                grade_frac,                   #grade_frac
+                grade_dims,                   #grade_dims
+                n_nlives,                     #n_nlives
+                loglikes,                     #loglikes
+                nlives,                       #nlives
                 self.random_seed,             #seed
                 )
 
         self.converged = True
 
-    def output_params(selfndead, nlive, npars, live, dead, logweights, log_z, log_z_err):
+    def output_params(self, ndead, nlive, npars, live, dead, logweights, log_z, log_z_err):
         self.log_z = log_z
         self.log_z_err = log_z_err
         data = np.array([dead[i] for i in range(npars*ndead)]).reshape((npars, ndead))
-        logw = np.array(logweights)
+        logw = np.array([logweights[i] for i in range(ndead)])
         for row, w in zip(data.T,logw):
             params = row[:self.ndim]
             extra_vals = row[self.ndim:self.ndim+self.nderived]
