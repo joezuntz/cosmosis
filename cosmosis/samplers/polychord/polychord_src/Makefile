@@ -1,33 +1,51 @@
-# Object files:
-# find all files ending in 90, and change .f90 and .F90 to .o, 
-FOBJECTS = $(patsubst %.F90,%.o,$(patsubst %.f90,%.o,$(wildcard *90)))  $(patsubst %.cpp,%.o,$(wildcard *.cpp))
+include ../../../../config/compilers.mk
 
-OBJECTS = $(FOBJECTS)
+MPI = $(shell which $(MPIFC) 2> /dev/null)
 
-# include the dependencies
-include makefile.dep
+TARGETS=libchord.so
+ifneq ($(MPI),)
+TARGETS+=libchord_mpi.so
+endif
 
-# The polychord library depends on the objects
-# we should make all the objects and the archive them with AR
-$(LIB_DIR)/libchord.a: $(OBJECTS)
-	$(AR) $@ $^
+all: $(TARGETS)
 
-$(LIB_DIR)/libchord.so: $(OBJECTS)
-	$(LDSHARED) $^ -o $@
+ifeq ($(COSMOSIS_DEBUG),1)
+FFLAGS += -fPIC -ffree-line-length-none
+else
+FFLAGS += -O3 -fPIC -ffree-line-length-none
+endif
 
-# General rule for building object file (.o)  from fortran files (.f90/.F90)
+FFLAGS += -fno-stack-arrays
+
+CHORDLIBDIR = ./
+
+PCOBJECTS = abort.o array_utils.o calculate.o chordal_sampling.o clustering.o feedback.o generate.o ini.o interfaces.o mpi_utils.o nested_sampling.o params.o priors.o random_utils.o read_write.o run_time_info.o settings.o utils.o
+PCOBJECTS_MPI = $(patsubst %.o,mpi/%.o,$(PCOBJECTS))
+
+
 %.o: %.f90
-	$(FC) $(FFLAGS) -c $<
+	$(FC) $(FFLAGS) -c -o $@ $^ 
+
 %.o: %.F90
-	$(FC) $(FFLAGS) -c $<
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $<
+	$(FC) $(FFLAGS) -c -o $@ $^ 
 
-# Utility targets
-.PHONY: clean veryclean
+mpi/%.o: %.f90 mpi/.phony
+	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
 
-clean:
-	$(RM) *.o *.mod *.MOD
+mpi/%.o: %.F90 mpi/.phony
+	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
 
-veryclean: clean
-	$(RM) *~ *.a *.so
+mpi/.phony:
+	@mkdir -p mpi
+	@touch mpi/.phony
+
+test:
+	@echo "Alas, PolyChord has no tests"
+
+clean: 
+ifneq ($(MPI),)
+	-rm -f $(CHORDLIBDIR)/libchord_mpi.*
+	-rm -rf mpi
+endif
+	-rm -f $(CHORDLIBDIR)/libchord.* *.o *.mod
+
