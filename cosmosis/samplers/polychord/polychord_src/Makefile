@@ -19,7 +19,7 @@ FFLAGS += -fno-stack-arrays
 
 CHORDLIBDIR = ./
 
-PCOBJECTS = abort.o array_utils.o calculate.o chordal_sampling.o clustering.o feedback.o generate.o ini.o interfaces.o mpi_utils.o nested_sampling.o params.o priors.o random_utils.o read_write.o run_time_info.o settings.o utils.o
+PCOBJECTS = utils.o abort.o array_utils.o settings.o calculate.o mpi_utils.o random_utils.o chordal_sampling.o run_time_info.o clustering.o params.o priors.o read_write.o feedback.o generate.o ini.o nested_sampling.o interfaces.o 
 PCOBJECTS_MPI = $(patsubst %.o,mpi/%.o,$(PCOBJECTS))
 
 
@@ -41,6 +41,12 @@ mpi/.phony:
 
 test:
 	@echo "Alas, PolyChord has no tests"
+
+libchord_mpi.so: $(PCOBJECTS_MPI)
+	$(MPIFC) -shared -o  $@ $^ $(LIBS) $(LDFLAGS)
+	
+libchord.so: $(PCOBJECTS) 
+	$(FC) -shared -o  $@ $^ $(LIBS) $(LDFLAGS)
 
 clean: 
 ifneq ($(MPI),)

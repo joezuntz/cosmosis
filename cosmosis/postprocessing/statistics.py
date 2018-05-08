@@ -605,6 +605,9 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         files.append(filename)
         return files
 
+class PolychordStatistics(MultiNestStatistics):
+    pass
+
 #The class hierarchy is getting too complex for this - revise it
 class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, WeightedMCMCPostProcessorElement):
     def compute_basic_stats(self):
@@ -649,6 +652,9 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         return files
 
 class MultinestCovariance(ChainCovariance, Statistics, MultinestPostProcessorElement):
+    pass
+
+class PolychordCovariance(MultinestCovariance):
     pass
 
 

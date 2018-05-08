@@ -12,6 +12,7 @@ from .pmaxlike import pmaxlike_sampler
 from .gridmax import gridmax_sampler
 from .importance import importance_sampler
 from .multinest import multinest_sampler
+from .polychord import polychord_sampler
 from .pmc import pmc_sampler
 from .snake import snake_sampler
 from .kombine import kombine_sampler
