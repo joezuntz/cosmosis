@@ -28,6 +28,10 @@ class _LazyPylab(object):
     
     def initialize_matplotlib(self):
         try:
+            import logging
+            logger = logging.getLogger('matplotlib')
+            # set WARNING for Matplotlib
+            logger.setLevel(logging.WARNING)
             import matplotlib
 
         except ImportError:
