@@ -220,9 +220,9 @@ class PolyChordSampler(ParallelSampler):
     def output_params(self, ndead, nlive, npars, live, dead, logweights, log_z, log_z_err):
         self.log_z = log_z
         self.log_z_err = log_z_err
-        data = np.array([dead[i] for i in range(npars*ndead)]).reshape((npars, ndead))
+        data = np.array([dead[i] for i in range(npars*ndead)]).reshape((ndead, npars))
         logw = np.array([logweights[i] for i in range(ndead)])
-        for row, w in zip(data.T,logw):
+        for row, w in zip(data,logw):
             params = row[:self.ndim]
             extra_vals = row[self.ndim:self.ndim+self.nderived]
             birth_like = row[self.ndim+self.nderived]
