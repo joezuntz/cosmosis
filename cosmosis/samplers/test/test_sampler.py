@@ -48,12 +48,10 @@ class TestSampler(Sampler):
             print()
 
         if self.analyze_fast_slow:
-            print
-            print
+            print("\n")
             self.pipeline.do_fast_slow = True
             self.pipeline.setup_fast_subspaces(all_params=True)
-            print
-            print
+            print("\n")
 
 
         if self.graph:
