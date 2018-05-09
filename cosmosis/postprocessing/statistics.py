@@ -1,4 +1,9 @@
 #coding: utf-8
+from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 from .elements import PostProcessorElement, MCMCPostProcessorElement, WeightedMCMCPostProcessorElement, MultinestPostProcessorElement
 import numpy as np
 from .utils import std_weight, mean_weight, median_weight, percentile_weight, find_asymmetric_errorbars
@@ -9,7 +14,7 @@ class Statistics(PostProcessorElement):
         super(Statistics, self).__init__(*args, **kwargs)
 
     def run(self):
-        print "I do not know how to generate statistics for this kind of data"
+        print("I do not know how to generate statistics for this kind of data")
         return []
  
     def filename(self, base):
@@ -137,62 +142,62 @@ class ConstrainingStatistics(Statistics):
         #files but to the screen instead, in a pretty format        
     def report_screen_mean(self):
         #Means
-        print
-        print "Marginalized mean, std-dev:"
+        print()
+        print("Marginalized mean, std-dev:")
         for P in zip(self.source.colnames, self.mu, self.sigma):
-            print '    %s = %g ± %g ' % P
-        print
+            print('    %s = %g ± %g ' % P)
+        print()
 
     def report_screen_asym(self):
         #Means
-        print
-        print "Marginalized 1D peak, 68% asymmetric error bars:"
+        print()
+        print("Marginalized 1D peak, 68% asymmetric error bars:")
         for P in zip(self.source.colnames, self.peak1d, self.lerr68, self.uerr68):
             name,mu,lerr,uerr = P
-            print '    %s = %g + %g - %g ' % (name,mu,uerr-mu, mu-lerr)
-        print
+            print('    %s = %g + %g - %g ' % (name,mu,uerr-mu, mu-lerr))
+        print()
 
     def report_screen_asym95(self):
         #Means
-        print
-        print "Marginalized 1D peak, 95% asymmetric error bars:"
+        print()
+        print("Marginalized 1D peak, 95% asymmetric error bars:")
         for P in zip(self.source.colnames, self.peak1d, self.lerr95, self.uerr95):
             name,mu,lerr,uerr = P
-            print '    %s = %g + %g - %g ' % (name,mu,uerr-mu, mu-lerr)
-        print
+            print('    %s = %g + %g - %g ' % (name,mu,uerr-mu, mu-lerr))
+        print()
 
     def report_screen_median(self):
         #Medians
-        print "Marginalized median, std-dev:"
+        print("Marginalized median, std-dev:")
         for P in zip(self.source.colnames, self.median, self.sigma):
-            print '    %s = %g ± %g' % P
-        print
+            print('    %s = %g ± %g' % P)
+        print()
     def report_screen_mode(self):
         #Mode
-        print "Best likelihood:"
+        print("Best likelihood:")
         for name, val in zip(self.source.colnames, self.source.get_row(self.best_fit_index)):
-            print '    %s = %g' % (name, val)
-        print
+            print('    %s = %g' % (name, val))
+        print()
 
     def report_screen_limits(self):
         #Mode
-        print "95% lower limits:"
+        print("95% lower limits:")
         for name, val in zip(self.source.colnames, self.l95):
-            print '    %s > %g' % (name, val)
-        print
-        print "95% upper limits:"
+            print('    %s > %g' % (name, val))
+        print()
+        print("95% upper limits:")
         for name, val in zip(self.source.colnames, self.u95):
-            print '    %s < %g' % (name, val)
-        print
+            print('    %s < %g' % (name, val))
+        print()
         #Mode
-        print "68% lower limits:"
+        print("68% lower limits:")
         for name, val in zip(self.source.colnames, self.l68):
-            print '    %s > %g' % (name, val)
-        print
-        print "68% upper limits:"
+            print('    %s > %g' % (name, val))
+        print()
+        print("68% upper limits:")
         for name, val in zip(self.source.colnames, self.u68):
-            print '    %s < %g' % (name, val)
-        print
+            print('    %s < %g' % (name, val))
+        print()
 
     @staticmethod
     def likelihood_ratio_warning(marge_like, name):
@@ -203,11 +208,11 @@ class ConstrainingStatistics(Statistics):
 
         like_ratio = marge_like.max() / marge_like.min()
         if like_ratio < 20:
-            print
-            print "L_max/L_min = %f for %s." % (like_ratio, name)
-            print "This indicates that the grid did not go far from the peak in this dimension"
-            print "Marginalized values will definitely be poor estimates for this parameter, and probably"
-            print "for any other parameters correlated with this one"
+            print()
+            print("L_max/L_min = %f for %s." % (like_ratio, name))
+            print("This indicates that the grid did not go far from the peak in this dimension")
+            print("Marginalized values will definitely be poor estimates for this parameter, and probably")
+            print("for any other parameters correlated with this one")
 
 
 class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElement):
@@ -256,7 +261,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
 
     def run(self):
         N = self.compute_basic_stats()
-        print "Samples after cutting:", N
+        print("Samples after cutting:", N)
 
         self.report_screen()
         files = self.report_file()
@@ -287,7 +292,7 @@ class ChainCovariance(object):
             f.write('#'+'    '.join(col_names)+'\n')
             np.savetxt(f, covmat)
         else:
-            print "NOT saving more than one covariance matrix - just using first ini file"
+            print("NOT saving more than one covariance matrix - just using first ini file")
 
         #Save the proposal matrix
         f, proposal_filename, new_file = self.get_text_output("proposal")
@@ -295,7 +300,7 @@ class ChainCovariance(object):
             f.write('#'+'    '.join(col_names[:n])+'\n')
             np.savetxt(f, proposal)
         else:
-            print "NOT saving more than one proposal matrix - just using first ini file"
+            print("NOT saving more than one proposal matrix - just using first ini file")
         return [filename, proposal_filename]
 
 class MetropolisHastingsCovariance(ChainCovariance, Statistics, MCMCPostProcessorElement):
@@ -310,7 +315,7 @@ class GridStatistics(ConstrainingStatistics):
         self.ncol = int(self.source.sampler_option('n_varied'))
 
         extra = self.source.sampler_option("extra_output","").replace('/','--').split()
-        self.grid_columns = [i for i in xrange(self.ncol) if (not self.source.colnames[i] in extra) and (self.source.colnames[i]!="post") and (self.source.colnames[i]!="like")]
+        self.grid_columns = [i for i in range(self.ncol) if (not self.source.colnames[i] in extra) and (self.source.colnames[i]!="post") and (self.source.colnames[i]!="like")]
         self.ndim = len(self.grid_columns)
         assert self.nrow == self.nsample**self.ndim
         self.shape = np.repeat(self.nsample, self.ndim)
@@ -324,7 +329,7 @@ class GridStatistics(ConstrainingStatistics):
 
         self.like = np.exp(like).reshape(self.shape)
 
-        grid_names = [self.source.colnames[i] for i in xrange(self.ncol) if i in self.grid_columns]
+        grid_names = [self.source.colnames[i] for i in range(self.ncol) if i in self.grid_columns]
         self.grid = [np.unique(self.source.get_col(name)) for name in grid_names]
 
     def run(self):
@@ -333,6 +338,26 @@ class GridStatistics(ConstrainingStatistics):
         self.report_screen()
         files = self.report_file()
         return files
+
+    def report_screen(self):
+        self.report_screen_mean()
+        #self.report_screen_asym()
+        # self.report_screen_asym95()
+        self.report_screen_median()
+        self.report_screen_mode()
+        #self.report_screen_limits()
+
+    def report_file(self):
+        #Get the filenames to make
+        return [
+            self.report_file_mean(),
+            self.report_file_median(),
+            self.report_file_mode(),
+            self.report_file_l95(),
+            self.report_file_u95(),
+#            self.report_file_l68(),
+#            self.report_file_u68(),
+            ]
 
     def compute_stats(self):
         #1D stats
@@ -345,7 +370,7 @@ class GridStatistics(ConstrainingStatistics):
         except:like = self.source.get_col("like")
         self.best_fit_index = np.argmax(like)
         #Loop through colums
-        for i, name in enumerate(self.source.colnames[:-1]):
+        for i, name in enumerate(self.source.colnames[:self.ncol]):
             if i in self.grid_columns:
                 self.mu[i], self.median[i], self.sigma[i], self.l95[i], self.u95[i] = self.compute_grid_stats(i)
             else:
@@ -359,7 +384,7 @@ class GridStatistics(ConstrainingStatistics):
         col = self.source.get_col(name)
         #Sum the likelihood over all the axes other than this one
         #to get the marginalized likelihood
-        marge_like = self.like.sum(tuple(j for j in xrange(self.ndim) if j!=i))
+        marge_like = self.like.sum(tuple(j for j in range(self.ndim) if j!=i))
         marge_like = marge_like / marge_like.sum()
         
         #Find the grid points with this value
@@ -424,26 +449,26 @@ class GelmanRubinStatistic(MetropolisHastingsStatistics):
 
     def run(self):
         if len(self.source.data)<2:
-            print
-            print "(One chain found. Run multiple chains if you want the Gelman-Rubin test)"
-            print
+            print()
+            print("(One chain found. Run multiple chains if you want the Gelman-Rubin test)")
+            print()
             return []
         names = [c for c in self.source.colnames if  c not in ['weight', 'like', 'post']]
         header = "#parameter   R-1\n"
         f, filename, is_new = self.get_text_output("gelman", header)
-        print
-        print "Gelman-Rubin tests"
-        print "------------------"
-        print "(Variance of means / Mean of variances.  Smaller is better, a few percent is usually good convergence)"
-        print
+        print()
+        print("Gelman-Rubin tests")
+        print("------------------")
+        print("(Variance of means / Mean of variances.  Smaller is better, a few percent is usually good convergence)")
+        print()
         for name in names:
             R1 = self.gelman_rubin(name)
             f.write("{}   {}\n".format(name,R1))
             if R1>0.1:
-                print "{}    {}  -- POORLY CONVERGED PARAMETER AT 10% LEVEL".format(name,R1)
+                print("{}    {}  -- POORLY CONVERGED PARAMETER AT 10% LEVEL".format(name,R1))
             else:
-                print "{}    {}".format(name,R1)
-        print
+                print("{}    {}".format(name,R1))
+        print()
         return [filename]
 
 
@@ -467,8 +492,8 @@ class DunkleyTest(MetropolisHastingsStatistics):
         #Just sample over the sample parameters,
         #not the likelihood or the derived parameters
         params = self.source.colnames[:n]
-        print "Dunkely et al (2005) power spectrum test."
-        print "For converged chains j* > %.1f:" %self.jstar_convergence_limit
+        print("Dunkely et al (2005) power spectrum test.")
+        print("For converged chains j* > %.1f:" %self.jstar_convergence_limit)
         for param in params:
             cols = self.reduced_col(param, stacked=False)
             for c,col in enumerate(cols):
@@ -476,16 +501,16 @@ class DunkleyTest(MetropolisHastingsStatistics):
                 jstar.append(js)
                 m = "Chain %d:  %-35s j* = %-.1f" % (c+1, param, js)
                 if js>20:
-                    print "    %-50s" % m
+                    print("    %-50s" % m)
                 else:
-                    print "    %-50s NOT CONVERGED!" % m
-        print
+                    print("    %-50s NOT CONVERGED!" % m)
+        print()
         if not np.min(jstar)>self.jstar_convergence_limit:
-            print "The Dunkley et al (2005) power spectrum test shows that this chain has NOT CONVERGED."
-            print "It is quite a conservative test, so no need to panic."
+            print("The Dunkley et al (2005) power spectrum test shows that this chain has NOT CONVERGED.")
+            print("It is quite a conservative test, so no need to panic.")
         else:
-            print "The power spectra for this chain suggests good convergence."
-        print
+            print("The power spectra for this chain suggests good convergence.")
+        print()
         header = '#'+'    '.join(params)
         f, filename, new_file = self.get_text_output("dunkley", header, self.source.name)
         f.write("\n")
@@ -541,7 +566,7 @@ class WeightedStatistics(object):
         weight = self.weight_col()
         n = len(data)
         try:
-            print col
+            print(col)
             peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data, weight)
         except RuntimeError:
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
@@ -560,17 +585,17 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         logz_sigma = self.source.final_metadata[0]["log_z_error"]
         
         #First print to screen
-        print "Bayesian evidence:"
-        print "    log(Z) = %g ± %g" % (logz,logz_sigma)
-        print
+        print("Bayesian evidence:")
+        print("    log(Z) = %g ± %g" % (logz,logz_sigma))
+        print()
 
 
         weight = self.weight_col()
         w = weight/weight.max()
         n_eff = w.sum()
 
-        print "Effective number samples = ", n_eff
-        print
+        print("Effective number samples = ", n_eff)
+        print()
         #Now save to file
         header = '#logz    logz_sigma'
         f, filename, new_file  = self.get_text_output("evidence", header, self.source.name)
@@ -617,7 +642,7 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
 
     def run(self):
         N = self.compute_basic_stats()
-        print "Samples after cutting:", N
+        print("Samples after cutting:", N)
 
         self.report_screen()
         files = self.report_file()
@@ -631,18 +656,18 @@ class CovarianceMatrix1D(Statistics):
     def run(self):
         params = self.source.colnames
         Sigma = np.linalg.inv(self.source.data[0]).diagonal()**0.5
-        Mu = [float(self.source.metadata[0]['mu_{0}'.format(i)]) for i in xrange(Sigma.size)]        
+        Mu = [float(self.source.metadata[0]['mu_{0}'.format(i)]) for i in range(Sigma.size)]        
         header = '#'+'    '.join(params)
         f, filename, new_file = self.get_text_output("means", header, self.source.name)
 
         for P in zip(self.source.colnames, Mu, Sigma):
             f.write("%s   %e   %e\n" % P)
 
-        print
-        print "Marginalized mean, std-dev:"
+        print()
+        print("Marginalized mean, std-dev:")
         for P in zip(self.source.colnames, Mu, Sigma):
-            print '    %s = %g ± %g' % P
-        print
+            print('    %s = %g ± %g' % P)
+        print()
 
         return [filename]
 
@@ -670,9 +695,9 @@ class Citations(Statistics):
     #This isn't really a statistic but it uses all the same
     #mechanisms
     def run(self):
-        print 
+        print() 
         message = "#You should cite these papers in any publication based on this pipeline."
-        print message
+        print(message)
         citations = set()
         f, filename, new_file = self.get_text_output("citations", message, self.source.name)
         for comment_set in self.source.comments:
@@ -682,7 +707,7 @@ class Citations(Statistics):
                     citation =comment[4:].strip()
                     citations.add(citation)
         for citation in citations:
-            print "    ", citation
+            print("    ", citation)
             f.write("%s\n"%citation)
-        print
+        print()
         return [filename]

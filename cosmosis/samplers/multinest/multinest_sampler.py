@@ -1,4 +1,7 @@
 #coding: utf-8
+from __future__ import print_function
+from builtins import str
+from builtins import range
 from .. import ParallelSampler
 import ctypes as ct
 import os
@@ -119,7 +122,7 @@ class MultinestSampler(ParallelSampler):
         #of parameters which are relatively flat in likelihood
         wrapped_params = self.read_ini("wrapped_params", str, default="")
         wrapped_params = wrapped_params.split()
-        self.wrapping = [0 for i in xrange(self.ndim)]
+        self.wrapping = [0 for i in range(self.ndim)]
         if wrapped_params:
             print("")
         for p in wrapped_params:
@@ -130,9 +133,9 @@ class MultinestSampler(ParallelSampler):
             if P in self.pipeline.varied_params:
                 index = self.pipeline.varied_params.index(P)
                 self.wrapping[index] = 1
-                print "MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p)
+                print("MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p))
             elif P in self.pipeline.parameters:
-                print "MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not fixed in this pipeline, so this will have no effect.".format(p)
+                print("MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not fixed in this pipeline, so this will have no effect.".format(p))
             else:
                 raise ValueError("You asked for an unknown parameter, {} to be wrapped around in the multinest wrapped_params option.".format(p))
         if wrapped_params:
@@ -142,7 +145,7 @@ class MultinestSampler(ParallelSampler):
 
         if self.output:
             def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
-                print "Saving %d samples" % nsample
+                print("Saving %d samples" % nsample)
                 self.output_params(nsample, live, post, logz, ins_logz, log_z_err)
             self.wrapped_output_logger = dumper_type(dumper)
         else:
@@ -153,17 +156,17 @@ class MultinestSampler(ParallelSampler):
         def likelihood(cube_p, ndim, nparam, context_p):
             nextra = nparam-ndim
             #pull out values from cube
-            cube_vector = np.array([cube_p[i] for i in xrange(ndim)])
+            cube_vector = np.array([cube_p[i] for i in range(ndim)])
             vector = self.pipeline.denormalize_vector_from_prior(cube_vector)
             try:
                 like, extra = self.pipeline.likelihood(vector)
             except KeyboardInterrupt:
                 raise sys.exit(1)
 
-            for i in xrange(ndim):
+            for i in range(ndim):
                 cube_p[i] = vector[i]
 
-            for i in xrange(nextra):
+            for i in range(nextra):
                 cube_p[ndim+i] = extra[i]
 
             return like
@@ -185,7 +188,7 @@ class MultinestSampler(ParallelSampler):
         # only master gets dumper function
         cluster_dimensions = self.ndim if self.cluster_dimensions==-1 else self.cluster_dimensions
         periodic_boundaries = (ct.c_int*self.ndim)()
-        for i in xrange(self.ndim):
+        for i in range(self.ndim):
             periodic_boundaries[i] = self.wrapping[i]
         context=None
         init_mpi=False
@@ -195,7 +198,7 @@ class MultinestSampler(ParallelSampler):
                   self.tolerance, self.efficiency, self.ndim,
                   self.npar, cluster_dimensions, self.max_modes,
                   self.update_interval, self.mode_ztolerance,
-                  self.multinest_outfile_root, self.random_seed,
+                  self.multinest_outfile_root.encode('ascii'), self.random_seed,
                   periodic_boundaries, self.feedback, self.resume,
                   self.multinest_outfile_root!="", init_mpi,
                   self.log_zero, self.max_iterations, 
@@ -207,7 +210,7 @@ class MultinestSampler(ParallelSampler):
     def output_params(self, n, live, posterior, log_z, ins_log_z, log_z_err):
         self.log_z = ins_log_z if self.importance else log_z
         self.log_z_err = log_z_err
-        data = np.array([posterior[i] for i in xrange(n*(self.npar+2))]).reshape((self.npar+2, n))
+        data = np.array([posterior[i] for i in range(n*(self.npar+2))]).reshape((self.npar+2, n))
         for row in data.T:
             params = row[:self.ndim]
             extra_vals = row[self.ndim:self.npar]
@@ -219,4 +222,3 @@ class MultinestSampler(ParallelSampler):
 
     def is_converged(self):
         return self.converged
-

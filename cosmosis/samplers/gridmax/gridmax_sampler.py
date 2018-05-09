@@ -1,3 +1,7 @@
+from builtins import zip
+from builtins import map
+from builtins import range
+from builtins import str
 from .. import ParallelSampler
 import numpy as np
 
@@ -23,7 +27,7 @@ class GridMaxSampler(ParallelSampler):
             self.ndim = len(self.pipeline.varied_params)
             self.p = self.pipeline.normalize_vector(self.pipeline.start_vector())
             self.dimension = 0
-            self.bounds = [(0,1) for i in xrange(self.ndim)]
+            self.bounds = [(0,1) for i in range(self.ndim)]
             self.previous_maxlike = -np.inf
             self.maxlike = -np.inf
 
@@ -33,7 +37,7 @@ class GridMaxSampler(ParallelSampler):
         #dimension, with the current bounds, in parallel
         #Start by setting all the points to the current one
 
-        normed_points = [self.p.copy() for i in xrange(self.nsteps)]
+        normed_points = [self.p.copy() for i in range(self.nsteps)]
 
         #Figure out which points to sample at in the current 
         #dimension
@@ -55,7 +59,7 @@ class GridMaxSampler(ParallelSampler):
         if self.pool:
             results = self.pool.map(task, points)
         else:
-            results = map(task, points)
+            results = list(map(task, points))
 
         #Log the results for posterity
         for p, (l, e) in zip(points, results):

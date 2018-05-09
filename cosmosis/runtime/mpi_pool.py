@@ -1,3 +1,6 @@
+from builtins import map
+from builtins import range
+from builtins import object
 class _close_pool_message(object):
     def __repr__(self):
         return "<Close pool message>"
@@ -54,9 +57,9 @@ class MPIPool(object):
                     result = self.function(x)
                     self.callback(x, result)
                     return result
-                results = map(compose, task)
+                results = list(map(compose, task))
             else:
-                results = map(self.function, task)
+                results = list(map(self.function, task))
             self.comm.send(results, dest=0, tag=status.tag)
 
     def map(self, function, tasks, callback=None):
@@ -88,9 +91,9 @@ class MPIPool(object):
                 result = self.function(x)
                 self.callback(x, result)
                 return result
-            results[::self.size] = map(compose, tasks[::self.size])
+            results[::self.size] = list(map(compose, tasks[::self.size]))
         else:
-            results[::self.size] = map(self.function, tasks[::self.size])
+            results[::self.size] = list(map(self.function, tasks[::self.size]))
 
         # recover results from workers (in any order)
         status = self.MPI.Status()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from cosmosis.postprocessing.postprocess import postprocessor_for_sampler
 from cosmosis.postprocessing.inputs import read_input
 from cosmosis.postprocessing.plots import Tweaks
@@ -22,6 +23,7 @@ general.add_argument("--more-latex", default="", help="Load an additional latex 
 general.add_argument("--no-latex", action='store_true', help="Do not use latex-style labels, just use the text")
 general.add_argument("--blind-add", action='store_true', help="Blind results by adding adding a secret value to each parameter")
 general.add_argument("--blind-mul", action='store_true', help="Blind results by scaling by a secret value for each parameter")
+general.add_argument("--pdb", action='store_true', help="Run the debugger if any of the postprocessing stages fail")
 
 inputs=parser.add_argument_group(title="Inputs", description="Options controlling the inputs to this script")
 inputs.add_argument("--text", action='store_true', help="Tell postprocess that its argument is a text file, regardless of its suffix")
@@ -72,11 +74,11 @@ def main(args):
 
 	for i,ini_filename in enumerate(args.inifile):
 		sampler, ini = read_input(ini_filename, args.text, args.weights)
-		processor_class = postprocessor_for_sampler(sampler)
+		processor_class = postprocessor_for_sampler(sampler.strip ())
 
 		#We do not know how to postprocess everything.
 		if processor_class is None:
-			print "I do not know how to postprocess output from the %s sampler"%sampler
+			print("I do not know how to postprocess output from the %s sampler"%sampler)
 			sampler = None
 			continue
 

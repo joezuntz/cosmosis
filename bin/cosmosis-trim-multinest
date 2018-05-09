@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+import argparse
+
+# Command line arguments
+parser = argparse.ArgumentParser(description='Remove unused samples and zero-weighted from a multinest chain')
+parser.add_argument("input_file", help='Existing multinest chain file')
+parser.add_argument("output_file", help='New trimmed output chain file')
+args = parser.parse_args()
+
+# Read in existing chain
+contents = open(args.input_file).readlines()
+nsample_line = contents[-3]
+
+# Check chain is indeed a multinest chain
+if not nsample_line.startswith('#nsample'):
+    raise ValueError("The input file you specified does not have #nsample as its thired line from the end - probably not a multinest file.")
+
+# Check the tail of the file to see how many samples 
+# are from the last run through.
+nsample_keep = int(nsample_line.split('=')[-1])
+nline = len(contents)
+
+# Count the header lines at the top
+nheader = 0
+for line in contents:
+    if line.startswith('#'):
+        nheader += 1
+    else:
+        break
+
+# Work out how many samples to skip.
+# The 3 is the length of the footer lines
+nsample_total = nline - nheader - 3
+skip = nsample_total - nsample_keep
+
+outfile = open(args.output_file, 'w')
+skipped = 0 
+nsample_used = 0
+
+# Loop through writing all the output
+for line in contents:
+    # Replace nsample line with new correct number
+    if line.startswith('#nsample='):
+        outfile.write('#nsample={}\n'.format(nsample_used))
+    # Keep header and footer lines intact
+    elif line.startswith('#'):
+        outfile.write(line)
+    # Skip early values
+    elif skipped < skip:
+        skipped += 1
+    else:
+        # Skip weight==0 values from last column
+        weight = float(line.split()[-1])
+        if weight>0:
+            # Write out other samples and keep track of how many we write out
+            outfile.write(line)
+            nsample_used += 1

@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import object
 import yaml
 import collections
 import os

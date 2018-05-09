@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import zip
 import matplotlib
 matplotlib.use('Agg')
 matplotlib.rcParams['font.family']='serif'
@@ -22,7 +24,7 @@ import scipy.optimize
 try:
 	from cosmosis import output as output_module
 except ImportError:
-	print "Running without cosmosis: no pretty section names or running on ini files"
+	print("Running without cosmosis: no pretty section names or running on ini files")
 
 class ChainPlotter(Plotter):
 
@@ -37,7 +39,7 @@ class ChainPlotter(Plotter):
 			pass
 		elif burn<1:
 			for i,chain in enumerate(chains):	
-				print "Burning fraction %f of chain %d, which is %d samples" %(burn,i,int(burn*len(chain[:,0])))
+				print("Burning fraction %f of chain %d, which is %d samples" %(burn,i,int(burn*len(chain[:,0]))))
 			chains = [chain[int(burn*len(chain[:,0])):, :] for chain in chains]
 		else:
 			burn = int(burn)
@@ -46,7 +48,7 @@ class ChainPlotter(Plotter):
 	#In this case all the chains are assumed to be from a single
 	#run.  So we should concatenate them all for a single 
 		chains = np.vstack(chains).T
-		chains = dict(zip(column_names,chains))
+		chains = dict(list(zip(column_names,chains)))
 		chain_data = {"Chains":chains}
 		return cls(chain_data, **kw)
 
@@ -60,7 +62,7 @@ class ChainPlotter(Plotter):
 		elif burn<1:
 
 			for name,data in zip(filenames,dataset):	
-				print "Burning fraction %f of chain %s, which is %d samples" %(burn,name,int(burn*len(data[0])))
+				print("Burning fraction %f of chain %s, which is %d samples" %(burn,name,int(burn*len(data[0]))))
 			dataset = [data[:,int(burn*len(data[0])):] for data in dataset]
 		else:
 			burn = int(burn)
@@ -71,7 +73,7 @@ class ChainPlotter(Plotter):
 
 		chain_data = collections.OrderedDict()
 		for filename,names,data in zip(filenames,nameset,dataset):
-			chain_datum = dict(zip(names,data))
+			chain_datum = dict(list(zip(names,data)))
 			chain_data[filename] = chain_datum	
 		return cls(chain_data, **kw)
 
@@ -181,7 +183,7 @@ class ChainPlotter(Plotter):
 		return dict(lw=5)
 
 	def w0_wa_plot(self):
-		print "Doing W0 - WA plot"
+		print("Doing W0 - WA plot")
 		w_name  = 'cosmological_parameters--w'
 		wa_name = 'cosmological_parameters--wa'
 		self._plot_2d(w_name, wa_name, fill=self.options.get('fill',True), factor=1.5)

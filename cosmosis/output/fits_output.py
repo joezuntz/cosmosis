@@ -1,3 +1,4 @@
+from __future__ import print_function
 from .output_base import OutputBase
 from . import utils
 import numpy as np
@@ -62,7 +63,7 @@ class FitsOutput(OutputBase):
 
     def _flush_metadata(self, metadata):
 
-        for (key,(value,comment)) in metadata.items():
+        for (key,(value,comment)) in list(metadata.items()):
             if key.startswith(comment_indicator):
                 self._hdu.write_comment(value)
             elif comment:
@@ -151,7 +152,7 @@ class FitsOutput(OutputBase):
 
         for datafile in datafiles:
 
-            print 'LOADING CHAIN FROM FILE: ', datafile
+            print('LOADING CHAIN FROM FILE: ', datafile)
             chain = []
             chain_metadata = {}
             chain_final_metadata = {}
@@ -166,7 +167,7 @@ class FitsOutput(OutputBase):
             column_names = hdu.get_colnames()
 
             hdr = hdu.read_header()
-            chain_comments = [r['comment'] for r in hdr.records() if r['name']=="COMMENT"]
+            chain_comments = [r['comment'] for r in hdr.records() if r['name'].lower()=="comment"]
             for r in hdr.records():
                 key = r['name']
                 if key=='COMMENT':

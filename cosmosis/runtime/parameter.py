@@ -2,11 +2,11 @@
 
 
 u"""Definition of the :class:`Parameter` class."""
-
-
+from __future__ import absolute_import
+from builtins import object
 import random
-import config
-import prior as priors # to avoid breaking other stuff below
+from . import config
+from . import prior as priors # to avoid breaking other stuff below
 import numpy as np
 
 

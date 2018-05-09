@@ -48,4 +48,17 @@ There are many different samplers packaged with the code that are useful in diff
 User Interface
 ================
 
-You run the CosmoSIS command on a parameter file.  That parameter file describes:
+CosmoSIS decides what analysis to perform using three configuration files that you write (one of them optional).  Theyt are all in the "ini" format, and are:
+
+ * The parameter file, which describes the pipeline of the model you want to run and the sampler you want to run on it.  The :code:`setup` functions for modules look in this file.
+ * The values file, which describes the numerical input parameters, some of which will probably be varied throughout the run. The samplers decide how to vary the parameter within the ranges it gives and modules look for these parameters in their :code:`execute` functions.
+ * The priors file, which optionally describes additional priors on the input parameters.  There is always an implicit Uniform prior on the value; adding a prior here creates an additional prior.  If you do not set a priors file then there will be no additional priors.
+
+When you execute CosmoSIS you tell it the parameter file on the command line.  The parameter file tells CosmoSIS where to find the other two files.
+
+The "ini" format splits a file into sections, which are named using square brackets, and keys and values within those sections.  For example::
+
+    [section_name]
+    parameter_name = value
+
+Values can be integers, doubles, complex, or strings.

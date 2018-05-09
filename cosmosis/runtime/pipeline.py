@@ -2,6 +2,14 @@
 
 u"""Definition of :class:`Pipeline` and the specialization :class:`LikelihoodPipeline`."""
 
+from __future__ import print_function
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import zip
+from builtins import range
+from builtins import object
 
 import os
 import ctypes
@@ -10,15 +18,15 @@ import string
 import numpy as np
 import time
 import collections
-import ConfigParser
 import warnings
+import configparser
 import traceback
 import signal
-import utils
-import config
-import parameter
-import prior
-import module
+from . import utils
+from . import config
+from . import parameter
+from . import prior
+from . import module
 from cosmosis.datablock.cosmosis_py import block
 import cosmosis.datablock.cosmosis_py as cosmosis_py
 try:
@@ -30,6 +38,7 @@ except ImportError:
 
 
 PIPELINE_INI_SECTION = "pipeline"
+NO_LIKELIHOOD_NAMES = "no_likelihood_names_sentinel"
 
 class MissingLikelihoodError(Exception):
 
@@ -321,7 +330,7 @@ class Pipeline(object):
             self.options = config.Inifile(arg)
 
         #This will be set later
-        self.root_directory = self.options.get("runtime", "root", "cosmosis_none_signifier")
+        self.root_directory = self.options.get("runtime", "root", fallback="cosmosis_none_signifier")
         if self.root_directory=="cosmosis_none_signifier":
             self.root_directory=None
 
@@ -329,28 +338,45 @@ class Pipeline(object):
                                        "modules", "").split()
         base_directory = self.base_directory()
 
-        self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", True)
-        self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", False)
-        self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", False)
-        self.shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", "")
-        self.shortcut_data = None
-        self.do_fast_slow = self.options.getboolean(PIPELINE_INI_SECTION, "fast_slow", False)
+
+        self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", fallback=True)
+        self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", fallback=False)
+        self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", fallback=False)
+        shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", fallback="")
+        if shortcut=="":
+            shortcut=None
+
+        self.do_fast_slow = self.options.getboolean(PIPELINE_INI_SECTION, "fast_slow", fallback=False)
         if self.do_fast_slow and self.shortcut:
             sys.stderr.write("Warning: you have the fast_slow and shortcut options both set, and we can only do one of those at once (we will do shortcut)\n")
             self.do_fast_slow = False
-        if self.shortcut and not self.shortcut in module_list:
-            raise ValueError("You set the parameter shortcut=''.  The value should be one of the modules in the modules=... list.")
         self.slow_subspace_cache = None #until set in method
+
         # initialize modules
         self.modules = []
-        if load and PIPELINE_INI_SECTION in self.options.sections():
+        self.has_run = False
 
+        if load and PIPELINE_INI_SECTION in self.options.sections():
+            module_list = self.options.get(PIPELINE_INI_SECTION,
+                                           "modules", fallback="").split()
             self.modules = [
                 module.Module.from_options(module_name,self.options,base_directory)
                 for module_name in module_list
             ]
 
-        self.has_run = False
+
+            self.shortcut_module=0
+            self.shortcut_data=None
+            if shortcut is not None:
+                try:
+                    index = module_list.index(shortcut)
+                except ValueError:
+                    raise ValueError("You tried to set a shortcut in "
+                        "the pipeline but I do not know module %s"%shortcut)
+                if index == 0:
+                    print("You set a shortcut in the pipeline but it was the first module.")
+                    print("It will make no difference.")
+                self.shortcut_module = index
 
 
 
@@ -364,12 +390,12 @@ class Pipeline(object):
         if self.root_directory is None:
             try:
                 self.root_directory = os.environ["COSMOSIS_SRC_DIR"]
-                print "Root directory is ", self.root_directory
+                print("Root directory is ", self.root_directory)
             except KeyError:
                 self.root_directory = os.getcwd()
-                print "WARNING: Could not find environment variable"
-                print "COSMOSIS_SRC_DIR. Module paths assumed to be relative"
-                print "to current directory, ", self.root_directory
+                print("WARNING: Could not find environment variable")
+                print("COSMOSIS_SRC_DIR. Module paths assumed to be relative")
+                print("to current directory, ", self.root_directory)
         return self.root_directory
 
 
@@ -396,7 +422,7 @@ class Pipeline(object):
 
             #We let the user specify additional global sections that are
             #visible to all modules
-            global_sections = self.options.get("runtime", "global", " ")
+            global_sections = self.options.get("runtime", "global", fallback=" ")
             for global_section in global_sections.split():
                 relevant_sections.append(global_section)
 
@@ -461,7 +487,7 @@ class Pipeline(object):
         try:
             import pygraphviz as pgv
         except ImportError:
-            print "Cannot generate a graphical pipeline; please install the python package pygraphviz (e.g. with pip install pygraphviz)"
+            print("Cannot generate a graphical pipeline; please install the python package pygraphviz (e.g. with pip install pygraphviz)")
             return
         P = pgv.AGraph(directed=True)
         # P = pydot.Cluster(label="Pipeline", color='black',  style='dashed')
@@ -473,12 +499,12 @@ class Pipeline(object):
             # module_node = pydot.Node(module.name, color='Yellow', style='filled')
             P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline', shape='box')
         P.add_edge("Sampler", norm_name(self.modules[0].name), color='lightskyblue', style='bold', arrowhead='none')
-        for i in xrange(len(self.modules)-1):
+        for i in range(len(self.modules)-1):
             P.add_edge(norm_name(self.modules[i].name),norm_name(self.modules[i+1].name), color='lightskyblue', style='bold', arrowhead='none')
         # D = pydot.Cluster(label="Data", color='red', style='dashed')
         # G.add_subgraph(D)
         # #find
-        log = [data.get_log_entry(i) for i in xrange(data.get_log_count())]
+        log = [data.get_log_entry(i) for i in range(data.get_log_count())]
         known_sections = set()
         for entry in log:
             if entry!="MODULE-START":
@@ -590,6 +616,11 @@ class Pipeline(object):
             if self.slow_subspace_cache and first_module==0:
                 self.slow_subspace_cache.next_module_results(module_number, data_package)
 
+            # Alternatively we will do the shortcut thing
+            elif self.shortcut_module and not self.has_run and module_number==self.shortcut_module-1:
+                print("Saving shortcut data")
+                self.shortcut_data = data_package.clone()
+
         if self.timing:
             end_time = time.time()
             sys.stdout.write("Total pipeline time: {:.3} seconds\n".format(end_time-start_time))
@@ -658,7 +689,7 @@ class LikelihoodPipeline(Pipeline):
         values_file = self.options.get(PIPELINE_INI_SECTION, "values")
         self.values_filename=values_file
         priors_files = self.options.get(PIPELINE_INI_SECTION,
-                                        "priors", "").split()
+                                        "priors", fallback="").split()
         self.priors_files = priors_files
 
         self.parameters = parameter.Parameter.load_parameters(values_file,
@@ -672,7 +703,7 @@ class LikelihoodPipeline(Pipeline):
 
         #We want to save some parameter results from the run for further output
         extra_saves = self.options.get(PIPELINE_INI_SECTION,
-                                       "extra_output", "")
+                                       "extra_output", fallback="")
 
         self.extra_saves = []
         for extra_save in extra_saves.split():
@@ -681,8 +712,14 @@ class LikelihoodPipeline(Pipeline):
 
         self.number_extra = len(self.extra_saves)
         #pull out all the section names and likelihood names for later
-        self.likelihood_names = self.options.get(PIPELINE_INI_SECTION,
-                                                 "likelihoods").split()
+
+        likelihood_names = self.options.get(PIPELINE_INI_SECTION,
+                                            "likelihoods",
+                                            fallback=NO_LIKELIHOOD_NAMES)
+        if likelihood_names==NO_LIKELIHOOD_NAMES:
+            self.likelihood_names = NO_LIKELIHOOD_NAMES
+        else:
+            self.likelihood_names = likelihood_names.split()
 
         # now that we've set up the pipeline properly, initialize modules
         self.setup()
@@ -691,20 +728,17 @@ class LikelihoodPipeline(Pipeline):
 
     def print_priors(self):
         u"""Pretty-print a table of priors for human inspection."""
-        
-        print ""
-        print "Parameter Priors"
-        print "----------------"
+        print("")
+        print("Parameter Priors")
+        print("----------------")
         if self.parameters:
             n = max([len(p.section)+len(p.name)+2 for p in self.parameters])
         else:
             n=1
         for param in self.parameters:
             s = "{}--{}".format(param.section,param.name)
-            print "{0:{1}}  ~ {2}" .format(s, n, param.prior)
-        print ""
-
-
+            print("{0:{1}}  ~ {2}" .format(s, n, param.prior))
+        print("")
 
     def reset_fixed_varied_parameters(self):
         u"""Identify the sub-set of parameters which are fixed, and those which are to be varied."""
@@ -820,10 +854,10 @@ class LikelihoodPipeline(Pipeline):
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
-        for i in xrange(n):
+        for i in range(n):
             pi = self.varied_params[i]
             ri = pi.limits[1] - pi.limits[0]
-            for j in xrange(n):
+            for j in range(n):
                 pj = self.varied_params[j]
                 rj = pj.limits[1] - pj.limits[0]
                 c[i,j] /= (ri*rj)
@@ -841,10 +875,10 @@ class LikelihoodPipeline(Pipeline):
         c = c.copy()
         n = c.shape[0]
         assert n==c.shape[1], "Cannot normalize a non-square matrix"
-        for i in xrange(n):
+        for i in range(n):
             pi = self.varied_params[i]
             ri = pi.limits[1] - pi.limits[0]
-            for j in xrange(n):
+            for j in range(n):
                 pj = self.varied_params[j]
                 rj = pj.limits[1] - pj.limits[0]
                 if inverse:
@@ -907,10 +941,9 @@ class LikelihoodPipeline(Pipeline):
             return np.array([param.limits[1] for
                          param in self.varied_params])
 
+    def build_starting_block(self, p, check_ranges=False, all_params=False):
+        u"""Assemble :class:`DataBlock` data based on parameter values in `p`, and return it.
 
-
-    def run_parameters(self, p, check_ranges=False, all_params=False):
-        u"""Assemble :class:`DataBlock` data based on parameter values in `p`, and run the pipeline on those data.
 
         If `check_ranges` is indicated, the function will return `None` if
         **any** of our parameters are out of their indicated range.
@@ -938,6 +971,23 @@ class LikelihoodPipeline(Pipeline):
             # add fixed parameters
             for param in self.fixed_params:
                 data[param.section, param.name] = param.start
+
+        return data
+
+
+    def run_parameters(self, p, check_ranges=False, all_params=False):
+        u"""Assemble :class:`DataBlock` data based on parameter values in `p`, and run the pipeline on those data.
+
+        If `check_ranges` is indicated, the function will return `None` if
+        **any** of our parameters are out of their indicated range.
+
+        If `all_params` is indicated, then the `p` run data will be
+        assumed to match all the pipeline parameter, including fixed ones.
+        Otherwise (the default) it should match the list ‘varied_params’, and all
+        of our ‘fixed’ parameters are added to the run-set.
+
+        """
+        data = self.build_starting_block(p, check_ranges=check_ranges, all_params=all_params)
 
         if self.run(data):
             return data
@@ -1036,7 +1086,7 @@ class LikelihoodPipeline(Pipeline):
                 for name,pr in priors:
                     data["priors", name] = pr
 
-        except StandardError:
+        except Exception:
             error = True
             # If we are 
             if self.debug:
@@ -1060,16 +1110,65 @@ class LikelihoodPipeline(Pipeline):
         else:
             return prior + like, extra
 
+    def _set_likelihood_names_from_block(self, data):
+        likelihood_names = []
+        for _,key in data.keys(cosmosis_py.section_names.likelihoods):
+            if key.endswith("_like"):
+                name = key[:-5]
+                likelihood_names.append(name)
+        self.likelihood_names = likelihood_names
+
+    def _extract_likelihoods(self, data):
+        "Extract the likelihoods from the block"
+
+        section_name = cosmosis_py.section_names.likelihoods
+
+        # First run.  If we have not set the likelihood names in the parameter
+        # file then get them from the block
+        if self.likelihood_names == NO_LIKELIHOOD_NAMES:
+            self._set_likelihood_names_from_block(data)
+
+            if not self.quiet:
+                # Tell the user what we found.
+                print("Likelihoods not set in parameter file, so checking what is generated:")
+                for name in self.likelihood_names:
+                    print("Found likelihood named {}".format(name))
+                if not self.likelihood_names:
+                    print("No likelihoods found")
+
+        # loop through named likelihoods and sum their values
+        likelihoods = []
+        for likelihood_name in self.likelihood_names:
+            try:
+                L = data.get_double(section_name,likelihood_name+"_like")
+                likelihoods.append(L)
+                if not self.quiet:
+                    print("    Likelihood {} = {}".format(likelihood_name, L))
+            # Complain if not found
+            except block.BlockError:
+                raise MissingLikelihoodError(likelihood_name, data)
+
+        # Total likelihood
+        like = sum(likelihoods)
+
+        # DM: Issue #181: Zuntz: replace NaN's with -inf's in posteriors and
+        #                 likelihoods.
+        if np.isnan(like):
+            like = -np.inf
+
+        if not self.quiet and self.likelihood_names:
+            sys.stdout.write("Likelihood total = {}\n".format(like))
+
+        return like
 
         
     def likelihood(self, p, return_data=False, all_params=False):
         u"""Run the simulation pipeline, computing any log-likelihoods in the pipeline 
         given the given input parameter values, and return the sum of these.
 
-        The parameter vector `p` must match the length of `self.varied_params`, unless
-        `all_params` is specified as `True` in which case it must match
-        `self.parameters', i.e. must correspond to the complete parameter
-        set.
+        The parameter vector `p` must match the length of `self.varied_params`,
+        unless `all_params` is specified as `True` in which case it must match
+        `self.parameters', i.e. must correspond to the complete parameter set.
 
         If `return_data` are requested, then the updated data block will
         be returned as the third return item.
@@ -1099,28 +1198,7 @@ class LikelihoodPipeline(Pipeline):
             else:
                 return -np.inf, np.repeat(np.nan, self.number_extra)
 
-        # loop through named likelihoods and sum their values
-        likelihoods = []
-        section_name = cosmosis_py.section_names.likelihoods
-        nlike = len(self.likelihood_names)
-        for likelihood_name in self.likelihood_names:
-            try:
-                L = data.get_double(section_name,likelihood_name+"_like")
-                likelihoods.append(L)
-                if not self.quiet and nlike>1:
-                    print "    Likelihood {} = {}".format(likelihood_name, L)
-            except block.BlockError:
-                raise MissingLikelihoodError(likelihood_name, data)
-
-        like = sum(likelihoods)
-
-        # DM: Issue #181: Zuntz: replace NaN's with -inf's in posteriors and
-        #                 likelihoods.
-        if np.isnan (like):
-            like = -np.inf
-
-        if not self.quiet and self.likelihood_names:
-            sys.stdout.write("Likelihood %e\n" % (like,))
+        like = self._extract_likelihoods(data)
 
         extra_saves = []
         for option in self.extra_saves:

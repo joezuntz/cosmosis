@@ -66,3 +66,4 @@ params:
     maxiter: (integer; default=1000) Maximum number of iterations of the sampler
     output_ini: "(string; default='') if present, save the resulting parameters to a new ini file with this name"
     output_covmat: "(string; default='') if present and the sampler supports it, save the estimated covariance to this file"
+    max_posterior: "(bool; default=False) find the max a posteriori point instead of max like (includes the priors as well)"

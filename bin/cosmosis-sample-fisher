@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 #sample_fisher.py
+from builtins import zip
+from builtins import range
 import sys
 from cosmosis.output.text_output import TextColumnOutput
 from cosmosis.runtime.pipeline import LikelihoodPipeline
@@ -24,7 +26,7 @@ data = data[0]
 if metadata['sampler']!='fisher':
 	raise ValueError("File {} is not output from cosmosis fisher sampler".format(filename))
 nparam = metadata['n_varied']
-means = [metadata['mu_{}'.format(i)] for i in xrange(nparam)]
+means = [metadata['mu_{}'.format(i)] for i in range(nparam)]
 covmat = np.linalg.inv(data)
 L = np.linalg.cholesky(covmat)
 

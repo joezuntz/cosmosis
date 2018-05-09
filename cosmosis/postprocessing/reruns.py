@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import zip
 from .elements import PostProcessorElement
 from cosmosis.runtime.config import Inifile
 import os
@@ -73,11 +75,14 @@ class Rerunner(PostProcessorElement):
 		# - save to our temp dir
 		# - read from our temp files
 		param_ini.write("[pipeline]\nvalues={}\n".format(value_ini.name))
-		param_ini.write("[runtime]\nsampler=test\n[test]\nsave_dir={}\n".format(self.rerun_dirname))
+		param_ini.write("[runtime]\nsampler=test\n[test]\nsave_dir={}\nquiet=F\ndebug=T\n".format(self.rerun_dirname))
 		param_ini.flush()
 
 		# and the values so that we use the desired parameters
-		for (name, value) in zip(self.source.colnames, sample):
+		nvaried = self.source.metadata[0]['n_varied']
+		for i,(name, value) in enumerate(zip(self.source.colnames, sample)):
+			if i>=nvaried:
+				break
 			if '--' in name:
 				section, key = name.split('--', 1)
 				value_ini.write("[{}]\n{}={}\n".format(section, key, value))
@@ -111,9 +116,9 @@ class BestFitRerunner(Rerunner):
 	def run(self):
 		best_fit_index = self.source.get_col("post").argmax()
 		sample = self.source.get_row(best_fit_index)
-		print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-		print "Re-running maximum-posterior sample and saving results to {}".format(self.rerun_dirname)
-		print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+		print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+		print("Re-running maximum-posterior sample and saving results to {}".format(self.rerun_dirname))
+		print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
 		self.test_run_sample(sample)
 
 

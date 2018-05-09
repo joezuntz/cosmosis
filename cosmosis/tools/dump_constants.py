@@ -5,16 +5,18 @@ You don't need to use this script.
 It is for the developers to make header files.
 
 """
+from __future__ import print_function
 
-print __doc__
+from builtins import object
+print(__doc__)
 import sys
 #You don't need to use this file - it is for the developers to 
 try:
 	import astropy.constants
 	import tabulate
 except ImportError:
-	print "I can tell you aren't really a developer because you don't have"
-	print "the dependencies (tabulate, astropy)."
+	print("I can tell you aren't really a developer because you don't have")
+	print("the dependencies (tabulate, astropy).")
 
 def find_constants():
 	consts = []

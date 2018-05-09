@@ -6,7 +6,9 @@ I think I need to re-write the plotting code almost from scratch
 as it's grown pretty organically.
 
 """
+from __future__ import print_function
 
+from builtins import zip
 import matplotlib
 matplotlib.use('Agg')
 #matplotlib.rcParams['text.usetex']=True
@@ -26,7 +28,7 @@ import scipy.optimize
 try:
 	from cosmosis import output as output_module
 except ImportError:
-	print "Running without cosmosis: no pretty section names or running on ini files"
+	print("Running without cosmosis: no pretty section names or running on ini files")
 
 
 class GridPlotter(Plotter):
@@ -40,7 +42,7 @@ class GridPlotter(Plotter):
 	def from_outputs(cls, options, **kw):
 		column_names, chains, metadata, comments, final_metadata = output_module.input_from_options(options)
 		chains = np.vstack(chains).T
-		chains = dict(zip(column_names,chains))
+		chains = dict(list(zip(column_names,chains)))
 		chain_data = {"Chains":chains}
 		return cls(chain_data, **kw)
 
@@ -50,19 +52,19 @@ class GridPlotter(Plotter):
 		dataset = [(np.loadtxt(filename).T) for filename in filenames]
 		chain_data = collections.OrderedDict()
 		for filename,names,data in zip(filenames,nameset,dataset):
-			chain_datum = dict(zip(names,data))
+			chain_datum = dict(list(zip(names,data)))
 			chain_data[filename] = chain_datum	
 		return cls(chain_data, **kw)
 
 	def _plot_1d(self, name1):
-		cols1 = self.cols_for_name(name1).values()[0]
-		like = self.cols_for_name("LIKE").values()[0]
+		cols1 = list(self.cols_for_name(name1).values())[0]
+		like = list(self.cols_for_name("LIKE").values())[0]
 		vals1 = np.unique(cols1)
 		n1 = len(vals1)
 
 		#check for derived parameters - this is a weak check
 		if len(vals1)==len(cols1) and not len(self.all_names)==2:
-			print "Not grid-plotting %s as it seems to be a derived parameter" % name1
+			print("Not grid-plotting %s as it seems to be a derived parameter" % name1)
 			raise ValueError(name1)
 		like_sum = np.zeros(n1)
 
@@ -135,9 +137,9 @@ class GridPlotter(Plotter):
 
 	def _plot_2d(self, name1, name2, log_like=True):
 		# Load the columns
-		cols1 = self.cols_for_name(name1).values()[0]
-		cols2 = self.cols_for_name(name2).values()[0]
-		like = self.cols_for_name("LIKE").values()[0]
+		cols1 = list(self.cols_for_name(name1).values())[0]
+		cols2 = list(self.cols_for_name(name2).values())[0]
+		like = list(self.cols_for_name("LIKE").values())[0]
 
 		#Marginalize over all the other parameters by summing
 		#them up

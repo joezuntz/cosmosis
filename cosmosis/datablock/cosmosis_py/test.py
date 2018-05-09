@@ -11,7 +11,7 @@ class TestBlockFunctions(unittest.TestCase):
 		section = 'test'
 		b.put_bool(section, 'b', True)
 		b._delete_section(section)
-		assert len(b.keys())==0
+		assert len(list(b.keys()))==0
 		self.assertRaises(errors.BlockSectionNotFound, b._delete_section, section)
 
 	def test_bool(self):
@@ -78,7 +78,7 @@ class TestBlockFunctions(unittest.TestCase):
 		b.put(section, 'a', 98)
 		b.put(section, "b", 1.4)
 		b.put_string(section, 's', 'my_string')
-		keys = b.keys()
+		keys = list(b.keys())
 		assert sorted(keys) == sorted([('dogs','x'), ('dogs','n'),('dogs','s'),('other','a'),('other','b'),('other','s')])
 		for k in keys:
 			assert k in b

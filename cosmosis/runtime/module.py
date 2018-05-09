@@ -2,6 +2,8 @@
 
 u"""Definition of :class:`Module`."""
 
+from __future__ import print_function
+from builtins import object
 
 import os
 import ctypes
@@ -43,7 +45,7 @@ class Module(object):
     opposed to a Python module!
 
     A :class:`Module` represents a single discrete step in an overall 
-    computational pipelinem consuming some inputs from and providing some
+    computational pipeline, consuming some inputs from and providing some
     outputs to a :class:`DataBlock`.
 
     :class:`Module`s are made from either a python file or a shared library,
@@ -148,7 +150,7 @@ class Module(object):
 
         if self.setup_function:
             if not quiet:
-                print '-- Setting up module %s --' % (self.name)
+                print('-- Setting up module %s --' % (self.name))
             self.data = self.setup_function(config)
         else:
             self.data = None
@@ -162,8 +164,8 @@ class Module(object):
                                                      self.execute_function,
                                                      module_type)
         if self.execute_function is None:
-            raise ValueError("Could not find a function 'execute' in module ‘"
-                                 +  self.name + "’")
+            raise ValueError("Could not find a function 'execute' in module '"
+                                 +  self.name + "'")
         
 
 
@@ -248,7 +250,7 @@ class Module(object):
     @staticmethod
     def load_function(library, function_name,
                       module_type=MODULE_TYPE_EXECUTE_SIMPLE):
-        u"""Load a Moduleʼs function from a shared library."""
+        u"""Load a Module's functions from a shared library."""
         function = getattr(library, function_name, None)
         if not function:
             function = getattr(library, function_name + "_", None)
@@ -292,9 +294,9 @@ class Module(object):
                                         options.get(module_name, "file"))
 
         # identify relevant functions
-        setup_function   = options.get (module_name, "setup",    "setup"  )
-        exec_function    = options.get (module_name, "function", "execute")
-        cleanup_function = options.get (module_name, "cleanup",  "cleanup")
+        setup_function = options.get(module_name, "setup", fallback="setup")
+        exec_function = options.get(module_name, "function", fallback="execute")
+        cleanup_function = options.get(module_name, "cleanup", fallback="cleanup")
 
         m = cls(module_name, filename,
                 setup_function, exec_function, cleanup_function,

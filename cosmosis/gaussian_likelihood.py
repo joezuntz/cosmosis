@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 import scipy.interpolate
 import scipy.integrate
 import numpy as np
@@ -39,7 +41,7 @@ class GaussianLikelihood(object):
             if include_norm:
                 # We have no datablock here so we don't want to call any subclass method
                 self.log_det_constant = GaussianLikelihood.extract_covariance_log_determinant(self,None)
-                print "Including -0.5*|C| normalization in {} likelihood where |C| = {}".format(self.like_name, self.log_det_constant)
+                print("Including -0.5*|C| normalization in {} likelihood where |C| = {}".format(self.like_name, self.log_det_constant))
             else:
                 self.log_det_constant = 0.0
 
@@ -163,6 +165,7 @@ class GaussianLikelihood(object):
         #gaussian likelihood
         d = x-mu
         chi2 = np.einsum('i,ij,j', d, self.inv_cov, d)
+        chi2 = float(chi2)
         like = -0.5*chi2
 
         #It can be useful to save the chi^2 as well as the likelihood,
@@ -173,10 +176,17 @@ class GaussianLikelihood(object):
         #account for this in the likelihood.
         if not self.constant_covariance:
             log_det = self.extract_covariance_log_determinant(block)
-            block[names.data_vector, self.like_name+"_LOG_DET"] = log_det
-            like -= 0.5 * log_det
         else:
-            like -= 0.5*self.log_det_constant
+            log_det = self.log_det_constant            
+
+        norm = -0.5 * log_det
+        like += norm
+        block[names.data_vector, self.like_name+"_LOG_DET"] = float(log_det)
+        block[names.data_vector, self.like_name+"_NORM"] = float(norm)
+
+        # Numpy has started returning a 0D array in recent versions (1.14).
+        # Convert this to a float.
+        like = float(like)
 
         #Now save the resulting likelihood
         block[names.likelihoods, self.like_name+"_LIKE"] = like
@@ -265,7 +275,7 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
                 file".format(self.like_name))
         if options.has_value("like_name"):
             self.like_name = options["like_name"]
-        print 'Likelihood "{0}" will be Gaussian {1} +/- {2} '.format(self.like_name, self.mean, self.sigma)
+        print('Likelihood "{0}" will be Gaussian {1} +/- {2} '.format(self.like_name, self.mean, self.sigma))
         self.data_y = np.array([mean])
         self.cov = np.array([[sigma**2]])
         self.inv_cov = np.array([[sigma**-2]])
@@ -274,7 +284,7 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
         if include_norm:
             # We have no datablock here so we don't want to call any subclass method
             self.log_det_constant = GaussianLikelihood.extract_covariance_log_determinant(self,None)
-            print "Including -0.5*|C| normalization in {} likelihood where log|C| = {}".format(self.like_name, self.log_det_constant)
+            print("Including -0.5*|C| normalization in {} likelihood where log|C| = {}".format(self.like_name, self.log_det_constant))
         else:
             self.log_det_constant = 0.0
             

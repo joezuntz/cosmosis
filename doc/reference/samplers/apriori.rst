@@ -1,5 +1,5 @@
 The Apriori sampler
-------------------
+--------------------------------------------------------------------
 
 Draw samples from the prior and evaluate the likelihood
 

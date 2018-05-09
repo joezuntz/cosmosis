@@ -1,3 +1,7 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
+from builtins import object
 import numpy as np
 
 
@@ -140,7 +144,7 @@ class MCMC(object):
         samples = []
         blobs = []
         #Take n sample mcmc steps
-        for i in xrange(n):
+        for i in range(n):
             #this function is designed to be called
             #multiple times.  keep track of overall iteration number
             self.iterations += 1
@@ -150,7 +154,7 @@ class MCMC(object):
             #assume two proposal subsets for now
             Lq = self.posterior(q)
             if not self.quiet:
-                print "  ".join(str(x) for x in q)
+                print("  ".join(str(x) for x in q))
             #acceptance test
             delta = Lq[0] - self.Lp[0]
             if  (delta>0) or (delta >= np.log(np.random.uniform())):
@@ -160,9 +164,9 @@ class MCMC(object):
                 self.accepted += 1
                 self.accepted_since_tuning += 1
                 if not self.quiet:
-                    print "[Accept delta={:.3g}]\n".format(delta)
+                    print("[Accept delta={:.3g}]\n".format(delta))
             elif not self.quiet:
-                print "[Reject delta={:.3g}]\n".format(delta)
+                print("[Reject delta={:.3g}]\n".format(delta))
 
             #store next point
             self.update_covariance_estimate()
@@ -195,28 +199,29 @@ class MCMC(object):
 
     def tune(self):
 
-        print "Cov 00 = ", self.covariance_estimate[0,0]
+        print("Cov 00 = ", self.covariance_estimate[0,0])
         f = (self.covariance_estimate.diagonal()**0.5-self.last_covariance_estimate.diagonal()**0.5)/self.last_covariance_estimate.diagonal()**0.5
         i = abs(f).argmax()
-        print "Largerst parameter sigma fractional change = {:.1f}% for param {}".format(100*f[i], i)
+        print("Largerst parameter sigma fractional change = {:.1f}% for param {}".format(100*f[i], i))
         self.last_covariance_estimate = self.covariance_estimate.copy()
 
-        print "Accepted since last tuning: {}%".format((100.*self.accepted_since_tuning)/self.iterations_since_tuning)
+        print("Accepted since last tuning: {}%".format((100.*self.accepted_since_tuning)/self.iterations_since_tuning))
         self.accepted_since_tuning = 0
         self.iterations_since_tuning = 0
 
 
         if isinstance(self.proposal, FastSlowProposal):
-            print "Tuning fast/slow sampler proposal."
+            print("Tuning fast/slow sampler proposal.")
             self.proposal = FastSlowProposal(self.covariance_estimate, 
                 self.fast_indices, self.slow_indices, self.oversampling, scaling=self.scaling, exponential_probability=self.exponential_probability)
         elif isinstance(self.proposal, Proposal):
-            print "Tuning standard sampler proposal."
+            print("Tuning standard sampler proposal.")
             cholesky = np.linalg.cholesky(self.covariance_estimate)
             self.proposal = Proposal(cholesky, scaling=self.scaling, exponential_probability=self.exponential_probability)
         else:
             #unknown proposal type
             pass
+
 
 #I've been copying this algorithm out of CosmoMC
 #for the last decade.  Every time I need a new one
@@ -229,10 +234,10 @@ class MCMC(object):
 #coming back to this and translating it.
 def random_rotation_matrix(n):
     R=np.identity(n)
-    for j in xrange(n):
+    for j in range(n):
         while True:
             v = np.random.normal(size=n)
-            for i in xrange(j):
+            for i in range(j):
                 v -= R[i,:] * np.dot(v,R[i,:])
             L = np.dot(v,v)
             if (L>1e-3): break

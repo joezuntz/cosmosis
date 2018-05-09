@@ -1,2 +1,2 @@
-Tutorial 4: Making a new pipeline
----------------------------------
+Tutorial 4: Building new pipelines
+----------------------------------

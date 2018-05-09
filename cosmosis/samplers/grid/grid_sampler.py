@@ -1,3 +1,7 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import map
+from builtins import str
 import itertools
 import numpy as np
 
@@ -51,19 +55,19 @@ class GridSampler(ParallelSampler):
         #This doesn't actually keep them all in memory, it is just the conceptual
         #outer product
         total_samples = self.nsample**len(self.pipeline.varied_params)
-        print
-        print "Total number of grid samples: ", total_samples
+        print()
+        print("Total number of grid samples: ", total_samples)
 
         if total_samples>LARGE_JOB_SIZE:
-            print "That is a very large number of samples."
+            print("That is a very large number of samples.")
             if self.allow_large:
-                print "But you set allow_large=T so I will continue"
+                print("But you set allow_large=T so I will continue")
             else:
-                print "This is suspicously large so I am going to stop"
-                print "If you really want to do this set allow_large=T in the"
-                print "[grid] section of the ini file."
+                print("This is suspicously large so I am going to stop")
+                print("If you really want to do this set allow_large=T in the")
+                print("[grid] section of the ini file.")
                 raise ValueError("Suspicously large number of grid points %d ( = n_samp ^ n_dim = %d ^ %d); set allow_large=T in [grid] section to permit this."%(total_samples,self.nsample,len(self.pipeline.varied_params)))
-        print
+        print()
         
         # If our pipeline allows it we arrange it so that the
         # fast parameters change fastest in the sequence.
@@ -107,13 +111,13 @@ class GridSampler(ParallelSampler):
         if self.pool:
             results = self.pool.map(task, jobs)
         else:
-            results = map(task, jobs)
+            results = list(map(task, jobs))
 
         #Update the count
         self.ndone += len(results)
 
         #Save the results of the sampling
-        for sample, result  in itertools.izip(samples, results):
+        for sample, result  in zip(samples, results):
             #Optionally save all the results calculated by each
             #pipeline run to files
             (prob, extra) = result

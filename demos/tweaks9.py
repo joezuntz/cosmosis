@@ -1,3 +1,4 @@
+from __future__ import print_function
 from cosmosis.postprocessing.plots import Tweaks
 import pylab
 
@@ -44,9 +45,9 @@ class AddTruth(Tweaks):
             x = truths.get(self.info[1])
             y = truths.get(self.info[2])
             if x is None:
-                print "No truth value for {}".format(self.info[1])
+                print("No truth value for {}".format(self.info[1]))
             if y is None:
-                print "No truth value for {}".format(self.info[2])
+                print("No truth value for {}".format(self.info[2]))
             if x is None or y is None:
                 return
             pylab.plot([x], [y], 'y*', markersize=20)
@@ -54,7 +55,7 @@ class AddTruth(Tweaks):
             # This is a 1D plot - just draw a line at the truth
             x = truths.get(self.info[0])
             if x is None:
-                print "No truth value for {}".format(self.info[1])
+                print("No truth value for {}".format(self.info[1]))
                 return
             pylab.plot([x,x], [0,1], 'k-')
 

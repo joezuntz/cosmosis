@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import map
+from builtins import object
 from .. import ParallelSampler
 from . import fisher
 from ...datablock import BlockError
@@ -11,7 +14,7 @@ def compute_fisher_vector(p):
     try:
         x = fisherPipeline.denormalize_vector(p)
     except ValueError:
-        print "Parameter vector outside limits: %r" % p
+        print("Parameter vector outside limits: %r" % p)
         return None
 
     #Run the pipeline, generating a data block
@@ -44,7 +47,7 @@ def compute_fisher_vector(p):
 
 class SingleProcessPool(object):
     def map(self, function, tasks):
-        return map(function, tasks)
+        return list(map(function, tasks))
 
 class FisherSampler(ParallelSampler):
     sampler_outputs = []
@@ -64,8 +67,8 @@ class FisherSampler(ParallelSampler):
         if self.output:
             for p in self.pipeline.extra_saves:
                 name = '%s--%s'%p
-                print "NOTE: You set extra_output to include parameter %s in the parameter file" % name
-                print "      But the Fisher Sampler cannot do that, so this will be ignored."
+                print("NOTE: You set extra_output to include parameter %s in the parameter file" % name)
+                print("      But the Fisher Sampler cannot do that, so this will be ignored.")
                 self.output.del_column(name)
 
         self.converged = False
@@ -77,15 +80,15 @@ class FisherSampler(ParallelSampler):
         P = np.zeros((n,n))
         for i, param in enumerate(self.pipeline.varied_params):
             if isinstance(param.prior, prior.GaussianPrior) or isinstance(param.prior, prior.TruncatedGaussianPrior):
-                print "Applying additional prior sigma = {0} to {1}".format(param.prior.sigma, param)
-                print "This will be assumed to be centered at the parameter center regardless of what the ini file says"
-                print "The limits of the parameter will also not be respected." 
-                print
+                print("Applying additional prior sigma = {0} to {1}".format(param.prior.sigma, param))
+                print("This will be assumed to be centered at the parameter center regardless of what the ini file says")
+                print("The limits of the parameter will also not be respected.") 
+                print()
                 P[i,i] = 1./param.prior.sigma**2
             elif isinstance(param.prior, prior.ExponentialPrior) or isinstance(param.prior, prior.TruncatedExponentialPrior):
-                print "There is an exponential prior applied to parameter {0}".format(param)
-                print "This is *not* accounted for in the Fisher matrix"
-                print
+                print("There is an exponential prior applied to parameter {0}".format(param))
+                print("This is *not* accounted for in the Fisher matrix")
+                print()
             #uniform prior should have no effect on the fisher matrix.
             #at least up until the assumptions of the FM are violated anyway
         return P
@@ -115,7 +118,32 @@ class FisherSampler(ParallelSampler):
         fisher_calc = fisher_class(compute_fisher_vector, start_vector, 
             self.step_size, self.tolerance, self.maxiter, pool=self.pool)
 
-        fisher_matrix = fisher_calc.compute_fisher_matrix()
+        try:
+            fisher_matrix = fisher_calc.compute_fisher_matrix()
+        except fisher.FisherParameterError as error:
+            param = str(self.pipeline.varied_params[error.parameter_index])
+            if error.parameter_index==0:
+                message = """
+There was an error running the pipeline for the Fisher Matrix for parameter:
+{}
+Since this is the first parameter this might indicate a general error in the pipeline.
+You might want to check with the "test" sampler.
+
+It might also indicate that the parameter lower or upper limit is too close to its
+starting value so the points used to calculate the derivative are outside the range.
+If that is the case you should try calculating the Fisher Matrix at a different starting point.
+""".format(param)
+            else:
+                message = """
+There was an error running the pipeline for the Fisher Matrix for parameter:
+{}
+
+This probably indicates that the parameter lower or upper limit is too close to its
+starting value, so the points used to calculate the derivative are outside the range.
+If that is the case you should try calculating the Fisher Matrix at a different starting point.
+""".format(param)
+            raise ValueError(message)
+
         fisher_matrix = self.pipeline.denormalize_matrix(fisher_matrix,inverse=True)
 
         P = self.compute_prior_matrix()
@@ -126,9 +154,11 @@ class FisherSampler(ParallelSampler):
         if self.converged:
             for row in fisher_matrix:
                 self.output.parameters(row)
-
-        covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
-        self.distribution_hints.set_cov(covariance_matrix)
+        try:
+            covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
+            self.distribution_hints.set_cov(covariance_matrix)
+        except ValueError:
+            sys.stderr.write("Generated covariance matrix was not positive definite - beware! ")
 
     def is_converged(self):
         return self.converged

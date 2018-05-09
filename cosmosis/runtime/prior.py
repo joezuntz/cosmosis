@@ -10,7 +10,7 @@ The specializations are :class:`UniformPrior`, :class:`GaussianPrior`,
 Applications can get by only knowing about the :class:`Prior` superclass.
 
 """
-
+from builtins import object
 
 from . import config
 import numpy as np
