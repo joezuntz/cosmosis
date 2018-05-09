@@ -200,13 +200,13 @@ class SlowSubspaceCache(object):
             print(first_use)
             print(params)
             raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline (used {}, have{})".format(sum(first_use_count), len(params)))
-        print
-        print "Parameters first used in each module:"
+        print("\n")
+        print("Parameters first used in each module:")
         for f, n in zip(first_use.items(), first_use_count):
             name, params = f
-            print "{} - {} parameters:".format(name, n)
+            print("{} - {} parameters:".format(name, n))
             for p in params:
-                print "     {}--{}".format(*p)
+                print("     {}--{}".format(*p))
 
         # Now we have a count of the number of parameters and amount of 
         # time used before each module in the pipeline
@@ -234,8 +234,8 @@ class SlowSubspaceCache(object):
 
         self.slow_modules = self.split_index
         self.fast_modules = len(pipeline.modules) - self.slow_modules
-        self.slow_params = sum(first_use.values()[:self.split_index], [])
-        self.fast_params = sum(first_use.values()[self.split_index:], [])
+        self.slow_params = sum(list(first_use.values())[:self.split_index], [])
+        self.fast_params = sum(list(first_use.values())[self.split_index:], [])
 
         if worth_splitting:
             print("")
@@ -270,7 +270,7 @@ class SlowSubspaceCache(object):
             print("Analyzing the fast/slow for grid sampler - different rule used for time saving")
 
         T = np.zeros(n_step)
-        for i in xrange(n_step):
+        for i in range(n_step):
             T_slow = sum(timings[:i])
             n_slow = sum(first_use_count[:i])
             T_fast = T_total - T_slow
@@ -347,7 +347,7 @@ class Pipeline(object):
             shortcut=None
 
         self.do_fast_slow = self.options.getboolean(PIPELINE_INI_SECTION, "fast_slow", fallback=False)
-        if self.do_fast_slow and self.shortcut:
+        if self.do_fast_slow and shortcut:
             sys.stderr.write("Warning: you have the fast_slow and shortcut options both set, and we can only do one of those at once (we will do shortcut)\n")
             self.do_fast_slow = False
         self.slow_subspace_cache = None #until set in method
@@ -554,8 +554,7 @@ class Pipeline(object):
         modules = self.modules
 
         timings = []
-        if self.shortcut:
-            shortcut_module_index = modules.index(self.shortcut)
+        if self.shortcut_module:
             if self.shortcut_data is None:
                 first_module = 0
             else:
