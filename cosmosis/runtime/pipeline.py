@@ -334,8 +334,6 @@ class Pipeline(object):
         if self.root_directory=="cosmosis_none_signifier":
             self.root_directory=None
 
-        module_list = self.options.get(PIPELINE_INI_SECTION,
-                                       "modules", "").split()
         base_directory = self.base_directory()
 
 
