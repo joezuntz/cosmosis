@@ -80,9 +80,7 @@ namespace cosmosis
     explicit Entry(nd_complex_t const& a);
 
     Entry(Entry const& other);
-    // The next might not be needed; havng the copy and not operator=
-    // makes operator= implicitly deleted.
-    Entry& operator=(Entry const& other) = delete;
+    Entry& operator=(Entry const& other);
 
     ~Entry();
 
@@ -166,6 +164,7 @@ namespace cosmosis
   // location addr.
   template <class T> void emplace(T* addr, T const& val);
 } // namespace cosmosis
+
 
 // Implementation of member functions.
 inline
@@ -265,6 +264,7 @@ void cosmosis::Entry::_vset(T const& val, T& member)
       emplace(&member, val);
     }
 }
+
 
 namespace cosmosis
 {

@@ -27,6 +27,27 @@ cosmosis::Entry::Entry(Entry const& e) :
   else throw BadEntry();
 }
 
+cosmosis::Entry&
+cosmosis::Entry::operator=(cosmosis::Entry const& e)
+{
+  _destroy_if_managed();
+  type_ = e.type_;
+  if      (type_ == typeid(int)) i = e.i;
+  else if (type_ == typeid(bool)) b = e.b;
+  else if (type_ == typeid(double)) d = e.d;
+  else if (type_ == typeid(string)) emplace(&s, e.s);
+  else if (type_ == typeid(complex_t)) z = e.z;
+  else if (type_ == typeid(vint_t)) emplace(&vi, e.vi);
+  else if (type_ == typeid(vdouble_t)) emplace(&vd, e.vd);
+  else if (type_ == typeid(vstring_t)) emplace(&vs, e.vs);
+  else if (type_ == typeid(vcomplex_t)) emplace(&vz,  e.vz);
+  else if (type_ == typeid(nd_int_t)) emplace(&ndi, e.ndi);
+  else if (type_ == typeid(nd_double_t)) emplace(&ndd, e.ndd);
+  else if (type_ == typeid(nd_complex_t)) emplace(&ndz, e.ndz);
+  else throw BadEntry();  
+  return *this;
+}
+
 cosmosis::Entry::~Entry()
 {
   _destroy_if_managed();
