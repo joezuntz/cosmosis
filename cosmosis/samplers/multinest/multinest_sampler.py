@@ -65,7 +65,7 @@ MULTINEST_SECTION='multinest'
 
 class MultinestSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("post", float), ("weight", float)]
+    sampler_outputs = [("like", float), ("post", float), ("weight", float)]
     supports_smp=False
 
     def config(self):
@@ -92,7 +92,10 @@ class MultinestSampler(ParallelSampler):
         self.converged=False
 
         self.ndim = len(self.pipeline.varied_params)
-        self.npar = self.ndim + len(self.pipeline.extra_saves)
+
+        # We add one to the output to save the posterior as well as the
+        # likelihood.
+        self.npar = self.ndim + len(self.pipeline.extra_saves) + 1
 
         #Required options
         self.max_iterations = self.read_ini("max_iterations", int)
@@ -154,10 +157,14 @@ class MultinestSampler(ParallelSampler):
             self.wrapped_output_logger = dumper_type(dumper)
 
         def likelihood(cube_p, ndim, nparam, context_p):
-            nextra = nparam-ndim
+            # The -1 is because we store the likelihood separately.
+            nextra = nparam-ndim-1
             #pull out values from cube
             cube_vector = np.array([cube_p[i] for i in range(ndim)])
             vector = self.pipeline.denormalize_vector_from_prior(cube_vector)
+
+            # For information only
+            prior = self.pipeline.prior(vector)
             try:
                 like, extra = self.pipeline.likelihood(vector)
             except KeyboardInterrupt:
@@ -168,6 +175,9 @@ class MultinestSampler(ParallelSampler):
 
             for i in range(nextra):
                 cube_p[ndim+i] = extra[i]
+
+            # posterior column
+            cube_p[ndim+nextra] = prior + like
 
             return like
         self.wrapped_likelihood = loglike_type(likelihood)
@@ -213,10 +223,11 @@ class MultinestSampler(ParallelSampler):
         data = np.array([posterior[i] for i in range(n*(self.npar+2))]).reshape((self.npar+2, n))
         for row in data.T:
             params = row[:self.ndim]
-            extra_vals = row[self.ndim:self.npar]
+            extra_vals = row[self.ndim:self.npar-1]
+            post = row[self.npar-1]
             like = row[self.npar]
             importance = row[self.npar+1]
-            self.output.parameters(params, extra_vals, like, importance)
+            self.output.parameters(params, extra_vals, like, post, importance)
         self.output.final("nsample", n)
         self.output.flush()
 
