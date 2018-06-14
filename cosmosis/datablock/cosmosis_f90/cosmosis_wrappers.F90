@@ -50,6 +50,15 @@ module cosmosis_wrappers
             character(kind=c_char), dimension(*) :: name
         end function c_datablock_has_section_wrapper
 
+        function c_datablock_has_value_wrapper(s, section, name) bind(C, name="c_datablock_has_value")
+            use iso_c_binding
+            use cosmosis_types
+            implicit none
+            logical (kind=c_bool) :: c_datablock_has_value_wrapper
+            integer(kind=cosmosis_block), value :: s
+            character(kind=c_char), dimension(*) :: section, name
+        end function c_datablock_has_value_wrapper
+
         function c_datablock_get_section_name_wrapper(s, i) bind(C, name="c_datablock_get_section_name")
             use iso_c_binding
             use cosmosis_types
