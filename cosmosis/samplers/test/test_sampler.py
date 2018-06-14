@@ -33,7 +33,7 @@ class TestSampler(Sampler):
             found_likelihoods = [k[1][:-5] for k in list(error.pipeline_data.keys()) if k[0]=="likelihoods"]            
             sys.stderr.write("\n")
             sys.stderr.write("One of the likelihoods you asked for was not found.\n")
-            sys.stderr.write("You asked for: %s\n"%error.message)
+            sys.stderr.write("You asked for: %s\n"%str(error))
             sys.stderr.write("But the only ones calculated in the pipeline were:\n")
             sys.stderr.write(", ".join(found_likelihoods)+"\n")
             sys.stderr.write("\n")
