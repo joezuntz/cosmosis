@@ -69,6 +69,13 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             self.output.metadata(option, str(val))
         return val
 
+    def read_ini_choices(self, option, option_type, choices, default=None):
+        value = self.read_ini(option, option_type, default=default)
+        if value not in choices:
+            name = self.__class__.__name__
+            raise ValueError("Parameter {} for sampler {} must be one of: {}\n Parameter file said: {}".format(option, name, choices, value))
+        return value
+
 
     def config(self):
         ''' Set up sampler (could instead use __init__) '''
