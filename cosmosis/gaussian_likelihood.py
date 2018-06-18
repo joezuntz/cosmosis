@@ -61,6 +61,8 @@ class GaussianLikelihood(object):
         if options.has_value("like_name"):
             self.like_name = options['like_name']
 
+        self.likelihood_only = options.get_bool('likelihood_only', 'False')
+
 
 
     def build_data(self):
@@ -191,6 +193,11 @@ class GaussianLikelihood(object):
         #Now save the resulting likelihood
         block[names.likelihoods, self.like_name+"_LIKE"] = like
 
+        # For some very fast likelihoods the overhead from
+        # the steps below is painful.  Setting likelihood_only avoids that.
+        if self.likelihood_only:
+            return
+
         #And also the predicted data points - the vector of observables 
         # that in a fisher approch we want the derivatives of.
         #and inverse cov mat which also goes into the fisher matrix.
@@ -287,6 +294,8 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
             print("Including -0.5*|C| normalization in {} likelihood where log|C| = {}".format(self.like_name, self.log_det_constant))
         else:
             self.log_det_constant = 0.0
+
+        self.likelihood_only = options.get_bool('likelihood_only', 'False')
             
     def build_data(self):
         """Sub-classes can over-ride this if they wish, to generate 
