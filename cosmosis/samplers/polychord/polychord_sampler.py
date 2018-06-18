@@ -178,6 +178,8 @@ class PolyChordSampler(ParallelSampler):
         loglikes = (ct.c_double*n_nlives)()
         nlives = (ct.c_int*n_nlives)()
 
+        polychord_outfile_root = self.polychord_outfile_root.encode('ascii')
+
         self._run(
                 self.wrapped_likelihood,      #loglike,
                 self.wrapped_prior,           #prior,
@@ -191,21 +193,21 @@ class PolyChordSampler(ParallelSampler):
                 self.log_zero,                #logzero
                 self.max_iterations,          #max_ndead
                 0.,                           #boost_posterior
-                self.polychord_outfile_root,  #posteriors
-                self.polychord_outfile_root,  #equals
+                polychord_outfile_root,  #posteriors
+                polychord_outfile_root,  #equals
                 ct.c_bool,                    #cluster_posteriors
                 self.resume,                  #write_resume 
                 False,                        #write_paramnames
                 self.resume,                  #read_resume
-                self.polychord_outfile_root,  #write_stats
-                self.polychord_outfile_root,  #write_live
-                self.polychord_outfile_root,  #write_dead
-                self.polychord_outfile_root,  #write_prior
+                polychord_outfile_root,  #write_stats
+                polychord_outfile_root,  #write_live
+                polychord_outfile_root,  #write_dead
+                polychord_outfile_root,  #write_prior
                 self.compression_factor,      #compression_factor
                 self.ndim,                    #nDims
                 self.nderived,                #nDerived 
-                "",                           #base_dir
-                self.polychord_outfile_root,  #file_root
+                "".encode('ascii'),           #base_dir
+                polychord_outfile_root,  #file_root
                 n_grade,                      #nGrade
                 grade_frac,                   #grade_frac
                 grade_dims,                   #grade_dims
