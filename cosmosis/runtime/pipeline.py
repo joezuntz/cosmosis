@@ -693,7 +693,6 @@ class LikelihoodPipeline(Pipeline):
                                                               priors_files,
                                                               override,
                                                               )
-
         self.reset_fixed_varied_parameters()
 
         self.print_priors()
@@ -743,6 +742,8 @@ class LikelihoodPipeline(Pipeline):
                               if param.is_varied()]
         self.fixed_params = [param for param in self.parameters
                              if param.is_fixed()]
+        self.nvaried = len(self.varied_params)
+        self.nfixed = len(self.fixed_params)
 
 
 
