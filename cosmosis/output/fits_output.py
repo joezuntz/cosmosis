@@ -167,7 +167,7 @@ class FitsOutput(OutputBase):
             column_names = hdu.get_colnames()
 
             hdr = hdu.read_header()
-            chain_comments = [r['comment'] for r in hdr.records() if r['name']=="COMMENT"]
+            chain_comments = [r['comment'] for r in hdr.records() if r['name'].lower()=="comment"]
             for r in hdr.records():
                 key = r['name']
                 if key=='COMMENT':

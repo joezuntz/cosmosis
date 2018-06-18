@@ -22,8 +22,10 @@ class RegisteredSampler(type):
 class Sampler(with_metaclass(RegisteredSampler, object)):
     needs_output = True
     sampler_outputs = []
+    understands_fast_subspaces = False
     parallel_output = False
     is_parallel_sampler = False
+
     
     def __init__(self, ini, pipeline, output):
         self.ini = ini

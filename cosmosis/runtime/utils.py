@@ -13,6 +13,8 @@ import errno
 from timeit import default_timer
 import sys
 from contextlib import contextmanager
+import tempfile
+
 
 
 
@@ -147,3 +149,143 @@ def stdout_redirected(to=os.devnull, stdout=None):
             #NOTE: dup2 makes stdout_fd inheritable unconditionally
             stdout.flush()
             os.dup2(copied.fileno(), stdout_fd)  # $ exec >&copied
+
+
+
+
+
+
+
+def read_comment_section(filename):
+    """Pull out the comments section from the top of a chain file"""
+    lines = []
+    for line in open(filename):
+        if not line.startswith('#'):
+            break
+        lines.append(line)
+    return lines
+
+
+def extract_section(lines, section):
+    """Extract the PARAMS, VALUES, or PRIORS section from a group
+    of comment lines from a chain file"""
+    start = "## START_OF_{}_INI".format(section).upper()
+    end = "## END_OF_{}_INI".format(section).upper()
+    in_section = False
+    output_lines = []
+    for line in lines:
+        if line.startswith(start):
+            in_section = True
+            continue
+        elif line.startswith(end):
+            break
+        elif in_section:
+            output_lines.append(line[3:])
+    return output_lines
+
+def save_section(lines, section, prefix):
+    """Save a group of lines to a file"""
+    filename = "{}_{}.ini".format(prefix, section)
+    open(filename,'w').writelines(lines)
+
+def extract_params(chain, prefix):
+    """ Extract the parameters, values, and priors files from file "chain"
+    and save them to prefix_params.ini etc. """
+    lines = read_comment_section(chain)
+
+    for section in ['params', 'values', 'priors']:
+        section_lines = extract_section(lines, section)
+        save_section(section_lines, section, prefix)
+
+
+def tempdir_safe_docker():
+    # Under python3 TemporaryDirectory is in the tempfile
+    # standard library package.
+    # Under python2 the backports.tempfile package is required.
+    # It can be pip installed.
+    try:
+        TemporaryDirectory = tempfile.TemporaryDirectory
+    except AttributeError:
+        try:
+            import backports.tempfile
+            TemporaryDirectory = backports.tempfile.TemporaryDirectory
+        except ImportError:
+            raise ImportError("In python 2 the PriorFunction code "+
+                "requires you to install backports.tempfile.  It can be done with pip")
+
+    return TemporaryDirectory()
+
+
+class PriorFunction(object):
+    def __init__(self, chain_filename):
+        "Build a prior function from an input chain file"
+        import cosmosis.runtime.parameter
+
+
+        # Read the parameter files to temporary files
+        # they will be deleted afterwards
+        with tempdir_safe_docker() as tmpdir:
+            dirname = tmpdir + os.path.sep
+            extract_params(chain_filename, dirname+"tmp")
+
+            # Load in the extracter parameters, including their priors
+            self.all_params = cosmosis.runtime.parameter.Parameter.load_parameters(
+                dirname+'tmp_values.ini',
+                priors_files=[dirname+'tmp_priors.ini'])
+
+        # Pull out the priors from the parameters
+        self.all_priors = [p.prior for p in self.all_params]
+        self.varied_priors = [p.prior for p in self.all_params if p.is_varied()]
+
+    def _evaluate(self, p_in, priors):
+        # Internal method
+        # Convert to 2D array
+        p = np.atleast_2d(p_in)
+
+        #Check shape of array
+        if not p.shape[1]==len(priors):
+            raise ValueError("Wrong dimension in evaluate_all")
+        # Number of samples
+        n = p.shape[0]
+        # Output value
+        logp = np.zeros(n)
+        # Loop through samples and then through parameters
+        # in that sample.
+        for i,p_i in enumerate(p):
+            logp_i = 0.0
+            for x, prior in zip(p_i, priors):
+                logp_i += prior(x)  # Calling a prior returns log(P(x))
+            logp[i] = logp_i
+        return logp
+
+    def evaluate_p(self, p_in):
+        """
+        Evaluate P(x) of the varied parameters.
+        p_in is a 1D array if length nparam
+        or a 2D array of shape (nsample, nparam)
+        """
+        return np.exp(self.evaluate_logp(p_in))
+
+    def evaluate_p_all(self, p_in):
+        """
+        Evaluate log(P(x)) of all the parameters, including fixed ones.
+        p_in is a 1D array if length nparam
+        or a 2D array of shape (nsample, nparam)
+        """
+        return np.exp(self.evaluate_logp_all(p_in))
+
+    def evaluate_logp(self, p_in):
+        """
+        Evaluate log(P(x)) of the varied parameters.
+        p_in is a 1D array if length nparam
+        or a 2D array of shape (nsample, nparam)
+        """
+        return self._evaluate(p_in, self.varied_priors)
+
+    def evaluate_logp_all(self, p_in):
+        """
+        Evaluate log(P(x)) of all the parameters, including fixed ones.
+        p_in is a 1D array if length nparam
+        or a 2D array of shape (nsample, nparam)
+        """
+        return self._evaluate(p_in, self.all_priors)

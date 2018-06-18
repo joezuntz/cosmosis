@@ -905,26 +905,28 @@ class DataBlock(object):
 						header+='%s = %s\n' % (key,val)
 
 				#Save this file into the tar file
-				string_output = io.StringIO()
+				string_output = io.BytesIO()
 				np.savetxt(string_output, value, header=header.rstrip("\n"))
 				string_output.seek(0)
 				info = tarfile.TarInfo(name=vector_outfile)
-				info.size=len(string_output.buf)
+				info.size=len(string_output.getvalue())
 				tar.addfile(tarinfo=info, fileobj=string_output)
 
 			#Save all the scalar outputs together as a single file
 			#inside the tar file
 			if scalar_outputs:
 				scalar_outfile = os.path.join(dirname,section,"values.txt")
-				string_output = io.StringIO()
+				string_output = io.BytesIO()
 				for s in scalar_outputs:
-					string_output.write("%s = %r\n"%s)
+					line = "{} = {}\n".format(s[0], s[1])
+					string_output.write(line.encode())
 					if s[0] in meta:
 						for key,val in list(meta[s[0]].items()):
-							string_output.write("#%s %s = %s\n"%(s[0],key,val))
+							line = "#{} {} = {}\n".format(s[0], key, val)
+							string_output.write(line.encode())
 				string_output.seek(0)
 				info = tarfile.TarInfo(name=scalar_outfile)
-				info.size=len(string_output.buf)
+				info.size=len(string_output.getvalue())
 				tar.addfile(tarinfo=info, fileobj=string_output)
 		tar.close()
 
@@ -1203,6 +1205,32 @@ class DataBlock(object):
 		sentinel_key = "_cosmosis_order_%s"%name_z
 		sentinel_value = "%s_cosmosis_order_%s" % (name_x, name_y)
 		self[section, sentinel_key] = sentinel_value.lower()
+
+	def get_first_parameter_use(self, params_of_interest):
+		u"""Analyze the log and figure out when each parameter is first used"""
+		params_by_module = collections.OrderedDict()
+		current_module = []
+		#make a copy of the parameter list so we can remove things
+		#from it as we find their first use
+		params = [(p.section,p.name) for p in params_of_interest]
+		#now actually parse the log
+		current_module = None
+		current_name = "None"
+		for i in range(self.get_log_count()):
+			ptype, section, name, _ = self.get_log_entry(i)
+			if ptype=="MODULE-START":
+				# The previous current_module is already the
+				#last element in params_by_module (unless it's the
+				#very first one in which case we discard it because
+				#it is the parameters being set in the sampler)
+				current_module = []
+				current_name = section
+				params_by_module[current_name] = current_module
+			elif ptype=="READ-OK" and (section,name) in params:
+				current_module.append((section,name))
+				params.remove((section,name))
+		#Return a list of lists of parameter first used in each section
+		return params_by_module
 
 
 
