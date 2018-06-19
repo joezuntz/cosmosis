@@ -89,10 +89,11 @@ class SlowSubspaceCache(object):
     of slow parameters so that if only fast parameters have changed the 
     pipeline can be much faster.
     """
-    def __init__(self, cache_size_limit=3):
+    def __init__(self, first_fast_module=None, cache_size_limit=3,):
         self.current_hash = np.nan
         self.analyzed = False
         self.cache = LimitedSizeDict(size_limit=cache_size_limit)
+        self.first_fast_module = first_fast_module
 
     def clear_cache(self):
         self.cache.clear()
@@ -262,6 +263,11 @@ class SlowSubspaceCache(object):
         #at the moment just return the last module where there are any 
         #parameters
         #n = len(slow_count)
+        if self.first_fast_module is not None:
+            print("You manually told me in the parameter file to use module {} as the first in the fast block".format(self.first_fast_module))
+            return self.first_fast_module
+
+
         n_step = len(timings)
         n_total = sum(first_use_count)
         T_total = sum(timings)
@@ -349,6 +355,7 @@ class Pipeline(object):
             sys.stderr.write("Warning: you have the fast_slow and shortcut options both set, and we can only do one of those at once (we will do shortcut)\n")
             self.do_fast_slow = False
         self.slow_subspace_cache = None #until set in method
+        self.first_fast_module = self.options.get(PIPELINE_INI_SECTION, "first_fast_module", fallback="")
 
         # initialize modules
         self.modules = []
@@ -442,7 +449,17 @@ class Pipeline(object):
 
     def setup_fast_subspaces(self, all_params=False, grid=False):
         if self.do_fast_slow:
-            self.slow_subspace_cache = SlowSubspaceCache()
+            if self.first_fast_module:
+                for i,module in enumerate(self.modules):
+                    if module.name==self.first_fast_module:
+                        first_fast_index=i
+                        break
+                else:
+                    raise ValueError("You set first_fast_module={} but never ran that module".format(self.first_fast_module))
+            else:
+                first_fast_index = None
+
+            self.slow_subspace_cache = SlowSubspaceCache(first_fast_module=first_fast_index)
             self.slow_subspace_cache.analyze_pipeline(self, all_params=all_params, grid=grid)
             # This looks a bit weird but makes sure that self.fast_params
             # and self.slow_params contain objects of type Parameter
