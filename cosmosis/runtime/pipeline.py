@@ -449,6 +449,7 @@ class Pipeline(object):
 
     def setup_fast_subspaces(self, all_params=False, grid=False):
         if self.do_fast_slow:
+            print("Doing fast/slow parameter splitting")
             if self.first_fast_module:
                 for i,module in enumerate(self.modules):
                     if module.name==self.first_fast_module:

@@ -80,6 +80,7 @@ class PolyChordSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("post", float), ("weight", float)]
     supports_smp=False
+    understands_fast_subspaces = True
 
     def config(self):
         if self.pool:
