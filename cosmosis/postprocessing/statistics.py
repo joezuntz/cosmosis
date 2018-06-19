@@ -605,7 +605,7 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         files.append(filename)
         return files
 
-class PolychordStatistics(MultiNestStatistics):
+class PolychordStatistics(MultinestStatistics):
     pass
 
 #The class hierarchy is getting too complex for this - revise it

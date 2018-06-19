@@ -640,7 +640,7 @@ class WeightedPlots1D(object):
 class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
     excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
 
-class PolyChordPlots1D(MultinestPlots1D):
+class PolychordPlots1D(MultinestPlots1D):
     pass
 
 
@@ -691,7 +691,7 @@ class MultinestPlots2D(WeightedPlots2D, MultinestPostProcessorElement, Metropoli
     excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
     pass
 
-class PolyChordPlots2D(MultinestPlots2D):
+class PolychordPlots2D(MultinestPlots2D):
     pass
 
 class TrianglePlot(MetropolisHastingsPlots):
