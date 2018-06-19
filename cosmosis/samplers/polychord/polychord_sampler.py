@@ -119,11 +119,13 @@ class PolyChordSampler(ParallelSampler):
 
         #General run options
         self.max_iterations = self.read_ini("max_iterations", int, -1)
-        self.num_repeats = self.read_ini("num_repeats", int, self.ndim*5)
+        self.num_repeats_factor = self.read_ini("num_repeats_factor", int, 5)
         self.nprior = self.read_ini("nprior", int, self.live_points*10)
         self.random_seed = self.read_ini("random_seed", int, -1)
         self.tolerance   = self.read_ini("tolerance", float, 0.1)
         self.log_zero    = self.read_ini("log_zero", float, -1e6)
+
+        self.fast_fraction    = self.read_ini("fast_fraction", float, 0.5)
 
         if self.output:
             def dumper(ndead, nlive, npars, live, dead, logweights, log_z, log_z_err):
@@ -137,6 +139,8 @@ class PolyChordSampler(ParallelSampler):
 
         def prior(cube, theta, ndim):
             cube_vector = np.array([cube[i] for i in range(ndim)])
+            if self.pipeline.do_fast_slow:
+                cube_vector = self.reorder_slow_fast(cube_vector)
             theta_vector = self.pipeline.denormalize_vector_from_prior(cube_vector) 
             for i in range(ndim):
                 theta[i] = theta_vector[i]
@@ -155,6 +159,15 @@ class PolyChordSampler(ParallelSampler):
             return like
         self.wrapped_likelihood = loglike_type(likelihood)
 
+    def reorder_slow_fast(self, x):
+        y = np.zeros_like(x)
+        ns = self.pipeline.n_slow_params
+        y[self.pipeline.slow_param_indices] = x[0:ns]
+        y[self.pipeline.fast_param_indices] = x[ns:]
+        return y
+
+
+
     def worker(self):
         self.sample()
 
@@ -169,11 +182,20 @@ class PolyChordSampler(ParallelSampler):
 
     def sample(self):
 
-        n_grade = 1
+        n_grade = 2 if self.pipeline.do_fast_slow else 1        
         grade_dims = (ct.c_int*n_grade)()
         grade_frac = (ct.c_double*n_grade)()
-        grade_dims[0] = self.ndim
-        grade_frac[0] = 1.
+
+        if self.pipeline.do_fast_slow:
+            grade_dims[0] = self.pipeline.n_slow_params
+            grade_dims[1] = self.pipeline.n_fast_params
+            grade_frac[0] = 1 - self.fast_fraction
+            grade_frac[1] = self.fast_fraction
+            print("Telling Polychord to spend fraction {} if its time in the fast subspace (adjust with fast_fraction option)".format(self.fast_fraction))
+        else:
+            grade_dims[0] = self.pipeline.nvaried
+            grade_frac[0] = 1.0
+
 
         n_nlives = 0
         loglikes = (ct.c_double*n_nlives)()
@@ -181,12 +203,15 @@ class PolyChordSampler(ParallelSampler):
 
         polychord_outfile_root = self.polychord_outfile_root.encode('ascii')
 
+        num_repeats = self.num_repeats_factor * grade_dims[0]
+        print("Polychord num_repeats = {}  (factor {} * n_slow_params {}".format(num_repeats, self.num_repeats_factor, grade_dims[0]))
+
         self._run(
                 self.wrapped_likelihood,      #loglike,
                 self.wrapped_prior,           #prior,
                 self.wrapped_output_logger,   #dumper,
                 self.live_points,             #nlive
-                self.num_repeats,             #nrepeats
+                num_repeats,                  #nrepeats
                 self.nprior,                  #nprior
                 True,                         #do_clustering
                 self.feedback,                #feedback

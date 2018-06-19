@@ -477,6 +477,8 @@ class Pipeline(object):
                 for p in self.fast_params]
             self.slow_param_indices = [params.index(p)
                 for p in self.slow_params]
+            self.n_fast_params = len(self.fast_params)
+            self.n_slow_params = len(self.slow_params)
         else:
             self.slow_subspace_cache = None
 
@@ -577,6 +579,9 @@ class Pipeline(object):
                 first_module = shortcut_module_index
         elif self.slow_subspace_cache:
             first_module = self.slow_subspace_cache.start_pipeline(data_package)
+            if first_module != 0 and (self.debug or self.timing):
+                sys.stdout.write("COOL: Quickstarting pipeline from module {} (fast/slow)\n".format(first_module))
+                sys.stdout.flush()
         else:
             first_module = 0
 
