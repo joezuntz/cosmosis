@@ -288,7 +288,12 @@ class SlowSubspaceCache(object):
             else:
                 T[i] = (T_fast*n_fast)/(T_total*n_total) + (T_slow*n_slow)/(n_total*T_total)
 
-        return T.argmin()
+        index = T.argmin()
+        Tmin = T.min()
+        index = (np.where(T==Tmin)[0]).max()
+        print("Will use module {} as the first in the fast block".format(index))
+
+        return index
 
 
 
