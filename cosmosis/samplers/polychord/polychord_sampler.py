@@ -109,7 +109,7 @@ class PolyChordSampler(ParallelSampler):
         self.nderived = len(self.pipeline.extra_saves)
 
         #Required options
-        self.live_points    = self.read_ini("live_points", int)
+        self.live_points    = self.read_ini("live_points", int, 100)
 
         #Output and feedback options
         self.feedback               = self.read_ini("feedback", int, 1)
