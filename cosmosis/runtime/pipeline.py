@@ -144,7 +144,7 @@ class SlowSubspaceCache(object):
         if not self.analyzed:
             return
 
-        if module_index != self.split_index:
+        if module_index != self.split_index-1:
             return
 
         self.cache[self.current_hash] = block.clone()
