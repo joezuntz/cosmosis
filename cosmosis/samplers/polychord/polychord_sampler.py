@@ -141,15 +141,23 @@ class PolyChordSampler(ParallelSampler):
             cube_vector = np.array([cube[i] for i in range(ndim)])
             if self.pipeline.do_fast_slow:
                 cube_vector = self.reorder_slow_fast(cube_vector)
-            theta_vector = self.pipeline.denormalize_vector_from_prior(cube_vector) 
+            try:
+                theta_vector = self.pipeline.denormalize_vector_from_prior(cube_vector) 
+            except ValueError:
+                # Polychord sometimes seems to propose outside the prior.
+                # Just give terrible parameters when that happens.
+                theta_vector = np.repeat(-np.inf, ndim)
             for i in range(ndim):
                 theta[i] = theta_vector[i]
 
         self.wrapped_prior = prior_type(prior)
 
         def likelihood(theta, ndim, phi, nderived):
+            theta_vector = np.array([theta[i] for i in range(ndim)])
+            if np.any(~np.isfinite(theta_vector)):
+                return -np.inf
+
             try:
-                theta_vector = np.array([theta[i] for i in range(ndim)])
                 like, phi_vector = self.pipeline.likelihood(theta_vector)
                 for i in range(nderived):
                     phi[i] = phi_vector[i]
