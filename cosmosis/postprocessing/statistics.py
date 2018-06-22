@@ -525,7 +525,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
 
         #Get the power spectrum of the chain
         n=len(x)
-        p = abs(np.fft.rfft(x)[1:(n/2+1)])**2
+        p = abs(np.fft.rfft(x)[1:n/2])**2
         #And the k-axis
         j = np.arange(p.size)+1.
         k = j / (2*np.pi*n)
@@ -605,6 +605,9 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         files.append(filename)
         return files
 
+class PolychordStatistics(MultinestStatistics):
+    pass
+
 #The class hierarchy is getting too complex for this - revise it
 class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, WeightedMCMCPostProcessorElement):
     def compute_basic_stats(self):
@@ -649,6 +652,9 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         return files
 
 class MultinestCovariance(ChainCovariance, Statistics, MultinestPostProcessorElement):
+    pass
+
+class PolychordCovariance(MultinestCovariance):
     pass
 
 

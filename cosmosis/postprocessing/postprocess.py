@@ -75,7 +75,7 @@ class MetropolisHastingsProcessor(PostProcessor):
 		thin = self.options.get("thin", 1)
 
 		if 0.0<burn<1.0:
-			burn = len(cols[0])*burn
+			burn = int(len(cols[0])*burn)
 		else:
 			burn = int(burn)
 		cols = [col[burn::thin] for col in cols]
@@ -269,6 +269,17 @@ class MultinestProcessor(WeightedMetropolisProcessor):
 		w = w / w.max()
 		u = np.random.uniform(size=w.size)
 		return u<w
+
+class PolyChordProcessor(MultinestProcessor):
+    elements = [
+            plots.PolychordPlots1D, 
+            plots.PolychordPlots2D,
+            statistics.PolychordStatistics,
+            statistics.PolychordCovariance,
+            statistics.Citations,
+            ]
+    sampler="polychord"
+
 
 
 class PMCPostProcessor(WeightedMetropolisProcessor):

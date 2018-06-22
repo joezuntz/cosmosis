@@ -22,8 +22,10 @@ class RegisteredSampler(type):
 class Sampler(with_metaclass(RegisteredSampler, object)):
     needs_output = True
     sampler_outputs = []
+    understands_fast_subspaces = False
     parallel_output = False
     is_parallel_sampler = False
+
     
     def __init__(self, ini, pipeline, output):
         self.ini = ini
@@ -66,6 +68,13 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
         if self.output:
             self.output.metadata(option, str(val))
         return val
+
+    def read_ini_choices(self, option, option_type, choices, default=None):
+        value = self.read_ini(option, option_type, default=default)
+        if value not in choices:
+            name = self.__class__.__name__
+            raise ValueError("Parameter {} for sampler {} must be one of: {}\n Parameter file said: {}".format(option, name, choices, value))
+        return value
 
 
     def config(self):

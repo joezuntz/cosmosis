@@ -40,6 +40,17 @@ module cosmosis_modules
         found = c_datablock_has_section_wrapper(block, trim(section)//C_NULL_CHAR)
     end function datablock_has_section
 
+    !Check whether the block contains a given value
+    function datablock_has_value(block, section, name) result(found)
+        logical(c_bool) :: found
+        integer(cosmosis_block) :: block
+        character(*) :: section, name
+
+        found = c_datablock_has_value_wrapper(block, trim(section)//C_NULL_CHAR, trim(name)//C_NULL_CHAR)
+    end function datablock_has_value
+
+
+
     function datablock_num_sections(block) result(n)
         integer(cosmosis_block) :: block
         integer :: n

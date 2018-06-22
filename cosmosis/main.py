@@ -87,10 +87,26 @@ def demo_10_special (args):
         os.environ ["HALOFIT"] = "halofit"
 
 
-def run_cosmosis(args, pool=None, ini=None, pipeline=None):
 
+def demo_20a_special (args):
+    if  "demo20a.ini" in args.inifile:
+        print ()
+        print ("You have completed demo20a, now run demo20b and compare")
+        print ("results with demo5!")
+
+
+def demo_20b_special (args):
+    if   "demo20b.ini" in args.inifile   and   not os.path.isfile ("./demo20a.txt"):
+        print ()
+        print ("********************************************************")
+        print ("*** YOU MUST RUN demo20a BEFORE YOU CAN RUN demo20b. ***")
+        print ("********************************************************")
+        
+
+def run_cosmosis(args, pool=None, ini=None, pipeline=None):
     # In case we need to hand-hold a naive demo-10 user.
     demo_10_special (args)
+    demo_20b_special (args)
 
     # Load configuration.
     if ini is None:
@@ -103,10 +119,16 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None):
         pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
         if (pool is None) or pool.is_master() or pool_stdout:
             pipeline = LikelihoodPipeline(ini, override=args.variables) 
+            if pipeline.do_fast_slow:
+                pipeline.setup_fast_subspaces()
+
         else:
             # Suppress output on everything except the master process
             with stdout_redirected():
                 pipeline = LikelihoodPipeline(ini, override=args.variables) 
+                if pipeline.do_fast_slow:
+                    pipeline.setup_fast_subspaces()
+
 
     # determine the type(s) of sampling we want.
     sample_methods = ini.get(RUNTIME_INI_SECTION, "sampler", fallback="test").split()
@@ -130,6 +152,7 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None):
                 raise ValueError("Sorry, the {} sampler does not support the --smp flag.".format(name))
 
     number_samplers = len(sampler_classes)
+
 
     #To start with we do not have any estimates of 
     #anything the samplers might give us like centers
@@ -261,6 +284,8 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None):
 
     # Extra-special actions we take to mollycoddle a brand-new user!
     demo_1_special (args)
+    demo_20a_special (args)
+
 
 def main():
     try:

@@ -14,6 +14,7 @@ class TestSampler(Sampler):
         self.fatal_errors = self.read_ini("fatal_errors", bool, False)
         self.save_dir = self.read_ini("save_dir", str, "")
         self.graph = self.read_ini("graph", str, "")
+        self.analyze_fast_slow = self.read_ini("analyze_fast_slow", bool, False)
 
     def execute(self):
         # load initial parameter values
@@ -32,7 +33,7 @@ class TestSampler(Sampler):
             found_likelihoods = [k[1][:-5] for k in list(error.pipeline_data.keys()) if k[0]=="likelihoods"]            
             sys.stderr.write("\n")
             sys.stderr.write("One of the likelihoods you asked for was not found.\n")
-            sys.stderr.write("You asked for: %s\n"%error.message)
+            sys.stderr.write("You asked for: %s\n"%str(error))
             sys.stderr.write("But the only ones calculated in the pipeline were:\n")
             sys.stderr.write(", ".join(found_likelihoods)+"\n")
             sys.stderr.write("\n")
@@ -45,6 +46,13 @@ class TestSampler(Sampler):
         if not self.pipeline.likelihood_names:
             print("(No likelihoods required in ini file)")
             print()
+
+        if self.analyze_fast_slow:
+            print("\n")
+            self.pipeline.do_fast_slow = True
+            self.pipeline.setup_fast_subspaces(all_params=True)
+            print("\n")
+
 
         if self.graph:
             self.pipeline.make_graph(data, self.graph)
