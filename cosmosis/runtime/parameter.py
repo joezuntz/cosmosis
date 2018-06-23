@@ -143,7 +143,7 @@ class Parameter(object):
 
     def random_point(self):
         u"""Return a random number taken from the 'prior' distribution."""
-        return self.prior.sample()
+        return self.prior.sample(1)[0]
 
 
 
