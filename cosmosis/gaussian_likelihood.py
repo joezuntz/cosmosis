@@ -61,7 +61,7 @@ class GaussianLikelihood(object):
         if options.has_value("like_name"):
             self.like_name = options['like_name']
 
-        self.likelihood_only = options.get_bool('likelihood_only', 'False')
+        self.likelihood_only = options.get_bool('likelihood_only', False)
 
 
 
