@@ -689,7 +689,7 @@ class LikelihoodPipeline(Pipeline):
 
     """
 
-    def __init__(self, arg=None, id="",override=None, load=True):
+    def __init__(self, arg=None, id="",override=None, load=True, values=None, priors=None):
         u"""Construct a :class:`LikelihoodPipeline`.
 
         The arguments `arg` and `load` are used in the base-class
@@ -707,14 +707,22 @@ class LikelihoodPipeline(Pipeline):
             self.id_code = ""
         self.n_iterations = 0
 
-        values_file = self.options.get(PIPELINE_INI_SECTION, "values")
-        self.values_filename=values_file
-        priors_files = self.options.get(PIPELINE_INI_SECTION,
-                                        "priors", fallback="").split()
-        self.priors_files = priors_files
 
-        self.parameters = parameter.Parameter.load_parameters(values_file,
-                                                              priors_files,
+        if values is None:
+            self.values_file = self.options.get(PIPELINE_INI_SECTION, "values")
+            self.values_filename = self.values_file
+        else:
+            self.values_file = values
+            self.values_filename = None
+
+        if priors is None:
+            priors_files = self.options.get(PIPELINE_INI_SECTION,
+                                            "priors", fallback="").split()
+            self.priors_files = priors_files
+        else:
+            self.priors_files = priors
+        self.parameters = parameter.Parameter.load_parameters(self.values_file,
+                                                              self.priors_files,
                                                               override,
                                                               )
         self.reset_fixed_varied_parameters()

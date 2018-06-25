@@ -103,7 +103,7 @@ def demo_20b_special (args):
         print ("********************************************************")
         
 
-def run_cosmosis(args, pool=None, ini=None, pipeline=None):
+def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
     # In case we need to hand-hold a naive demo-10 user.
     demo_10_special (args)
     demo_20b_special (args)
@@ -118,14 +118,14 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None):
     if pipeline is None:
         pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
         if (pool is None) or pool.is_master() or pool_stdout:
-            pipeline = LikelihoodPipeline(ini, override=args.variables) 
+            pipeline = LikelihoodPipeline(ini, override=args.variables, values=values)
             if pipeline.do_fast_slow:
                 pipeline.setup_fast_subspaces()
 
         else:
             # Suppress output on everything except the master process
             with stdout_redirected():
-                pipeline = LikelihoodPipeline(ini, override=args.variables) 
+                pipeline = LikelihoodPipeline(ini, override=args.variables, values=values)
                 if pipeline.do_fast_slow:
                     pipeline.setup_fast_subspaces()
 
@@ -242,7 +242,10 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None):
             #Do the same with the values file.
             #Unfortunately that means reading it in again;
             #if we ever refactor this bit we could eliminate that.
-            values_ini=Inifile(pipeline.values_filename)
+            if values is None:
+                values_ini=Inifile(pipeline.values_filename)
+            else:
+                values_ini=values
             output.comment("START_OF_VALUES_INI")
             values_ini.write(comment_wrapper)
             output.comment("END_OF_VALUES_INI")
