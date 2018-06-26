@@ -1020,6 +1020,11 @@ class LikelihoodPipeline(Pipeline):
         data = self.build_starting_block(p, check_ranges=check_ranges, all_params=all_params)
 
         if self.run(data):
+            # First run.  If we have not set the likelihood names in the parameter
+            # file then get them from the block
+            if self.likelihood_names == NO_LIKELIHOOD_NAMES:
+                self._set_likelihood_names_from_block(data)
+                
             return data
         else:
             sys.stderr.write("Pipeline failed on these parameters: {}\n".format(p))
@@ -1148,23 +1153,18 @@ class LikelihoodPipeline(Pipeline):
                 likelihood_names.append(name)
         self.likelihood_names = likelihood_names
 
+        if not self.quiet:
+            # Tell the user what we found.
+            print("Likelihoods not set in parameter file, so checking what is generated:")
+            for name in self.likelihood_names:
+                print("Found likelihood named {}".format(name))
+            if not self.likelihood_names:
+                print("No likelihoods found")
+
     def _extract_likelihoods(self, data):
         "Extract the likelihoods from the block"
 
         section_name = cosmosis_py.section_names.likelihoods
-
-        # First run.  If we have not set the likelihood names in the parameter
-        # file then get them from the block
-        if self.likelihood_names == NO_LIKELIHOOD_NAMES:
-            self._set_likelihood_names_from_block(data)
-
-            if not self.quiet:
-                # Tell the user what we found.
-                print("Likelihoods not set in parameter file, so checking what is generated:")
-                for name in self.likelihood_names:
-                    print("Found likelihood named {}".format(name))
-                if not self.likelihood_names:
-                    print("No likelihoods found")
 
         # loop through named likelihoods and sum their values
         likelihoods = []

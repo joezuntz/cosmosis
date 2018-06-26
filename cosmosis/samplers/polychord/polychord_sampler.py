@@ -119,7 +119,7 @@ class PolyChordSampler(ParallelSampler):
 
         #General run options
         self.max_iterations = self.read_ini("max_iterations", int, -1)
-        self.num_repeats_factor = self.read_ini("num_repeats_factor", int, 5)
+        self.num_repeats = self.read_ini("num_repeats", int, 0)
         self.nprior = self.read_ini("nprior", int, self.live_points*10)
         self.random_seed = self.read_ini("random_seed", int, -1)
         self.tolerance   = self.read_ini("tolerance", float, 0.1)
@@ -211,8 +211,12 @@ class PolyChordSampler(ParallelSampler):
 
         polychord_outfile_root = self.polychord_outfile_root.encode('ascii')
 
-        num_repeats = self.num_repeats_factor * grade_dims[0]
-        print("Polychord num_repeats = {}  (factor {} * n_slow_params {}".format(num_repeats, self.num_repeats_factor, grade_dims[0]))
+        if self.num_repeats == 0:
+            num_repeats = 3 * grade_dims[0]
+            print("Polychord num_repeats = {}  (3 * n_slow_params [{}])".format(num_repeats, grade_dims[0]))
+        else:
+            num_repeats = self.num_repeats
+            print("Polychord num_repeats = {}  (from parameter file)".format(num_repeats))
 
         self._run(
                 self.wrapped_likelihood,      #loglike,
