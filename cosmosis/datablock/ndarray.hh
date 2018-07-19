@@ -4,6 +4,16 @@
 #include <numeric>
 #include <functional>
 #include <vector>
+#include <exception>
+
+class NDArrayIndexException: public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "Wrong number of indices to NDArray";
+  }
+} ndarrayindexexception;
+
 
 inline
 std::size_t num_elements(std::vector<std::size_t> const& extents)
@@ -48,6 +58,65 @@ namespace cosmosis
 
     // size() returns the number of elements in the array.
     std::size_t size() const;
+
+    // Access to data elements.
+    // No bounds checking!
+    // We do two specialist cases for 2D and 3D as they will 
+    // be the most common, and this might be slightly faster
+
+    // 2D element access - version for RHS a = x(i,j)
+    const T& operator()(int i, int j) const{
+      return data_[extents_[1]*i+j];
+    }
+
+    // 2D element access - version for LHS x(i,j) = 1
+    T& operator()(int i, int j){
+      return data_[extents_[1]*i+j];
+    }
+
+
+    // 3D element access RHS
+    const T& operator()(int i, int j, int k) const{
+      return data_[extents_[2]*extents_[1]*i+extents_[1]*j+k];
+    }
+
+    // 3d element access LHS
+    T& operator()(int i, int j, int k){
+      return data_[extents_[2]*extents_[1]*i+extents_[1]*j+k];
+    }
+
+    // Indexing for general nd array
+    // the "..." thing is called a "parameter pack"
+    // and is a C++11 thing
+    template<typename... Args>
+    size_t get_index(Args... indices){
+      const size_t n = sizeof...(indices);
+      size_t indices2[n] = {indices...};
+      if (n!=ndims()) throw ndarrayindexexception;
+      size_t index1D = 0;
+      size_t r = 1;
+      for (size_t i=0; i<n; i++){
+        index1D += indices2[n-1-i] * r;
+        r *= extents_[n-1-i];
+      }
+      return index1D;      
+    }
+
+    // general n-D element access - LHS
+    template<typename... Args>
+    T& operator()(Args... indices)
+    {
+      return data_[get_index(indices...)];
+    }
+
+    // general n-D elemetn access - RHS
+    template<typename... Args>
+    const T& operator()(Args... indices) const
+    {
+      return data_[get_index(indices...)];
+    }
+
+
 
   private:
     std::vector<std::size_t> extents_;
