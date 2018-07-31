@@ -566,8 +566,36 @@ extern "C" {
 
 
   /*
-    The c_datablock_put_TYPE_array functions
-    TODO: complete this documentation.
+    The c_datablock_put_TYPE_array functions return DBS_SUCCESS if the given
+    value was stored in the c_datablock, and an error status
+    otherwise. Note that it is an error to use the
+    c_datablock_put_TYPE_array functions to replace a value already in the
+    c_datablock, use c_datablock_replace_TYPE_array (below) for that.
+
+    Stores, under `section`, with the name `name`, an array of `ndims`
+    dimensions represented by `val`. The `extents` represent the size of each
+    dimension, and should be an array of `ndims` entries. Thus, a 3D array
+    which would be represented in C by:
+
+        int my_ndarr[3][2][6];
+
+    Would be represented here as:
+
+        int *my_ndarr = malloc(sizeof(int) * 3 * 2 * 6);
+        int extents[3] = {3, 2, 6};
+
+    Once filled with relevent values, it can be stored in the datablock as:
+
+        int retval = c_datablock_put_int_array(datablock,
+                                               "my_section", "my_name",
+                                               my_ndarr, 3, extents);
+        if (retval != DBS_SUCCESS) {
+            ...
+        }
+        free(my_ndarr);
+
+    Note that the datablock will allocate its own memory for the array; thus,
+    you are responsible for freeing your own ndarray.
   */
   DATABLOCK_STATUS
   c_datablock_put_int_array(c_datablock* s,
@@ -594,24 +622,32 @@ extern "C" {
 				int const* extents);
 
   /*
-    The c_datablock_put_TYPE_array functions
-    TODO: complete this documentation.
+    The c_datablock_replace_TYPE_array functions return DBS_SUCCESS if the
+    given value was stored in the c_datablock, and an error status
+    otherwise. Note that it is an error to use the
+    c_datablock_replace_TYPE_array functions to put a new value (rather than
+    replacing a value) in a c_datablock. Use c_datablock_replace_TYPE_array
+    instead.
+
+    The arguments are the same pattern as for c_datablock_put_TYPE_array
+    functions, see above for an explanation of the arguments. (The same memory
+    management policy applies).
   */
   DATABLOCK_STATUS
-  c_datablock_put_int_array(c_datablock* s,
-			    const char* section,
-			    const char* name,
-			    int const* val,
-			    int ndims,
-			    int const* extents);
+  c_datablock_replace_int_array(c_datablock* s,
+                            const char* section,
+                            const char* name,
+                            int const* val,
+                            int ndims,
+                            int const* extents);
 
   DATABLOCK_STATUS
-  c_datablock_put_double_array(c_datablock* s,
-			       const char* section,
-			       const char* name,
-			       double const* val,
-			       int ndims,
-			       int const* extents);
+  c_datablock_replace_double_array(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               double const* val,
+                               int ndims,
+                               int const* extents);
 
   /*
     TODO: document these functions.
