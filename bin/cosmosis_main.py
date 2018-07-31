@@ -178,7 +178,7 @@ def run_cosmosis(args, pool=None):
                 output_options = dict(ini.items('output'))
             except configparser.NoSectionError:
                 sys.stderr.write("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
-                sys.exit(1)
+                return 1
             #Additionally we tell the output here if
             #we are parallel or not.
             if (pool is not None) and (sampler_class.parallel_output):
@@ -205,14 +205,16 @@ def run_cosmosis(args, pool=None):
                 print("* Saving output -> {}".format(output_options['filename']))
 
 
-
         else:
             #some samplers, like the test one, do not need an output
             #file of the usual type.  In fact giving them one would be
             #a bad idea, because they might over-write something important.
             #so we just give them none.
             output = None
-        print("****************************")
+
+        # Finish the printout from above
+        if pool is None or pool.is_master():
+            print("****************************")
 
         #Initialize our sampler, with the class we got above.
         #It needs an extra pool argument if it is a ParallelSampler.
@@ -284,6 +286,8 @@ def run_cosmosis(args, pool=None):
     demo_1_special (args)
     demo_20a_special (args)
 
+    return 0
+
 
 def main():
     try:
@@ -303,13 +307,13 @@ def main():
         # initialize parallel workers
         if args.mpi:
             with mpi_pool.MPIPool() as pool:
-                run_cosmosis(args,pool)
+                return run_cosmosis(args,pool)
         elif args.smp:
             with process_pool.Pool(args.smp) as pool:
-                run_cosmosis(args,pool)
+                return run_cosmosis(args,pool)
         else:
             try:
-                run_cosmosis(args)
+                return run_cosmosis(args)
             except Exception as error:
                 if args.pdb:
                     print("There was an exception - starting python debugger because you ran with --pdb")
@@ -319,8 +323,9 @@ def main():
                     raise
     except CosmosisConfigurationError as e:
         print(e)
-        sys.exit (1)
+        return 1
 
 
 if __name__=="__main__":
-    main()
+    status = main()
+    sys.exit(status)
