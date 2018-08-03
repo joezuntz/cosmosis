@@ -22,7 +22,9 @@ class InMemoryOutput(OutputBase):
         self.final_meta[key] = (value,comment)
 
     @classmethod
-    def from_options(cls, options):
+    def from_options(cls, options, resume=False):
+        if resume:
+            raise ValueError("Cannot resume from in-memory output")
         return cls()
 
     @classmethod

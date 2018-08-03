@@ -163,10 +163,18 @@ def run_cosmosis(args, pool=None):
             zip(sampler_classes, sample_methods)):
         sampler_name = sampler_class.__name__[:-len("Sampler")].lower()
 
+        # The resume feature lets us restart from an existing file.
+        # It's not fully rolled out to all the suitable samplers yet though.
+        resume = ini.get(RUNTIME_INI_SECTION, "resume", fallback=False)
+
+        # Not all samplers can be resumed.
+        if resume and not sampler_class.supports_resume:
+            print("NOTE: You set resume=T in the [runtime] section but the sampler {} does not support resuming yet.  I will ignore this option.".format(sampler_name))
+            resume=False
+
         if pool is None or pool.is_master():
             print("****************************")
             print("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name))
-
 
         if sampler_class.needs_output and \
            (pool is None 
@@ -198,7 +206,7 @@ def run_cosmosis(args, pool=None):
 
 
             #Generate the output from a factory
-            output = output_module.output_from_options(output_options)
+            output = output_module.output_from_options(output_options, resume)
             output.metadata("sampler", sample_method)
 
             if ("filename" in output_options):
@@ -229,6 +237,14 @@ def run_cosmosis(args, pool=None):
         #for additional parameters.
         sampler.distribution_hints.update(distribution_hints)
         sampler.config()
+
+        # Potentially resume
+        if resume and sampler_class.needs_output and \
+            sampler_class.supports_resume and \
+           (pool is None 
+            or pool.is_master() 
+            or sampler_class.parallel_output):
+           sampler.resume()
 
         #If there is an output file, save the ini information to
         #it as well.  We do it here since it's nicer to have it
