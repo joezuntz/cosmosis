@@ -110,7 +110,7 @@ class PopulationMonteCarlo(object):
 			try:
 				m.update(w_norm, x, rho_d)
 			except np.linalg.LinAlgError as error:
-				print("Component not fitting the data very well", d, error.message)
+				print("Component not fitting the data very well", d, str(error))
 				self.kill[d] = True
 
 		if do_kill:

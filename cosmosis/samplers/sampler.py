@@ -22,8 +22,11 @@ class RegisteredSampler(type):
 class Sampler(with_metaclass(RegisteredSampler, object)):
     needs_output = True
     sampler_outputs = []
+    understands_fast_subspaces = False
     parallel_output = False
     is_parallel_sampler = False
+    supports_resume = False
+
     
     def __init__(self, ini, pipeline, output):
         self.ini = ini
@@ -32,20 +35,23 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
         self.attribution = PipelineAttribution(self.pipeline.modules)
         self.distribution_hints = Hints()
         self.name = self.__class__.__name__[:-len("Sampler")].lower()
+        self.write_header()
+
+    def write_header(self):
         if self.output:
-            for p in pipeline.output_names():
+            for p in self.pipeline.output_names():
                 self.output.add_column(p, float)
             for p,ptype in self.sampler_outputs:
                 self.output.add_column(p, ptype)
-            output.metadata("n_varied", len(self.pipeline.varied_params))
+            self.output.metadata("n_varied", len(self.pipeline.varied_params))
 
             self.attribution.write_output(self.output)
         blinding_header = self.ini.getboolean("output","blinding-header", fallback=False)
         if blinding_header and self.output:
-            output.comment("")
-            output.comment("Blank lines prevent accidental unblinding")
+            self.output.comment("")
+            self.output.comment("Blank lines prevent accidental unblinding")
             for i in range(250):
-                output.comment("")
+                self.output.comment("")
 
     def read_ini(self, option, option_type, default=None):
         """
@@ -67,6 +73,13 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             self.output.metadata(option, str(val))
         return val
 
+    def read_ini_choices(self, option, option_type, choices, default=None):
+        value = self.read_ini(option, option_type, default=default)
+        if value not in choices:
+            name = self.__class__.__name__
+            raise ValueError("Parameter {} for sampler {} must be one of: {}\n Parameter file said: {}".format(option, name, choices, value))
+        return value
+
 
     def config(self):
         ''' Set up sampler (could instead use __init__) '''
@@ -76,6 +89,9 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
         ''' Run one (self-determined) iteration of sampler.
             Should be enough to test convergence '''
         raise NotImplementedError
+
+    def resume(self):
+        raise NotImplementedError("The sampler {} does not support resuming".format(self.name))
 
     def is_converged(self):
         return False

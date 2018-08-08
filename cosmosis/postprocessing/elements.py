@@ -79,3 +79,6 @@ class WeightedMCMCPostProcessorElement(MCMCPostProcessorElement):
 class MultinestPostProcessorElement(MCMCPostProcessorElement):
     def weight_col(self):
         return self.source.weight_col()
+
+class PolychordPostProcessorElement(MultinestPostProcessorElement):
+    pass

@@ -1206,6 +1206,32 @@ class DataBlock(object):
 		sentinel_value = "%s_cosmosis_order_%s" % (name_x, name_y)
 		self[section, sentinel_key] = sentinel_value.lower()
 
+	def get_first_parameter_use(self, params_of_interest):
+		u"""Analyze the log and figure out when each parameter is first used"""
+		params_by_module = collections.OrderedDict()
+		current_module = []
+		#make a copy of the parameter list so we can remove things
+		#from it as we find their first use
+		params = [(p.section,p.name) for p in params_of_interest]
+		#now actually parse the log
+		current_module = None
+		current_name = "None"
+		for i in range(self.get_log_count()):
+			ptype, section, name, _ = self.get_log_entry(i)
+			if ptype=="MODULE-START":
+				# The previous current_module is already the
+				#last element in params_by_module (unless it's the
+				#very first one in which case we discard it because
+				#it is the parameters being set in the sampler)
+				current_module = []
+				current_name = section
+				params_by_module[current_name] = current_module
+			elif ptype=="READ-OK" and (section,name) in params:
+				current_module.append((section,name))
+				params.remove((section,name))
+		#Return a list of lists of parameter first used in each section
+		return params_by_module
+
 
 
 class SectionOptions(object):

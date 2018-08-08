@@ -42,6 +42,7 @@ You will see a lot of output showing:
     planck--a_planck                      ~ delta(1.0)
     cosmological_parameters--h0           ~ delta(0.6726)
     cosmological_parameters--omega_m      ~ delta(0.3141)
+    ...
 
 
 * The set-up phase for each step (module) in the calculation, e.g.::
@@ -52,6 +53,7 @@ You will see a lot of output showing:
      camb FeedbackLevel =            2
      accuracy boost =    1.1000000000000001     
      HighAccuracyDefault =  T
+     ...
 
 
 * The sampler that is being run::
@@ -68,6 +70,7 @@ You will see a lot of output showing:
     Om_b h^2             =  0.018096
     Om_c h^2             =  0.123356
     Om_nu h^2            =  0.000644
+    ...
 
 Defining a sampler
 ===================

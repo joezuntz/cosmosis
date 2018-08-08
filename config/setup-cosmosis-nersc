@@ -14,9 +14,10 @@ then
 elif [ $NERSC_HOST == "edison" ]
 then
 	module swap PrgEnv-intel PrgEnv-gnu
-	module load gsl
-	module load python
-	module load fftw
+	module load gsl/2.3
+	module load python/2.7-anaconda-4.4
+	module load cray-fftw/3.3.6.2
+	module load cfitsio/3.410
 else
 	echo "Unknown NERSC host - was expecting NERSC_HOST variable to be one of cori,edison"
 	return

@@ -116,11 +116,17 @@ def run_cosmosis(args, pool=None):
     # Create pipeline.
     pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
     if (pool is None) or pool.is_master() or pool_stdout:
-        pipeline = LikelihoodPipeline(ini, override=args.variables) 
+        pipeline = LikelihoodPipeline(ini, override=args.variables)
+        if pipeline.do_fast_slow:
+            pipeline.setup_fast_subspaces()
+
     else:
         # Suppress output on everything except the master process
         with stdout_redirected():
             pipeline = LikelihoodPipeline(ini, override=args.variables) 
+            if pipeline.do_fast_slow:
+                pipeline.setup_fast_subspaces()
+
 
     # determine the type(s) of sampling we want.
     sample_methods = ini.get(RUNTIME_INI_SECTION, "sampler", fallback="test").split()
@@ -145,6 +151,7 @@ def run_cosmosis(args, pool=None):
 
     number_samplers = len(sampler_classes)
 
+
     #To start with we do not have any estimates of 
     #anything the samplers might give us like centers
     #or covariances. 
@@ -156,10 +163,18 @@ def run_cosmosis(args, pool=None):
             zip(sampler_classes, sample_methods)):
         sampler_name = sampler_class.__name__[:-len("Sampler")].lower()
 
+        # The resume feature lets us restart from an existing file.
+        # It's not fully rolled out to all the suitable samplers yet though.
+        resume = ini.get(RUNTIME_INI_SECTION, "resume", fallback=False)
+
+        # Not all samplers can be resumed.
+        if resume and not sampler_class.supports_resume:
+            print("NOTE: You set resume=T in the [runtime] section but the sampler {} does not support resuming yet.  I will ignore this option.".format(sampler_name))
+            resume=False
+
         if pool is None or pool.is_master():
             print("****************************")
             print("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name))
-
 
         if sampler_class.needs_output and \
            (pool is None 
@@ -171,7 +186,7 @@ def run_cosmosis(args, pool=None):
                 output_options = dict(ini.items('output'))
             except configparser.NoSectionError:
                 sys.stderr.write("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
-                sys.exit(1)
+                return 1
             #Additionally we tell the output here if
             #we are parallel or not.
             if (pool is not None) and (sampler_class.parallel_output):
@@ -191,12 +206,11 @@ def run_cosmosis(args, pool=None):
 
 
             #Generate the output from a factory
-            output = output_module.output_from_options(output_options)
+            output = output_module.output_from_options(output_options, resume)
             output.metadata("sampler", sample_method)
 
             if ("filename" in output_options):
                 print("* Saving output -> {}".format(output_options['filename']))
-
 
 
         else:
@@ -205,7 +219,10 @@ def run_cosmosis(args, pool=None):
             #a bad idea, because they might over-write something important.
             #so we just give them none.
             output = None
-        print("****************************")
+
+        # Finish the printout from above
+        if pool is None or pool.is_master():
+            print("****************************")
 
         #Initialize our sampler, with the class we got above.
         #It needs an extra pool argument if it is a ParallelSampler.
@@ -220,6 +237,14 @@ def run_cosmosis(args, pool=None):
         #for additional parameters.
         sampler.distribution_hints.update(distribution_hints)
         sampler.config()
+
+        # Potentially resume
+        if resume and sampler_class.needs_output and \
+            sampler_class.supports_resume and \
+           (pool is None 
+            or pool.is_master() 
+            or sampler_class.parallel_output):
+           sampler.resume()
 
         #If there is an output file, save the ini information to
         #it as well.  We do it here since it's nicer to have it
@@ -277,6 +302,8 @@ def run_cosmosis(args, pool=None):
     demo_1_special (args)
     demo_20a_special (args)
 
+    return 0
+
 
 def main():
     try:
@@ -296,13 +323,13 @@ def main():
         # initialize parallel workers
         if args.mpi:
             with mpi_pool.MPIPool() as pool:
-                run_cosmosis(args,pool)
+                return run_cosmosis(args,pool)
         elif args.smp:
             with process_pool.Pool(args.smp) as pool:
-                run_cosmosis(args,pool)
+                return run_cosmosis(args,pool)
         else:
             try:
-                run_cosmosis(args)
+                return run_cosmosis(args)
             except Exception as error:
                 if args.pdb:
                     print("There was an exception - starting python debugger because you ran with --pdb")
@@ -312,8 +339,9 @@ def main():
                     raise
     except CosmosisConfigurationError as e:
         print(e)
-        sys.exit (1)
+        return 1
 
 
 if __name__=="__main__":
-    main()
+    status = main()
+    sys.exit(status)

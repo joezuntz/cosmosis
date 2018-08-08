@@ -196,7 +196,7 @@ class GridPlots(Plots):
 class GridPlots1D(GridPlots):
 
     def run(self):
-        return [self.plot_1d(name) for name in self.source.colnames]
+        return [self.plot_1d(name) for name in self.source.colnames if name not in self.excluded_columns]
 
     def plot_1d(self, name1):
         filename = self.filename(name1)
@@ -640,6 +640,9 @@ class WeightedPlots1D(object):
 class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
     excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
 
+class PolychordPlots1D(MultinestPlots1D):
+    pass
+
 
 class WeightedMetropolisPlots1D(WeightedPlots1D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots1D):
     excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
@@ -688,6 +691,8 @@ class MultinestPlots2D(WeightedPlots2D, MultinestPostProcessorElement, Metropoli
     excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
     pass
 
+class PolychordPlots2D(MultinestPlots2D):
+    pass
 
 class TrianglePlot(MetropolisHastingsPlots):
     def run(self):
@@ -766,6 +771,9 @@ class WeightedMCMCColorScatterPlot(WeightedMCMCPostProcessorElement, ColorScatte
 
 
 class MultinestColorScatterPlot(MultinestPostProcessorElement, ColorScatterPlotBase):
+    pass
+
+class PolychordColorScatterPlot(MultinestColorScatterPlot):
     pass
 
 

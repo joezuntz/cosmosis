@@ -525,7 +525,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
 
         #Get the power spectrum of the chain
         n=len(x)
-        p = abs(np.fft.rfft(x)[1:(n/2+1)])**2
+        p = abs(np.fft.rfft(x)[1:n/2])**2
         #And the k-axis
         j = np.arange(p.size)+1.
         k = j / (2*np.pi*n)
@@ -605,6 +605,9 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         files.append(filename)
         return files
 
+class PolychordStatistics(MultinestStatistics):
+    pass
+
 #The class hierarchy is getting too complex for this - revise it
 class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, WeightedMCMCPostProcessorElement):
     def compute_basic_stats(self):
@@ -651,6 +654,9 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
 class MultinestCovariance(ChainCovariance, Statistics, MultinestPostProcessorElement):
     pass
 
+class PolychordCovariance(MultinestCovariance):
+    pass
+
 
 class CovarianceMatrix1D(Statistics):
     def run(self):
@@ -689,6 +695,17 @@ class CovarianceMatrixEllipseAreas(Statistics):
 
         return [filename]
 
+
+class FisherFigureOfMerit(Statistics):
+    def run(self):
+        params = self.source.colnames
+        header = '#figure_of_merit\n#Definition: det(F)**(-0.5/n)'
+        f, filename, new_file = self.get_text_output("fisher_fom", header, self.source.name)
+        F = self.source.data[0]
+        n = self.source.metadata[0]['n_varied']
+        fom = (np.linalg.det(F))**(-0.5 / n)
+        f.write("{}\n".format(fom))
+        return [filename]
 
 
 class Citations(Statistics):

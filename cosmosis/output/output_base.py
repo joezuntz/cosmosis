@@ -209,7 +209,7 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
         pass
 
     @classmethod
-    def from_options(cls, options):
+    def from_options(cls, options, resume=False):
         """ This method should create an output object from the section of ini file it is given"""
         raise NotImplemented("The format mode you tried to use is incomplete - sorry")
 

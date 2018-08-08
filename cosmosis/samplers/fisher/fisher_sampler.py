@@ -52,6 +52,7 @@ class SingleProcessPool(object):
 class FisherSampler(ParallelSampler):
     sampler_outputs = []
     parallel_output = False
+    understands_fast_subspaces = True
 
     def config(self):
         #Save the pipeline as a global variable so it
