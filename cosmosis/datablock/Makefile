@@ -13,7 +13,7 @@ USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 #CFLAGS+=-I../../
 
 
-all: libcosmosis.so 
+all: libcosmosis.so libcosmosis_c.so
 
 lib: libcosmosis.so cosmosis_py/section_names.py
 
@@ -123,12 +123,14 @@ cosmosis_py/section_names.py: section_names.txt generate_sections.py
 # problem of generating dependencies for the Fortran modules within
 # libcomsosis_fortran.so. The tradeoff is worthwhile, unless so many source
 # files are added that the build time is excessive.
-libcosmosis.so: cosmosis_section_names.F90 cosmosis_types.F90 cosmosis_wrappers.F90 cosmosis_modules.F90 libcosmosis_c.so
+libcosmosis.so: cosmosis_section_names.F90 cosmosis_types.F90 cosmosis_wrappers.F90 cosmosis_modules.F90 libcosmosis_c.a
 	$(FC) $(FFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ -lgfortran
 
-libcosmosis_c.so: datablock.o entry.o section.o c_datablock.o datablock_logging.o
-	$(CXX) $(CXXFLAGS) -shared -o $@ $+
+libcosmosis_c.so: libcosmosis_c.a
+	$(CXX) $(CXXFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++
 
+libcosmosis_c.a: datablock.o entry.o section.o c_datablock.o datablock_logging.o
+	$(AR) rc $@ $+
 
 fortran_t: cosmosis_test.F90
 	$(FC) $(FFLAGS)  -o $@ cosmosis_test.F90  -L. -lcosmosis

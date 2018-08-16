@@ -45,7 +45,8 @@ cc_headers = [
     "datablock/section.hh"
 ]
 
-datablock_libs = ["datablock/libcosmosis.so"]
+datablock_libs = ["datablock/libcosmosis.so",
+                  "datablock/libcosmosis_c.so"]
 
 sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",
                 "samplers/multinest/multinest_src/libnest3_mpi.so",
@@ -55,7 +56,7 @@ sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",
 
 runtime_libs = ["runtime/experimental_fault_handler.so"]
 
-compilers_config = ["compilers.mk"]
+compilers_config = ["compilers.mk", "subdirs.mk"]
 
 if sys.platform == 'darwin':
     from distutils import sysconfig
