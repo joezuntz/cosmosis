@@ -55,6 +55,8 @@ sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",
 
 runtime_libs = ["runtime/experimental_fault_handler.so"]
 
+compilers_config = ["compilers.mk"]
+
 if sys.platform == 'darwin':
     from distutils import sysconfig
     vars = sysconfig.get_config_vars()
@@ -126,17 +128,6 @@ class my_install(install):
         compile_library()
         install.run(self)
 
-class my_uninstall(install):
-    def __init__(self, dist):
-        install.__init__(self, dist)
-        self.build_args = {}
-        if self.record is None:
-            self.record = 'install-record.txt'
-
-    def run(self):
-        print("Removing python module:")
-        os.system("cat {} | xargs rm -rv".format(self.record))
-
 class my_clean(clean):
     def run(self):
         clean_library()
@@ -149,11 +140,11 @@ if __name__ == "__main__":
           author_email      = "joezuntz@googlemail.com",
           packages = find_packages(),
           package_data = {"" : datablock_libs + sampler_libs + runtime_libs 
-                             + c_headers + cc_headers + f90_mods,},
+                             + c_headers + cc_headers + f90_mods 
+                             + compilers_config,},
           scripts = scripts,
           install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy'],
           cmdclass={"install"   : my_install,
-                    "uninstall" : my_uninstall,
                     "build"     : my_build,
                     "clean"     : my_clean},
           version=version,
