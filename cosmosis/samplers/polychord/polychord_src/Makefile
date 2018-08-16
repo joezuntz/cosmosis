@@ -1,4 +1,6 @@
-include ../../../../config/compilers.mk
+ifneq ($(COSMOSIS_SRC_DIR),)
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
+endif
 
 MPI = $(shell which $(MPIFC) 2> /dev/null)
 

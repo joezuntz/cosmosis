@@ -1,16 +1,17 @@
 from setuptools import setup, find_packages, Extension
 from distutils.command.install import install
 from distutils.command.build import build
+from distutils.command.clean import clean
 import os
 import sys
 
 version = '0.0.8'
 
 f90_mods = [
-    "cosmosis/datablock/cosmosis_section_names.mod",
-    "cosmosis/datablock/cosmosis_types.mod",
-    "cosmosis/datablock/cosmosis_wrappers.mod",
-    "cosmosis/datablock/cosmosis_modules.mod",
+    "datablock/cosmosis_section_names.mod",
+    "datablock/cosmosis_types.mod",
+    "datablock/cosmosis_wrappers.mod",
+    "datablock/cosmosis_modules.mod",
 ]
 
 scripts = [
@@ -25,24 +26,34 @@ scripts = [
 ]
 
 c_headers = [
-    "cosmosis/datablock/c_datablock.h",
-    "cosmosis/datablock/datablock_logging.h",
-    "cosmosis/datablock/datablock_types.h",
-    "cosmosis/datablock/cosmosis_constants.h",
-    "cosmosis/datablock/datablock_status.h",
-    "cosmosis/datablock/section_names.h",
+    "datablock/c_datablock.h",
+    "datablock/datablock_logging.h",
+    "datablock/datablock_types.h",
+    "datablock/cosmosis_constants.h",
+    "datablock/datablock_status.h",
+    "datablock/section_names.h",
 ]
 
 cc_headers = [
-    "cosmosis/datablock/clamp.hh",
-    "cosmosis/datablock/entry.hh",
-    "cosmosis/datablock/fakearray.hh",
-    "cosmosis/datablock/ndarray.hh",
-    "cosmosis/datablock/datablock.hh",
-    "cosmosis/datablock/exceptions.hh",
-    "cosmosis/datablock/mdarraygen.hh",
-    "cosmosis/datablock/section.hh"
+    "datablock/clamp.hh",
+    "datablock/entry.hh",
+    "datablock/fakearray.hh",
+    "datablock/ndarray.hh",
+    "datablock/datablock.hh",
+    "datablock/exceptions.hh",
+    "datablock/mdarraygen.hh",
+    "datablock/section.hh"
 ]
+
+datablock_libs = ["datablock/libcosmosis.so"]
+
+sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",
+                "samplers/multinest/multinest_src/libnest3_mpi.so",
+                "samplers/polychord/polychord_src/libchord.so",
+                "samplers/polychord/polychord_src/libchord_mpi.so",
+                "samplers/minuit/minuit_wrapper.so"]
+
+runtime_libs = ["runtime/experimental_fault_handler.so"]
 
 if sys.platform == 'darwin':
     from distutils import sysconfig
@@ -51,13 +62,23 @@ if sys.platform == 'darwin':
 
 def compile_library():
     cosmosis_src_dir = os.getcwd()
-    os.chdir('cosmosis/datablock/')
+    os.chdir('cosmosis/')
     try:
         status = os.system("COSMOSIS_ALT_COMPILERS=1 COSMOSIS_SRC_DIR={} make".format(cosmosis_src_dir))
     finally:
-        os.chdir('../../')
+        os.chdir('../')
     if status:
         raise RuntimeError("Failed to compile cosmosis core")
+
+def clean_library():
+    cosmosis_src_dir = os.getcwd()
+    os.chdir('cosmosis/')
+    try:
+        status = os.system("COSMOSIS_ALT_COMPILERS=1 COSMOSIS_SRC_DIR={} make clean".format(cosmosis_src_dir))
+    finally:
+        os.chdir('../')
+    if status:
+        raise RuntimeError("Failed to make clean")
 
 def setup_compilers():
     try:
@@ -93,13 +114,33 @@ class my_build(build):
 
 
 class my_install(install):
+    def __init__(self, dist):
+        install.__init__(self, dist)
+        self.build_args = {}
+        if self.record is None:
+            self.record = "install-record.txt"
+
     def run(self):
         check_compilers()
         setup_compilers()
         compile_library()
         install.run(self)
 
+class my_uninstall(install):
+    def __init__(self, dist):
+        install.__init__(self, dist)
+        self.build_args = {}
+        if self.record is None:
+            self.record = 'install-record.txt'
 
+    def run(self):
+        print("Removing python module:")
+        os.system("cat {} | xargs rm -rv".format(self.record))
+
+class my_clean(clean):
+    def run(self):
+        clean_library()
+        clean.run(self)
 
 if __name__ == "__main__":
     setup(name = 'cosmosis-standalone',
@@ -107,10 +148,14 @@ if __name__ == "__main__":
           author            = "Joe Zuntz",
           author_email      = "joezuntz@googlemail.com",
           packages = find_packages(),
-          package_data = {"" : ["datablock/libcosmosis.so",] + c_headers + cc_headers + f90_mods},
+          package_data = {"" : datablock_libs + sampler_libs + runtime_libs 
+                             + c_headers + cc_headers + f90_mods,},
           scripts = scripts,
           install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy'],
-          cmdclass={"install":my_install, "build":my_build},
+          cmdclass={"install"   : my_install,
+                    "uninstall" : my_uninstall,
+                    "build"     : my_build,
+                    "clean"     : my_clean},
           version=version,
           )
 

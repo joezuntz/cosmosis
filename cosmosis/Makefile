@@ -1,5 +1,5 @@
 ifneq (clean,$(MAKECMDGOALS))
-include cosmosis/compilers.mk
+include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 endif
 
 $(info ${COSMOSIS_SRC_DIR})

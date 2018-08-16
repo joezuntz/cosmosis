@@ -136,11 +136,8 @@ libcosmosis_c.so: datablock.o entry.o section.o c_datablock.o datablock_logging.
 	$(CXX) $(CXXFLAGS) -shared -o $@ $+
 
 
-fortran_t: libcosmosis_fortran.so  cosmosis_test.F90
+fortran_t: cosmosis_test.F90
 	$(FC) $(FFLAGS)  -o $@ cosmosis_test.F90  -L. -lcosmosis
-
-fortran_t: libcosmosis.so  cosmosis_test.F90
-	$(FC) $(FFLAGS)  -o $@ cosmosis_test.F90  -L. -lcosmosis -lcosmosis
 
 
 datablock_t: datablock_test.cc datablock.hh libcosmosis.so
