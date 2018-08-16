@@ -11,6 +11,7 @@ def log_probability_function(p):
 
 class EmceeSampler(ParallelSampler):
     parallel_output = False
+    supports_resume = True
     sampler_outputs = [("post", float)]
 
     def config(self):
@@ -80,6 +81,18 @@ class EmceeSampler(ParallelSampler):
             self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, self.ndim,
                                                        log_probability_function,
                                                        pool=self.pool)
+
+    def resume(self):
+        if self.output.resumed:
+            data = np.genfromtxt(self.output._filename, invalid_raise=False)[:, :self.ndim]
+            num_samples = len(data) // self.nwalkers
+            self.p0 = data[-self.nwalkers:]
+            self.num_samples += num_samples
+            if self.num_samples >= self.samples:
+                print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
+                print("Increase the 'samples' parameter to keep going.")
+            else:
+                print("Continuing emcee from existing chain - have {} samples already".format(len(data)))
 
     def load_start(self, filename):
         #Load the data and cut to the bits we need.

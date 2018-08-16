@@ -15,7 +15,9 @@ class NullOutput(OutputBase):
         pass
 
     @classmethod
-    def from_options(cls, options):
+    def from_options(cls, options, resume=False):
+        if resume:
+            raise ValueError("Cannot resume from null output")
         return cls()
 
     @classmethod

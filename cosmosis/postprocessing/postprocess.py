@@ -339,6 +339,7 @@ class FisherProcessor(PostProcessor):
 		plots.CovarianceMatrixGaussians,
 		statistics.CovarianceMatrix1D,
 		statistics.CovarianceMatrixEllipseAreas,
+		statistics.FisherFigureOfMerit,
 	]
 
 

@@ -68,6 +68,7 @@ class MPIPool(object):
             self.wait()
             return
 
+        tasks= list(tasks)
         # send function if necessary
         if function is not self.function or callback is not self.callback:
             self.function = function

@@ -696,6 +696,17 @@ class CovarianceMatrixEllipseAreas(Statistics):
         return [filename]
 
 
+class FisherFigureOfMerit(Statistics):
+    def run(self):
+        params = self.source.colnames
+        header = '#figure_of_merit\n#Definition: det(F)**(-0.5/n)'
+        f, filename, new_file = self.get_text_output("fisher_fom", header, self.source.name)
+        F = self.source.data[0]
+        n = self.source.metadata[0]['n_varied']
+        fom = (np.linalg.det(F))**(-0.5 / n)
+        f.write("{}\n".format(fom))
+        return [filename]
+
 
 class Citations(Statistics):
     #This isn't really a statistic but it uses all the same

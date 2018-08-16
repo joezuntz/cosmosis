@@ -13,7 +13,7 @@ PARAM_NAME = '.paramnames'
 
 
 class CosmoMCOutput(TextColumnOutput):
-    def __init__(self, filename, rank=0, nchain=1, delimiter=''):
+    def __init__(self, filename, rank=0, nchain=1, delimiter='    '):
         super(CosmoMCOutput, self).__init__(filename, rank, nchain, '')
         if filename.endswith(self.FILE_EXTENSION):
             filename = filename[:-len(self.FILE_EXTENSION)]
@@ -95,3 +95,10 @@ class CosmoMCOutput(TextColumnOutput):
             print(datafile, chain.shape)
             data.append(chain)
         return column_names, data, metadata, comments, final_metadata
+
+    @classmethod
+    def from_options(cls, options, resume=False):
+        if resume:
+            raise ValueError("Cannot resume from cosmomc files yet")
+        return super(CosmoMCOutput,cls).from_options(options, resume=False)
+
