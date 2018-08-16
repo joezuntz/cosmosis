@@ -1,27 +1,16 @@
-#from numpy.distutils.core import Extension
-#from distutils.core import Extension
 from setuptools import setup, find_packages, Extension
 from distutils.command.install import install
 from distutils.command.build import build
 import os
 import sys
 
-version = '0.0.7'
+version = '0.0.8'
 
-cc_files = [
-    "cosmosis/datablock/c_datablock.cc",
-    "cosmosis/datablock/datablock_logging.cc",
-    "cosmosis/datablock/entry.cc",
-    "cosmosis/datablock/section.cc",
-    "cosmosis/datablock/datablock.cc",
-]
-
-
-f90_files = [
-    "cosmosis/datablock/cosmosis_section_names.F90",
-    "cosmosis/datablock/cosmosis_types.F90",
-    "cosmosis/datablock/cosmosis_wrappers.F90",
-    "cosmosis/datablock/cosmosis_modules.F90",
+f90_mods = [
+    "cosmosis/datablock/cosmosis_section_names.mod",
+    "cosmosis/datablock/cosmosis_types.mod",
+    "cosmosis/datablock/cosmosis_wrappers.mod",
+    "cosmosis/datablock/cosmosis_modules.mod",
 ]
 
 scripts = [
@@ -59,10 +48,6 @@ if sys.platform == 'darwin':
     from distutils import sysconfig
     vars = sysconfig.get_config_vars()
     vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-dynamiclib')
-
-
-f90_objects = [f[:-4]+".o" for f in f90_files]
-f90_headers = [f[:-4]+".mod" for f in f90_files]
 
 def compile_library():
     cosmosis_src_dir = os.getcwd()
@@ -122,7 +107,7 @@ if __name__ == "__main__":
           author            = "Joe Zuntz",
           author_email      = "joezuntz@googlemail.com",
           packages = find_packages(),
-          include_package_data = True,
+          package_data = {"" : ["datablock/libcosmosis.so",] + c_headers + cc_headers + f90_mods},
           scripts = scripts,
           install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy'],
           cmdclass={"install":my_install, "build":my_build},

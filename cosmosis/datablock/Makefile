@@ -129,15 +129,18 @@ cosmosis_py/section_names.py: section_names.txt generate_sections.py
 # problem of generating dependencies for the Fortran modules within
 # libcomsosis_fortran.so. The tradeoff is worthwhile, unless so many source
 # files are added that the build time is excessive.
-libcosmosis.so: cosmosis_section_names.o cosmosis_types.o cosmosis_wrappers.o cosmosis_modules.o datablock.o entry.o section.o c_datablock.o datablock_logging.o
-	$(FC) $(FFLAGS) -shared -o $@ $+ -lstdc++ -lgfortran
+libcosmosis.so: cosmosis_section_names.F90 cosmosis_types.F90 cosmosis_wrappers.F90 cosmosis_modules.F90 libcosmosis_c.so
+	$(FC) $(FFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ -lgfortran
+
+libcosmosis_c.so: datablock.o entry.o section.o c_datablock.o datablock_logging.o
+	$(CXX) $(CXXFLAGS) -shared -o $@ $+
+
+
+fortran_t: libcosmosis_fortran.so  cosmosis_test.F90
+	$(FC) $(FFLAGS)  -o $@ cosmosis_test.F90  -L. -lcosmosis
 
 fortran_t: libcosmosis.so  cosmosis_test.F90
 	$(FC) $(FFLAGS)  -o $@ cosmosis_test.F90  -L. -lcosmosis -lcosmosis
-
-%.o : %.F90
-	$(FC) -c $(FFLAGS)  $< -o $@
-
 
 
 datablock_t: datablock_test.cc datablock.hh libcosmosis.so
