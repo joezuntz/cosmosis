@@ -3,6 +3,12 @@ include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
 USER_CFLAGS=$(PEDANTIC_C_FLAGS) -Werror
 USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 
+detected_OS := $(shell uname -s)
+ifeq ($(detected_OS),Darwin)
+RPATH=-install_name @rpath/libcosmosis.so
+else
+RPATH=
+endif
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 #CCFLAGS=-std=c99 -O0 -Wall -Wextra -pedantic -fPIC -g
@@ -13,7 +19,7 @@ USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 #CFLAGS+=-I../../
 
 
-all: libcosmosis.so libcosmosis_c.so
+all: libcosmosis.so libcosmosis_c.so cosmosis_py/section_names.py
 
 lib: libcosmosis.so cosmosis_py/section_names.py
 
@@ -112,7 +118,7 @@ cosmosis_section_names.F90: section_names.txt generate_sections.py
 
 cosmosis_py/section_names.py: section_names.txt generate_sections.py 
 	python generate_sections.py section_names.txt python cosmosis_py/section_names.py
-	ln -s -f ${PWD}/cosmosis_py/section_names.py ${PWD}/../names.py 
+	# ln -s -f ${PWD}/cosmosis_py/section_names.py ${PWD}/../names.py 
 
 .PHONY: test_datablock test_c_datablock test_section test_entry test_fortran test clean test_python 
 
@@ -124,10 +130,10 @@ cosmosis_py/section_names.py: section_names.txt generate_sections.py
 # libcomsosis_fortran.so. The tradeoff is worthwhile, unless so many source
 # files are added that the build time is excessive.
 libcosmosis.so: cosmosis_section_names.F90 cosmosis_types.F90 cosmosis_wrappers.F90 cosmosis_modules.F90 libcosmosis_c.a
-	$(FC) $(FFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ -lgfortran
+	$(FC) $(FFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ -lgfortran $(RPATH)
 
 libcosmosis_c.so: libcosmosis_c.a
-	$(CXX) $(CXXFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++
+	$(CXX) $(CXXFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ $(RPATH)
 
 libcosmosis_c.a: datablock.o entry.o section.o c_datablock.o datablock_logging.o
 	$(AR) rc $@ $+
