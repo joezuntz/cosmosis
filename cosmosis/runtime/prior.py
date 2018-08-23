@@ -5,7 +5,8 @@ u"""Implementation of :class:`Prior` and the concrete probability distribution s
 
 The specializations are :class:`UniformPrior`, :class:`GaussianPrior`,
 :class:`TruncatedGaussianPrior`, :class:`ExponentialPrior`,
-:class:`TruncatedExponentialPrior` and :class:`DeltaFunctionPrior`.
+:class:`TruncatedExponentialPrior`, :class:`TruncatedOneoverxPrior`,
+and :class:`DeltaFunctionPrior`.
 
 Applications can get by only knowing about the :class:`Prior` superclass.
 
@@ -88,6 +89,8 @@ class Prior(object):
                 return GaussianPrior(*parameters)
             elif prior_type.startswith("exp"):
                 return ExponentialPrior(*parameters)
+            elif  prior_type.startswith("one"):
+                return TruncatedOneoverxPrior(*parameters)
             else:
                 raise ValueError("Unable to parse %s as prior" %
                                  (value,))
@@ -348,6 +351,53 @@ class TruncatedExponentialPrior(Prior):
         lower = max(lower, self.lower)
         upper = min(upper, self.upper)
         return TruncatedExponentialPrior(self.beta, lower, upper)
+
+
+class TruncatedOneoverxPrior(Prior):
+    u"""The 1/x distribution, which is a uniform distribution in ln(x). As ln(x) diverges in both directions, we only provide the truncated option."""
+
+    def __init__(self, lower, upper):
+        u"""Create a distribution with 1/x, `lower` bound of non-zero probability, and `upper` bound."""
+        if lower<=0:
+            lower = np.nextafter(0, 1)
+        self.lower = lower
+        self.upper = upper
+        self.ln_lower = np.log(lower)
+        self.ln_upper = np.log(upper)
+        # Normalization: \int_upper^lower 1/x dx = ln(upper) - ln(lower)
+        self.norm = self.ln_upper-self.ln_lower
+        self.ln_norm = np.log(self.norm)
+        super(TruncatedOneoverxPrior,self).__init__()
+
+    def __call__(self, x):
+        u"""Return the logarithm of probability density at `x`."""
+        if x<self.lower:
+            return -np.inf
+        if x>self.upper:
+            return -np.inf
+        return -np.log(x) - self.ln_norm
+
+    def sample(self, n):
+        u"""Obtain random sample of `n` values from 1/x distribution within `lower` and `upper` bounds."""
+        if n is None:
+            n = 1
+        return np.exp(np.uniform(self.ln_lower, self.ln_upper, n))
+
+    def denormalize_from_prior(self, y):
+        u"""Return the value at which the cumulated probability is `y`."""
+        # int_a^x dz 1/z 1/N = (ln(x)-ln(a)) / N != y
+        # ln(x) = y*N + ln(a)
+        return np.exp(y*self.norm + self.ln_lower)
+
+    def __str__(self):
+        u"""Give a terse description of ourself."""
+        return "1/x   [{} < x < {}]".format(self.lower, self.upper)
+
+    def truncate(self, lower, upper):
+        u"""Return a :class:`Prior` like ourself but with range of non-zero probability further restricted to `lower` and `upper` bounds."""
+        lower = max(lower, self.lower)
+        upper = min(upper, self.upper)
+        return TruncatedOneoverxPrior(lower, upper)
 
 
 
