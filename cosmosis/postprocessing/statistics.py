@@ -525,7 +525,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
 
         #Get the power spectrum of the chain
         n=len(x)
-        p = abs(np.fft.rfft(x)[1:n/2])**2
+        p = abs(np.fft.rfft(x)[1:n//2])**2
         #And the k-axis
         j = np.arange(p.size)+1.
         k = j / (2*np.pi*n)
