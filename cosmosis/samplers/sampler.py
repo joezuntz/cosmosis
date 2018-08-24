@@ -48,10 +48,7 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             self.attribution.write_output(self.output)
         blinding_header = self.ini.getboolean("output","blinding-header", fallback=False)
         if blinding_header and self.output:
-            self.output.comment("")
-            self.output.comment("Blank lines prevent accidental unblinding")
-            for i in range(250):
-                self.output.comment("")
+            self.output.blinding_header()
 
     def read_ini(self, option, option_type, default=None):
         """

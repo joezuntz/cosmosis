@@ -1,4 +1,4 @@
-
+import os
 from past.builtins import basestring
 TRUE_STRINGS =  ["T","t","True","TRUE","true","y","Y","yes","Yes","YES","1"]
 FALSE_STRINGS = ["F","f","False","FALSE","false","n","N","no","No","NO","0"]
@@ -35,3 +35,10 @@ def parse_value(x):
     if x=='False':
         x=False
     return x
+
+def file_exists_and_is_empty(fpath):
+    """
+    
+    from https://stackoverflow.com/questions/2507808/how-to-check-whether-a-file-is-empty-or-not
+    """
+    return os.path.isfile(fpath) and os.path.getsize(fpath) == 0
