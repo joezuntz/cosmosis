@@ -130,21 +130,20 @@ class my_clean(clean):
         clean_library()
         super().run()
 
-if __name__ == "__main__":
-    setup(name = 'cosmosis-standalone',
-          description       = "A testbed stand-alone installation of the CosmoSIS project. Not ready for primetime!",
-          author            = "Joe Zuntz",
-          author_email      = "joezuntz@googlemail.com",
-          packages = find_packages(),
-          package_data = {"" : datablock_libs + sampler_libs + runtime_libs 
-                             + c_headers + cc_headers + f90_mods 
-                             + compilers_config,},
-          scripts = scripts,
-          install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy'],
-          cmdclass={"install"   : my_install,
-                    "build"     : my_build,
-                    "build_ext" : my_build,
-                    "clean"     : my_clean},
-          version=version,
-          )
+setup(name = 'cosmosis-standalone',
+        description       = "A testbed stand-alone installation of the CosmoSIS project. Not ready for primetime!",
+        author            = "Joe Zuntz",
+        author_email      = "joezuntz@googlemail.com",
+        packages = find_packages(),
+        package_data = {"" : datablock_libs + sampler_libs + runtime_libs 
+                            + c_headers + cc_headers + f90_mods 
+                            + compilers_config,},
+        scripts = scripts,
+        install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy'],
+        cmdclass={"install"   : my_install,
+                "build"     : my_build,
+                "build_ext" : my_build,
+                "clean"     : my_clean},
+        version=version,
+        )
 
