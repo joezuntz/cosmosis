@@ -1,11 +1,18 @@
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, find_packages
 from distutils.command.install import install
 from distutils.command.build import build
 from distutils.command.clean import clean
+import pkg_resources
+import subprocess
+
 import os
 import sys
 
-version = '0.0.8'
+import cosmosis
+version = cosmosis.__version__
+
+minimum_cc_version = pkg_resources.parse_version("5.0.0")
+minimum_cxx_version = pkg_resources.parse_version("5.0.0")
 
 f90_mods = [
     "datablock/cosmosis_section_names.mod",
@@ -58,62 +65,54 @@ runtime_libs = ["runtime/experimental_fault_handler.so"]
 
 compilers_config = ["compilers.mk", "subdirs.mk"]
 
-if sys.platform == 'darwin':
-    from distutils import sysconfig
-    vars = sysconfig.get_config_vars()
-    vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-dynamiclib')
+# if sys.platform == 'darwin':
+#     from distutils import sysconfig
+#     vars = sysconfig.get_config_vars()
+#     vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-dynamiclib')
 
-def compile_library():
+def compile_library(env):
     cosmosis_src_dir = os.getcwd()
-    os.chdir('cosmosis/')
-    try:
-        status = os.system("COSMOSIS_ALT_COMPILERS=1 COSMOSIS_SRC_DIR={} make".format(cosmosis_src_dir))
-    finally:
-        os.chdir('../')
-    if status:
-        raise RuntimeError("Failed to compile cosmosis core")
+    env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
+    subprocess.check_call(["make"], env=env, cwd="cosmosis")
+    
 
 def clean_library():
     cosmosis_src_dir = os.getcwd()
-    os.chdir('cosmosis/')
-    try:
-        status = os.system("COSMOSIS_ALT_COMPILERS=1 COSMOSIS_SRC_DIR={} make clean".format(cosmosis_src_dir))
-    finally:
-        os.chdir('../')
-    if status:
-        raise RuntimeError("Failed to make clean")
-
-def setup_compilers():
-    try:
-        cc = os.environ['CC']
-        fc = os.environ['FC']
-        cxx = os.environ['CXX']
-    except KeyError:
-        sys.stderr.write("\n")
-        sys.stderr.write("    For the avoidance of later problems you need to set\n")
-        sys.stderr.write("    these environment variables before installing cosmosis:\n")
-        sys.stderr.write("    CC, FC, CXX for the C compiler, fortran compiler, and C++ compiler.\n\n")
-        sys.stderr.write("    Your compilers need to be recent enough to compile cosmosis.\n\n")
-        sys.stderr.write("\n")
-        sys.exit(1)
-    f = open("./cosmosis/compilers.py", "w")
-    f.write("compilers = '''\n".format(cc))
-    f.write("export CC={}\n".format(cc))
-    f.write("export FC={}\n".format(fc))
-    f.write("export CXX={}\n".format(cxx))
-    f.write("export COSMOSIS_ALT_COMPILERS=1\n")
-    f.write("'''\n")
-    f.close()
+    env = {"COSMOSIS_SRC_DIR"       : cosmosis_src_dir}
+    
+    subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
 
 def check_compilers():
-    pass
+    default_cc    = "gcc"
+    default_cxx   = "g++"
+    default_fc    = "gfortran"
+    default_mpifc = "" # Disable MPI be default, else set to "mpif90"
+
+    env = {"PATH"  : os.environ["PATH"] if "PATH" in os.environ else "/usr/bin/",
+           "CC"    : os.environ["CC"] if "CC" in os.environ else default_cc,
+           "CXX"   : os.environ["CXX"] if "CXX" in os.environ else default_cxx,
+           "FC"    : os.environ["FC"] if "FC" in os.environ else default_fc,
+           "MPIFC" : os.environ["MPIFC"] if "MPIFC" in os.environ else default_mpifc,}
+
+    cc_version = subprocess.check_output("${CC} -dumpversion", shell=True, env=env).decode("utf-8")
+    cxx_version = subprocess.check_output("${CXX} -dumpversion", shell=True, env=env).decode("utf-8")
+    fc_version = subprocess.check_output("${FC} -dumpversion", shell=True, env=env).decode("utf-8")
+
+    cc_version = pkg_resources.parse_version(cc_version)
+    cxx_version = pkg_resources.parse_version(cxx_version)
+
+    if cc_version < minimum_cc_version:
+        raise RuntimeError(f"GCC compiler version ({cc_version}) does not meet requirements ({minimum_cc_version}).")
+    if cxx_version < minimum_cxx_version:
+        raise RuntimeError(f"G++ compiler version ({cxx_version}) does not meet requirements ({minimum_cxx_version}).")
+    
+    return env
 
 class my_build(build):
     def run(self):
-        check_compilers()
-        setup_compilers()
-        compile_library()
-        build.run(self)
+        env = check_compilers()
+        compile_library(env)
+        super().run()
 
 
 class my_install(install):
@@ -124,15 +123,12 @@ class my_install(install):
             self.record = "install-record.txt"
 
     def run(self):
-        check_compilers()
-        setup_compilers()
-        compile_library()
-        install.run(self)
+        super().run()
 
 class my_clean(clean):
     def run(self):
         clean_library()
-        clean.run(self)
+        super().run()
 
 if __name__ == "__main__":
     setup(name = 'cosmosis-standalone',
@@ -147,6 +143,7 @@ if __name__ == "__main__":
           install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy'],
           cmdclass={"install"   : my_install,
                     "build"     : my_build,
+                    "build_ext" : my_build,
                     "clean"     : my_clean},
           version=version,
           )
