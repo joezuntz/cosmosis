@@ -19,7 +19,7 @@ endif
 #CFLAGS+=-I../../
 
 
-all: libcosmosis.so libcosmosis_c.so ../names.py
+all: libcosmosis.so ../names.py
 
 lib: libcosmosis.so ../names.py
 
