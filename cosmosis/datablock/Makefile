@@ -19,9 +19,9 @@ endif
 #CFLAGS+=-I../../
 
 
-all: libcosmosis.so ../names.py
+all: libcosmosis.so cosmosis_py/section_names.py
 
-lib: libcosmosis.so ../names.py
+lib: libcosmosis.so cosmosis_py/section_names.py
 
 clean:
 	rm -f *.o *.d *.so *.log *.mod *.mod 
@@ -32,7 +32,7 @@ clean:
 	rm -f c_datablock_multidim_complex_array_t
 	rm -f datablock_t entry_t fortran_t ndarray_t section_t
 	rm -rf  *.dSYM/
-	rm -f ../names.py section_names.h cosmosis_section_names.F90
+	rm -f cosmosis_py/section_names.py section_names.h cosmosis_section_names.F90
 
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
@@ -117,8 +117,8 @@ section_names.h: section_names.txt generate_sections.py
 cosmosis_section_names.F90: section_names.txt generate_sections.py
 	python generate_sections.py section_names.txt fortran cosmosis_section_names.F90
 
-../names.py: section_names.txt generate_sections.py 
-	python generate_sections.py section_names.txt python ../names.py
+cosmosis_py/section_names.py: section_names.txt generate_sections.py 
+	python generate_sections.py section_names.txt python cosmosis_py/section_names.py
 
 .PHONY: test_datablock test_c_datablock test_section test_entry test_fortran test clean test_python 
 
