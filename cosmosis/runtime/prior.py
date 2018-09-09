@@ -381,7 +381,7 @@ class TruncatedOneoverxPrior(Prior):
         u"""Obtain random sample of `n` values from 1/x distribution within `lower` and `upper` bounds."""
         if n is None:
             n = 1
-        return np.exp(np.uniform(self.ln_lower, self.ln_upper, n))
+        return np.exp(np.random.uniform(self.ln_lower, self.ln_upper, n))
 
     def denormalize_from_prior(self, y):
         u"""Return the value at which the cumulated probability is `y`."""
