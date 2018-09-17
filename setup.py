@@ -107,6 +107,9 @@ def check_compilers():
     if cxx_version < minimum_cxx_version:
         raise RuntimeError(f"G++ compiler version ({cxx_version}) does not meet requirements ({minimum_cxx_version}).")
     
+    if env["MPIFC"] == "":
+        print("Compiling CosmoSIS without MPI support. If MPI support is required, set MPIFC.")
+    
     return env
 
 class my_build(build):
