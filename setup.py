@@ -53,7 +53,7 @@ cc_headers = [
 ]
 
 datablock_libs = ["datablock/libcosmosis.so",
-                 # "datablock/libcosmosis_c.so"
+                  "datablock/libcosmosis_fortran.so"
                  ]
 
 sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",

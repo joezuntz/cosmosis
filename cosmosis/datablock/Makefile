@@ -19,7 +19,7 @@ endif
 #CFLAGS+=-I../../
 
 
-all: libcosmosis.so cosmosis_py/section_names.py
+all: libcosmosis.so libcosmosis_fortran.so cosmosis_py/section_names.py
 
 lib: libcosmosis.so cosmosis_py/section_names.py
 
@@ -132,8 +132,11 @@ cosmosis_py/section_names.py: section_names.txt generate_sections.py
 libcosmosis.so: cosmosis_section_names.F90 cosmosis_types.F90 cosmosis_wrappers.F90 cosmosis_modules.F90 libcosmosis_c.a
 	$(FC) $(FFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ -lgfortran $(RPATH)
 
-libcosmosis_c.so: libcosmosis_c.a
+libcosmosis_cxx.so: libcosmosis_c.a
 	$(CXX) $(CXXFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ $(RPATH)
+
+libcosmosis_fortran.so: libcosmosis.so
+	ln -s libcosmosis.so libcosmosis_fortran.so
 
 libcosmosis_c.a: datablock.o entry.o section.o c_datablock.o datablock_logging.o
 	$(AR) rc $@ $+
