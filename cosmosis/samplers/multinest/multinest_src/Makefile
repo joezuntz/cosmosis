@@ -1,5 +1,5 @@
 ifneq ($(COSMOSIS_SRC_DIR),)
-include ${COSMOSIS_SRC_DIR}/cosmosis/compilers.mk
+include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 endif
 
 MPI = $(shell which $(MPIFC) 2> /dev/null)

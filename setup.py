@@ -64,23 +64,26 @@ sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",
 
 runtime_libs = ["runtime/experimental_fault_handler.so"]
 
-compilers_config = ["compilers.mk", "subdirs.mk"]
+compilers_config = ["config/compilers.mk", "config/subdirs.mk"]
 
 # if sys.platform == 'darwin':
 #     from distutils import sysconfig
 #     vars = sysconfig.get_config_vars()
 #     vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-dynamiclib')
 
+def get_COSMOSIS_SRC_DIR():
+    cosmosis_src_dir = os.path.join(os.getcwd(), "cosmosis")
+    return cosmosis_src_dir
+
 def compile_library(env):
-    cosmosis_src_dir = os.getcwd()
+    cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
     env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
     subprocess.check_call(["make"], env=env, cwd="cosmosis")
     
 
 def clean_library():
-    cosmosis_src_dir = os.getcwd()
+    cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
     env = {"COSMOSIS_SRC_DIR"       : cosmosis_src_dir}
-    
     subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
 
 def check_compilers():
