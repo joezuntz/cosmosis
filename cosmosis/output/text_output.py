@@ -28,7 +28,11 @@ class TextColumnOutput(OutputBase):
         else:
             self._filename = filename + self.FILE_EXTENSION
 
-        if resume and os.path.exists(self._filename):
+        if resume and utils.file_exists_and_is_empty(self._filename):
+            print("You set resume=T but the file {} is empty so I will start afresh".format(self._filename))
+            self._file = open(self._filename, "w")
+            self.resumed = False
+        elif resume and os.path.exists(self._filename):
             print("Note: You set resume=T so I will resume from file {}".format(self._filename))
             self._file = open(self._filename, "r+")
             # Jump to the end of the file
@@ -74,11 +78,12 @@ In the last case you can set lock=F in the [output] section to disable this feat
 
     def _begun_sampling(self, params):
         #write the name line
-        name_line = '#'+self.delimiter.join(c[0] for c in self.columns) + '\n'
-        self._file.write(name_line)
-        #now write any metadata.
-        #text mode does not support comments
-        self._flush_metadata(self._metadata)
+        if not self.resumed:
+            name_line = '#'+self.delimiter.join(c[0] for c in self.columns) + '\n'
+            self._file.write(name_line)
+            #now write any metadata.
+            #text mode does not support comments
+            self._flush_metadata(self._metadata)
         self._metadata={}
 
     def _write_metadata(self, key, value, comment=''):

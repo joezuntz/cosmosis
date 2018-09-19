@@ -46,6 +46,7 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
         self._columns = []
         self.closed=False
         self.begun_sampling = False
+        self.resumed = False
 
     def log_debug(self, message, *args, **kwargs):
         logging.debug(message, *args, **kwargs)
@@ -178,6 +179,15 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
     def close(self):
         self._close()
         self.closed=True
+
+    def blinding_header(self):
+        if self.resumed:
+            return
+        self.comment("")
+        self.comment("Blank lines prevent accidental unblinding")
+        for i in range(250):
+            self.comment("")
+
 
     #These are the methods that subclasses should
     #implement.  _begun_sampling and _close are optional.

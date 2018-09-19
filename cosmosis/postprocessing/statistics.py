@@ -525,7 +525,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
 
         #Get the power spectrum of the chain
         n=len(x)
-        p = abs(np.fft.rfft(x)[1:n/2])**2
+        p = abs(np.fft.rfft(x)[1:n//2])**2
         #And the k-axis
         j = np.arange(p.size)+1.
         k = j / (2*np.pi*n)
@@ -568,7 +568,7 @@ class WeightedStatistics(object):
         try:
             print(col)
             peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data, weight)
-        except RuntimeError:
+        except (RuntimeError, ValueError):
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
             peak1d = np.nan
 

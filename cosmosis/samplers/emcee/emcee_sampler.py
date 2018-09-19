@@ -3,6 +3,7 @@ from builtins import range
 from builtins import str
 from .. import ParallelSampler
 import numpy as np
+import sys
 
 
 def log_probability_function(p):
@@ -142,8 +143,10 @@ class EmceeSampler(ParallelSampler):
         self.prob0 = prob
         self.blob0 = extra_info
         self.num_samples += self.nsteps
-        self.output.log_info("Done %d iterations", self.num_samples)
-        self.output.final("mean_acceptance_fraction", self.ensemble.acceptance_fraction.mean())
+        acceptance_fraction = self.ensemble.acceptance_fraction.mean()
+        print("Done {} iterations of emcee. Acceptance fraction {:.3f}".format(self.num_samples, acceptance_fraction))
+        sys.stdout.flush()
+        self.output.final("mean_acceptance_fraction", acceptance_fraction)
 
     def is_converged(self):
         return self.num_samples >= self.samples
