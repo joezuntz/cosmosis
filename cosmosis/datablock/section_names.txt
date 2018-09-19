@@ -26,6 +26,7 @@ wl_number_density
 # 2-pt and related quantities
 matter_power_nl
 matter_power_lin
+matter_power_lin_cdm_baryon
 matter_galaxy_power
 galaxy_power
 shear_xi
