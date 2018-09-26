@@ -56,10 +56,11 @@ class MetropolisSampler(ParallelSampler):
         quiet = self.pipeline.quiet
         start_norm = self.pipeline.normalize_vector(start)
         covmat_norm = self.pipeline.normalize_matrix(covmat)
+
         self.sampler = metropolis.MCMC(start_norm, posterior, covmat_norm, 
             quiet=quiet, 
-            tuning_frequency=tuning_frequency * self.oversampling, 
-            tuning_grace=tuning_grace,
+            tuning_frequency=tuning_frequency, # Will be multiplied by the oversampling
+            tuning_grace=tuning_grace,         # within the sampler if needed
             tuning_end=tuning_end,
             exponential_probability=self.exponential_probability)
         self.analytics = Analytics(self.pipeline.varied_params, self.pool)
