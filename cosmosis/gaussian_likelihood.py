@@ -215,6 +215,10 @@ class GaussianLikelihood(object):
             #Also save a simulation of the data - the mean with added noise
             #these can be used among other places by the ABC sampler.
             #This also requires the cov mat.
+            # If we have a parameter-dependent covariance we need
+            # to re-calculate the Cholesky decomposition to simulate some data.
+            if not self.constant_covariance:
+                self.chol = np.linalg.cholesky(self.cov)
             sim = self.simulate_data_vector(x)
             block[names.data_vector, self.like_name + "_simulation"] = sim
 
