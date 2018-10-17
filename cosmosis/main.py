@@ -101,12 +101,103 @@ def demo_20b_special (args):
         print ("********************************************************")
         print ("*** YOU MUST RUN demo20a BEFORE YOU CAN RUN demo20b. ***")
         print ("********************************************************")
-        
+
+
+def sampler_main_loop(sampler, output, pool):
+    # Run the sampler until convergence
+    # which really means "finished" here - 
+    # a sampler can "converge" just by reaching the 
+    # limit of the number of samples it is allowed.
+    if not pool or pool.is_master():
+        while not sampler.is_converged():
+            sampler.execute()
+            #Flush any output. This is to stop
+            #a problem in some MPI cases where loads
+            #of output is built up before being written.
+            if output:
+                output.flush()
+        # If we are in parallel tell the other processors to end the 
+        # loop and prepare for the next sampler
+        if pool and sampler.is_parallel_sampler:
+            pool.close()
+    else:
+        if sampler.is_parallel_sampler:
+            sampler.worker()
+
+
+
+def write_header_output(output, params, values, pipeline):
+    # If there is an output file, save the ini information to
+    # it as well.  We do it here since it's nicer to have it
+    # after the sampler options that get written in sampler.config.
+    # Create a buffer to store the output:
+    output.comment("START_OF_PARAMS_INI")
+    comment_wrapper = output.comment_file_wrapper()
+    params.write(comment_wrapper)
+    output.comment("END_OF_PARAMS_INI")
+    # Do the same with the values file.
+    # Unfortunately that means reading it in again;
+    # if we ever refactor this bit we could eliminate that.
+    if values is None:
+        values_ini=Inifile(pipeline.values_filename)
+    else:
+        values_ini=values
+    output.comment("START_OF_VALUES_INI")
+    values_ini.write(comment_wrapper)
+    output.comment("END_OF_VALUES_INI")
+
+    # And the same with the priors
+    output.comment("START_OF_PRIORS_INI")
+    for priors_file in pipeline.priors_files:
+        prior_ini=Inifile(priors_file)
+        prior_ini.write(comment_wrapper)
+    output.comment("END_OF_PRIORS_INI")
+
+def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method):
+
+    needs_output = sampler_class.needs_output and \
+       (pool is None or pool.is_master() or sampler_class.parallel_output)
+
+    if not needs_output:
+        return None
+
+
+    #create the output files and methods.
+    try:
+        output_options = dict(ini.items('output'))
+    except configparser.NoSectionError:
+        sys.stderr.write("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
+        sys.exit(1)
+    #Additionally we tell the output here if
+    #we are parallel or not.
+    if (pool is not None) and (sampler_class.parallel_output):
+        output_options['rank'] = pool.rank
+        output_options['parallel'] = pool.size
+
+    #Give different output filenames to the different sampling steps
+    #Only change if this is not the last sampling step - the final
+    #one retains the name in the output file.
+    # Change, e.g. demo17.txt to demo17.fisher.txt
+    if ("filename" in output_options) and (sampler_number<number_samplers-1):
+        filename = output_options['filename']
+        filename, ext = os.path.splitext(filename)
+        filename += '.' + sampler_name
+        filename += ext
+        output_options['filename'] = filename
+
+
+    #Generate the output from a factory
+    output = output_module.output_from_options(output_options)
+    output.metadata("sampler", sample_method)
+
+    if ("filename" in output_options):
+        print("* Saving output -> {}".format(output_options['filename']))
+
+    return output
+
 
 def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
     # In case we need to hand-hold a naive demo-10 user.
-    demo_10_special (args)
-    demo_20b_special (args)
 
     # Load configuration.
     if ini is None:
@@ -116,6 +207,7 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
 
     # Create pipeline.
     if pipeline is None:
+        cleanup_pipeline = True
         pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
         if (pool is None) or pool.is_master() or pool_stdout:
             pipeline = LikelihoodPipeline(ini, override=args.variables, values=values)
@@ -128,6 +220,9 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
                 pipeline = LikelihoodPipeline(ini, override=args.variables, values=values)
                 if pipeline.do_fast_slow:
                     pipeline.setup_fast_subspaces()
+    else:
+        # We should not cleanup a pipeline which we didn't make
+        cleanup_pipeline = False
 
 
     # determine the type(s) of sampling we want.
@@ -169,51 +264,8 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
             print("****************************")
             print("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name))
 
+        output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method)
 
-        if sampler_class.needs_output and \
-           (pool is None 
-            or pool.is_master() 
-            or sampler_class.parallel_output):
-
-            #create the output files and methods.
-            try:
-                output_options = dict(ini.items('output'))
-            except configparser.NoSectionError:
-                sys.stderr.write("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
-                sys.exit(1)
-            #Additionally we tell the output here if
-            #we are parallel or not.
-            if (pool is not None) and (sampler_class.parallel_output):
-                output_options['rank'] = pool.rank
-                output_options['parallel'] = pool.size
-
-            #Give different output filenames to the different sampling steps
-            #Only change if this is not the last sampling step - the final
-            #one retains the name in the output file.
-            # Change, e.g. demo17.txt to demo17.fisher.txt
-            if ("filename" in output_options) and (sampler_number<number_samplers-1):
-                filename = output_options['filename']
-                filename, ext = os.path.splitext(filename)
-                filename += '.' + sampler_name
-                filename += ext
-                output_options['filename'] = filename
-
-
-            #Generate the output from a factory
-            output = output_module.output_from_options(output_options)
-            output.metadata("sampler", sample_method)
-
-            if ("filename" in output_options):
-                print("* Saving output -> {}".format(output_options['filename']))
-
-
-
-        else:
-            #some samplers, like the test one, do not need an output
-            #file of the usual type.  In fact giving them one would be
-            #a bad idea, because they might over-write something important.
-            #so we just give them none.
-            output = None
         print("****************************")
 
         #Initialize our sampler, with the class we got above.
@@ -230,64 +282,19 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
         sampler.distribution_hints.update(distribution_hints)
         sampler.config()
 
-        #If there is an output file, save the ini information to
-        #it as well.  We do it here since it's nicer to have it
-        #after the sampler options that get written in sampler.config.
-        if output is not None:
-            #Create a buffer to store the output:
-            output.comment("START_OF_PARAMS_INI")
-            comment_wrapper = output.comment_file_wrapper()
-            ini.write(comment_wrapper)
-            output.comment("END_OF_PARAMS_INI")
-            #Do the same with the values file.
-            #Unfortunately that means reading it in again;
-            #if we ever refactor this bit we could eliminate that.
-            if values is None:
-                values_ini=Inifile(pipeline.values_filename)
-            else:
-                values_ini=values
-            output.comment("START_OF_VALUES_INI")
-            values_ini.write(comment_wrapper)
-            output.comment("END_OF_VALUES_INI")
+        if output:
+            write_header_output(output, ini, values, pipeline)
 
-            output.comment("START_OF_PRIORS_INI")
-            for priors_file in pipeline.priors_files:
-                prior_ini=Inifile(priors_file)
-                prior_ini.write(comment_wrapper)
-            output.comment("END_OF_PRIORS_INI")
-
-
-        # Run the sampler until convergence
-        # which really means "finished" here - 
-        # a sampler can "converge" just by reaching the 
-        # limit of the number of samples it is allowed.
-        if not pool or pool.is_master():
-            while not sampler.is_converged():
-                sampler.execute()
-                #Flush any output. This is to stop
-                #a problem in some MPI cases where loads
-                #of output is built up before being written.
-                if output:
-                    output.flush()
-            # If we are in parallel tell the other processors to end the 
-            # loop and prepare for the next sampler
-            if pool and sampler.is_parallel_sampler:
-                pool.close()
-        else:
-            if sampler.is_parallel_sampler:
-                sampler.worker()
-
+        sampler_main_loop(sampler, output, pool)
 
         distribution_hints.update(sampler.distribution_hints)
 
         if output:
             output.close()
 
-    pipeline.cleanup()
+    if cleanup_pipeline:
+        pipeline.cleanup()
 
-    # Extra-special actions we take to mollycoddle a brand-new user!
-    demo_1_special (args)
-    demo_20a_special (args)
 
 
 def main():
@@ -301,6 +308,10 @@ def main():
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
         args = parser.parse_args(sys.argv[1:])
+
+
+        demo_10_special (args)
+        demo_20b_special (args)
 
         if args.experimental_fault_handling:
             experimental_fault_handling()
@@ -325,6 +336,10 @@ def main():
     except CosmosisConfigurationError as e:
         print(e)
         sys.exit (1)
+
+    # Extra-special actions we take to mollycoddle a brand-new user!
+    demo_1_special (args)
+    demo_20a_special (args)
 
 
 if __name__=="__main__":

@@ -387,6 +387,10 @@ class Pipeline(object):
                     print("You set a shortcut in the pipeline but it was the first module.")
                     print("It will make no difference.")
                 self.shortcut_module = index
+        else:
+            self.shortcut_module=0
+            self.shortcut_data=None
+            
 
 
 
