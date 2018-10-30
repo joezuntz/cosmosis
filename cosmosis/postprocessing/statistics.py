@@ -4,8 +4,11 @@ from builtins import zip
 from builtins import str
 from builtins import range
 from builtins import object
+from cosmosis.runtime.parameter import Parameter
 from .elements import PostProcessorElement, MCMCPostProcessorElement, WeightedMCMCPostProcessorElement, MultinestPostProcessorElement
+from getdist import MCSamples
 import numpy as np
+import scipy as sp
 from .utils import std_weight, mean_weight, median_weight, percentile_weight, find_asymmetric_errorbars
 from .outputs import PostprocessText
 
@@ -216,15 +219,24 @@ class ConstrainingStatistics(Statistics):
 
 
 class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElement):
-    def compute_basic_stats_col(self, col):
-        data = self.reduced_col(col)
-        n = len(data)
-        try:
-            peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data)
-        except ValueError:
-            (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
-            peak1d = np.nan
-        return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.), lerr68, uerr68, lerr95, uerr95, peak1d
+
+    def get_gdobj(self):
+        datapts = []
+        for col in self.source.colnames:
+            datapts.append(self.reduced_col(col))
+        datapts = np.array(datapts).T
+        vlfile = self.source.extract_ini("VALUES")#test
+        vlpars = Parameter.load_parameters(vlfile)#test
+        rangedict = {}
+        for vlpar in vlpars:
+            rangedict[str(vlpar)] = np.array(vlpar.limits)
+            
+        try: loglikes = np.log(self.source.get_col("post"))
+        except: loglikes = np.log(self.source.get_col("like"))
+        
+        gdc = MCSamples(samples = datapts,loglikes=loglikes,names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
+        self.source.gdc = gdc
+        return gdc
 
     def compute_basic_stats(self):
         self.mu = []
@@ -241,23 +253,33 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.peak1d = []
         try:self.best_fit_index = self.source.get_col("post").argmax()
         except:self.best_fit_index = self.source.get_col("like").argmax()
-        
         n = 0
+        gdc = self.get_gdobj()
+        # output: self.mu, sigma, median, l/u68, l/u95, l/uerr68, l/uerr95
+
+        n = len(gdc.samples)
+        self.mu = gdc.getMeans()
+        self.sigma = np.sqrt(gdc.cov().diagonal())
+        self.median = np.median(gdc.samples,axis=0)
+
         for col in self.source.colnames:
-            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
-            self.mu.append(mu)
-            self.sigma.append(sigma)
-            self.median.append(median)
-            self.l68.append(l68)
-            self.u68.append(u68)
-            self.l95.append(l95)
-            self.u95.append(u95)
-            self.lerr68.append(lerr68)
-            self.uerr68.append(uerr68)
-            self.lerr95.append(lerr95)
-            self.uerr95.append(uerr95)
-            self.peak1d.append(peak1d)
+            dens1d = gdc.get1DDensity(col,writeDataToFile=False)
+            def func(x):
+                return -dens1d.Prob(x)
+            self.peak1d.append(sp.optimize.fmin(func,dens1d.bounds()[0])[0])
+#l/u are done before KDE
+            self.l68.append(gdc.confidence(col,0.16))
+            self.u68.append(gdc.confidence(col,0.16,True))
+            self.l95.append(gdc.confidence(col,0.025))
+            self.u95.append(gdc.confidence(col,0.025,True))
+#l/uerr are done after KDE
+            self.lerr68.append(dens1d.getLimits([0.68])[0])
+            self.uerr68.append(dens1d.getLimits([0.68])[1])
+            self.lerr95.append(dens1d.getLimits([0.95])[0])
+            self.uerr95.append(dens1d.getLimits([0.95])[1])
         return n
+
+
 
     def run(self):
         N = self.compute_basic_stats()
@@ -276,9 +298,7 @@ class ChainCovariance(object):
         if len(col_names)<2:
             return []
 
-        ps = self.posterior_sample()
-        cols = [self.reduced_col(p)[ps] for p in col_names]
-        covmat = np.cov(cols)
+        covmat = self.source.gdc.cov()
 
         #For the proposal we just want the first 
         #nvaried rows/cols - we don't want to include
@@ -307,7 +327,7 @@ class MetropolisHastingsCovariance(ChainCovariance, Statistics, MCMCPostProcesso
     pass
 
 
-
+# didn't touch this part
 class GridStatistics(ConstrainingStatistics):
     def set_data(self):
         self.nsample = int(self.source.sampler_option("nsample_dimension"))
@@ -415,7 +435,7 @@ class GridStatistics(ConstrainingStatistics):
         l95 = self.find_percentile(col, like, 5.0)
         u95 = self.find_percentile(col, like, 95.0)        
         return mu, median, sigma2**0.5, l95, u95
-
+#end didn't touch part
 
 
 class TestStatistics(Statistics):
@@ -561,20 +581,20 @@ class DunkleyTest(MetropolisHastingsStatistics):
 
 
 class WeightedStatistics(object):
-    def compute_basic_stats_col(self, col):
-        data = self.reduced_col(col)
+    def get_gdobj(self):
+        datapts = []
         weight = self.weight_col()
-        n = len(data)
-        try:
-            print(col)
-            peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data, weight)
-        except (RuntimeError, ValueError):
-            (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
-            peak1d = np.nan
-
-        return (n, mean_weight(data,weight), std_weight(data,weight), 
-            median_weight(data, weight), percentile_weight(data, weight, 32.), percentile_weight(data, weight, 68.),
-            percentile_weight(data, weight, 5.), percentile_weight(data, weight, 95.), lerr68, uerr68, lerr95, uerr95, peak1d)
+        for col in self.source.colnames:
+            datapts.append(self.reduced_col(col))
+        datapts = np.array(datapts).T
+        vlfile = self.source.extract_ini("VALUES")#test
+        vlpars = Parameter.load_parameters(vlfile)#test
+        rangedict = {}
+        for vlpar in vlpars:
+            rangedict[str(vlpar)] = np.array(vlpar.limits)
+        gdc = MCSamples(samples = datapts,weights=weight,loglikes=np.log(self.source.get_col("post")),names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
+        self.source.gdc = gdc
+        return gdc
 
 class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, MetropolisHastingsStatistics):
     def run(self):
@@ -583,7 +603,11 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         files = super(MultinestStatistics,self).run()
         logz = self.source.final_metadata[0]["log_z"]
         logz_sigma = self.source.final_metadata[0]["log_z_error"]
-        
+#        vlfile = self.source.extract_ini("VALUES")#test
+#        params = Parameter.load_parameters(vlfile)#test
+
+#        for param in params:#test
+#            print(param, param.limits)#test
         #First print to screen
         print("Bayesian evidence:")
         print("    log(Z) = %g ± %g" % (logz,logz_sigma))
@@ -604,43 +628,52 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         #Include evidence in list of created files
         files.append(filename)
         return files
-
+        
+        
 class PolychordStatistics(MultinestStatistics):
     pass
 
 #The class hierarchy is getting too complex for this - revise it
 class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, WeightedMCMCPostProcessorElement):
     def compute_basic_stats(self):
-        #TODO make this code less ridiculous
         self.mu = []
         self.sigma = []
         self.median = []
-        self.l95 = []
-        self.u95 = []
         self.l68 = []
         self.u68 = []
+        self.l95 = []
+        self.u95 = []
         self.lerr68 = []
         self.uerr68 = []
         self.lerr95 = []
         self.uerr95 = []
-        self.peak1d = []      
+        self.peak1d = []
         try:self.best_fit_index = self.source.get_col("post").argmax()
         except:self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
+        gdc = self.get_gdobj()
+        # output: self.mu, sigma, median, l/u68, l/u95, l/uerr68, l/uerr95
+
+        n = len(gdc.samples)
+        self.mu = gdc.getMeans()
+        self.sigma = np.sqrt(gdc.cov().diagonal())
+        self.median = np.median(gdc.samples,axis=0)
+
         for col in self.source.colnames:
-            n, mu, sigma, median, l68, u68, l95, u95,  lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
-            self.mu.append(mu)
-            self.sigma.append(sigma)
-            self.median.append(median)
-            self.l68.append(l68)
-            self.u68.append(u68)
-            self.l95.append(l95)
-            self.u95.append(u95)
-            self.lerr68.append(lerr68)
-            self.uerr68.append(uerr68)
-            self.lerr95.append(lerr95)
-            self.uerr95.append(uerr95)
-            self.peak1d.append(peak1d)
+            dens1d = gdc.get1DDensity(col,writeDataToFile=False)
+            def func(x):
+                return -dens1d.Prob(x)
+            self.peak1d.append(sp.optimize.fmin(func,dens1d.bounds()[0])[0])
+#l/u are done before KDE
+            self.l68.append(gdc.confidence(col,0.16))
+            self.u68.append(gdc.confidence(col,0.16,True))
+            self.l95.append(gdc.confidence(col,0.025))
+            self.u95.append(gdc.confidence(col,0.025,True))
+#l/uerr are done after KDE
+            self.lerr68.append(dens1d.getLimits([0.68])[0])
+            self.uerr68.append(dens1d.getLimits([0.68])[1])
+            self.lerr95.append(dens1d.getLimits([0.95])[0])
+            self.uerr95.append(dens1d.getLimits([0.95])[1])
         return n
 
     def run(self):
