@@ -267,11 +267,11 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
             def func(x):
                 return -dens1d.Prob(x)
             self.peak1d.append(sp.optimize.fmin(func,dens1d.bounds()[0])[0])
-#l/u are done before KDE
-            self.l68.append(gdc.confidence(col,0.16))
-            self.u68.append(gdc.confidence(col,0.16,True))
-            self.l95.append(gdc.confidence(col,0.025))
-            self.u95.append(gdc.confidence(col,0.025,True))
+#l/u are done before KDE, lower or upper
+            self.l68.append(gdc.confidence(col,0.32))
+            self.u68.append(gdc.confidence(col,0.32,True))
+            self.l95.append(gdc.confidence(col,0.05))
+            self.u95.append(gdc.confidence(col,0.05,True))
 #l/uerr are done after KDE
             self.lerr68.append(dens1d.getLimits([0.68])[0])
             self.uerr68.append(dens1d.getLimits([0.68])[1])
@@ -665,10 +665,10 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
                 return -dens1d.Prob(x)
             self.peak1d.append(sp.optimize.fmin(func,dens1d.bounds()[0])[0])
 #l/u are done before KDE
-            self.l68.append(gdc.confidence(col,0.16))
-            self.u68.append(gdc.confidence(col,0.16,True))
-            self.l95.append(gdc.confidence(col,0.025))
-            self.u95.append(gdc.confidence(col,0.025,True))
+            self.l68.append(gdc.confidence(col,0.32))
+            self.u68.append(gdc.confidence(col,0.32,True))
+            self.l95.append(gdc.confidence(col,0.05))
+            self.u95.append(gdc.confidence(col,0.05,True))
 #l/uerr are done after KDE
             self.lerr68.append(dens1d.getLimits([0.68])[0])
             self.uerr68.append(dens1d.getLimits([0.68])[1])
