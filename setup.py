@@ -81,8 +81,9 @@ def compile_library(env):
     subprocess.check_call(["make"], env=env, cwd="cosmosis")
     
 
-def clean_library(env={}):
+def clean_library():
     cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
+    env = {}
     env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
     subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
 
@@ -134,8 +135,8 @@ class my_install(install):
 
 class my_clean(clean):
     def run(self):
-        env = check_compilers()
-        clean_library(env)
+        #env = check_compilers()
+        clean_library()
         super().run()
 
 setup(name = 'cosmosis-standalone',
