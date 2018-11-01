@@ -341,12 +341,7 @@ class Pipeline(object):
             self.options = config.Inifile(arg)
 
         #This will be set later
-        self.root_directory = self.options.get("runtime", "root", fallback="cosmosis_none_signifier")
-        if self.root_directory=="cosmosis_none_signifier":
-            self.root_directory=None
-
-        base_directory = self.base_directory()
-
+        self.root_directory = self.options.get("runtime", "root", fallback=os.getcwd())
 
         self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", fallback=True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", fallback=False)
@@ -370,7 +365,7 @@ class Pipeline(object):
             module_list = self.options.get(PIPELINE_INI_SECTION,
                                            "modules", fallback="").split()
             self.modules = [
-                module.Module.from_options(module_name,self.options,base_directory)
+                module.Module.from_options(module_name,self.options,self.root_directory)
                 for module_name in module_list
             ]
 
@@ -390,33 +385,12 @@ class Pipeline(object):
         else:
             self.shortcut_module=0
             self.shortcut_data=None
-            
-
-
-
-    def base_directory(self):
-        u"""Return our `root_directory` according to the environment.
-
-        Use the environment variable `COSMOSIS_SRC_DIR` if available,
-        otherwise use this processʼs working directory.
-
-        """
-        if self.root_directory is None:
-            try:
-                self.root_directory = os.environ["COSMOSIS_SRC_DIR"]
-                print("Root directory is ", self.root_directory)
-            except KeyError:
-                self.root_directory = os.getcwd()
-                print("WARNING: Could not find environment variable")
-                print("COSMOSIS_SRC_DIR. Module paths assumed to be relative")
-                print("to current directory, ", self.root_directory)
-        return self.root_directory
 
 
 
     def find_module_file(self, path):
         u"""Find a module file, which is assumed to be either absolute or relative to COSMOSIS_SRC_DIR"""
-        return os.path.join(self.base_directory(), path)
+        return os.path.join(self.root_directory, path)
 
 
 

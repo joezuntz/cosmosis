@@ -80,6 +80,7 @@ class DataBlock(object):
 		if own is not None:
 			self.owns=own
 		self._ptr = ptr
+		self._as_parameter_ = ptr
 	#TODO: add destructor.  destroy block if owned
 
 	def __del__(self):
@@ -93,6 +94,7 @@ class DataBlock(object):
 				lib.destroy_c_datablock(self._ptr)
 		except:
 			pass
+
 				
 	def clone(self):
 		u"""Make a brand-new, completely independent object, a deep copy of the existing one.

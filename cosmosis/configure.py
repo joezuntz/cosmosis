@@ -6,8 +6,7 @@ if '--debug' in sys.argv:
     common_flags = "-O3 -g -fPIC"
 
 
-dirname = os.path.split(__file__)[0]
-cosmosis_src_dir =  os.path.abspath(os.path.join(dirname, os.path.pardir))
+cosmosis_src_dir = os.path.split(__file__)[0]
 
 
 
