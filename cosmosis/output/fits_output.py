@@ -114,9 +114,12 @@ class FitsOutput(OutputBase):
 
 
     @classmethod
-    def from_options(cls, options):
+    def from_options(cls, options, resume=False):
         #look something up required parameters in the ini file.
         #how this looks will depend on the ini 
+        if resume:
+            raise ValueError("Cannot resume from FITS output")
+            
         filename = options['filename']
         delimiter = options.get('delimiter', '\t')
         rank = options.get('rank', 0)

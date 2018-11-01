@@ -24,6 +24,7 @@ CosmoSIS is described in `Zuntz et al <http://arxiv.org/abs/1409.3409>` - if you
    overview/overview
    installation/installation
    tutorials/tutorials
+   debugging/debugging
    reference/reference
    help/help
 

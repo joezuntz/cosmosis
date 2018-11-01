@@ -35,8 +35,8 @@ class DynestySampler(ParallelSampler):
             self.dlogz = self.read_ini("dlogz", float, 0.01)
             self.print_progress = self.read_ini("print_progress", bool, True)
 
-            if self.mode=='dynamic':
-                raise ValueError("Dynesty mode 'dynamic' not yet implemented (sorry)")
+            # if self.mode=='dynamic':
+            #     raise ValueError("Dynesty mode 'dynamic' not yet implemented (sorry)")
 
             for sec,name in pipeline.extra_saves:
                 col = "{}--{}".format(sec,name)
@@ -48,22 +48,38 @@ class DynestySampler(ParallelSampler):
 
 
     def execute(self):
-        from dynesty import NestedSampler
+        from dynesty import NestedSampler, DynamicNestedSampler
 
         ndim = self.pipeline.nvaried
-        sampler = NestedSampler(
-            log_probability_function,
-            prior_transform, 
-            ndim, 
-            nlive = self.nlive,
-            bound = self.bound,
-            sample = self.sample,
-            update_interval = self.update_interval,
-            first_update = {'min_ncall':self.min_ncall, 'min_eff':self.min_eff},
-            queue_size = self.queue_size,
-            pool = self.pool
-            )
-        sampler.run_nested()
+        if self.mode == "static":
+            sampler = NestedSampler(
+                log_probability_function,
+                prior_transform, 
+                ndim, 
+                nlive = self.nlive,
+                bound = self.bound,
+                sample = self.sample,
+                update_interval = self.update_interval,
+                first_update = {'min_ncall':self.min_ncall, 'min_eff':self.min_eff},
+                queue_size = self.queue_size,
+                pool = self.pool
+                )
+
+            sampler.run_nested(dlogz=self.dlogz)
+
+        else:
+            sampler = DynamicNestedSampler(
+                log_probability_function,
+                prior_transform, 
+                ndim, 
+                bound = self.bound,
+                sample = self.sample,
+                update_interval = self.update_interval,
+                queue_size = self.queue_size,
+                pool = self.pool
+                )
+            sampler.run_nested()
+
         results = sampler.results
         results.summary()
 

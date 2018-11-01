@@ -14,7 +14,7 @@ class TextColumnOutput(OutputBase):
     FILE_EXTENSION = ".txt"
     _aliases = ["text", "txt"]
 
-    def __init__(self, filename, rank=0, nchain=1, delimiter='\t', lock=True):
+    def __init__(self, filename, rank=0, nchain=1, delimiter='\t', lock=True, resume=False):
         super(TextColumnOutput, self).__init__()
         self.delimiter = delimiter
 
@@ -28,8 +28,21 @@ class TextColumnOutput(OutputBase):
         else:
             self._filename = filename + self.FILE_EXTENSION
 
-        self._file = open(self._filename, "w")
-
+        if resume and utils.file_exists_and_is_empty(self._filename):
+            print("You set resume=T but the file {} is empty so I will start afresh".format(self._filename))
+            self._file = open(self._filename, "w")
+            self.resumed = False
+        elif resume and os.path.exists(self._filename):
+            print("Note: You set resume=T so I will resume from file {}".format(self._filename))
+            self._file = open(self._filename, "r+")
+            # Jump to the end of the file
+            self._file.seek(0,2)
+            self.resumed = True
+        else:
+            if resume:
+                print("Note: You set resume=T but the file {} does not exist so I will start a new one".format(self._filename))
+            self._file = open(self._filename, "w")
+            self.resumed = False
         if lock:
             try:
                 self.lock_file(self._file)
@@ -65,11 +78,12 @@ In the last case you can set lock=F in the [output] section to disable this feat
 
     def _begun_sampling(self, params):
         #write the name line
-        name_line = '#'+self.delimiter.join(c[0] for c in self.columns) + '\n'
-        self._file.write(name_line)
-        #now write any metadata.
-        #text mode does not support comments
-        self._flush_metadata(self._metadata)
+        if not self.resumed:
+            name_line = '#'+self.delimiter.join(c[0] for c in self.columns) + '\n'
+            self._file.write(name_line)
+            #now write any metadata.
+            #text mode does not support comments
+            self._flush_metadata(self._metadata)
         self._metadata={}
 
     def _write_metadata(self, key, value, comment=''):
@@ -99,7 +113,7 @@ In the last case you can set lock=F in the [output] section to disable this feat
         self._file.flush()
 
     @classmethod
-    def from_options(cls, options):
+    def from_options(cls, options, resume=False):
         #look something up required parameters in the ini file.
         #how this looks will depend on the ini 
         filename = options['filename']
@@ -107,7 +121,7 @@ In the last case you can set lock=F in the [output] section to disable this feat
         rank = options.get('rank', 0)
         nchain = options.get('parallel', 1)
         lock = utils.boolean_string(options.get('lock', True))
-        return cls(filename, rank, nchain, delimiter=delimiter, lock=lock)
+        return cls(filename, rank, nchain, delimiter=delimiter, lock=lock, resume=resume)
 
     @classmethod
     def load_from_options(cls, options):

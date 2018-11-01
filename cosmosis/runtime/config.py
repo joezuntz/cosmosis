@@ -91,9 +91,7 @@ class IncludingConfigParser(configparser.ConfigParser):
                                                            + filename + "'\n")
                         if not os.path.exists(filename):
                             # TODO: remove direct sys.stderr writes
-                            sys.stderr.write("Tried to include non-existent "
-                                             "ini file: `" + filename + "'\n")
-                            raise IOError("Tried to include non-existent "
+                            raise ValueError("Tried to include non-existent "
                                           "ini file: `" + filename + "'\n")
                         self.read(filename)
                     cursect = None

@@ -38,7 +38,7 @@ def set_verbosity(verb):
 	logging.getLogger().setLevel(level)
 	logging.debug("CosmoSIS verbosity set to %d"%(verb))
 
-def output_from_options(options):
+def output_from_options(options, resume=False):
 	# figure out the type of output required
 	format = options.get('format', 'text')
 	if format not in output_registry:
@@ -55,7 +55,7 @@ I know about these format names:
 
 	verb = options.get("verbosity", "standard")
 	set_verbosity(verb)
-	return output_class.from_options(options)
+	return output_class.from_options(options,resume)
 
 def input_from_options(options):
     format = options['format']

@@ -129,6 +129,7 @@ class MCMC(object):
         #self.covariance_estimate.copy()
         self.mean_estimate = start.copy()
         self.tuning_frequency = tuning_frequency
+        self.original_tuning_frequency = tuning_frequency
         self.tuning_grace = tuning_grace
         self.tuning_end = tuning_end
 
@@ -196,6 +197,7 @@ class MCMC(object):
         self.slow_indices = slow_indices
         self.oversampling = oversampling
         self.proposal = FastSlowProposal(self.covariance, fast_indices, slow_indices, oversampling, scaling=self.scaling, exponential_probability=self.exponential_probability)
+        self.tuning_frequency = self.original_tuning_frequency * oversampling
 
     def tune(self):
 

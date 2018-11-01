@@ -3,6 +3,7 @@ from builtins import range
 from builtins import str
 from .. import ParallelSampler
 import numpy as np
+import sys
 
 
 def log_probability_function(p):
@@ -11,6 +12,7 @@ def log_probability_function(p):
 
 class EmceeSampler(ParallelSampler):
     parallel_output = False
+    supports_resume = True
     sampler_outputs = [("post", float)]
 
     def config(self):
@@ -81,6 +83,18 @@ class EmceeSampler(ParallelSampler):
                                                        log_probability_function,
                                                        pool=self.pool)
 
+    def resume(self):
+        if self.output.resumed:
+            data = np.genfromtxt(self.output._filename, invalid_raise=False)[:, :self.ndim]
+            num_samples = len(data) // self.nwalkers
+            self.p0 = data[-self.nwalkers:]
+            self.num_samples += num_samples
+            if self.num_samples >= self.samples:
+                print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
+                print("Increase the 'samples' parameter to keep going.")
+            else:
+                print("Continuing emcee from existing chain - have {} samples already".format(len(data)))
+
     def load_start(self, filename):
         #Load the data and cut to the bits we need.
         #This means you can either just use a test file with
@@ -129,8 +143,10 @@ class EmceeSampler(ParallelSampler):
         self.prob0 = prob
         self.blob0 = extra_info
         self.num_samples += self.nsteps
-        self.output.log_info("Done %d iterations", self.num_samples)
-        self.output.final("mean_acceptance_fraction", self.ensemble.acceptance_fraction.mean())
+        acceptance_fraction = self.ensemble.acceptance_fraction.mean()
+        print("Done {} iterations of emcee. Acceptance fraction {:.3f}".format(self.num_samples, acceptance_fraction))
+        sys.stdout.flush()
+        self.output.final("mean_acceptance_fraction", acceptance_fraction)
 
     def is_converged(self):
         return self.num_samples >= self.samples

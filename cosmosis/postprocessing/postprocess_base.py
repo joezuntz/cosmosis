@@ -13,6 +13,10 @@ import os
 from future.utils import with_metaclass
 postprocessor_registry = {}
 
+from future import standard_library
+standard_library.install_aliases()
+from io import StringIO
+
 
 class PostProcessMetaclass(abc.ABCMeta):
     def __init__(cls, name, b, d):
@@ -134,6 +138,26 @@ class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
     def load(self, ini):
         if self.cosmosis_standard_output:
             self.load_chain(ini)
+
+    def extract_ini(self, tag):
+        in_ = False
+        lines = []
+        for line in self.comments[0]:
+            line = line.strip()
+            if line == 'START_OF_{}_INI'.format(tag):
+                in_ = True
+            elif line == 'END_OF_{}_INI'.format(tag):
+                break
+            elif in_:
+                lines.append(line)
+
+        s = StringIO("\n".join(lines))
+        ini = Inifile(None)
+        ini.read_file(s)
+        return ini
+
+
+
         
 
     def __len__(self):

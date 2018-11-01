@@ -15,4 +15,3 @@ c_datablock_multidim_double_array_t
 ndarray_t
 c_datablock_multidim_complex_array_t
 c_datablock_multidim_int_array_t
-fake_array_t
