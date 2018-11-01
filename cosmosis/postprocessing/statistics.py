@@ -6,7 +6,9 @@ from builtins import range
 from builtins import object
 from cosmosis.runtime.parameter import Parameter
 from .elements import PostProcessorElement, MCMCPostProcessorElement, WeightedMCMCPostProcessorElement, MultinestPostProcessorElement
-from getdist import MCSamples
+try: from getdist import MCSamples
+except: print("GetDist not installed, can't use -gd stats")
+# getdist not implemented for polychord and grid sampler yet
 import numpy as np
 import scipy as sp
 from .utils import std_weight, mean_weight, median_weight, percentile_weight, find_asymmetric_errorbars
@@ -219,6 +221,48 @@ class ConstrainingStatistics(Statistics):
 
 
 class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElement):
+    def compute_basic_stats_col(self, col):
+        data = self.reduced_col(col)
+        n = len(data)
+        try:
+            peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data)
+        except ValueError:
+            (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
+            peak1d = np.nan
+        return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.), lerr68, uerr68, lerr95, uerr95, peak1d
+
+    def compute_basic_stats(self):
+        self.mu = []
+        self.sigma = []
+        self.median = []
+        self.l68 = []
+        self.u68 = []
+        self.l95 = []
+        self.u95 = []
+        self.lerr68 = []
+        self.uerr68 = []
+        self.lerr95 = []
+        self.uerr95 = []
+        self.peak1d = []
+        try:self.best_fit_index = self.source.get_col("post").argmax()
+        except:self.best_fit_index = self.source.get_col("like").argmax()
+        
+        n = 0
+        for col in self.source.colnames:
+            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
+            self.mu.append(mu)
+            self.sigma.append(sigma)
+            self.median.append(median)
+            self.l68.append(l68)
+            self.u68.append(u68)
+            self.l95.append(l95)
+            self.u95.append(u95)
+            self.lerr68.append(lerr68)
+            self.uerr68.append(uerr68)
+            self.lerr95.append(lerr95)
+            self.uerr95.append(uerr95)
+            self.peak1d.append(peak1d)
+        return n
 
     def get_gdobj(self):
         datapts = []
@@ -238,7 +282,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.source.gdc = gdc
         return gdc
 
-    def compute_basic_stats(self):
+    def compute_basic_statsgd(self):
         self.mu = []
         self.sigma = []
         self.median = []
@@ -282,7 +326,10 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
 
 
     def run(self):
-        N = self.compute_basic_stats()
+        if self.source.options.get("getdist",False):
+            N = self.compute_basic_statsgd()
+        else:
+            N = self.compute_basic_stats()
         print("Samples after cutting:", N)
 
         self.report_screen()
@@ -298,7 +345,12 @@ class ChainCovariance(object):
         if len(col_names)<2:
             return []
 
-        covmat = self.source.gdc.cov()
+        if self.source.options.get("getdist",False):
+            covmat = self.source.gdc.cov()
+        else:
+            ps = self.posterior_sample()
+            cols = [self.reduced_col(p)[ps] for p in col_names]
+            covmat = np.cov(cols)
 
         #For the proposal we just want the first 
         #nvaried rows/cols - we don't want to include
@@ -595,6 +647,22 @@ class WeightedStatistics(object):
         gdc = MCSamples(samples = datapts,weights=weight,loglikes=np.log(self.source.get_col("post")),names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
         self.source.gdc = gdc
         return gdc
+        
+    def compute_basic_stats_col(self, col):
+        data = self.reduced_col(col)
+        weight = self.weight_col()
+        n = len(data)
+        try:
+            print(col)
+            peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data, weight)
+        except (RuntimeError, ValueError):
+            (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
+            peak1d = np.nan
+
+        return (n, mean_weight(data,weight), std_weight(data,weight), 
+            median_weight(data, weight), percentile_weight(data, weight, 32.), percentile_weight(data, weight, 68.),
+            percentile_weight(data, weight, 5.), percentile_weight(data, weight, 95.), lerr68, uerr68, lerr95, uerr95, peak1d)
+
 
 class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, MetropolisHastingsStatistics):
     def run(self):
@@ -635,7 +703,7 @@ class PolychordStatistics(MultinestStatistics):
 
 #The class hierarchy is getting too complex for this - revise it
 class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, WeightedMCMCPostProcessorElement):
-    def compute_basic_stats(self):
+    def compute_basic_statsgd(self):
         self.mu = []
         self.sigma = []
         self.median = []
@@ -675,9 +743,46 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
             self.lerr95.append(dens1d.getLimits([0.95])[0])
             self.uerr95.append(dens1d.getLimits([0.95])[1])
         return n
-
+        
+    def compute_basic_stats(self):
+        self.mu = []
+        self.sigma = []
+        self.median = []
+        self.l68 = []
+        self.u68 = []
+        self.l95 = []
+        self.u95 = []
+        self.lerr68 = []
+        self.uerr68 = []
+        self.lerr95 = []
+        self.uerr95 = []
+        self.peak1d = []
+        try:self.best_fit_index = self.source.get_col("post").argmax()
+        except:self.best_fit_index = self.source.get_col("like").argmax()
+        
+        n = 0
+        for col in self.source.colnames:
+            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
+            self.mu.append(mu)
+            self.sigma.append(sigma)
+            self.median.append(median)
+            self.l68.append(l68)
+            self.u68.append(u68)
+            self.l95.append(l95)
+            self.u95.append(u95)
+            self.lerr68.append(lerr68)
+            self.uerr68.append(uerr68)
+            self.lerr95.append(lerr95)
+            self.uerr95.append(uerr95)
+            self.peak1d.append(peak1d)
+        return n
+        
     def run(self):
-        N = self.compute_basic_stats()
+
+        if self.source.options.get("getdist",False):
+            N = self.compute_basic_statsgd()
+        else:
+            N = self.compute_basic_stats()
         print("Samples after cutting:", N)
 
         self.report_screen()
