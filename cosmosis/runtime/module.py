@@ -132,9 +132,7 @@ class Module(object):
         for (section, name) in config.keys(self.name):
             config[option_section, name] = config[section, name]
 
-
-
-    def setup(self, config, quiet=True):
+    def setup_functions(self, config, quiet=True):
         u"""Call the /Module/ constructor.
 
         This method also pulls in the `execute_function` from the linked
@@ -144,10 +142,6 @@ class Module(object):
         any other action takes place.
 
         """
-        self.copy_section_to_module_options(config)
-        if not self.is_python:
-            config = config._ptr
-
         if self.setup_function:
             if not quiet:
                 print('-- Setting up module %s --' % (self.name))
@@ -166,7 +160,15 @@ class Module(object):
         if self.execute_function is None:
             raise ValueError("Could not find a function 'execute' in module '"
                                  +  self.name + "'")
+
+    def setup(self, config, quiet=True):
+        u"""Call the /Module/ after copying config information constructor.
         
+        This module is split from the main workhorse method  setup_functions
+        so that Modules can be used more easily in external code.
+        """
+        self.copy_section_to_module_options(config)
+        self.setup_functions(config)
 
 
     def execute(self, data_block):
