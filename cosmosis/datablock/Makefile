@@ -18,10 +18,9 @@ endif
 #CXXFLAGS+=-I../../
 #CFLAGS+=-I../../
 
+all: lib
 
-all: libcosmosis.so libcosmosis_fortran.so cosmosis_py/section_names.py
-
-lib: libcosmosis.so cosmosis_py/section_names.py
+lib: libcosmosis.so libcosmosis_fortran.so cosmosis_py/section_names.py
 
 clean:
 	rm -f *.o *.d *.so *.log *.mod *.mod 
