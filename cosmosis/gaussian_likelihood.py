@@ -30,10 +30,15 @@ class GaussianLikelihood(object):
     def __init__(self, options):
         self.options=options
         self.data_x, self.data_y = self.build_data()
+        self.likelihood_only = options.get_bool('likelihood_only', False)
 
         if self.constant_covariance:
             self.cov = self.build_covariance()
             self.inv_cov = self.build_inverse_covariance()
+
+            if not self.likelihood_only:
+                self.chol = np.linalg.cholesky(self.cov)
+
 
             # We may want to include the normalization of the likelihood
             # via the log |C| term.
@@ -60,8 +65,6 @@ class GaussianLikelihood(object):
             self.y_name = options['y_name']
         if options.has_value("like_name"):
             self.like_name = options['like_name']
-
-        self.likelihood_only = options.get_bool('likelihood_only', False)
 
 
 
@@ -212,6 +215,10 @@ class GaussianLikelihood(object):
             #Also save a simulation of the data - the mean with added noise
             #these can be used among other places by the ABC sampler.
             #This also requires the cov mat.
+            # If we have a parameter-dependent covariance we need
+            # to re-calculate the Cholesky decomposition to simulate some data.
+            if not self.constant_covariance:
+                self.chol = np.linalg.cholesky(self.cov)
             sim = self.simulate_data_vector(x)
             block[names.data_vector, self.like_name + "_simulation"] = sim
 
@@ -220,7 +227,7 @@ class GaussianLikelihood(object):
         #generate a vector of normal deviates
 
         r = np.random.randn(x.size)
-        return x + np.dot(self.cov, r)
+        return x + np.dot(self.chol, r)
 
 
     def extract_theory_points(self, block):
