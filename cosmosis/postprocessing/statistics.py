@@ -6,8 +6,10 @@ from builtins import range
 from builtins import object
 from cosmosis.runtime.parameter import Parameter
 from .elements import PostProcessorElement, MCMCPostProcessorElement, WeightedMCMCPostProcessorElement, MultinestPostProcessorElement
-try: from getdist import MCSamples
-except: print("GetDist not installed, can't use -gd stats")
+try: 
+    from getdist import MCSamples
+except: 
+    MCSamples = None
 # getdist not implemented for polychord and grid sampler yet
 import numpy as np
 import scipy as sp
@@ -275,10 +277,14 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         for vlpar in vlpars:
             rangedict[str(vlpar)] = np.array(vlpar.limits)
             
-        try: loglikes = np.log(self.source.get_col("post"))
-        except: loglikes = np.log(self.source.get_col("like"))
-        
-        gdc = MCSamples(samples = datapts,loglikes=loglikes,names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
+        try: 
+            loglikes = np.log(self.source.get_col("post"))
+        except: 
+            loglikes = np.log(self.source.get_col("like"))
+        if MCSamples:
+            gdc = MCSamples(samples = datapts,loglikes=loglikes,names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
+        else:
+            raise ImportError('GetDist is not installed')
         self.source.gdc = gdc
         return gdc
 
@@ -295,8 +301,10 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.lerr95 = []
         self.uerr95 = []
         self.peak1d = []
-        try:self.best_fit_index = self.source.get_col("post").argmax()
-        except:self.best_fit_index = self.source.get_col("like").argmax()
+        try:
+            self.best_fit_index = self.source.get_col("post").argmax()
+        except:
+            self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         gdc = self.get_gdobj()
         # output: self.mu, sigma, median, l/u68, l/u95, l/uerr68, l/uerr95
@@ -644,7 +652,10 @@ class WeightedStatistics(object):
         rangedict = {}
         for vlpar in vlpars:
             rangedict[str(vlpar)] = np.array(vlpar.limits)
-        gdc = MCSamples(samples = datapts,weights=weight,loglikes=np.log(self.source.get_col("post")),names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
+        if MCSamples:
+            gdc = MCSamples(samples = datapts,weights=weight,loglikes=np.log(self.source.get_col("post")),names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
+        else:
+            raise ImportError('GetDist is not installed')
         self.source.gdc = gdc
         return gdc
         
