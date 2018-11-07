@@ -81,7 +81,18 @@ class Prior(object):
         prior_type, parameters = value.split(' ', 1)
         prior_type = prior_type.lower()
         try:
-            parameters = [float(p) for p in parameters.split()]
+            # Most of the priors require float
+            # parameters, but not all of them -
+            # the InverseTransform prior needs
+            # a string argument (file name).
+            parameters_flt = []
+            for p in parameters.split():
+                try:
+                    p = float(p)
+                except:
+                    pass
+                parameters_flt.append(p)
+            parameters = parameters_flt
 
             if prior_type.startswith("uni"):
                 return UniformPrior(*parameters)
@@ -94,7 +105,7 @@ class Prior(object):
                 return TruncatedOneoverxPrior(*parameters)
             elif prior_type.startswith("inv") or \
                     prior_type.startswith("loa"):
-                return InverseTransformPrior(*parameters)
+                return TabulatedPDF(*parameters)
             else:
                 raise ValueError("Unable to parse %s as prior" %
                                  (value,))
@@ -123,7 +134,7 @@ class Prior(object):
 
         return priors
 
-class InverseTransformPrior(Prior):
+class TabulatedPDF(Prior):
 
     u"""Load from a 2-column ASCII table containing values for x, pdf(x).
     
@@ -139,7 +150,7 @@ class InverseTransformPrior(Prior):
         self.function_filename = function_filename
         # Basic input checking and setups
         if function_filename is None:
-            raise TypeError('You must specify a function_filename for InverseTransformPrior!')
+            raise TypeError('You must specify a function_filename for TabulatedPDF!')
 
         # Load the probability distribution function, pdf(x)
         xarray, pdf = np.loadtxt(function_filename, unpack=True)
@@ -168,7 +179,7 @@ class InverseTransformPrior(Prior):
 
         # Check that the probability is nonnegative
         if not np.all(pdf >= 0.):
-            raise ValueError('Negative probability found in InverseTransformPrior.',function)
+            raise ValueError('Negative probability found in TabulatedPDF.',function)
 
         # Compute the cumulative distribution function = int(pdf(x),x)
         cdf = np.cumsum(pdf)
@@ -214,7 +225,7 @@ class InverseTransformPrior(Prior):
         upper = min(self.upper, upper)
         if lower>upper:
             raise ValueError("One of your priors is inconsistent with the range described in the values file")
-        return InverseTransformPrior(self.function_filename, lower, upper)
+        return TabulatedPDF(self.function_filename, lower, upper)
 
 
 class UniformPrior(Prior):
