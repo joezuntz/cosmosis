@@ -103,7 +103,7 @@ class Prior(object):
                 return ExponentialPrior(*parameters)
             elif  prior_type.startswith("one"):
                 return TruncatedOneoverxPrior(*parameters)
-            elif prior_type.startswith("inv") or \
+            elif prior_type.startswith("tab") or \
                     prior_type.startswith("loa"):
                 return TabulatedPDF(*parameters)
             else:
@@ -212,7 +212,7 @@ class TabulatedPDF(Prior):
 
     def __str__(self):
         u"""Tersely describe ourself to a human mathematician."""
-        return "Inverse transform defined by {0}\n on range [{1}, {2}]".format(self.function_filename, self.lower, self.upper)
+        return "Tabulated transform from {0} on range [{1}, {2}]".format(self.function_filename, self.lower, self.upper)
 
     def truncate(self, lower, upper):
         u"""Return a new distribution whose range is the intersection of ours with [`lower`, `upper`].
