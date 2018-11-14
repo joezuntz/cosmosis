@@ -281,6 +281,8 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
             loglikes = np.log(self.source.get_col("post"))
         except: 
             loglikes = np.log(self.source.get_col("like"))
+        burn = self.source.options.get("burn", 0)
+        loglikes = loglikes[int(burn):]
         if MCSamples:
             gdc = MCSamples(samples = datapts,loglikes=loglikes,names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
         else:
@@ -643,7 +645,8 @@ class DunkleyTest(MetropolisHastingsStatistics):
 class WeightedStatistics(object):
     def get_gdobj(self):
         datapts = []
-        weight = self.weight_col()
+        burn = self.source.options.get("burn", 0)
+        weight = self.weight_col()[int(burn):]
         for col in self.source.colnames:
             datapts.append(self.reduced_col(col))
         datapts = np.array(datapts).T
@@ -652,8 +655,13 @@ class WeightedStatistics(object):
         rangedict = {}
         for vlpar in vlpars:
             rangedict[str(vlpar)] = np.array(vlpar.limits)
+        try: 
+            loglikes = np.log(self.source.get_col("post"))
+        except: 
+            loglikes = np.log(self.source.get_col("like"))
+        loglikes = loglikes[int(burn):]
         if MCSamples:
-            gdc = MCSamples(samples = datapts,weights=weight,loglikes=np.log(self.source.get_col("post")),names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
+            gdc = MCSamples(samples = datapts,weights=weight,loglikes=loglikes, names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
         else:
             raise ImportError('GetDist is not installed')
         self.source.gdc = gdc
