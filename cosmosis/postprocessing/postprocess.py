@@ -350,3 +350,8 @@ class StarProcessor(PostProcessor):
 	]
 
 
+
+
+class CobayaProcessor(WeightedMetropolisProcessor):
+	sampler="cobaya"
+
