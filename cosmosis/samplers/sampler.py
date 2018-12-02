@@ -100,6 +100,42 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             start = self.pipeline.start_vector()
         return start
 
+    def cov_estimate(self):
+        covmat_file = self.read_ini("covmat", str, "")
+        n = len(self.pipeline.varied_params)
+
+        if self.distribution_hints.has_cov():
+            # hints from a previous sampler take
+            # precendence
+            covmat = self.distribution_hints.get_cov()
+
+        elif covmat_file:
+            covmat = np.loadtxt(covmat_file)
+            # Fix the size.
+            # If there is only one sample parameter then 
+            # we assume it is a 1x1 matrix
+            # If it's a 1D vector then assume these are
+            # standard deviations
+            if covmat.ndim == 0:
+                covmat = covmat.reshape((1, 1))
+            elif covmat.ndim == 1:
+                covmat = np.diag(covmat ** 2)
+
+            # Error on incorrect shapes or sizes
+            if covmat.shape[0] != covmat.shape[1]:
+                raise ValueError("Covariance matrix from {}"
+                                 "not square".format(covmat_file))
+            if covmat.shape[0] != n:
+                raise ValueError("Covariance matrix from {} "
+                                 "is the wrong shape ({}x{}) "
+                                 "for the {} varied params".format(
+                                    covmat_file, covmat.shape[0], n))
+        else:
+            # Just try a minimal estimate - 5% of prior width as standard deviation
+            covmat = np.diag([w*p.width() for p in self.pipeine.varied_params])**2
+
+        return covmat
+
 
 
 class ParallelSampler(Sampler):

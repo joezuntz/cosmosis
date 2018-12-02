@@ -28,7 +28,16 @@ class CobayaSampler(ParallelSampler):
     sampler_outputs = [("weight", float), ("prior", float), ("post", float)]
 
     def config(self):
-        import cobaya.run
+        try:
+            import cobaya.run
+        except ImportError:
+            sys.stderr.write("")
+            sys.stderr.write(r"*********************************************")
+            sys.stderr.write("COBAYA NOT INSTALLED")
+            sys.stderr.write("It can usually be installed using pip")
+            sys.stderr.write(r"*********************************************")
+            sys.stderr.write("")
+            raise
 
         # For MPI - this needs to be a global variable
         global sampler
@@ -39,14 +48,44 @@ class CobayaSampler(ParallelSampler):
         
 
         default_drag = self.pipeline.do_fast_slow
+
+        self.covmat = self.cov_estimate()
+        self.proposal_scale = self.read_ini("proposal_scale", float, 2.4)
+
+        self.check_every = self.read_ini("check_every", str, "40d")
+        self.output_every = self.read_ini("output_every", int, 20)
+
+        self.burn_in = self.read_ini("burn_in", str, "20d")
+        self.max_tries = self.read_ini("max_tries", str, "40d")
+        self.max_samples = self.read_ini("max_samples", int, np.inf)
+
+
+        # Parameters controlling the adaptive proposal
+        self.learn_proposal = self.read_ini("learn_proposal", bool, True)
+        self.learn_proposal_Rminus1_max = self.read_ini("learn_proposal_Rminus1_max", float, 2.0)
+        self.learn_proposal_Rminus1_max_early = self.read_ini("learn_proposal_Rminus1_max_early", float, 2.0)
+        self.learn_proposal_Rminus1_min = self.read_ini("learn_proposal_Rminus1_min", float, 2.0)
+
+        # Parameters controlling Gelman-Rubin convergence testing
+        self.Rminus1_stop = self.read_ini("Rminus1_stop", float, 0.01)
+        self.Rminus1_cl_stop = self.read_ini("Rminus1_cl_stop", float, 0.2)
+        self.Rminus1_cl_level = self.read_ini("Rminus1_cl_level", float, 0.95)
+        self.Rminus1_single_split = self.read_ini("Rminus1_single_split", int, 4)
+
+
         self.oversample = self.read_ini("oversample", bool, False)
         self.drag = self.read_ini("drag", bool, default_drag)
+        self.drag_limits = [int(x) for x in self.read_ini("drag_limits", str, "1,10").split(',')]
+
 
         if self.oversample and self.drag:
             raise ValueError("Can only set one oversample=T and drag=T for cobaya")
-        if self.oversample or self.drag and not self.pipeline.do_fast_slow:
+        if (self.oversample or self.drag) and not self.pipeline.do_fast_slow:
             raise ValueError("Need to set fast_slow=T in [pipeline] to use oversampling or dragging")
         
+        self.seed = self.read_ini("seed", int, 0)
+        if self.seed == -1:
+            self.seed = None
 
 
     def make_cobaya_info(self):
@@ -113,9 +152,27 @@ class CobayaSampler(ParallelSampler):
         # Our various sampling options
         sampler_info = {
             "mcmc": {
+                "callback_function": callback,
+                "covmat": self.covmat,
+                "covmat_params": self.cobaya_param_names,
+                "proposal_scale": self.proposal_scale,
+                "check_every": self.check_every,
+                "output_every": self.output_every,
+                "burn_in": self.burn_in,
+                "max_tries": self.max_tries,
+                "max_samples": self.max_samples,
+                "learn_proposal": self.learn_proposal,
+                "learn_proposal_Rminus1_max": self.learn_proposal_Rminus1_max,
+                "learn_proposal_Rminus1_max_early": self.learn_proposal_Rminus1_max_early,
+                "learn_proposal_Rminus1_min": self.learn_proposal_Rminus1_min,
+                "Rminus1_stop": self.Rminus1_stop,
+                "Rminus1_cl_stop": self.Rminus1_cl_stop,
+                "Rminus1_cl_level": self.Rminus1_cl_level,
+                "Rminus1_single_split": self.Rminus1_single_split,
                 "oversample": self.oversample,
                 "drag": self.drag,
-                "callback_function": callback
+                "drag_limits": self.drag_limits,
+                "seed": self.seed,
             },
         }
 
