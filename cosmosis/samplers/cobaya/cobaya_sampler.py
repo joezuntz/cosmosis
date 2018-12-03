@@ -9,14 +9,11 @@ from collections import OrderedDict
 
 def callback(mcmc):
     global sampler
-    print("Called back!  R-1 = ", mcmc.Rminus1_last)
-    print("output things now using.", sampler, mcmc)
     start = sampler.n_saved
     end = mcmc.collection.n()
     if end>start:
-        print("\n\nCosmosis saving {}-{}\n\n".format(start,end))
+        print("Cosmosis saving samples {}-{}.".format(start,end))
         samples = mcmc.collection.data[start:end]
-        print("Len = ", len(samples))
         for i,row in samples.iterrows():
             sampler.output_row(row)
         sampler.output.flush()
@@ -57,14 +54,16 @@ class CobayaSampler(ParallelSampler):
 
         self.burn_in = self.read_ini("burn_in", str, "20d")
         self.max_tries = self.read_ini("max_tries", str, "40d")
-        self.max_samples = self.read_ini("max_samples", int, np.inf)
+        self.max_samples = self.read_ini("max_samples", int, 0)
+        if self.max_samples == 0:
+            self.max_samples = np.inf
 
 
         # Parameters controlling the adaptive proposal
         self.learn_proposal = self.read_ini("learn_proposal", bool, True)
         self.learn_proposal_Rminus1_max = self.read_ini("learn_proposal_Rminus1_max", float, 2.0)
-        self.learn_proposal_Rminus1_max_early = self.read_ini("learn_proposal_Rminus1_max_early", float, 2.0)
-        self.learn_proposal_Rminus1_min = self.read_ini("learn_proposal_Rminus1_min", float, 2.0)
+        self.learn_proposal_Rminus1_max_early = self.read_ini("learn_proposal_Rminus1_max_early", float, 30.0)
+        self.learn_proposal_Rminus1_min = self.read_ini("learn_proposal_Rminus1_min", float, 0.0)
 
         # Parameters controlling Gelman-Rubin convergence testing
         self.Rminus1_stop = self.read_ini("Rminus1_stop", float, 0.01)
@@ -83,9 +82,6 @@ class CobayaSampler(ParallelSampler):
         if (self.oversample or self.drag) and not self.pipeline.do_fast_slow:
             raise ValueError("Need to set fast_slow=T in [pipeline] to use oversampling or dragging")
         
-        self.seed = self.read_ini("seed", int, 0)
-        if self.seed == -1:
-            self.seed = None
 
 
     def make_cobaya_info(self):
@@ -172,7 +168,6 @@ class CobayaSampler(ParallelSampler):
                 "oversample": self.oversample,
                 "drag": self.drag,
                 "drag_limits": self.drag_limits,
-                "seed": self.seed,
             },
         }
 

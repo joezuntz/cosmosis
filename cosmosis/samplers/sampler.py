@@ -4,7 +4,7 @@ from builtins import range
 from builtins import object
 from cosmosis.runtime.attribution import PipelineAttribution
 from .hints import Hints
-
+import numpy as np
 # Sampler metaclass that registers each of its subclasses
 
 class RegisteredSampler(type):
@@ -132,7 +132,7 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
                                     covmat_file, covmat.shape[0], n))
         else:
             # Just try a minimal estimate - 5% of prior width as standard deviation
-            covmat = np.diag([w*p.width() for p in self.pipeine.varied_params])**2
+            covmat = np.diag([0.05*p.width() for p in self.pipeline.varied_params])**2
 
         return covmat
 
