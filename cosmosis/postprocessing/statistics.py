@@ -280,11 +280,10 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
             rangedict[str(vlpar)] = np.array(vlpar.limits)
             
         try: 
-            loglikes = np.log(self.source.get_col("post"))
+            loglikes = self.source.reduced_col("post")
         except: 
-            loglikes = np.log(self.source.get_col("like"))
-        burn = self.source.options.get("burn", 0)
-        loglikes = loglikes[int(burn):]
+            loglikes = self.source.reduced_col("like")
+
         if MCSamples:
             gdc = MCSamples(samples = datapts,loglikes=loglikes,names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
         else:
@@ -667,8 +666,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
 class WeightedStatistics(object):
     def get_gdobj(self):
         datapts = []
-        burn = self.source.options.get("burn", 0)
-        weight = self.weight_col()[int(burn):]
+        weight = self.weight_col()
         for col in self.source.colnames:
             datapts.append(self.reduced_col(col))
         datapts = np.array(datapts).T
@@ -678,10 +676,10 @@ class WeightedStatistics(object):
         for vlpar in vlpars:
             rangedict[str(vlpar)] = np.array(vlpar.limits)
         try: 
-            loglikes = np.log(self.source.get_col("post"))
+            loglikes = self.source.reduced_col("post")
         except: 
-            loglikes = np.log(self.source.get_col("like"))
-        loglikes = loglikes[int(burn):]
+            loglikes = self.source.reduced_col("like")
+
         if MCSamples:
             gdc = MCSamples(samples = datapts,weights=weight,loglikes=loglikes, names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
         else:
