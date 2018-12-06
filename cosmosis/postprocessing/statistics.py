@@ -781,8 +781,10 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.lerr95 = []
         self.uerr95 = []
         self.peak1d = []
-        try:self.best_fit_index = self.source.get_col("post").argmax()
-        except:self.best_fit_index = self.source.get_col("like").argmax()
+        try:
+            self.best_fit_index = self.source.get_col("post").argmax()
+        except:
+            self.best_fit_index = self.source.get_col("like").argmax()
         n = 0
         gdc = self.get_gdobj()
         # output: self.mu, sigma, median, l/u68, l/u95, l/uerr68, l/uerr95
@@ -819,8 +821,10 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.lerr95 = []
         self.uerr95 = []
         self.peak1d = []
-        try:self.best_fit_index = self.source.get_col("post").argmax()
-        except:self.best_fit_index = self.source.get_col("like").argmax()
+        try:
+            self.best_fit_index = self.source.get_col("post").argmax()
+        except:
+            self.best_fit_index = self.source.get_col("like").argmax()
         
         n = 0
         for col in self.source.colnames:
