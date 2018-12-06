@@ -246,8 +246,10 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.lerr95 = []
         self.uerr95 = []
         self.peak1d = []
-        try:self.best_fit_index = self.source.get_col("post").argmax()
-        except:self.best_fit_index = self.source.get_col("like").argmax()
+        try:
+            self.best_fit_index = self.source.get_col("post").argmax()
+        except:
+            self.best_fit_index = self.source.get_col("like").argmax()
         
         n = 0
         for col in self.source.colnames:
