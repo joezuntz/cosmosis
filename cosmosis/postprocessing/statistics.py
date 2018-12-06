@@ -292,6 +292,30 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.source.gdc = gdc
         return gdc
 
+    def compute_basic_statsgd_col(self, gdc, col):
+        dens1d = gdc.get1DDensity(col,writeDataToFile=False)
+        if dens1d is None:
+            return [np.nan for i in range(9)]
+
+        def func(x):
+            return -dens1d.Prob(x)
+
+        results = [
+            sp.optimize.fmin(func,dens1d.bounds()[0])[0],
+            #l/u are done before KDE, lower or upper
+            gdc.confidence(col,0.32),
+            gdc.confidence(col,0.32,True),
+            gdc.confidence(col,0.05),
+            gdc.confidence(col,0.05,True),
+            #l/uerr are done after KDE
+            dens1d.getLimits([0.68])[0],
+            dens1d.getLimits([0.68])[1],
+            dens1d.getLimits([0.95])[0],
+            dens1d.getLimits([0.95])[1],
+        ]
+        return results
+
+
     def compute_basic_statsgd(self):
         self.mu = []
         self.sigma = []
@@ -319,20 +343,16 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.median = np.median(gdc.samples,axis=0)
 
         for col in self.source.colnames:
-            dens1d = gdc.get1DDensity(col,writeDataToFile=False)
-            def func(x):
-                return -dens1d.Prob(x)
-            self.peak1d.append(sp.optimize.fmin(func,dens1d.bounds()[0])[0])
-#l/u are done before KDE, lower or upper
-            self.l68.append(gdc.confidence(col,0.32))
-            self.u68.append(gdc.confidence(col,0.32,True))
-            self.l95.append(gdc.confidence(col,0.05))
-            self.u95.append(gdc.confidence(col,0.05,True))
-#l/uerr are done after KDE
-            self.lerr68.append(dens1d.getLimits([0.68])[0])
-            self.uerr68.append(dens1d.getLimits([0.68])[1])
-            self.lerr95.append(dens1d.getLimits([0.95])[0])
-            self.uerr95.append(dens1d.getLimits([0.95])[1])
+            col_results = self.compute_basic_statsgd_col(gdc, col)
+            self.peak1d.append(col_results[0])
+            self.l68.append(col_results[1])
+            self.u68.append(col_results[2])
+            self.l95.append(col_results[3])
+            self.u95.append(col_results[4])
+            self.lerr68.append(col_results[5])
+            self.uerr68.append(col_results[6])
+            self.lerr95.append(col_results[7])
+            self.uerr95.append(col_results[8])
         return n
 
 
@@ -724,6 +744,30 @@ class PolychordStatistics(MultinestStatistics):
 
 #The class hierarchy is getting too complex for this - revise it
 class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, WeightedMCMCPostProcessorElement):
+    def compute_basic_statsgd_col(self, gdc, col):
+        dens1d = gdc.get1DDensity(col,writeDataToFile=False)
+        if dens1d is None:
+            return [np.nan for i in range(9)]
+
+        def func(x):
+            return -dens1d.Prob(x)
+
+        results = [
+            sp.optimize.fmin(func,dens1d.bounds()[0])[0],
+            #l/u are done before KDE, lower or upper
+            gdc.confidence(col,0.32),
+            gdc.confidence(col,0.32,True),
+            gdc.confidence(col,0.05),
+            gdc.confidence(col,0.05,True),
+            #l/uerr are done after KDE
+            dens1d.getLimits([0.68])[0],
+            dens1d.getLimits([0.68])[1],
+            dens1d.getLimits([0.95])[0],
+            dens1d.getLimits([0.95])[1],
+        ]
+        return results
+
+
     def compute_basic_statsgd(self):
         self.mu = []
         self.sigma = []
@@ -749,21 +793,18 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.median = np.median(gdc.samples,axis=0)
 
         for col in self.source.colnames:
-            dens1d = gdc.get1DDensity(col,writeDataToFile=False)
-            def func(x):
-                return -dens1d.Prob(x)
-            self.peak1d.append(sp.optimize.fmin(func,dens1d.bounds()[0])[0])
-#l/u are done before KDE
-            self.l68.append(gdc.confidence(col,0.32))
-            self.u68.append(gdc.confidence(col,0.32,True))
-            self.l95.append(gdc.confidence(col,0.05))
-            self.u95.append(gdc.confidence(col,0.05,True))
-#l/uerr are done after KDE
-            self.lerr68.append(dens1d.getLimits([0.68])[0])
-            self.uerr68.append(dens1d.getLimits([0.68])[1])
-            self.lerr95.append(dens1d.getLimits([0.95])[0])
-            self.uerr95.append(dens1d.getLimits([0.95])[1])
+            col_results = self.compute_basic_statsgd_col(gdc, col)
+            self.peak1d.append(col_results[0])
+            self.l68.append(col_results[1])
+            self.u68.append(col_results[2])
+            self.l95.append(col_results[3])
+            self.u95.append(col_results[4])
+            self.lerr68.append(col_results[5])
+            self.uerr68.append(col_results[6])
+            self.lerr95.append(col_results[7])
+            self.uerr95.append(col_results[8])
         return n
+
         
     def compute_basic_stats(self):
         self.mu = []
