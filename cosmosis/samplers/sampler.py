@@ -132,7 +132,8 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
                                     covmat_file, covmat.shape[0], n))
         else:
             # Just try a minimal estimate - 5% of prior width as standard deviation
-            covmat = np.diag([0.05*p.width() for p in self.pipeline.varied_params])**2
+            covmat_scale = self.read_ini("covmat_scale", float, 0.05)
+            covmat = np.diag([covmat_scale*p.width() for p in self.pipeline.varied_params])**2
 
         return covmat
 

@@ -228,7 +228,8 @@ def likelihood({}, _derived=[{}]):
     {}
     like, derived = sampler.pipeline.likelihood(_full_params_input)
     {}
-    #print(_full_params_input, like)
+    if not sampler.pipeline.quiet:
+        print(_full_params_input, like)
     return like
     """
     pnames = [str(p).replace("-",'_') for p in params]

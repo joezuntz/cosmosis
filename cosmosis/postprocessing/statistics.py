@@ -307,6 +307,9 @@ class MetropolisHastingsCovariance(ChainCovariance, Statistics, MCMCPostProcesso
     pass
 
 
+class WeightedMetropolisHastingsCovariance(ChainCovariance, Statistics, MCMCPostProcessorElement):
+    pass
+
 
 class GridStatistics(ConstrainingStatistics):
     def set_data(self):
