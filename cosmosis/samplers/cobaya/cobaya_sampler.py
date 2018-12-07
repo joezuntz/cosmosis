@@ -90,9 +90,15 @@ class CobayaSampler(ParallelSampler):
         if self.pipeline.do_fast_slow:
             fast_params = self.pipeline.fast_params
             slow_params = self.pipeline.slow_params
+            # Slightly different definitions of the fast and slow times here
+            fast_speed = 1.0/(self.pipeline.fast_time)
+            slow_speed = 1.0/(self.pipeline.slow_time+self.pipeline.fast_time)
         else:
             fast_params = []
             slow_params = varied_params
+            fast_speed = 0.1
+            slow_speed = 1.0
+
 
         self.cobaya_derived_names = [
             "{}__{}".format(*d).lower() 
@@ -107,8 +113,8 @@ class CobayaSampler(ParallelSampler):
         mock_slow_likelihood = make_slow_mock_likelihood(slow_params)
 
         likelihood_info = {
-            "total": {"external": likelihood, "speed":1},
-            "mock": {"external": mock_slow_likelihood, "speed":0},
+            "total": {"external": likelihood, "speed": fast_speed},
+            "mock": {"external": mock_slow_likelihood, "speed": slow_speed},
         }
 
         # The dictionary that we pass cobaya describing the parameters.
