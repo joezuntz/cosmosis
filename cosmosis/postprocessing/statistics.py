@@ -410,7 +410,6 @@ class MetropolisHastingsCovariance(ChainCovariance, Statistics, MCMCPostProcesso
     pass
 
 
-# didn't touch this part
 class GridStatistics(ConstrainingStatistics):
     def set_data(self):
         self.nsample = int(self.source.sampler_option("nsample_dimension"))
@@ -518,7 +517,6 @@ class GridStatistics(ConstrainingStatistics):
         l95 = self.find_percentile(col, like, 5.0)
         u95 = self.find_percentile(col, like, 95.0)        
         return mu, median, sigma2**0.5, l95, u95
-#end didn't touch part
 
 
 class TestStatistics(Statistics):
@@ -710,11 +708,6 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         files = super(MultinestStatistics,self).run()
         logz = self.source.final_metadata[0]["log_z"]
         logz_sigma = self.source.final_metadata[0]["log_z_error"]
-#        vlfile = self.source.extract_ini("VALUES")#test
-#        params = Parameter.load_parameters(vlfile)#test
-
-#        for param in params:#test
-#            print(param, param.limits)#test
         #First print to screen
         print("Bayesian evidence:")
         print("    log(Z) = %g ± %g" % (logz,logz_sigma))
@@ -735,8 +728,8 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         #Include evidence in list of created files
         files.append(filename)
         return files
-        
-        
+
+
 class PolychordStatistics(MultinestStatistics):
     pass
 
