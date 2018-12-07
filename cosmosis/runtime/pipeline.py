@@ -214,14 +214,14 @@ class SlowSubspaceCache(object):
         # So we can divide up the parameters into fast and slow.
         self.split_index = self._choose_fast_slow_split(first_use_count, timings, grid)
 
-        full_time = sum(timings)
-        slow_time = sum(timings[:self.split_index])
-        fast_time = sum(timings[self.split_index:])
+        self.full_time = sum(timings)
+        self.slow_time = sum(timings[:self.split_index])
+        self.fast_time = sum(timings[self.split_index:])
 
-        print("Time for full pipeline:  {:.2f}s".format(full_time))
-        print("Time for slow pipeline:  {:.2f}s".format(slow_time))
-        print("Time for fast pipeline:  {:.2f}s".format(fast_time))
-        time_save_percent = 100-100*fast_time/full_time
+        print("Time for full pipeline:  {:.2f}s".format(self.full_time))
+        print("Time for slow pipeline:  {:.2f}s".format(self.slow_time))
+        print("Time for fast pipeline:  {:.2f}s".format(self.fast_time))
+        time_save_percent = 100-100*self.fast_time/self.full_time
         print("Time saving: {:.2f}%".format(time_save_percent))
 
         worth_splitting = time_save_percent > 10.
@@ -467,6 +467,8 @@ class Pipeline(object):
 
             self.slow_subspace_cache = SlowSubspaceCache(first_fast_module=first_fast_index)
             self.slow_subspace_cache.analyze_pipeline(self, all_params=all_params, grid=grid)
+            self.fast_time = self.slow_subspace_cache.fast_time
+            self.slow_time = self.slow_subspace_cache.slow_time
             # This looks a bit weird but makes sure that self.fast_params
             # and self.slow_params contain objects of type Parameter
             # not just the (section,name) tuples.
