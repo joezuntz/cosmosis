@@ -222,9 +222,10 @@ def slow_like({}):
     pnames = [str(p).replace("-",'_') for p in params]
     params_text = ", ".join(str(p) for p in pnames)
     function_text = function_template.format(params_text)
-    exec(function_text)
+    d = locals()
+    exec(function_text, globals(), d)
     print(function_text)
-    return locals()['slow_like']
+    return d['slow_like']
 
 def make_main_likelihood(params, derived):
     function_template = """
@@ -246,9 +247,10 @@ def likelihood({}, _derived=[{}]):
     set_text = "\n    ".join(["_full_params_input[{}] = {}".format(i,p) for i,p in enumerate(pnames)])
     set_derived = "\n    ".join(["_derived['{}'] = derived[{}]".format(dname, i) for i,dname in enumerate(dnames)])
     function_text = function_template.format(params_text, derived_text, length_text, set_text, set_derived)
-    exec(function_text)
+    d=locals()
+    exec(function_text, globals(), d)
     print(function_text)
-    return locals()['likelihood']
+    return d['likelihood']
 
 
 
