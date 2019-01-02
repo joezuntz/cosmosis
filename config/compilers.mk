@@ -17,6 +17,8 @@ else
 COMMON_FLAGS=-O3 -g -fPIC
 endif
 
+OS=$(shell uname -s)
+
 COMMON_C_FLAGS=$(COMMON_FLAGS) -I${COSMOSIS_SRC_DIR}
 PEDANTIC_C_FLAGS=-Wall -Wextra -pedantic
 CXXFLAGS=$(COMMON_C_FLAGS) $(USER_CXXFLAGS) -std=c++14
@@ -33,4 +35,8 @@ endif
 ifeq (1,${COSMOSIS_OMP})
 COMMON_FLAGS+= -fopenmp
 LDFLAGS+=-lgomp
+endif
+
+ifeq (Darwin, $(OS))
+  LDFLAGS+=-headerpad_max_install_names
 endif

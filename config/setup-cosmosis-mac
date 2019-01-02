@@ -1,0 +1,27 @@
+# This script is only used for setting up to use a native macOS build
+# of CosmoSIS.
+
+export COSMOSIS_SRC_DIR=$PWD
+
+#The gnu science library
+export GSL_INC=/usr/local
+export GSL_LIB=/usr/local
+
+#The cfitsio FITS library
+export CFITSIO_INC=/usr/local/include
+export CFITSIO_LIB=/usr/local/lib
+
+#The fftw3 Fourier transform library
+export FFTW_LIBRARY=/usr/local
+export FFTW_INCLUDE_DIR=/usr/local
+
+# Minuit2
+export MINUIT2_LIB=/usr/local
+export MINUIT2_INC=/usr/local
+
+# The lapack linear algebra package. On macOS, this is provided by
+# the Accelerate framework.
+export LAPACK_LINK="-framework Accelerate"
+
+export PYTHONPATH=${COSMOSIS_SRC_DIR}:${PYTHONPATH}
+export PATH=${COSMOSIS_SRC_DIR}/bin:${PATH}
