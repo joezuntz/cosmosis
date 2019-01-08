@@ -191,4 +191,3 @@ entry_test.o: entry_test.cc entry.hh
 section.o: section.cc section.hh entry.hh datablock_status.h datablock_types.h
 section_test.o: section_test.cc section.hh datablock_types.h
 ndarray_test.o: ndarray_test.cc ndarray.hh
-
