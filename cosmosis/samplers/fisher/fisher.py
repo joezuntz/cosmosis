@@ -96,10 +96,15 @@ class Fisher(object):
         else:
             results = self.pool.map(self.compute_vector, points)
 
+        # Bit of a waste of time to compute the inv cov separately,
+        # but it's a quick fix to a memory error if we compute the cov
+        # for every single value
+        _, inv_cov = self.compute_vector(points[0], cov=True)
+
         #Now get out the results that correspond to each dimension
         for p in range(self.nparams):
             results_p = results[4*p:4*(p+1)]
-            derivative, inv_cov = self.five_point_stencil_deriv(results_p, p)
+            derivative = self.five_point_stencil_deriv(results_p, p)
             derivatives.append(derivative)
         derivatives = np.array(derivatives)
         return derivatives, inv_cov
@@ -127,14 +132,12 @@ class Fisher(object):
         ]
         return points        
 
-    def five_point_stencil_deriv(self, results, param_index):
-        for r in results:
+    def five_point_stencil_deriv(self, obs, param_index):
+        for r in obs:
             if r is None:
                 raise FisherParameterError(param_index)
-        obs = [r[0] for r in results]
-        inv_cov = results[0][1]
         deriv = (-obs[0] + 8*obs[1] - 8*obs[2] + obs[3])/(12*self.step_size)
-        return deriv, inv_cov
+        return deriv
 
     def compute_one_sigma(Fmatrix):
         sigma = np.sqrt(np.linalg.inv(Fmatrix))
@@ -145,10 +148,10 @@ class NumDiffToolsFisher(Fisher):
         import numdifftools as nd
         def wrapper(param_vector):
             print("Running pipeline:", param_vector)
-            return self.compute_vector(param_vector)[0]
+            return self.compute_vector(param_vector, cov=False)
         jacobian_calculator = nd.Jacobian(wrapper, step=self.step_size)
         derivatives = jacobian_calculator(self.current_params)
-        _, inv_cov = self.compute_vector(self.current_params)
+        _, inv_cov = self.compute_vector(self.current_params, cov=True)
         print(derivatives.shape, inv_cov.shape)
         return derivatives.T, inv_cov
     

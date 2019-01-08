@@ -8,7 +8,7 @@ import numpy as np
 import scipy.linalg
 from ...runtime import prior,utils
 
-def compute_fisher_vector(p):
+def compute_fisher_vector(p, cov=False):
     # use normalized parameters - fisherPipeline is a global
     # variable because it has to be picklable)
     try:
@@ -16,6 +16,9 @@ def compute_fisher_vector(p):
     except ValueError:
         print("Parameter vector outside limits: %r" % p)
         return None
+
+    if not fisherPipeline.quiet:
+        print("Running: ",x)
 
     #Run the pipeline, generating a data block
     data = fisherPipeline.run_parameters(x)
@@ -30,16 +33,23 @@ def compute_fisher_vector(p):
     #since if the pipeline finishes it must have a fisher vector if it
     #has been acceptably designed.
     v = []
-    M = []
     for like_name in fisherPipeline.likelihood_names:
         v.append(data["data_vector", like_name + "_theory"])
-        M.append(data["data_vector", like_name + "_inverse_covariance"])
 
     v = np.concatenate(v)
-    M = scipy.linalg.block_diag(*M)
-
     #Might be only length-one, conceivably, so convert to a vector
     v = np.atleast_1d(v)
+
+    # If we don't need the cov mat for this run just return now
+    if not cov:
+        return v
+
+    # Otherwise calculate the covmat too.
+    M = []
+    for like_name in fisherPipeline.likelihood_names:
+        M.append(data["data_vector", like_name + "_inverse_covariance"])
+
+    M = scipy.linalg.block_diag(*M)
     M = np.atleast_2d(M)
 
     #Return numpy vector
