@@ -4,8 +4,8 @@
 export COSMOSIS_SRC_DIR=$PWD
 
 #The gnu science library
-export GSL_INC=/usr/local
-export GSL_LIB=/usr/local
+export GSL_INC=/usr/local/include
+export GSL_LIB=/usr/local/lib
 
 #The cfitsio FITS library
 export CFITSIO_INC=/usr/local/include
@@ -25,3 +25,8 @@ export LAPACK_LINK="-framework Accelerate"
 
 export PYTHONPATH=${COSMOSIS_SRC_DIR}:${PYTHONPATH}
 export PATH=${COSMOSIS_SRC_DIR}/bin:${PATH}
+
+export CXX=clang++
+export CC=clang
+export FC=gfortran
+export COSMOSIS_ALT_COMPILERS=1
