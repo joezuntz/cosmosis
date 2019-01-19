@@ -32,4 +32,3 @@ export CC=clang
 export FC=gfortran
 export MPIFC=mpifort
 export COSMOSIS_ALT_COMPILERS=1
-
