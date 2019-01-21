@@ -121,7 +121,7 @@ namespace cosmosis
 
   private:
     // The type of the value currenty active.
-    std::type_index type_;
+    std::type_index type_hash_;
 
     // The anonymous union contains the value. We have a named union
     // member for each type we can hold.
@@ -169,78 +169,78 @@ namespace cosmosis
 // Implementation of member functions.
 inline
 cosmosis::Entry::Entry() :
-  type_(typeid(double)), d(0.0)
+  type_hash_(typeid(d)), d(0.0)
 { }
 
 inline
 cosmosis::Entry::Entry(int v) :
-  type_(typeid(v)), i(v)
+  type_hash_(typeid(v)), i(v)
 {}
 
 inline
 cosmosis::Entry::Entry(bool v) :
-  type_(typeid(v)), b(v)
+  type_hash_(typeid(v)), b(v)
 {}
 
 inline
 cosmosis::Entry::Entry(double v) :
-  type_(typeid(v)), d(v)
+  type_hash_(typeid(v)), d(v)
 {}
 
 inline
 cosmosis::Entry::Entry(const char * v) :
-  type_(typeid(std::string)), s(v)
+  type_hash_(typeid(std::string)), s(v)
 {}
 
 inline
 cosmosis::Entry::Entry(std::string v) :
-  type_(typeid(v)), s(v)
+  type_hash_(typeid(v)), s(v)
 {}
 
 inline
 cosmosis::Entry::Entry(complex_t v) :
-  type_(typeid(v)), z(v)
+  type_hash_(typeid(v)), z(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vint_t const& v) :
-  type_(typeid(v)), vi(v)
+  type_hash_(typeid(v)), vi(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vdouble_t const& v) :
-  type_(typeid(v)), vd(v)
+  type_hash_(typeid(v)), vd(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vstring_t const& v) :
-  type_(typeid(v)), vs(v)
+  type_hash_(typeid(v)), vs(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vcomplex_t const& v) :
-  type_(typeid(v)), vz(v)
+  type_hash_(typeid(v)), vz(v)
 {}
 
 inline
 cosmosis::Entry::Entry(nd_int_t const& v) :
-  type_(typeid(v)), ndi(v)
+  type_hash_(typeid(v)), ndi(v)
 {}
 
 inline
 cosmosis::Entry::Entry(nd_double_t const& v) :
-  type_(typeid(v)), ndd(v)
+  type_hash_(typeid(v)), ndd(v)
 {}
 
 inline
 cosmosis::Entry::Entry(nd_complex_t const& v) :
-  type_(typeid(v)), ndz(v)
+  type_hash_(typeid(v)), ndz(v)
 {}
 
 template <class T>
 T const& cosmosis::Entry::_val(T* v) const
 {
-  if (type_ != typeid(T)) throw BadEntry();
+  if (type_hash_ != typeid(T)) throw BadEntry();
   return *v;
 }
 
@@ -248,19 +248,19 @@ template <class T>
 void cosmosis::Entry::_set(T val, T& member)
 {
   _destroy_if_managed();
-  type_ = typeid(val);
+  type_hash_ = typeid(val);
   member = val;
 }
 
 template <class T>
 void cosmosis::Entry::_vset(T const& val, T& member)
 {
-  if (type_ == typeid(val))
+  if (type_hash_ == typeid(val))
     member = val;
   else
     {
       _destroy_if_managed();
-      type_ = typeid(val);
+      type_hash_ = typeid(val);
       emplace(&member, val);
     }
 }
@@ -269,7 +269,7 @@ void cosmosis::Entry::_vset(T const& val, T& member)
 namespace cosmosis
 {
   template <class T> void emplace(T* addr, T const& val) { new(addr) T(val); }
-  template <class T> bool Entry::is() const { return (type_ == typeid(T)); }
+  template <class T> bool Entry::is() const { return (type_hash_ == typeid(T)); }
 
   template <> inline bool Entry::val<bool>() const { return _val(&b); }
   template <> inline int Entry::val<int>() const { return _val(&i); }
