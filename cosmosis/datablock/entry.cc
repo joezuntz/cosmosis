@@ -9,7 +9,7 @@ using std::vector;
 // We initialize one of the members of the anonymous union in order to
 // avoid warnings about the use of unitialized memory.
 cosmosis::Entry::Entry(Entry const& e) :
-  type_hash_(e.type_hash_),
+  type_(e.type_),
   i(0)
 {
   if      (type_ == enum_for_type<int>()) i = e.i;

@@ -40,7 +40,6 @@
 #include <map>
 #include <cctype>
 #include <ostream>
-#include <typeinfo>
 
 #include "datablock_status.h"
 #include "section.hh"
