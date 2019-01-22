@@ -157,13 +157,6 @@ extern "C"
         *ndim=1;
         return DBS_SUCCESS;
         break;
-      case DBT_INT2D:
-      case DBT_DOUBLE2D:
-      case DBT_COMPLEX2D:
-      case DBT_STRING2D:
-        *ndim=2;
-        return DBS_SUCCESS;
-        break;
       case DBT_INTND:
         status = p->get_array_shape<int>(section, name, extents);
         break;

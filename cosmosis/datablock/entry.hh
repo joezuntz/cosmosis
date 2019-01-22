@@ -3,12 +3,11 @@
 
 #include <string>
 #include <complex>
-#include <typeindex>
-#include <typeinfo>
 #include <vector>
 
 #include "ndarray.hh"
 #include "exceptions.hh"
+#include "datablock_types.h"
 
 // Entry is a discriminated union, capable of holding any one of the
 // value types indicated by tag_t.
@@ -121,7 +120,7 @@ namespace cosmosis
 
   private:
     // The type of the value currenty active.
-    std::type_index type_hash_;
+    datablock_type_t type_;
 
     // The anonymous union contains the value. We have a named union
     // member for each type we can hold.
@@ -151,6 +150,8 @@ namespace cosmosis
     // it; otherwise throw BadEntry.
     template <class T> T const& _val(T* v) const;
 
+    template <class T> datablock_type_t enum_for_type() const;
+
     // Set the carried value to be of type T, with value val. Use this
     // function to set types with trivial destructors.
     template <class T> void _set(T val, T& member);
@@ -169,78 +170,78 @@ namespace cosmosis
 // Implementation of member functions.
 inline
 cosmosis::Entry::Entry() :
-  type_hash_(typeid(d)), d(0.0)
+  type_(DBT_DOUBLE), d(0.0)
 { }
 
 inline
 cosmosis::Entry::Entry(int v) :
-  type_hash_(typeid(v)), i(v)
+  type_(DBT_INT), i(v)
 {}
 
 inline
 cosmosis::Entry::Entry(bool v) :
-  type_hash_(typeid(v)), b(v)
+  type_(DBT_BOOL), b(v)
 {}
 
 inline
 cosmosis::Entry::Entry(double v) :
-  type_hash_(typeid(v)), d(v)
+  type_(DBT_DOUBLE), d(v)
 {}
 
 inline
 cosmosis::Entry::Entry(const char * v) :
-  type_hash_(typeid(std::string)), s(v)
+  type_(DBT_STRING), s(v)
 {}
 
 inline
 cosmosis::Entry::Entry(std::string v) :
-  type_hash_(typeid(v)), s(v)
+  type_(DBT_STRING), s(v)
 {}
 
 inline
 cosmosis::Entry::Entry(complex_t v) :
-  type_hash_(typeid(v)), z(v)
+  type_(DBT_COMPLEX), z(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vint_t const& v) :
-  type_hash_(typeid(v)), vi(v)
+  type_(DBT_INT1D), vi(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vdouble_t const& v) :
-  type_hash_(typeid(v)), vd(v)
+  type_(DBT_DOUBLE1D), vd(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vstring_t const& v) :
-  type_hash_(typeid(v)), vs(v)
+  type_(DBT_STRING1D), vs(v)
 {}
 
 inline
 cosmosis::Entry::Entry(vcomplex_t const& v) :
-  type_hash_(typeid(v)), vz(v)
+  type_(DBT_COMPLEX1D), vz(v)
 {}
 
 inline
 cosmosis::Entry::Entry(nd_int_t const& v) :
-  type_hash_(typeid(v)), ndi(v)
+  type_(DBT_INTND), ndi(v)
 {}
 
 inline
 cosmosis::Entry::Entry(nd_double_t const& v) :
-  type_hash_(typeid(v)), ndd(v)
+  type_(DBT_DOUBLEND), ndd(v)
 {}
 
 inline
 cosmosis::Entry::Entry(nd_complex_t const& v) :
-  type_hash_(typeid(v)), ndz(v)
+  type_(DBT_COMPLEXND), ndz(v)
 {}
 
 template <class T>
 T const& cosmosis::Entry::_val(T* v) const
 {
-  if (type_hash_ != typeid(T)) throw BadEntry();
+  if (type_ != enum_for_type<T>()) throw BadEntry();
   return *v;
 }
 
@@ -248,19 +249,19 @@ template <class T>
 void cosmosis::Entry::_set(T val, T& member)
 {
   _destroy_if_managed();
-  type_hash_ = typeid(val);
+  type_ = enum_for_type<T>();
   member = val;
 }
 
 template <class T>
 void cosmosis::Entry::_vset(T const& val, T& member)
 {
-  if (type_hash_ == typeid(val))
+  if (type_ == enum_for_type<T>())
     member = val;
   else
     {
       _destroy_if_managed();
-      type_hash_ = typeid(val);
+      type_ = enum_for_type<T>();
       emplace(&member, val);
     }
 }
@@ -268,8 +269,39 @@ void cosmosis::Entry::_vset(T const& val, T& member)
 
 namespace cosmosis
 {
+
+
+  template <> inline datablock_type_t Entry::enum_for_type<bool const>()         const {return DBT_BOOL;}
+  template <> inline datablock_type_t Entry::enum_for_type<int const>()          const {return DBT_INT;}
+  template <> inline datablock_type_t Entry::enum_for_type<double const>()       const {return DBT_DOUBLE;}
+  template <> inline datablock_type_t Entry::enum_for_type<std::string const>()  const {return DBT_STRING;}
+  template <> inline datablock_type_t Entry::enum_for_type<complex_t const>()    const {return DBT_COMPLEX;}
+  template <> inline datablock_type_t Entry::enum_for_type<vint_t const>()       const {return DBT_INT1D;}
+  template <> inline datablock_type_t Entry::enum_for_type<vdouble_t const>()    const {return DBT_DOUBLE1D;}
+  template <> inline datablock_type_t Entry::enum_for_type<vstring_t const>()    const {return DBT_STRING1D;}
+  template <> inline datablock_type_t Entry::enum_for_type<vcomplex_t const>()   const {return DBT_COMPLEX1D;}
+  template <> inline datablock_type_t Entry::enum_for_type<nd_int_t const>()     const {return DBT_INTND;}
+  template <> inline datablock_type_t Entry::enum_for_type<nd_double_t const>()  const {return DBT_DOUBLEND;}
+  template <> inline datablock_type_t Entry::enum_for_type<nd_complex_t const>() const {return DBT_COMPLEXND;}
+
+  template <> inline datablock_type_t Entry::enum_for_type<bool>()         const {return DBT_BOOL;}
+  template <> inline datablock_type_t Entry::enum_for_type<int>()          const {return DBT_INT;}
+  template <> inline datablock_type_t Entry::enum_for_type<double>()       const {return DBT_DOUBLE;}
+  template <> inline datablock_type_t Entry::enum_for_type<std::string>()  const {return DBT_STRING;}
+  template <> inline datablock_type_t Entry::enum_for_type<complex_t>()    const {return DBT_COMPLEX;}
+  template <> inline datablock_type_t Entry::enum_for_type<vint_t>()       const {return DBT_INT1D;}
+  template <> inline datablock_type_t Entry::enum_for_type<vdouble_t>()    const {return DBT_DOUBLE1D;}
+  template <> inline datablock_type_t Entry::enum_for_type<vstring_t>()    const {return DBT_STRING1D;}
+  template <> inline datablock_type_t Entry::enum_for_type<vcomplex_t>()   const {return DBT_COMPLEX1D;}
+  template <> inline datablock_type_t Entry::enum_for_type<nd_int_t>()     const {return DBT_INTND;}
+  template <> inline datablock_type_t Entry::enum_for_type<nd_double_t>()  const {return DBT_DOUBLEND;}
+  template <> inline datablock_type_t Entry::enum_for_type<nd_complex_t>() const {return DBT_COMPLEXND;}
+  // template <> inline bool Entry::val<bool>() const { return _val(&b); }
+
+
+
   template <class T> void emplace(T* addr, T const& val) { new(addr) T(val); }
-  template <class T> bool Entry::is() const { return (type_hash_ == typeid(T)); }
+  template <class T> bool Entry::is() const { return (type_ == enum_for_type<T>()); }
 
   template <> inline bool Entry::val<bool>() const { return _val(&b); }
   template <> inline int Entry::val<int>() const { return _val(&i); }
