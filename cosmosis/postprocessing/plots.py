@@ -532,9 +532,9 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         contour1=1-0.68
         contour2=1-0.95
         level1, level2, total_mass = self._find_contours(like, x, y, n, x_axis[0], x_axis[-1], y_axis[0], y_axis[-1], contour1, contour2)
-        level0 = 1.1
-        levels = [level2, level1, level0]
 
+        level0 = np.inf
+        levels = [level2, level1, level0]
 
         #Make the plot
         pylab.figure(figure.number)
