@@ -31,27 +31,27 @@ def test_text():
 	ns = 20 
 	populate_table(out, nparam, ns)
 
-	#We should be able to load this table with loadtxt
-	if astropy:
-		t = astropy.table.Table.read(filename, format='ascii.commented_header')
-		A = t['A']
-		B = t['B']
-	else:
-		t = np.loadtxt(filename,dtype=int).T
-		A = t[0]
-		B = t[1]
+    try:
+    	#We should be able to load this table with loadtxt
+    	if astropy:
+    		t = astropy.table.Table.read(filename, format='ascii.commented_header')
+    		A = t['A']
+    		B = t['B']
+    	else:
+    		t = np.loadtxt(filename,dtype=int).T
+    		A = t[0]
+    		B = t[1]
 
-		assert A == np.arange(ns, dtype=int)
-		assert B == np.arange(ns, dtype=int)+1
+    		assert A == np.arange(ns, dtype=int)
+    		assert B == np.arange(ns, dtype=int)+1
 
 
-	#or with our own method
-	names, cols, meta, final = TextColumnOutput.load(filename)
-	assert names == [string.ascii_uppercase[i] for i in range(nparam)]
-	assert len(cols)==nparam
-	assert len(cols[0])==ns
-	assert meta['NP']==nparam
-	assert final['FINISH'] is True
-
-	os.remove(filename)
-
+    	#or with our own method
+    	names, cols, meta, final = TextColumnOutput.load(filename)
+    	assert names == [string.ascii_uppercase[i] for i in range(nparam)]
+    	assert len(cols)==nparam
+    	assert len(cols[0])==ns
+    	assert meta['NP']==nparam
+    	assert final['FINISH'] is True
+    finally:
+        os.remove(filename)
