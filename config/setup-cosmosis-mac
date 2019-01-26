@@ -29,4 +29,5 @@ export PATH=${COSMOSIS_SRC_DIR}/bin:${PATH}
 export CXX=clang++
 export CC=clang
 export FC=gfortran
+export MPIFC=mpifort
 export COSMOSIS_ALT_COMPILERS=1
