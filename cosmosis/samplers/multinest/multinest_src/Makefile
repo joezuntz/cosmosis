@@ -29,16 +29,10 @@ NSOBJECTS_MPI = $(patsubst %.o,mpi/%.o,$(NSOBJECTS))
 
 
 %.o: %.f90
-	$(FC) $(FFLAGS) -c -o $@ $^ 
-
-%.o: %.F90
-	$(FC) $(FFLAGS) -c -o $@ $^ 
+	$(FC) $(FFLAGS) -cpp -c -o $@ $^
 
 mpi/%.o: %.f90 mpi/.phony
-	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
-
-mpi/%.o: %.F90 mpi/.phony
-	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
+	$(MPIFC) $(FFLAGS) -cpp -DMPI -c -o $@ $<
 
 mpi/.phony:
 	@mkdir -p mpi
