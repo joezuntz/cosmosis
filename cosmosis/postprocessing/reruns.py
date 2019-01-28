@@ -54,11 +54,11 @@ def ini_from_header(header_text):
 			prior_lines.append(line+"\n")
 
 	f = Inifile(None)
-	f.read_string("\n".join(param_lines))
+	f.read_string(str("\n".join(param_lines)))
 	g = Inifile(None)
-	g.read_string("\n".join(value_lines))
+	g.read_string(str("\n".join(value_lines)))
 	h = Inifile(None)
-	h.read_string("\n".join(prior_lines))
+	h.read_string(str("\n".join(prior_lines)))
 
 	return f, g, h
 
@@ -112,10 +112,11 @@ class Rerunner(PostProcessorElement):
 		varied_params = self.source.colnames[:nvaried]
 		values_update = defaultdict(dict)
 		i=0
+		print("Updating these parameters:")
 		for (sec,key), val in values_ini:
 			if '{}--{}'.format(sec,key) in varied_params:
 				l, _, u = val.split()
-				print("{}--{} = {}".format(sec,key,sample[i]))
+				print("    {}--{} = {}".format(sec,key,sample[i]))
 				values_update[sec][key] = "{}  {}  {}".format(l, sample[i], u)
 				i+=1
 			else:
