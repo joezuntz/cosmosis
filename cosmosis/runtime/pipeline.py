@@ -581,7 +581,7 @@ class Pipeline(object):
             if self.shortcut_data is None:
                 first_module = 0
             else:
-                first_module = shortcut_module_index
+                first_module = self.shortcut_module
         elif self.slow_subspace_cache:
             first_module = self.slow_subspace_cache.start_pipeline(data_package)
             if first_module != 0 and (self.debug or self.timing):
