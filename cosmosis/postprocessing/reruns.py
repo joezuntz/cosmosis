@@ -1,10 +1,13 @@
 from __future__ import print_function
-from builtins import zip
+from builtins import str
 from .elements import PostProcessorElement
 from cosmosis.runtime.config import Inifile
 import os
 import tempfile
-
+import sys
+from collections import defaultdict
+from future import standard_library
+standard_library.install_aliases()
 
 def ini_from_header(header_text):
 	"""
@@ -22,6 +25,7 @@ def ini_from_header(header_text):
 	state=None
 	param_lines = []
 	value_lines = []
+	prior_lines = []
 	for line in header_text:
 		line=line.strip()
 		if line=='START_OF_PARAMS_INI':
@@ -36,20 +40,27 @@ def ini_from_header(header_text):
 		elif line=='END_OF_VALUES_INI':
 			state=None
 			continue
+		elif line=='START_OF_PRIORS_INI':
+			state='priors'
+			continue
+		elif line=='END_OF_PRIORS_INI':
+			state=None
+			continue
 		if state=='params':
 			param_lines.append(line+"\n")
 		elif state=='values':
 			value_lines.append(line+"\n")
+		elif state=='priors':
+			prior_lines.append(line+"\n")
 
-	f = tempfile.NamedTemporaryFile(suffix='.ini')
-	f.writelines(param_lines)
-	f.flush()
+	f = Inifile(None)
+	f.read_string("\n".join(param_lines))
+	g = Inifile(None)
+	g.read_string("\n".join(value_lines))
+	h = Inifile(None)
+	h.read_string("\n".join(prior_lines))
 
-	g = tempfile.NamedTemporaryFile(suffix='.ini')
-	g.writelines(value_lines)
-	g.flush()
-
-	return f, g
+	return f, g, h
 
 
 
@@ -67,26 +78,58 @@ class Rerunner(PostProcessorElement):
 		#Turn the output header into an ini file.
 		#Definitely better to do it here as any
 		#envar substitution is already done
-		param_ini, value_ini = ini_from_header(self.source.comments[0])
-
+		params_ini, values_ini, priors_ini = ini_from_header(self.source.comments[0])
+		params_file = tempfile.NamedTemporaryFile(suffix='.ini', mode='w+')
+		values_file = tempfile.NamedTemporaryFile(suffix='.ini', mode='w+')
+		priors_file = tempfile.NamedTemporaryFile(suffix='.ini', mode='w+')
 
 		#Now override the old parameters so that we:
 		# - run the test sampler not the old sampelr
 		# - save to our temp dir
 		# - read from our temp files
-		param_ini.write("[pipeline]\nvalues={}\n".format(value_ini.name))
-		param_ini.write("[runtime]\nsampler=test\n[test]\nsave_dir={}\nquiet=F\ndebug=T\n".format(self.rerun_dirname))
-		param_ini.flush()
 
-		# and the values so that we use the desired parameters
+		params_ini.update({
+			"pipeline": {
+				"values": values_file.name,
+				"priors": priors_file.name,
+				"quiet": "F",
+				"debug": "T",
+				"likelihoods":  params_ini.get('pipeline', 'likelihoods', fallback=''),
+				"modules":  params_ini.get('pipeline', 'modules', fallback=''),
+				},
+			"runtime": {
+				"sampler": "test",
+			},
+			"test": {
+				"save_dir": self.rerun_dirname,
+			},
+		})
+
+		params_ini.write(params_file)
+		params_file.flush()
+
 		nvaried = self.source.metadata[0]['n_varied']
-		for i,(name, value) in enumerate(zip(self.source.colnames, sample)):
-			if i>=nvaried:
-				break
-			if '--' in name:
-				section, key = name.split('--', 1)
-				value_ini.write("[{}]\n{}={}\n".format(section, key, value))
-		value_ini.flush()
+		varied_params = self.source.colnames[:nvaried]
+		values_update = defaultdict(dict)
+		i=0
+		for (sec,key), val in values_ini:
+			if '{}--{}'.format(sec,key) in varied_params:
+				l, _, u = val.split()
+				print("{}--{} = {}".format(sec,key,sample[i]))
+				values_update[sec][key] = "{}  {}  {}".format(l, sample[i], u)
+				i+=1
+			else:
+				values_update[sec][key] = val
+		print("")
+		values_ini.update(values_update)
+
+		values_ini.write(values_file)
+		values_file.flush()
+
+
+		# No changes needed to prior
+		priors_ini.write(priors_file)
+		priors_file.flush()
 
 		#A bit of painful fiddling to work around
 		#link issues on a mac.  To run the postprocess
@@ -101,7 +144,7 @@ class Rerunner(PostProcessorElement):
 			new_ld = ''
 
 		#Run the actual command
-		cmd = "{0} cosmosis {1}".format(new_ld, param_ini.name)
+		cmd = "{0} cosmosis {1}".format(new_ld, params_file.name)
 		status = os.system(cmd)
 
 		#Now we have the cosmology data!
