@@ -386,6 +386,11 @@ class Pipeline(object):
                 if index == 0:
                     print("You set a shortcut in the pipeline but it was the first module.")
                     print("It will make no difference.")
+                else:
+                    print("Shortcut mode activated: the first pipeline run will proceed as normal.")
+                    print("Subsequent runs will use module {}, {}, as their first module".format(index,shortcut))
+                    print("and use the cached results from the first run for everything before that.")
+                    print("except the input parameter values. Think about this to check it's what you want.")
                 self.shortcut_module = index
 
 
@@ -582,6 +587,10 @@ class Pipeline(object):
                 first_module = 0
             else:
                 first_module = self.shortcut_module
+                existing_keys = set(data_package.keys())
+                for (sec, name) in self.shortcut_data.keys():
+                    if (sec,name) not in existing_keys:
+                        data_package[sec, name] = self.shortcut_data[sec,name]
         elif self.slow_subspace_cache:
             first_module = self.slow_subspace_cache.start_pipeline(data_package)
             if first_module != 0 and (self.debug or self.timing):
@@ -642,7 +651,7 @@ class Pipeline(object):
                 self.slow_subspace_cache.next_module_results(module_number, data_package)
 
             # Alternatively we will do the shortcut thing
-            elif self.shortcut_module and not self.has_run and module_number==self.shortcut_module-1:
+            elif self.shortcut_module and (not self.has_run) and module_number==self.shortcut_module-1:
                 print("Saving shortcut data")
                 self.shortcut_data = data_package.clone()
 
@@ -1122,7 +1131,7 @@ class LikelihoodPipeline(Pipeline):
             # If we are 
             if self.debug:
                 sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
-                sys.stderr.write("\n\Because you have debug=T I will let this kill the chain.\n")
+                sys.stderr.write("\nBecause you have debug=T I will let this kill the chain.\n")
                 sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
                 raise
 
