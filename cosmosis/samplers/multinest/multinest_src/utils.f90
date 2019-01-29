@@ -1,4 +1,5 @@
  module RandomNS
+    integer :: rand_instNS = 0
     double precision, dimension(:), allocatable :: C, CD, CM, GSET
     double precision, dimension(:, :), allocatable :: U
     integer, dimension(:), allocatable :: I97, J97, ISET
