@@ -1,5 +1,4 @@
  module RandomNS
-    integer :: rand_instNS = 0
     double precision, dimension(:), allocatable :: C, CD, CM, GSET
     double precision, dimension(:, :), allocatable :: U
     integer, dimension(:), allocatable :: I97, J97, ISET
@@ -34,13 +33,12 @@
              ij = (i + (k - 1))*45
           else
              call system_clock(count=ij)
-             ij = mod(ij + rand_instNS*100, 31328) + (k - 1)*45
+             ij = mod(ij, 31328) + (k - 1)*45
              call date_and_time(time=fred)
              read (fred, '(e10.3)') klr
              kl = mod(int(klr*1000), 30081)
           end if
 
-          !write(*,'(" randomNS seeds:",1I6,",",1I6," rand_instNS:",1I4)")') ij,kl,rand_instNS
           call RMARINNS(ij, kl, k)
        enddo
     end subroutine initRandomNS
