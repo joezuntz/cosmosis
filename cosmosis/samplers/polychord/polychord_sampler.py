@@ -115,6 +115,7 @@ class PolyChordSampler(ParallelSampler):
         self.feedback               = self.read_ini("feedback", int, 1)
         self.resume                 = self.read_ini("resume", bool, False)
         self.polychord_outfile_root = self.read_ini("polychord_outfile_root", str, "")
+        self.base_dir = self.read_ini("base_dir", str, ".")
         self.compression_factor     = self.read_ini("compression_factor", float, np.exp(-1))
 
         #General run options
@@ -209,6 +210,7 @@ class PolyChordSampler(ParallelSampler):
         loglikes = (ct.c_double*n_nlives)()
         nlives = (ct.c_int*n_nlives)()
 
+        base_dir = self.base_dir.encode('ascii')
         polychord_outfile_root = self.polychord_outfile_root.encode('ascii')
 
         if self.num_repeats == 0:
@@ -244,7 +246,7 @@ class PolyChordSampler(ParallelSampler):
                 self.compression_factor,      #compression_factor
                 self.ndim,                    #nDims
                 self.nderived,                #nDerived 
-                "".encode('ascii'),           #base_dir
+                base_dir,           #base_dir
                 polychord_outfile_root,  #file_root
                 n_grade,                      #nGrade
                 grade_frac,                   #grade_frac
