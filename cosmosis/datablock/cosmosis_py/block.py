@@ -669,7 +669,7 @@ class DataBlock(object):
 		in this case.
 
 		"""
-		status = lib.c_datablock_replace_int(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
+		status = lib.c_datablock_replace_bool(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
