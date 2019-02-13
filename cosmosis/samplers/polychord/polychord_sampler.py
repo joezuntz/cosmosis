@@ -120,7 +120,7 @@ class PolyChordSampler(ParallelSampler):
         #General run options
         self.max_iterations = self.read_ini("max_iterations", int, -1)
         self.num_repeats = self.read_ini("num_repeats", int, 0)
-        self.nprior = self.read_ini("nprior", int, self.live_points*10)
+        self.nprior = self.read_ini("nprior", int, -1)
         self.random_seed = self.read_ini("random_seed", int, -1)
         self.tolerance   = self.read_ini("tolerance", float, 0.1)
         self.log_zero    = self.read_ini("log_zero", float, -1e6)
@@ -154,6 +154,9 @@ class PolyChordSampler(ParallelSampler):
 
         def likelihood(theta, ndim, phi, nderived):
             theta_vector = np.array([theta[i] for i in range(ndim)])
+            if not self.pipeline.quiet:
+                print(theta_vector)
+
             if np.any(~np.isfinite(theta_vector)):
                 return -np.inf
 
