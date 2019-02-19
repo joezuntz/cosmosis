@@ -212,6 +212,7 @@ class PolyChordSampler(ParallelSampler):
 
         base_dir = self.base_dir.encode('ascii')
         polychord_outfile_root = self.polychord_outfile_root.encode('ascii')
+        output_to_file = len(polychord_outfile_root) > 0
 
         if self.num_repeats == 0:
             num_repeats = 3 * grade_dims[0]
@@ -233,16 +234,16 @@ class PolyChordSampler(ParallelSampler):
                 self.log_zero,                #logzero
                 self.max_iterations,          #max_ndead
                 0.,                           #boost_posterior
-                polychord_outfile_root,  #posteriors
-                polychord_outfile_root,  #equals
+                False,                        #posteriors
+                True,                         #equals
                 ct.c_bool,                    #cluster_posteriors
                 self.resume,                  #write_resume 
                 False,                        #write_paramnames
                 self.resume,                  #read_resume
-                polychord_outfile_root,  #write_stats
-                polychord_outfile_root,  #write_live
-                polychord_outfile_root,  #write_dead
-                polychord_outfile_root,  #write_prior
+                output_to_file,  #write_stats
+                output_to_file,  #write_live
+                output_to_file,  #write_dead
+                output_to_file,  #write_prior
                 self.compression_factor,      #compression_factor
                 self.ndim,                    #nDims
                 self.nderived,                #nDerived 
