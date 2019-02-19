@@ -115,7 +115,7 @@ class PolyChordSampler(ParallelSampler):
         self.feedback               = self.read_ini("feedback", int, 1)
         self.resume                 = self.read_ini("resume", bool, False)
         self.polychord_outfile_root = self.read_ini("polychord_outfile_root", str, "")
-        self.base_dir = self.read_ini("base_dir", str, ".")
+        self.base_dir               = self.read_ini("base_dir", str, ".")
         self.compression_factor     = self.read_ini("compression_factor", float, np.exp(-1))
 
         #General run options
