@@ -7,13 +7,14 @@ import sys
 
 
 def log_probability_function(p):
-    return emcee_pipeline.posterior(p)
+    r = emcee_pipeline.run_results(p)
+    return r.post, (r.prior, r.extra)
 
 
 class EmceeSampler(ParallelSampler):
     parallel_output = False
     supports_resume = True
-    sampler_outputs = [("post", float)]
+    sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
         global emcee_pipeline
@@ -123,8 +124,9 @@ class EmceeSampler(ParallelSampler):
 
 
     def output_samples(self, pos, prob, extra_info):
-        for p,l,e in zip(pos,prob,extra_info):
-            self.output.parameters(p, e, l)
+        for params, post, extra in zip(pos,prob,extra_info):
+            prior, extra = extra      
+            self.output.parameters(params, extra, prior, post)
 
     def execute(self):
         #Run the emcee sampler.

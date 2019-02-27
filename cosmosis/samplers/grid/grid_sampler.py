@@ -10,11 +10,11 @@ from .. import ParallelSampler
 
 def task(p):
     i,p = p
-    results = grid_sampler.pipeline.posterior(p, return_data=grid_sampler.save_name)
+    results = grid_sampler.pipeline.run_results(p)
     #If requested, save the data to file
-    if grid_sampler.save_name and results[2] is not None:
-        results[2].save_to_file(grid_sampler.save_name+"_%d"%i, clobber=True)
-    return (results[0], results[1])
+    if grid_sampler.save_name and results.block is not None:
+        results.block.save_to_file(grid_sampler.save_name+"_%d"%i, clobber=True)
+    return (results.post, results.prior, results.extra)
 
 LARGE_JOB_SIZE = 1000000
 
@@ -22,7 +22,7 @@ LARGE_JOB_SIZE = 1000000
 
 class GridSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("post", float)]
+    sampler_outputs = [("prior", float), ("post", float)]
     understands_fast_subspaces = True
 
     def config(self):
@@ -120,9 +120,9 @@ class GridSampler(ParallelSampler):
         for sample, result  in zip(samples, results):
             #Optionally save all the results calculated by each
             #pipeline run to files
-            (prob, extra) = result
+            (prob, prior, extra) = result
             #always save the usual text output
-            self.output.parameters(sample, extra, prob)
+            self.output.parameters(sample, extra, prior, prob)
 
     def is_converged(self):
         return self.converged

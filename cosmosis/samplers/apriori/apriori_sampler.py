@@ -12,18 +12,25 @@ from .. import ParallelSampler
 def task(p):
     i,p = p
     print("Running sample from prior: ", p)
-    results = sampler.pipeline.posterior(p, return_data=sampler.save_name)
+    r = sampler.pipeline.run_results(p)
+    prior = sampler.pipeline.prior(p)
+    results = sampler.pipeline.likelihood(p, return_data=sampler.save_name)
     #If requested, save the data to file
-    if sampler.save_name and results[2] is not None:
-        results[2].save_to_file(sampler.save_name+"_%d"%i, clobber=True)
-    return (results[0], results[1])
+    if sampler.save_name:
+        if r.block is None:
+            print("Failed to run parameters: {} so not saving".format(p))
+        else:
+            filename = "{}_{}".format(sampler.save_name, i)
+            r.block.save_to_file(filename, clobber=True)
+
+    return (r.prior, r.post, r.extra)
 
 
 
 
 class AprioriSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("post", float)]
+    sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
         global sampler
@@ -62,9 +69,9 @@ class AprioriSampler(ParallelSampler):
                 i, sample=sample
                 #Optionally save all the results calculated by each
                 #pipeline run to files
-                (prob, extra) = result
+                (prior, post, extra) = result
                 #always save the usual text output
-                self.output.parameters(sample, extra, prob)
+                self.output.parameters(sample, extra, prior, post)
 
         #We only ever run this once, though that could 
         #change if we decide to split up the runs

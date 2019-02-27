@@ -10,11 +10,12 @@ def task(p):
     #pipeline here refers to a global variable
     #created later.  This is the only way we know
     #to get MPI task sharing to work
-    return pipeline.posterior(p)
+    results = pipeline.run_results(p)
+    return (results.prior, results.post, results.extra)
 
 
 class GridMaxSampler(ParallelSampler):
-    sampler_outputs = [("post", float)]
+    sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
         global pipeline
@@ -62,8 +63,8 @@ class GridMaxSampler(ParallelSampler):
             results = list(map(task, points))
 
         #Log the results for posterity
-        for p, (l, e) in zip(points, results):
-            self.output.parameters(p, e, l)
+        for p, (l, pr, e) in zip(points, results):
+            self.output.parameters(p, e, pr, l)
 
         #And now update our information.
         #We need to find the two points either side

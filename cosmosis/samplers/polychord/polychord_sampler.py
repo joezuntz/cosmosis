@@ -78,7 +78,7 @@ POLYCHORD_SECTION='polychord'
 
 class PolyChordSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("post", float), ("weight", float)]
+    sampler_outputs = [("prior", float), ("post", float), ("weight", float)]
     supports_smp=False
     understands_fast_subspaces = True
 
@@ -106,7 +106,8 @@ class PolyChordSampler(ParallelSampler):
         self.converged=False
 
         self.ndim = len(self.pipeline.varied_params)
-        self.nderived = len(self.pipeline.extra_saves)
+        # We save the prior as well as the other derived params
+        self.nderived = len(self.pipeline.extra_saves) + 1
 
         #Required options
         self.live_points    = self.read_ini("live_points", int, 100)
@@ -161,13 +162,18 @@ class PolyChordSampler(ParallelSampler):
                 return -np.inf
 
             try:
-                like, phi_vector = self.pipeline.likelihood(theta_vector)
-                for i in range(nderived):
-                    phi[i] = phi_vector[i]
+                r = self.pipeline.run_results(theta_vector)
+
+                # Extract the derived parameters
+                for i in range(nderived-1):
+                    phi[i] = r.extra[i]
+                # And we also handle the prior here
+                phi[nderived-1] = r.prior
+
             except KeyboardInterrupt:
                 raise sys.exit(1)
 
-            return like
+            return r.like
         self.wrapped_likelihood = loglike_type(likelihood)
 
     def reorder_slow_fast(self, x):
@@ -267,11 +273,12 @@ class PolyChordSampler(ParallelSampler):
         logw = np.array([logweights[i] for i in range(ndead)])
         for row, w in zip(data,logw):
             params = row[:self.ndim]
-            extra_vals = row[self.ndim:self.ndim+self.nderived]
+            extra_vals = row[self.ndim:self.ndim+self.nderived-1]
+            prior = row[self.ndim+self.nderived-1]
             birth_like = row[self.ndim+self.nderived]
-            like = row[self.ndim+self.nderived+1]
+            post = row[self.ndim+self.nderived+1]
             importance = np.exp(w)
-            self.output.parameters(params, extra_vals, like, importance)
+            self.output.parameters(params, extra_vals, prior, post, importance)
         self.output.final("nsample", ndead)
         self.output.flush()
 
