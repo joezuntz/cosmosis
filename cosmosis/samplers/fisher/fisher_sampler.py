@@ -7,6 +7,7 @@ from ...datablock import BlockError
 import numpy as np
 import scipy.linalg
 from ...runtime import prior,utils
+import sys
 
 def compute_fisher_vector(p, cov=False):
     # use normalized parameters - fisherPipeline is a global
