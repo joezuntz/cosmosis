@@ -65,8 +65,8 @@ class GridMaxSampler(ParallelSampler):
             results = list(map(task, points))
 
         #Log the results for posterity
-        for p, (l, pr, e) in zip(points, results):
-            self.output.parameters(p, e, pr, l)
+        for p, (pr, po, e) in zip(points, results):
+            self.output.parameters(p, e, pr, po)
 
         #And now update our information.
         #We need to find the two points either side

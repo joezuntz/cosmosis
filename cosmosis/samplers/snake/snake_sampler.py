@@ -12,12 +12,12 @@ def posterior(p_in):
         print(p_in)
         return -np.inf, [np.nan for i in range(len(snake_pipeline.extra_saves))]
     p = snake_pipeline.denormalize_vector(p_in)
-    like, extra = snake_pipeline.posterior(p)
-    return like, extra
+    results = snake_pipeline.run_results(p)
+    return results.post, (results.extra, results.prior)
 
 
 class SnakeSampler(ParallelSampler):
-    sampler_outputs = [("post", float)]
+    sampler_outputs = [("prior", float), ("post", float)]
     parallel_output = False
 
     def config(self):
@@ -35,10 +35,10 @@ class SnakeSampler(ParallelSampler):
 
     def execute(self):
         X, P, E = self.snake.iterate()
-        for (x,post,extra) in zip(X,P,E):
+        for (x,post,(extra, prior)) in zip(X,P,E):
             try:
                 x = self.pipeline.denormalize_vector(x)
-                self.output.parameters(x, extra, post)
+                self.output.parameters(x, extra, prior, post)
             except ValueError:
                 print("The snake is trying to escape its bounds!")
 

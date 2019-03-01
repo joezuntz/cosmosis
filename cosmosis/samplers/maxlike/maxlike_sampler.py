@@ -4,7 +4,7 @@ import numpy as np
 
 
 class MaxlikeSampler(Sampler):
-    sampler_outputs = [("like", float)]
+    sampler_outputs = [("prior", float), ("like", float), ("post", float)]
 
     def config(self):
         self.tolerance = self.read_ini("tolerance", float, 1e-3)
@@ -61,17 +61,17 @@ class MaxlikeSampler(Sampler):
 
         #Some output - first log the parameters to the screen.
         #It's not really a warning - that's just a level name
+        results = self.pipeline.run_results(opt)
         if self.max_posterior:
-            like, extra = self.pipeline.posterior(opt)
-            self.output.log_warning("Best fit:\n%s"%'   '.join(str(x) for x in opt))
-            self.output.log_warning("Posterior: {}\n".format(like))
+            self.output.log_warning("Best fit (ny posterior):\n%s"%'   '.join(str(x) for x in opt))
         else:
             like, extra = self.pipeline.likelihood(opt)
-            self.output.log_warning("Best fit:\n%s"%'   '.join(str(x) for x in opt))
-            self.output.log_warning("Likelihood: {}\n".format(like))
+            self.output.log_warning("Best fit (by likelihood):\n%s"%'   '.join(str(x) for x in opt))
+        self.output.log_warning("Posterior: {}\n".format(results.post))
+        self.output.log_warning("Likelihood: {}\n".format(results.like))
 
         #Next save them to the proper table file
-        self.output.parameters(opt, extra, like)
+        self.output.parameters(opt, extra, results.prior, results.like, results.post)
 
         #If requested, create a new ini file for the
         #best fit.
