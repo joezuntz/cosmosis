@@ -54,9 +54,9 @@ def run(sampler, check_prior, check_extra=True, **options):
         assert not np.all(pr==-np.inf)
 
     if check_extra:
-        p1 = np.array(output['parameters--p1'])
-        p2 = np.array(output['parameters--p2'])
-        p3 = np.array(output['PARAMETERS--P3'])
+        p1 = output['parameters--p1']
+        p2 = output['parameters--p2']
+        p3 = output['PARAMETERS--P3']
 
         assert np.all((p1+p2==p3)|(np.isnan(p3)))
 
