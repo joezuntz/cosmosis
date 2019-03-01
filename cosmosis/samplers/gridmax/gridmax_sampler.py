@@ -24,6 +24,7 @@ class GridMaxSampler(ParallelSampler):
         if self.is_master():
             self.nsteps = self.read_ini("nsteps", int, 24)
             self.tolerance = self.read_ini("tolerance", float, 0.1)
+            self.max_iterations = self.read_ini("max_iterations", int, 10000)
             self.output_ini = self.read_ini("output_ini", str, "")
             self.ndim = len(self.pipeline.varied_params)
             self.p = self.pipeline.normalize_vector(self.pipeline.start_vector())
@@ -31,6 +32,7 @@ class GridMaxSampler(ParallelSampler):
             self.bounds = [(0,1) for i in range(self.ndim)]
             self.previous_maxlike = -np.inf
             self.maxlike = -np.inf
+            self.iterations = 0
 
 
     def execute(self):
@@ -70,7 +72,7 @@ class GridMaxSampler(ParallelSampler):
         #We need to find the two points either side
         #of the maximum likelihood and set them as our new bound,
         #and set our new starting point to be the max value
-        posteriors = np.array([p for (p,e) in results])
+        posteriors = np.array([r[1] for r in results])
         best = posteriors.argmax()
         #first, the special cases one of the boundary 
         #points is the best (this might be cause for concern, of course)
@@ -110,8 +112,9 @@ class GridMaxSampler(ParallelSampler):
 
         if self.is_converged() and self.output_ini:
             self.pipeline.create_ini(points[best], self.output_ini)
+        self.iterations += 1
 
 
 
     def is_converged(self):
-        return self.dimension==1 and (0<self.maxlike-self.previous_maxlike<self.tolerance)
+        return (self.dimension==1 and (0<self.maxlike-self.previous_maxlike<self.tolerance)) or self.iterations > self.max_iterations
