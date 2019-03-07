@@ -2,6 +2,7 @@
 cosmosis_dir=$( (builtin cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
 cosmosis_dir=${cosmosis_dir%/config}
 export COSMOSIS_SRC_DIR="$cosmosis_dir"
+export COSMOSIS_OMP=1
 
 # Modules - depends on the machine
 if [ $NERSC_HOST == "cori" ]
