@@ -19,9 +19,10 @@ export FFTW_INCLUDE_DIR=/usr/local
 export MINUIT2_LIB=/usr/local
 export MINUIT2_INC=/usr/local
 
-# The lapack linear algebra package. On macOS, this is provided by
-# the Accelerate framework.
-export LAPACK_LINK="-framework Accelerate"
+# BLAS and LAPACK are used from OpenBLAS, rather than
+# from the macOS Accelerate framework. In this, we are
+# following the lead of SciPy and NumPy.
+export LAPACK_LINK=/usr/local/opt/openblas/lib/liblapack.dylib
 
 export PYTHONPATH=${COSMOSIS_SRC_DIR}:${PYTHONPATH}
 export PATH=${COSMOSIS_SRC_DIR}/bin:${PATH}
