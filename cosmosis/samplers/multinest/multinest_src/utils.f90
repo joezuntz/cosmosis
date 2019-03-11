@@ -11,7 +11,7 @@
        integer n !no. of nodes
        integer, optional, intent(IN) :: i
        integer kl, ij, k
-       character(len=10) :: fred
+       integer, dimension(8) :: now
        real :: klr
 
        !sanity  check
@@ -34,8 +34,12 @@
           else
              call system_clock(count=ij)
              ij = mod(ij, 31328) + (k - 1)*45
-             call date_and_time(time=fred)
-             read (fred, '(e10.3)') klr
+             call date_and_time(VALUES = now)
+             ! The following could be simplified using all integer arithmetic.
+             ! The current implementation is designed to obtain the same rounding
+             ! behavior of the earlier implementation, which read the time into
+             ! a character array and parsed it with the 'read' statement.
+             klr = ((now(5) * 10) + now(6)) * 10 + now(7) + now(8)/1000.0
              kl = mod(int(klr*1000), 30081)
           end if
 
