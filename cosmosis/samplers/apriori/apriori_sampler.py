@@ -13,8 +13,6 @@ def task(p):
     i,p = p
     print("Running sample from prior: ", p)
     r = sampler.pipeline.run_results(p)
-    prior = sampler.pipeline.prior(p)
-    results = sampler.pipeline.likelihood(p, return_data=sampler.save_name)
     #If requested, save the data to file
     if sampler.save_name:
         if r.block is None:
