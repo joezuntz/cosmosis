@@ -10,7 +10,7 @@ def posterior(p_in):
     #Check the normalization
     if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
         print(p_in)
-        return -np.inf, [np.nan for i in range(len(snake_pipeline.extra_saves))]
+        return -np.inf, ([np.nan for i in range(len(snake_pipeline.extra_saves))], -np.inf)
     p = snake_pipeline.denormalize_vector(p_in)
     results = snake_pipeline.run_results(p)
     return results.post, (results.extra, results.prior)
