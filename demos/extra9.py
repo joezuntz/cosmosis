@@ -87,10 +87,10 @@ import numpy as np
 class ColorScatter(plots.MultinestColorScatterPlot):
     #Column names to use:
     x_column = "supernova_params--deltam"
-    y_column = "supernova_params--m"
+    y_column = "cosmological_parameters--h0"
     color_column = "cosmological_parameters--omega_m"
     #File name to create
-    scatter_filename = "scatter_dm_m_omm"
+    scatter_filename = "scatter_dm_h0_omm"
 
 
 
