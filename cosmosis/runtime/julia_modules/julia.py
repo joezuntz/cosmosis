@@ -33,6 +33,9 @@ class JuliaModule(object):
 
         libdir = os.path.split(__file__)[0]
         libname = os.path.join(libdir, "libcosmosis_julia.so")
+
+        if not os.path.exists(libname):
+            raise RuntimeError("You must compile cosmosis with Julia support by running make in {}".format(libdir))
         cls.lib = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
         cls.lib.load_module.restype = JuliaModuleInfoPtr
