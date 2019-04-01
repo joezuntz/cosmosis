@@ -19,6 +19,7 @@ MODULE_TYPE_CLEANUP = "cleanup"
 
 MODULE_LANG_PYTHON = "python"
 MODULE_LANG_DYLIB = "dylib"
+MODULE_LANG_JULIA = "julia"
 
 
 
@@ -103,14 +104,19 @@ class Module(object):
 
         self.library, language = Module.load_library(filename)
         self.is_python = (language == MODULE_LANG_PYTHON)
+        self.is_julia = (language == MODULE_LANG_JULIA)
+        self.is_dynamic = (language == MODULE_LANG_DYLIB)
 
         # attempt to load setup and cleanup functions
         self.setup_function = Module.load_function(self.library,
                                                    setup_function,
-                                                   MODULE_TYPE_SETUP)
+                                                   MODULE_TYPE_SETUP,
+                                                   set_types=self.is_dynamic,
+                                                   )
         self.cleanup_function = Module.load_function(self.library,
                                                      cleanup_function,
-                                                     MODULE_TYPE_CLEANUP)
+                                                     MODULE_TYPE_CLEANUP,
+                                                     set_types=self.is_dynamic)
 
 
 
@@ -162,7 +168,8 @@ class Module(object):
 
         self.execute_function = Module.load_function(self.library,
                                                      self.execute_function,
-                                                     module_type)
+                                                     module_type,
+                                                     set_types=self.is_dynamic)
         if self.execute_function is None:
             raise ValueError("Could not find a function 'execute' in module '"
                                  +  self.name + "'")
@@ -228,6 +235,10 @@ class Module(object):
                     raise SetupError("You specified a path %s for a module. "
                                      "File does not exist.  Error was %s" %
                                      (filepath, error))
+        elif filepath.endswith(".jl"):
+            from . import julia_modules
+            library = julia_modules.JuliaModule(filepath)
+            language = MODULE_LANG_JULIA
         else:
             language = MODULE_LANG_PYTHON
             dirname, filename = os.path.split(filepath)
@@ -249,13 +260,13 @@ class Module(object):
 
     @staticmethod
     def load_function(library, function_name,
-                      module_type=MODULE_TYPE_EXECUTE_SIMPLE):
+                      module_type=MODULE_TYPE_EXECUTE_SIMPLE, set_types=True):
         u"""Load a Module's functions from a shared library."""
         function = getattr(library, function_name, None)
         if not function:
             function = getattr(library, function_name + "_", None)
 
-        if function:
+        if function and set_types:
             if module_type == MODULE_TYPE_EXECUTE_SIMPLE:
                 function.argtypes = [ctypes.c_voidp]
                 function.restype = ctypes.c_int
