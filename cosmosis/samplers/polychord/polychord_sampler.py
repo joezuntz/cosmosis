@@ -126,6 +126,10 @@ class PolyChordSampler(ParallelSampler):
         self.random_seed = self.read_ini("random_seed", int, -1)
         self.tolerance   = self.read_ini("tolerance", float, 0.1)
         self.log_zero    = self.read_ini("log_zero", float, -1e6)
+        self.boost_posteriors = self.read_ini("boost_posteriors", float, 0.0)
+        self.weighted_posteriors = self.read_ini("weighted_posteriors", bool, T)
+        self.equally_weighted_posteriors = self.read_ini("equally_weighted_posteriors", bool, T)       
+        self.cluster_posteriors = self.read_ini("cluster_posteriors", bool, T)
 
         self.fast_fraction    = self.read_ini("fast_fraction", float, 0.5)
 
@@ -223,6 +227,10 @@ class PolyChordSampler(ParallelSampler):
         polychord_outfile_root = self.polychord_outfile_root.encode('ascii')
         output_to_file = len(polychord_outfile_root) > 0
 
+        if output_to_file:
+            os.makedirs(base_dir, exist_ok=True)
+            os.makedirs(os.path.join(base_dir, "clusters"), exist_ok=True)
+            
         if self.num_repeats == 0:
             num_repeats = 3 * grade_dims[0]
             print("Polychord num_repeats = {}  (3 * n_slow_params [{}])".format(num_repeats, grade_dims[0]))
@@ -242,10 +250,10 @@ class PolyChordSampler(ParallelSampler):
                 self.tolerance,               #precision_criterion
                 self.log_zero,                #logzero
                 self.max_iterations,          #max_ndead
-                0.,                           #boost_posterior
-                False,                        #posteriors
-                True,                         #equals
-                ct.c_bool,                    #cluster_posteriors
+                self.boost_posterior,         #boost_posterior
+                self.weighted_posteriors,     #posteriors
+                self.equally_weighted_posteriors, #equals
+                self.cluster_posteriors,      #cluster_posteriors
                 self.resume,                  #write_resume 
                 False,                        #write_paramnames
                 self.resume,                  #read_resume
