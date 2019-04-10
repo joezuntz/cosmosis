@@ -116,6 +116,7 @@ class PolyChordSampler(ParallelSampler):
         self.feedback               = self.read_ini("feedback", int, 1)
         self.resume                 = self.read_ini("resume", bool, False)
         self.polychord_outfile_root = self.read_ini("polychord_outfile_root", str, "")
+        self.base_dir               = self.read_ini("base_dir", str, ".")
         self.compression_factor     = self.read_ini("compression_factor", float, np.exp(-1))
 
         #General run options
@@ -125,6 +126,10 @@ class PolyChordSampler(ParallelSampler):
         self.random_seed = self.read_ini("random_seed", int, -1)
         self.tolerance   = self.read_ini("tolerance", float, 0.1)
         self.log_zero    = self.read_ini("log_zero", float, -1e6)
+        self.boost_posteriors = self.read_ini("boost_posteriors", float, 0.0)
+        self.weighted_posteriors = self.read_ini("weighted_posteriors", bool, True)
+        self.equally_weighted_posteriors = self.read_ini("equally_weighted_posteriors", bool, True)       
+        self.cluster_posteriors = self.read_ini("cluster_posteriors", bool, True)
 
         self.fast_fraction    = self.read_ini("fast_fraction", float, 0.5)
 
@@ -218,8 +223,14 @@ class PolyChordSampler(ParallelSampler):
         loglikes = (ct.c_double*n_nlives)()
         nlives = (ct.c_int*n_nlives)()
 
+        base_dir = self.base_dir.encode('ascii')
         polychord_outfile_root = self.polychord_outfile_root.encode('ascii')
+        output_to_file = len(polychord_outfile_root) > 0
 
+        if output_to_file:
+            os.makedirs(self.base_dir, exist_ok=True)
+            os.makedirs(os.path.join(self.base_dir, "clusters"), exist_ok=True)
+            
         if self.num_repeats == 0:
             num_repeats = 3 * grade_dims[0]
             print("Polychord num_repeats = {}  (3 * n_slow_params [{}])".format(num_repeats, grade_dims[0]))
@@ -239,21 +250,21 @@ class PolyChordSampler(ParallelSampler):
                 self.tolerance,               #precision_criterion
                 self.log_zero,                #logzero
                 self.max_iterations,          #max_ndead
-                0.,                           #boost_posterior
-                polychord_outfile_root,  #posteriors
-                polychord_outfile_root,  #equals
-                ct.c_bool,                    #cluster_posteriors
+                self.boost_posteriors,         #boost_posterior
+                self.weighted_posteriors,     #posteriors
+                self.equally_weighted_posteriors, #equals
+                self.cluster_posteriors,      #cluster_posteriors
                 self.resume,                  #write_resume 
                 False,                        #write_paramnames
                 self.resume,                  #read_resume
-                polychord_outfile_root,  #write_stats
-                polychord_outfile_root,  #write_live
-                polychord_outfile_root,  #write_dead
-                polychord_outfile_root,  #write_prior
+                output_to_file,  #write_stats
+                output_to_file,  #write_live
+                output_to_file,  #write_dead
+                output_to_file,  #write_prior
                 self.compression_factor,      #compression_factor
                 self.ndim,                    #nDims
                 self.nderived,                #nDerived 
-                "".encode('ascii'),           #base_dir
+                base_dir,           #base_dir
                 polychord_outfile_root,  #file_root
                 n_grade,                      #nGrade
                 grade_frac,                   #grade_frac
