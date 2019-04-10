@@ -333,6 +333,10 @@ int main()
   test_copy();
   test_mapusage();
 
+  // Test copy assignability.
+  static_assert(std::is_copy_constructible<Entry>::value, "Entry is not copy constructible");
+  static_assert(std::is_copy_assignable<Entry>::value, "Entry is not copy assignable");
+
   Entry e("cats and dogs");
   std::cout << "size of Entry is: " << sizeof(Entry) << std::endl;
   std::cout << "size of e is:     " << sizeof(e) << std::endl;

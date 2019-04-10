@@ -610,7 +610,7 @@ class DataBlock(object):
 		method = self._method_for_datatype_code(type_code,self.GET)
 		if method:
 			return method(section,name)
-		raise ValueError("Cosmosis internal error; unknown type of data")
+		raise ValueError("Cosmosis internal error; unknown type of data. section: %s, name: %s, type_code: %s" % (section, name, type_code))
 
 	def put(self, section, name, value, **meta):
 		u"""Add a parameter with `value` at (`section`, `name`) in the map.

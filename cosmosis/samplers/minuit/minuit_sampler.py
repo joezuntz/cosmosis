@@ -125,7 +125,7 @@ class MinuitSampler(ParallelSampler):
         elif self.neval > self.maxiter:
             print()
             print("MINUIT has failed to converge properly in the max number of iterations.  Sorry.")
-            print("Saving the best fitting parameters of the ones we trid, though beware: these are probably not the best-fit")
+            print("Saving the best fitting parameters of the ones we tried, though beware: these are probably not the best-fit")
             print()
             self.save_results(param_vector, param_names, results)
             #we actually just use self.converged to indicate that the 

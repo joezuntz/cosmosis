@@ -1,8 +1,11 @@
 import ctypes as ct
 from . import dbt_types
+import os
 
+source_dir = os.path.dirname(__file__)
+libcosmosis_path = source_dir + "/../libcosmosis.so"
 
-dll = ct.cdll.LoadLibrary("libcosmosis.so")
+dll = ct.cdll.LoadLibrary(libcosmosis_path)
 
 # We export a symbol in the C code to tell us this
 enum_size = ct.c_int.in_dll(dll, "cosmosis_enum_size").value
