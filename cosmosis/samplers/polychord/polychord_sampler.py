@@ -116,6 +116,7 @@ class PolyChordSampler(ParallelSampler):
         self.feedback               = self.read_ini("feedback", int, 1)
         self.resume                 = self.read_ini("resume", bool, False)
         self.polychord_outfile_root = self.read_ini("polychord_outfile_root", str, "")
+        self.base_dir               = self.read_ini("base_dir", str, ".")
         self.compression_factor     = self.read_ini("compression_factor", float, np.exp(-1))
 
         #General run options
@@ -218,7 +219,9 @@ class PolyChordSampler(ParallelSampler):
         loglikes = (ct.c_double*n_nlives)()
         nlives = (ct.c_int*n_nlives)()
 
+        base_dir = self.base_dir.encode('ascii')
         polychord_outfile_root = self.polychord_outfile_root.encode('ascii')
+        output_to_file = len(polychord_outfile_root) > 0
 
         if self.num_repeats == 0:
             num_repeats = 3 * grade_dims[0]
@@ -240,20 +243,20 @@ class PolyChordSampler(ParallelSampler):
                 self.log_zero,                #logzero
                 self.max_iterations,          #max_ndead
                 0.,                           #boost_posterior
-                polychord_outfile_root,  #posteriors
-                polychord_outfile_root,  #equals
+                False,                        #posteriors
+                True,                         #equals
                 ct.c_bool,                    #cluster_posteriors
                 self.resume,                  #write_resume 
                 False,                        #write_paramnames
                 self.resume,                  #read_resume
-                polychord_outfile_root,  #write_stats
-                polychord_outfile_root,  #write_live
-                polychord_outfile_root,  #write_dead
-                polychord_outfile_root,  #write_prior
+                output_to_file,  #write_stats
+                output_to_file,  #write_live
+                output_to_file,  #write_dead
+                output_to_file,  #write_prior
                 self.compression_factor,      #compression_factor
                 self.ndim,                    #nDims
                 self.nderived,                #nDerived 
-                "".encode('ascii'),           #base_dir
+                base_dir,           #base_dir
                 polychord_outfile_root,  #file_root
                 n_grade,                      #nGrade
                 grade_frac,                   #grade_frac
