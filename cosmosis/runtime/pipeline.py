@@ -1121,6 +1121,9 @@ class LikelihoodPipeline(Pipeline):
         priors = self.prior(p, all_params=all_params, total_only=False)
         r.prior = sum(pr[1] for pr in priors)
 
+        if np.isnan(r.prior):
+            r.prior = -np.inf
+
         if not np.isfinite(r.prior):
             if not self.quiet:
                 print("Proposed outside bounds: prior -infinity")
@@ -1144,6 +1147,12 @@ class LikelihoodPipeline(Pipeline):
             sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
             traceback.print_exc(file=sys.stderr)
             sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
+
+        if np.isnan(r.post):
+            r.post = -np.inf
+
+        if np.isnan(r.like):
+            r.like = -np.inf
 
         return r
 
