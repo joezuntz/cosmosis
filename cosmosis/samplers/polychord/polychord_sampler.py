@@ -127,9 +127,9 @@ class PolyChordSampler(ParallelSampler):
         self.tolerance   = self.read_ini("tolerance", float, 0.1)
         self.log_zero    = self.read_ini("log_zero", float, -1e6)
         self.boost_posteriors = self.read_ini("boost_posteriors", float, 0.0)
-        self.weighted_posteriors = self.read_ini("weighted_posteriors", bool, T)
-        self.equally_weighted_posteriors = self.read_ini("equally_weighted_posteriors", bool, T)       
-        self.cluster_posteriors = self.read_ini("cluster_posteriors", bool, T)
+        self.weighted_posteriors = self.read_ini("weighted_posteriors", bool, True)
+        self.equally_weighted_posteriors = self.read_ini("equally_weighted_posteriors", bool, True)       
+        self.cluster_posteriors = self.read_ini("cluster_posteriors", bool, True)
 
         self.fast_fraction    = self.read_ini("fast_fraction", float, 0.5)
 
@@ -228,8 +228,8 @@ class PolyChordSampler(ParallelSampler):
         output_to_file = len(polychord_outfile_root) > 0
 
         if output_to_file:
-            os.makedirs(base_dir, exist_ok=True)
-            os.makedirs(os.path.join(base_dir, "clusters"), exist_ok=True)
+            os.makedirs(self.base_dir, exist_ok=True)
+            os.makedirs(os.path.join(self.base_dir, "clusters"), exist_ok=True)
             
         if self.num_repeats == 0:
             num_repeats = 3 * grade_dims[0]
@@ -250,7 +250,7 @@ class PolyChordSampler(ParallelSampler):
                 self.tolerance,               #precision_criterion
                 self.log_zero,                #logzero
                 self.max_iterations,          #max_ndead
-                self.boost_posterior,         #boost_posterior
+                self.boost_posteriors,         #boost_posterior
                 self.weighted_posteriors,     #posteriors
                 self.equally_weighted_posteriors, #equals
                 self.cluster_posteriors,      #cluster_posteriors
