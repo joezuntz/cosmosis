@@ -197,6 +197,7 @@ class PolyChordSampler(ParallelSampler):
         self.log_z = 0.0
         self.log_z_err = 0.0
 
+
         self.sample()
 
         self.output.final("log_z", self.log_z)
@@ -278,6 +279,9 @@ class PolyChordSampler(ParallelSampler):
         self.converged = True
 
     def output_params(self, ndead, nlive, npars, live, dead, logweights, log_z, log_z_err):
+        # Polychord repeats output, but with changed weights, so reset to the start
+        # of the chain to overwrite them.
+        self.output.reset_to_chain_start()
         self.log_z = log_z
         self.log_z_err = log_z_err
         data = np.array([dead[i] for i in range(npars*ndead)]).reshape((ndead, npars))

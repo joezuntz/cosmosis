@@ -217,6 +217,7 @@ class MultinestSampler(ParallelSampler):
         self.converged = True
 
     def output_params(self, n, live, posterior, log_z, ins_log_z, log_z_err):
+        self.output.reset_to_chain_start()
         self.log_z = ins_log_z if self.importance else log_z
         self.log_z_err = log_z_err
         data = np.array([posterior[i] for i in range(n*(self.npar+2))]).reshape((self.npar+2, n))
