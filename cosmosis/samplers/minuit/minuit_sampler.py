@@ -97,6 +97,7 @@ class MinuitSampler(ParallelSampler):
             self.iterations += 1
             if self.verbose:
                 print(self.iterations, like, "   ",  "    ".join(str(v) for v in vector))
+                sys.stdout.flush()
             return -like
 
         self.wrapped_likelihood = wrapped_likelihood

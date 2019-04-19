@@ -11,9 +11,7 @@ from .. import ParallelSampler
 
 def task(p):
     i,p = p
-    result = list_sampler.pipeline.run_results(p, all_params=True)
-    results = list_sampler.pipeline.posterior(p, 
-        return_data=list_sampler.save_name, all_params=True)
+    results = list_sampler.pipeline.run_results(p, all_params=True)
     #If requested, save the data to file
     if list_sampler.save_name and results.block is not None:
         results.block.save_to_file(list_sampler.save_name+"_%d"%i, clobber=True)
