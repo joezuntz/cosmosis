@@ -9,7 +9,7 @@ if [ $NERSC_HOST == "cori" ]
 then
 	module swap PrgEnv-intel PrgEnv-gnu
 	module load gsl/2.1
-	module load cray-fftw/3.3.6.2
+	module load cray-fftw/3.3.6.3
 	module load cfitsio/3.410
 	module load python/2.7-anaconda-4.4
 elif [ $NERSC_HOST == "edison" ]
