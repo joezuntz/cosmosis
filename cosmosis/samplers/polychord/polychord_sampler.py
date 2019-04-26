@@ -255,7 +255,7 @@ class PolyChordSampler(ParallelSampler):
                 self.weighted_posteriors,     #posteriors
                 self.equally_weighted_posteriors, #equals
                 self.cluster_posteriors,      #cluster_posteriors
-                self.resume,                  #write_resume 
+                True,                         #write_resume  - always
                 False,                        #write_paramnames
                 self.resume,                  #read_resume
                 output_to_file,  #write_stats
