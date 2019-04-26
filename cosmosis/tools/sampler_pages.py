@@ -112,7 +112,7 @@ def main():
 	#Find and parse all the files
 	search_path = "{}/*/sampler.yaml".format(sampler_dir)
 	yaml_files = glob.glob(search_path)
-	infos = [yaml.load(open(f)) for f in yaml_files]
+	infos = [yaml.safe_load(open(f)) for f in yaml_files]
 	#Make the ordering the same every time
 	try:
 		os.mkdir('wiki')
