@@ -8,6 +8,7 @@ import os
 import cosmosis
 import numpy as np
 import sys
+from cosmosis.runtime.utils import mkdir
 
 prior_type = ct.CFUNCTYPE(None, 
     ct.POINTER(ct.c_double),  #hypercube
@@ -229,8 +230,8 @@ class PolyChordSampler(ParallelSampler):
         output_to_file = len(polychord_outfile_root) > 0
 
         if output_to_file:
-            os.makedirs(self.base_dir, exist_ok=True)
-            os.makedirs(os.path.join(self.base_dir, "clusters"), exist_ok=True)
+            mkdir(self.base_dir)
+            mkdir(os.path.join(self.base_dir, "clusters"))
             
         if self.num_repeats == 0:
             num_repeats = 3 * grade_dims[0]
