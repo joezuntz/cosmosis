@@ -158,14 +158,18 @@ class NumDiffToolsFisher(Fisher):
 
 
 def test():
-    def theory_prediction(x):
+    def theory_prediction(x, cov=False):
         #same number of data points as parameters here
+        x = np.concatenate([x,x])
         theory = 2*x + 2
         inv_cov = np.diag(np.ones_like(x)**-1)
-        return theory, inv_cov
+        if cov:
+            return theory, inv_cov
+        else:
+            return theory
 
-    best_fit_params = np.array([0.1, 1.0, 2.0, 4.0])
-    fisher_calculator = Fisher(theory_prediction, best_fit_params, 0.01, 0.0, 1)
+    best_fit_params = np.array([0.1, 1.0, 2.0, 4.0,])
+    fisher_calculator = Fisher(theory_prediction, best_fit_params, 0.01, 0.0, 100)
     F = fisher_calculator.compute_fisher_matrix()
     print(F)
     return F
