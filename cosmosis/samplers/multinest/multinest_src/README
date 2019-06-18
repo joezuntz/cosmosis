@@ -52,7 +52,7 @@ integer nCdims							!no. of parameters on which clustering should be performed 
 integer maxModes						!maximum no. of modes (for memory allocation)
 integer updInt							!iterations after which the output files should be written
 double precision Ztol						!null log-evidence (read below)
-character(LEN=100) root  					!root for MultiNest output files
+character(len=root_max_len) root  					!root for MultiNest output files
 integer seed 		 					!random no. generator seed, -ve value for seed from the sys clock
 integer pWrap[ndims]						!wraparound parameters?
 logical feedback						!need update on sampling progress?

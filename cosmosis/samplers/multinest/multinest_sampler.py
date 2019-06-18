@@ -107,6 +107,9 @@ class MultinestSampler(ParallelSampler):
         self.multinest_outfile_root = self.read_ini("multinest_outfile_root", str, "")
         self.update_interval        = self.read_ini("update_interval", int, 200)
 
+        if len(self.multinest_outfile_root)>511:
+            raise ValueError("Multinest parameter 'multinest_outfile_root'"
+                " cannot be longer than 511 characters.")
         #General run options
         self.random_seed = self.read_ini("random_seed", int, -1)
         self.importance  = self.read_ini("ins", bool, True)

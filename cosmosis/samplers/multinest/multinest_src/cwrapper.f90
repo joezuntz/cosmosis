@@ -29,6 +29,7 @@ module cnested
 
 	use iso_c_binding, only: c_int, c_bool, c_double, c_char, c_funptr, c_ptr, C_NULL_CHAR
 	use Nested, only: nestRun
+	use utils1, only: root_max_len
 	implicit none
 
 	integer(c_int),  intent(in), value :: nest_ndims,nest_nlive,nest_updInt,seed
@@ -40,11 +41,11 @@ module cnested
 	type(c_funptr),  intent(in), value :: loglike, dumper
 	type(c_ptr),     intent(in) :: context
 
-	character(len=100) :: fnest_root
+	character(len=root_max_len) :: fnest_root
 	integer :: i, context_f
 
 	fnest_root = ' '
-	do i = 1, 100
+	do i = 1, root_max_len
 		if (nest_root(i) == C_NULL_CHAR) then
 			exit
 		else

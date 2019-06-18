@@ -120,6 +120,11 @@ class PolyChordSampler(ParallelSampler):
         self.base_dir               = self.read_ini("base_dir", str, ".")
         self.compression_factor     = self.read_ini("compression_factor", float, np.exp(-1))
 
+        if len(polychord_outfile_root)>299:
+            raise ValueError("Polychord parameter 'polychord_outfile_root'"
+                " cannot be longer than 299s characters.")
+
+
         #General run options
         self.max_iterations = self.read_ini("max_iterations", int, -1)
         self.num_repeats = self.read_ini("num_repeats", int, 0)
