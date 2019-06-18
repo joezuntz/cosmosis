@@ -13,6 +13,7 @@ import ctypes as ct
 from . import lib
 from . import errors
 from . import dbt_types as types
+from ...runtime.utils import mkdir
 from .errors import BlockError
 import numpy as np
 import os
@@ -882,7 +883,7 @@ class DataBlock(object):
 		base_dirname,base_filename=os.path.split(filename)
 		if base_dirname:
 			try:
-				os.mkdir(base_dirname)
+				mkdir(base_dirname)
 			except OSError:
 				pass
 
@@ -944,7 +945,7 @@ class DataBlock(object):
 
 		"""
 		try:
-			os.mkdir(dirname)
+			mkdir(dirname)
 		except OSError:
 			if not clobber:
 				print("Not clobbering", clobber)
@@ -954,7 +955,7 @@ class DataBlock(object):
 			#Create the sub-directory for this 
 			#section
 			try:
-				os.mkdir(os.path.join(dirname,section))
+				mkdir(os.path.join(dirname,section))
 			except OSError:
 				if not clobber:
 					raise
