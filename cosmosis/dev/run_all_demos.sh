@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-for (( D=1 ; D<=19 ; D++ ))
+export HALOFIT=halofit_takahashi
+for (( D=20 ; D<=19 ; D++ ))
 do
 	cosmosis demos/demo$D.ini
 	if [ $? -ne 0 ]
@@ -13,7 +14,7 @@ do
 		echo "Error postprocessing Demo $D"
 		exit 1
 	fi
-
-
 done
+exit 0
+
 
