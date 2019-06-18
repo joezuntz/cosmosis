@@ -41,3 +41,4 @@ config/shifter-make.log
 config/make.temp.sub
 *~
 .DS_Store
+output/*
