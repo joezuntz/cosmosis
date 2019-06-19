@@ -7,7 +7,7 @@ export HALOFIT=halofit_takahashi
 for (( D=1 ; D<=24 ; D++ ))
 do
 	# There is no demo 23 yet
-	if [[ D == 23 ]]
+	if [[ $D == 23 ]]
 	then
 		continue
 	fi
