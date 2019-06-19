@@ -75,7 +75,7 @@ def main(args):
 
 	for i,ini_filename in enumerate(args.inifile):
 		sampler, ini = read_input(ini_filename, args.text, args.weights)
-		processor_class = postprocessor_for_sampler(sampler.strip ())
+		processor_class = postprocessor_for_sampler(sampler.split()[-1])
 
 		#We do not know how to postprocess everything.
 		if processor_class is None:
