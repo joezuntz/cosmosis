@@ -15,8 +15,8 @@ import pylab
 import numpy as np
 
 #Load in the cosmosis output files
-log_like = np.loadtxt("demo12_output/evs/logphi.txt").T
-m = np.loadtxt("demo12_output/evs/m.txt").T
+log_like = np.loadtxt("output/demo12/evs/logphi.txt").T
+m = np.loadtxt("output/demo12/evs/m.txt").T
 
 #convert to like from log-like and normalize
 like = np.exp(log_like)
@@ -38,6 +38,8 @@ pylab.ylabel("Likelihood")
 pylab.minorticks_on()
 pylab.legend()
 pylab.grid()
+pylab.tight_layout()
+
 
 #Save the file
-pylab.savefig("demo12_pdf.png")
+pylab.savefig("plots/demo12_pdf.png")
