@@ -24,7 +24,7 @@ class DynestySampler(ParallelSampler):
             self.mode = self.read_ini_choices("mode", str, ["static", "dynamic"], "static")
             self.nlive = self.read_ini("nlive", int, 500)
             self.bound = self.read_ini_choices("bound", str, ["none", "single", "multi", "balls", "cube"], "multi")
-            self.sample = self.read_ini_choices("sample", str, ["unif", "rwalk", "slice", "rslice", "hslice"], "rwalk")
+            self.sample = self.read_ini_choices("sample", str, ["unif", "rwalk", "slice", "rslice", "hslice"], "auto")
             self.update_interval = self.read_ini("update_interval", float, 0.6)
             self.min_ncall = self.read_ini("min_ncall",int, 2*self.nlive)
             self.min_eff = self.read_ini("min_eff",float, 10.0)
@@ -51,6 +51,9 @@ class DynestySampler(ParallelSampler):
         from dynesty import NestedSampler, DynamicNestedSampler
 
         ndim = self.pipeline.nvaried
+
+        sampling_method = None if self.sample == "auto" else self.sample
+
         if self.mode == "static":
             sampler = NestedSampler(
                 log_probability_function,
@@ -58,7 +61,7 @@ class DynestySampler(ParallelSampler):
                 ndim, 
                 nlive = self.nlive,
                 bound = self.bound,
-                sample = self.sample,
+                sample = sampling_method,
                 update_interval = self.update_interval,
                 first_update = {'min_ncall':self.min_ncall, 'min_eff':self.min_eff},
                 queue_size = self.queue_size,
@@ -73,12 +76,12 @@ class DynestySampler(ParallelSampler):
                 prior_transform, 
                 ndim, 
                 bound = self.bound,
-                sample = self.sample,
-                update_interval = self.update_interval,
+                sample = sampling_method,
+                # update_interval = self.update_interval,
                 queue_size = self.queue_size,
                 pool = self.pool
                 )
-            sampler.run_nested()
+            sampler.run_nested(dlogz_init=self.dlogz)
 
         results = sampler.results
         results.summary()
