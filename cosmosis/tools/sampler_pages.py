@@ -76,8 +76,8 @@ def generate_sampler_wiki(info):
 			dtype, default, rest = parse_parameter_description(description)
 			parameter_lines.append("{}|{}|{}|{}".format(pname, dtype, rest, default))
 		except (IndexError, ValueError):
-			print "ERROR: Could not parse in {0}".format(name)
-			print description
+			print("ERROR: Could not parse in {0}".format(name))
+			print(description)
 			continue
 		
 	parameter_lines = '\n'.join(parameter_lines)
