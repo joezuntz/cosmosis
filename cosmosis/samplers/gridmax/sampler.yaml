@@ -29,3 +29,4 @@ params:
     nsteps: (integer) The number of sample points along each line through the space
     tolerance: "(real; default=0.1) tolerance for Delta Log Like along one complete loop through the dimensions"
     output_ini: "(string; default='') if present, save the resulting parameters to a new ini file with this name"
+    max_iterations: "(int; default=10000) Max number of slices"
