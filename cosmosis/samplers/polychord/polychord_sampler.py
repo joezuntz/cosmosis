@@ -9,6 +9,7 @@ import cosmosis
 import numpy as np
 import sys
 from cosmosis.runtime.utils import mkdir
+import warnings
 
 prior_type = ct.CFUNCTYPE(None, 
     ct.POINTER(ct.c_double),  #hypercube
@@ -124,6 +125,13 @@ class PolyChordSampler(ParallelSampler):
             raise ValueError("Polychord parameter 'polychord_outfile_root'"
                 " cannot be longer than 299s characters.")
 
+        if '/' in self.polychord_outfile_root:
+            warnings.warn("\n\nWARNING: / found in polychord_outfile_root\n"
+                "In polychord it is better to set base_dir to the directory and \n"
+                "have polychord_outfile_root not include the directory.\n"
+                "Otherwise you may have to mkdir some directories yourself.\n"
+                "This may cause problems below.\n"
+                )
 
         #General run options
         self.max_iterations = self.read_ini("max_iterations", int, -1)
