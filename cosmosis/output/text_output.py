@@ -2,6 +2,7 @@ from __future__ import print_function
 from builtins import str
 from .output_base import OutputBase
 from . import utils
+from ..runtime.utils import mkdir
 import numpy as np
 import os
 from glob import glob
@@ -27,6 +28,9 @@ class TextColumnOutput(OutputBase):
                                           self.FILE_EXTENSION)
         else:
             self._filename = filename + self.FILE_EXTENSION
+
+        dirname, _ = os.path.split(self._filename)
+        mkdir(dirname)
 
         if resume and utils.file_exists_and_is_empty(self._filename):
             print("You set resume=T but the file {} is empty so I will start afresh".format(self._filename))
