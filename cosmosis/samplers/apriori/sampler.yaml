@@ -2,7 +2,7 @@ name: "apriori"
 version: "1.0"
 parallel: parallel
 purpose: "Draw samples from the prior and evaluate the likelihood"
-url: "http://dan.iel.fm/emcee/"
+url: ""
 attribution: ["CosmoSIS Team"]
 cite: []
 
@@ -18,4 +18,4 @@ installation: "None required"
 # List of configuration options for this sampler
 params:
     nsample: (integer) number of samples to draw
-    save_name: (string; default='') If set, save sample data to directories save_name_0, save_name_1, etc.
+    save: (string; default='') If set, save sample data to directories save_name_0, save_name_1, etc.

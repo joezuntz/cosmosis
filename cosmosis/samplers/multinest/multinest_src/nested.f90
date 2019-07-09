@@ -8,11 +8,14 @@ module Nested
   use xmeans_clstr
   use posterior
   use priors
+#ifdef MPI
+  use mpi
+#endif  
+
   implicit none
 
 #ifdef MPI
-  include 'mpif.h'
-  integer mpi_status(MPI_STATUS_SIZE), errcode
+  integer errcode
 #endif
   integer my_rank
   integer maxCls,maxeCls
@@ -33,7 +36,7 @@ module Nested
   integer maxIter
   logical fback,resumeFlag,dlive,genLive,dino
   !output files name
-  character(LEN=100)physname,broot,rname,resumename,livename,evname,IS_Files(3)
+  character(len=root_max_len)physname,broot,rname,resumename,livename,evname,IS_Files(3)
   !output file units
   integer u_ev,u_resume,u_phys,u_live,u_IS(3)
   double precision gZ,ginfo !total log(evidence) & info
@@ -56,8 +59,9 @@ contains
 	integer nest_ndims,nest_nlive,nest_updInt,context,seed,i
 	integer maxClst,nest_nsc,nest_totPar,nest_nCdims,nest_pWrap(*),nest_maxIter
 	logical nest_IS,nest_mmodal,nest_fb,nest_resume,nest_ceff,nest_outfile,initMPI
-	character(LEN=100) nest_root
+	character(len=root_max_len) nest_root
 	double precision nest_tol,nest_ef,nest_Ztol,nest_logZero
+    integer ierror
 	
 	INTERFACE
     		!the likelihood function
@@ -82,7 +86,7 @@ contains
 		call MPI_INIT(errcode)
 		if (errcode/=MPI_SUCCESS) then
      			write(*,*)'Error starting MPI. Terminating.'
-     			call MPI_ABORT(MPI_COMM_WORLD,errcode)
+     			call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
   		end if
 	endif
 	call MPI_COMM_RANK(MPI_COMM_WORLD, my_rank, errcode)
@@ -115,7 +119,7 @@ contains
 			write(*,*)"Aborting"
 		endif
 #ifdef MPI
-		call MPI_ABORT(MPI_COMM_WORLD,errcode)
+		call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
             	stop
 	endif
@@ -178,7 +182,7 @@ contains
 				write(*,*)"Aborting"
 			endif
 #ifdef MPI
-			call MPI_ABORT(MPI_COMM_WORLD,errcode)
+			call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
             		stop
 		endif
@@ -255,10 +259,10 @@ contains
 	double precision, allocatable :: l(:) !log-likelihood
 	double precision vnow1!current vol
 	double precision ltmp(totPar+2)
-	character(len=100) fmt
+	character(len=root_max_len) fmt
 	integer np,i,j,k,ios
 	logical flag
-
+    integer ierror
 	
 	INTERFACE
 		!the likelihood function
@@ -302,7 +306,7 @@ contains
 				  	write(*,*)"ERROR: no. of live points in the resume file is not equal to the the no. passed to nestRun."
 					write(*,*)"Aborting"
 #ifdef MPI
-					call MPI_ABORT(MPI_COMM_WORLD,errcode)
+					call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
 					stop
 				endif
@@ -328,7 +332,7 @@ contains
 					write(*,*)"ERROR: no. of points in ev.dat file is not equal to the no. specified in resume file."
 					write(*,*)"Aborting"
 #ifdef MPI
-					call MPI_ABORT(MPI_COMM_WORLD,errcode)
+					call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
 					stop
 				endif
@@ -388,10 +392,11 @@ contains
     	double precision, allocatable :: pnewP(:,:), phyPnewP(:,:), lnewP(:)
     	double precision p(ndims,nlive+1), phyP(totPar,nlive+1), l(nlive+1)
     	integer id
-    	character(len=100) fmt,fmt2
+    	character(len=root_max_len) fmt,fmt2
 #ifdef MPI
 	double precision, allocatable ::  tmpl(:), tmpp(:,:), tmpphyP(:,:)
 	integer q
+    integer ierror
 #endif
     
     	INTERFACE
@@ -444,7 +449,7 @@ contains
 							write(*,*)"ERROR: more than ",nlive," points in the live points file."
 							write(*,*)"Aborting"
 #ifdef MPI
-							call MPI_ABORT(MPI_COMM_WORLD,errcode)
+							call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
 	                        			stop
 						endif
@@ -516,7 +521,7 @@ contains
 			write(*,*)"Aborting"
 		endif
 #ifdef MPI
-            	call MPI_ABORT(MPI_COMM_WORLD,errcode)
+            	call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
             	stop
 	endif
@@ -566,9 +571,9 @@ contains
 #ifdef MPI				
 				!receive the points from other nodes
 				do m=1,mpi_nthreads-1
-					call MPI_RECV(tmpl(1:i),i,MPI_DOUBLE_PRECISION,m,m,MPI_COMM_WORLD,mpi_status,errcode)
-					call MPI_RECV(tmpp(1:ndims,1:i),i*ndims,MPI_DOUBLE_PRECISION,m,m,MPI_COMM_WORLD,mpi_status,errcode)
-					call MPI_RECV(tmpphyP(1:totPar,1:i),i*totPar,MPI_DOUBLE_PRECISION,m,m,MPI_COMM_WORLD,mpi_status,errcode)
+					call MPI_RECV(tmpl(1:i),i,MPI_DOUBLE_PRECISION,m,m,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
+					call MPI_RECV(tmpp(1:ndims,1:i),i*ndims,MPI_DOUBLE_PRECISION,m,m,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
+					call MPI_RECV(tmpphyP(1:totPar,1:i),i*totPar,MPI_DOUBLE_PRECISION,m,m,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
 					do q = 1 , i
 						if( nend + 1 <= nlive ) then
 							l(nend + 1) = tmpl(q)
@@ -662,8 +667,8 @@ contains
 	logical eswitch,peswitch,cSwitch !whether to do ellipsoidal sampling or not
 	logical remFlag, acpt, flag, flag2
 	integer funit1, funit2 !file units
-	character(len=100) fName1, fName2 !file names
-	character(len=100) fmt,fmt1
+	character(len=root_max_len) fName1, fName2 !file names
+	character(len=root_max_len) fmt,fmt1
 	
 	!diagnostics for determining when to do eigen analysis
 	integer neVol
@@ -725,7 +730,8 @@ contains
 	integer :: IS_nstore = 10000, IS_nMC = 1000
 	double precision :: IS_Z(2)
 	logical :: IS_CheckAll = .false., IS_betterMC = .true., IS_GetVolInsidePrior = .true.
-	      
+    integer ierror
+
 	INTERFACE
     		!the likelihood function
     		subroutine loglike(Cube,n_dim,nPar,lnew,context_pass)
@@ -921,7 +927,7 @@ contains
                   				write(*,*)"ERROR: live points file has less than ",nlive," points."
 						write(*,*)"Aborting"
 #ifdef MPI
-						call MPI_ABORT(MPI_COMM_WORLD,errcode)
+						call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
                         			stop
 					endif
@@ -931,7 +937,7 @@ contains
 					write(*,*)"ERROR: live points file has greater than ",nlive," points."
 					write(*,*)"Aborting"
 #ifdef MPI
-					call MPI_ABORT(MPI_COMM_WORLD,errcode)
+					call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
                         		stop
 				endif
@@ -950,7 +956,7 @@ contains
                   				write(*,*)"ERROR: phys live points file has less than ",nlive," points."
 						write(*,*)"Aborting"
 #ifdef MPI
-						call MPI_ABORT(MPI_COMM_WORLD,errcode)
+						call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
                         			stop
 					endif
@@ -960,7 +966,7 @@ contains
 					write(*,*)"ERROR: phys live points file has greater than ",nlive," points."
 					write(*,*)"Aborting"
 #ifdef MPI
-					call MPI_ABORT(MPI_COMM_WORLD,errcode)
+					call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
                         		stop
 				endif
@@ -987,7 +993,7 @@ contains
 						write(*,*)"ERROR: Not enough points in ",IS_Files(2)
 						write(*,*)"Aborting"
 #ifdef MPI
-						call MPI_ABORT(MPI_COMM_WORLD,errcode)
+						call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
 						stop
 					endif
@@ -1003,7 +1009,7 @@ contains
 						write(*,*)"ERROR: Not enough points in ",IS_Files(1)
 						write(*,*)"Aborting"
 #ifdef MPI
-						call MPI_ABORT(MPI_COMM_WORLD,errcode)
+						call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
 						stop
 					endif
@@ -1020,7 +1026,7 @@ contains
 						write(*,*)"ERROR: Not enough points in ",IS_Files(3)
 						write(*,*)"Aborting"
 #ifdef MPI
-						call MPI_ABORT(MPI_COMM_WORLD,errcode)
+						call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
 						stop
 					endif
@@ -1831,10 +1837,10 @@ contains
 								endif
 							else
 								do i2=1,mpi_nthreads-1
-									call MPI_RECV(lnewa(nd,i2+1),1,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,mpi_status,errcode)
+									call MPI_RECV(lnewa(nd,i2+1),1,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
 									if(lnewa(nd,i2+1)>logZero) then
-										call MPI_RECV(pnewa(nd,i2+1,1:ndims),ndims,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,mpi_status,errcode)
-										call MPI_RECV(phyPnewa(nd,i2+1,1:totPar),totPar,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,mpi_status,errcode)
+										call MPI_RECV(pnewa(nd,i2+1,1:ndims),ndims,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
+										call MPI_RECV(phyPnewa(nd,i2+1,1:totPar),totPar,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
 									endif
 									if( lnewa(nd,i2+1) == HUGE(1d0) ) bogus = .true.
 								enddo
@@ -1999,14 +2005,14 @@ contains
 							else
 								do i2=1,mpi_nthreads-1
 									if( IS ) then
-										call MPI_RECV(n,1,MPI_INTEGER,i2,i2,MPI_COMM_WORLD,mpi_status,errcode)
+										call MPI_RECV(n,1,MPI_INTEGER,i2,i2,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
 										IS_iterinfo(globff+1,4) = IS_iterinfo(globff+1,4) + n
 									endif
-									call MPI_RECV(lnewa(nd,i2+1),1,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,mpi_status,errcode)
+									call MPI_RECV(lnewa(nd,i2+1),1,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
 									if(lnewa(nd,i2+1)>logZero) then
-										call MPI_RECV(sEll(nd,i2+1),1,MPI_INTEGER,i2,i2,MPI_COMM_WORLD,mpi_status,errcode)
-										call MPI_RECV(pnewa(nd,i2+1,1:ndims),ndims,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,mpi_status,errcode)
-										call MPI_RECV(phyPnewa(nd,i2+1,1:totPar),totPar,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,mpi_status,errcode)
+										call MPI_RECV(sEll(nd,i2+1),1,MPI_INTEGER,i2,i2,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
+										call MPI_RECV(pnewa(nd,i2+1,1:ndims),ndims,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
+										call MPI_RECV(phyPnewa(nd,i2+1,1:totPar),totPar,MPI_DOUBLE_PRECISION,i2,i2,MPI_COMM_WORLD,MPI_STATUS_IGNORE,errcode)
 									endif
 									
 									if( lnewa(nd,i2+1) == HUGE(1d0) ) bogus = .true.
@@ -2850,7 +2856,7 @@ contains
 	logical, allocatable :: wrapEll(:), wrapDim(:,:,:)
 	integer, allocatable :: wrapN(:)
 	double precision, allocatable :: meanw(:,:),meank(:,:),evalk(:,:),eveck(:,:,:),invcovk(:,:,:),tmatk(:,:,:),kfack(:)
-	
+    integer ierror	
 	
 	allocate( order(nCdim), nptx(npt/(nCdim+1)+1), nodex(npt/(nCdim+1)+1) )
 	allocate( gList(npt/(nCdim+1)+1), lList(npt/(nCdim+1)+1), toBeChkd(npt/(nCdim+1)+1), overlapk(npt/(nCdim+1)+1,npt/(nCdim+1)+1) )
@@ -3120,7 +3126,7 @@ contains
 					write(*,*)"Increase maxmodes in the call to nestrun and run MultiNest again."
 					write(*,*)"Aborting"
 #ifdef MPI
-					call MPI_ABORT(MPI_COMM_WORLD,errcode)
+					call MPI_ABORT(MPI_COMM_WORLD,errcode,ierror)
 #endif
                         		stop
 				endif

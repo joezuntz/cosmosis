@@ -112,7 +112,7 @@ program test_cosmosis
         call cosmosis_assert(status==0, "Get scalar failed")
         call cosmosis_assert(n==15, "Get int wrong answer")
         call cosmosis_assert(x==14.8, "Get float wrong answer")
-        call cosmosis_assert(z==dcmplx(1.4,-1.2), "Get int wrong answer")
+        call cosmosis_assert(z==dcmplx(1.4,-1.2), "Get complex wrong answer")
         call cosmosis_assert(b, "Get bool wrong answer")
 
         s = "cat"

@@ -289,7 +289,7 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
                 file".format(self.like_name))
         if options.has_value("like_name"):
             self.like_name = options["like_name"]
-        print('Likelihood "{0}" will be Gaussian {1} +/- {2} '.format(self.like_name, self.mean, self.sigma))
+        print('Likelihood "{0}" will be Gaussian {1} +/- {2} '.format(self.like_name, mean, sigma))
         self.data_y = np.array([mean])
         self.cov = np.array([[sigma**2]])
         self.inv_cov = np.array([[sigma**-2]])

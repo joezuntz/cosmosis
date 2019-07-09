@@ -169,7 +169,7 @@ class Plots(PostProcessorElement):
 
 
 class GridPlots(Plots):
-    excluded_columns=["post","like"]
+    excluded_columns=["post","like", "prior"]
     def __init__(self, *args, **kwargs):
         super(GridPlots, self).__init__(*args, **kwargs)
         self.nsample_dimension = self.source.metadata[0]['nsample_dimension']
@@ -429,7 +429,7 @@ class SnakePlots2D(GridPlots2D):
 
 
 class MetropolisHastingsPlots(Plots, MCMCPostProcessorElement):
-    excluded_columns = ["like","post"]
+    excluded_columns = ["like","post", "prior"]
 
 
 class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
@@ -532,9 +532,9 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         contour1=1-0.68
         contour2=1-0.95
         level1, level2, total_mass = self._find_contours(like, x, y, n, x_axis[0], x_axis[-1], y_axis[0], y_axis[-1], contour1, contour2)
-        level0 = 1.1
-        levels = [level2, level1, level0]
 
+        level0 = np.inf
+        levels = [level2, level1, level0]
 
         #Make the plot
         pylab.figure(figure.number)
@@ -638,19 +638,19 @@ class WeightedPlots1D(object):
 
 
 class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
 
 class PolychordPlots1D(MultinestPlots1D):
     pass
 
 
 class WeightedMetropolisPlots1D(WeightedPlots1D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
 
 
 
 class WeightedPlots2D(object):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
     def smooth_likelihood(self, x, y):
         n = self.options.get("n_kde", 100)
         fill = self.options.get("fill", True)
@@ -684,11 +684,11 @@ class WeightedPlots2D(object):
         return level1, level2, like.sum()
 
 class WeightedMetropolisPlots2D(WeightedPlots2D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
     pass
 
 class MultinestPlots2D(WeightedPlots2D, MultinestPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post"]
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
     pass
 
 class PolychordPlots2D(MultinestPlots2D):
@@ -915,7 +915,7 @@ class CovarianceMatrixEllipse(Plots):
         return ellip
 
 class StarPlots(Plots):
-    excluded_columns=["post","like"]
+    excluded_columns=["post","like", "prior"]
 
     def star_plot(self, i, name, log):
         n = self.source.metadata[0]['nsample_dimension']

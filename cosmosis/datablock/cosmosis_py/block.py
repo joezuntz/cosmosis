@@ -13,6 +13,7 @@ import ctypes as ct
 from . import lib
 from . import errors
 from . import dbt_types as types
+from ...runtime.utils import mkdir
 from .errors import BlockError
 import numpy as np
 import os
@@ -610,7 +611,7 @@ class DataBlock(object):
 		method = self._method_for_datatype_code(type_code,self.GET)
 		if method:
 			return method(section,name)
-		raise ValueError("Cosmosis internal error; unknown type of data")
+		raise ValueError("Cosmosis internal error; unknown type of data. section: %s, name: %s, type_code: %s" % (section, name, type_code))
 
 	def put(self, section, name, value, **meta):
 		u"""Add a parameter with `value` at (`section`, `name`) in the map.
@@ -669,7 +670,7 @@ class DataBlock(object):
 		in this case.
 
 		"""
-		status = lib.c_datablock_replace_int(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
+		status = lib.c_datablock_replace_bool(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
@@ -882,7 +883,7 @@ class DataBlock(object):
 		base_dirname,base_filename=os.path.split(filename)
 		if base_dirname:
 			try:
-				os.mkdir(base_dirname)
+				mkdir(base_dirname)
 			except OSError:
 				pass
 
@@ -944,7 +945,7 @@ class DataBlock(object):
 
 		"""
 		try:
-			os.mkdir(dirname)
+			mkdir(dirname)
 		except OSError:
 			if not clobber:
 				print("Not clobbering", clobber)
@@ -954,7 +955,7 @@ class DataBlock(object):
 			#Create the sub-directory for this 
 			#section
 			try:
-				os.mkdir(os.path.join(dirname,section))
+				mkdir(os.path.join(dirname,section))
 			except OSError:
 				if not clobber:
 					raise

@@ -52,7 +52,7 @@ implicit none
       	parameter(nest_efr=0.3d0)
       
       	!root for saving posterior files
-      	character*100 nest_root
+      	character*512 nest_root
 	parameter(nest_root='chains/rosenbrock-')
 	
 	!after how many iterations feedback is required & the output files should be updated

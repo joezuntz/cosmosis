@@ -16,7 +16,8 @@ from builtins import object
 from . import config
 import numpy as np
 import math
-
+from scipy import interpolate
+import copy
 
 class Prior(object):
 
@@ -80,7 +81,18 @@ class Prior(object):
         prior_type, parameters = value.split(' ', 1)
         prior_type = prior_type.lower()
         try:
-            parameters = [float(p) for p in parameters.split()]
+            # Most of the priors require float
+            # parameters, but not all of them -
+            # the InverseTransform prior needs
+            # a string argument (file name).
+            parameters_flt = []
+            for p in parameters.split():
+                try:
+                    p = float(p)
+                except:
+                    pass
+                parameters_flt.append(p)
+            parameters = parameters_flt
 
             if prior_type.startswith("uni"):
                 return UniformPrior(*parameters)
@@ -91,6 +103,9 @@ class Prior(object):
                 return ExponentialPrior(*parameters)
             elif  prior_type.startswith("one"):
                 return TruncatedOneoverxPrior(*parameters)
+            elif prior_type.startswith("tab") or \
+                    prior_type.startswith("loa"):
+                return TabulatedPDF(*parameters)
             else:
                 raise ValueError("Unable to parse %s as prior" %
                                  (value,))
@@ -119,6 +134,98 @@ class Prior(object):
 
         return priors
 
+class TabulatedPDF(Prior):
+
+    u"""Load from a 2-column ASCII table containing values for x, pdf(x).
+    
+    pdf(x) not interpolated (assumed to be zero) outisde of range of x
+
+    Heavily 'inspired' by DistDeviate from GalSim
+    """
+
+    def __init__(self, function_filename=None, lower=None, upper=None):
+        u"""Create an object representing the distribution specified in function_filename"""
+        
+
+        self.function_filename = function_filename
+        # Basic input checking and setups
+        if function_filename is None:
+            raise TypeError('You must specify a function_filename for TabulatedPDF!')
+
+        # Load the probability distribution function, pdf(x)
+        xarray, pdf = np.loadtxt(function_filename, unpack=True)
+        
+        if lower==None:
+            self.lower = xarray.min()
+        else:
+            self.lower = lower
+
+        if upper==None:
+            self.upper = xarray.max()
+        else:
+            self.upper = upper
+
+        pdf = pdf[(xarray >= self.lower)*(xarray <= self.upper)]
+        xarray = xarray[(xarray >= self.lower)*(xarray <= self.upper)]
+
+        # Set up pdf, so cumsum basically does a cumulative trapz integral
+        # On Python 3.4, doing pdf[1:] += pdf[:-1] the last value gets messed up.
+        # Writing it this way works.  (Maybe slightly slower though, so if we stop
+        # supporting python 3.4, consider switching to the += version.)
+        pdf_x = copy.copy(pdf)
+        pdf[1:] = pdf[1:] + pdf[:-1]
+        pdf[1:] *= np.diff(xarray)
+        pdf[0] = 0
+
+        # Check that the probability is nonnegative
+        if not np.all(pdf >= 0.):
+            raise ValueError('Negative probability found in TabulatedPDF.',function)
+
+        # Compute the cumulative distribution function = int(pdf(x),x)
+        cdf = np.cumsum(pdf)
+
+        # Quietly renormalize the probability if it wasn't already normalized
+        totalprobability = cdf[-1]
+        cdf /= totalprobability
+
+        self.inverse_cdf_interp = interpolate.interp1d(cdf, xarray, kind='linear')
+        self.cdf_interp = interpolate.interp1d(xarray, cdf, kind='linear')
+        self.pdf_interp = interpolate.interp1d(xarray, pdf_x, kind='linear')
+
+    def __call__(self, x):
+        u"""Return the logarithm of the probability density."""
+        if x<self.lower:
+            return -np.inf
+        elif x>self.upper:
+            return -np.inf
+        return np.log(self.pdf_interp(x))
+
+    def sample(self, n):
+        u"""Use interpolation of inverse CDF to give us `n` random samples from a the distribution."""
+        if n is None:
+            n = 1 
+        return self.inverse_cdf_interp(np.random.rand(n))
+
+    def denormalize_from_prior(self, y):
+        u"""Get the value for which the cumulated probability is `y`."""
+        return self.inverse_cdf_interp(y)
+
+    def __str__(self):
+        u"""Tersely describe ourself to a human mathematician."""
+        return "Tabulated transform from {0} on range [{1}, {2}]".format(self.function_filename, self.lower, self.upper)
+
+    def truncate(self, lower, upper):
+        u"""Return a new distribution whose range is the intersection of ours with [`lower`, `upper`].
+
+        A :class:`ValueError` will be thrown if the arguments supplied do
+        not make sense.
+
+        """
+        lower = max(self.lower, lower)
+        upper = min(self.upper, upper)
+        if lower>upper:
+            raise ValueError("One of your priors is inconsistent with the range described in the values file")
+        return TabulatedPDF(self.function_filename, lower, upper)
 
 
 class UniformPrior(Prior):

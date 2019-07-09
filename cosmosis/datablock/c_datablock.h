@@ -60,7 +60,7 @@ extern "C" {
     Return true (1) if the datablock has a section with the given name, and
     false (0) otherwise. If either 's' or 'name' is null, return false.
   */
-  _Bool
+  bool
   c_datablock_has_section(c_datablock const* s, const char* name);
 
   /*
@@ -91,7 +91,7 @@ extern "C" {
     with the given name, and an error status otherwise. The associated
     value can be of any supported type.
   */
-  _Bool
+  bool
   c_datablock_has_value(c_datablock const* s, const char* section,
 			const char* name);
 

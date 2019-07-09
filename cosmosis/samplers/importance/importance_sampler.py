@@ -27,9 +27,10 @@ class ImportanceSampler(ParallelSampler):
     def config(self):
         global importance_pipeline
         importance_pipeline = self.pipeline
-        self.input_filename = self.ini.get(INI_SECTION, "input")
-        self.nstep = self.ini.getint(INI_SECTION, "nstep", fallback=128)
-        self.add_to_likelihood = self.ini.getboolean(INI_SECTION, "add_to_likelihood", fallback=False)
+        self.input_filename = self.read_ini("input", str)
+        self.nstep = self.read_ini("nstep", int, 128)
+        self.add_to_likelihood = self.read_ini("add_to_likelihood", bool, False)
+
         self.converged = False
         if self.is_master():
             self.load_samples(self.input_filename)

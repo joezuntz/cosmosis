@@ -139,6 +139,14 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
         #Pass to the subclasses to write output
         self._write_parameters(params)
 
+    def reset_to_chain_start(self):
+        """
+        Seek the start of the chain so previous output can be overwritten.
+
+        Subclasses can override this to actually do something.
+        """
+        pass
+
     def flush(self):
         """
         For supported output classes, flush all pending output

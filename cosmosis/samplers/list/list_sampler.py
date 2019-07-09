@@ -11,19 +11,18 @@ from .. import ParallelSampler
 
 def task(p):
     i,p = p
-    results = list_sampler.pipeline.posterior(p, 
-        return_data=list_sampler.save_name, all_params=True)
+    results = list_sampler.pipeline.run_results(p, all_params=True)
     #If requested, save the data to file
-    if list_sampler.save_name and results[2] is not None:
-        results[2].save_to_file(list_sampler.save_name+"_%d"%i, clobber=True)
-    return (results[0], results[1])
+    if list_sampler.save_name and results.block is not None:
+        results.block.save_to_file(list_sampler.save_name+"_%d"%i, clobber=True)
+    return results.post, (results.prior, results.extra)
 
 
 
 
 class ListSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("post", float)]
+    sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
         global list_sampler
@@ -111,9 +110,9 @@ class ListSampler(ParallelSampler):
         for sample, result  in zip(sample_vectors, results):
             #Optionally save all the results calculated by each
             #pipeline run to files
-            (prob, extra) = result
+            (prob, (prior,extra)) = result
             #always save the usual text output
-            self.output.parameters(sample, extra, prob)
+            self.output.parameters(sample, extra, prior, prob)
         #We only ever run this once, though that could 
         #change if we decide to split up the runs
         self.converged = True

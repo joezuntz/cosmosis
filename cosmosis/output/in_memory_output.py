@@ -1,4 +1,5 @@
 from .output_base import OutputBase
+import numpy as np
 
 class InMemoryOutput(OutputBase):
     _aliases = ["memory"]
@@ -20,6 +21,13 @@ class InMemoryOutput(OutputBase):
 
     def _write_final(self, key, value, comment):
         self.final_meta[key] = (value,comment)
+
+    def __getitem__(self, key_or_index):
+        if isinstance(key_or_index, int):
+            return self.rows[key_or_index]
+        else:
+            column_index = [c[0] for c in self.columns].index(key_or_index)
+            return np.array([row[column_index] for row in self.rows])
 
     @classmethod
     def from_options(cls, options, resume=False):
