@@ -56,6 +56,9 @@ def mkdir(path):
 
     """
     #This is much nicer in python 3.
+    # Avoid trying to make an empty path
+    if not path.strip():
+        return
     try:
         os.makedirs(path)
     except OSError as error:
