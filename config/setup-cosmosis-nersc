@@ -43,6 +43,7 @@ then
         module load gsl/2.5
         module load cray-fftw/3.3.8.2
         module load cfitsio/3.47
+	module unload craype-hugepages2M
 	if  [ $PY2 == 1 ]
 	then
 	        module load python/2.7-anaconda-2019.07
