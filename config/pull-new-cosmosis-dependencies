@@ -15,30 +15,34 @@ function get_platform()
   macos="no"
   case $(uname -s) in
     Darwin) 
-      darwin_version=$(sw_vers -productVersion)
-      if [[ "$darwin_version" =~ ^10.9.* ]]
-      then
-        platform="d13"
-        macos="yes"
-      elif [[ "$darwin_version" =~ ^10.10.* ]]
-      then
-        platform="d14"
-        macos="yes"
-      else
-          die "Sorry - we can not recognize your Darwin version. See the cosmosis wiki for supported systems."
-      fi
+      echo "This script updates dependencies for Linux builds of CosmoSIS."
+      echo "For macOS, please update Homebrew-installed and pip-installed"
+      echo "products using the procedures provided by Homebrew and pip"
       ;;
     Linux)
-        plat_id=$(lsb_release -si)
-        plat_release=$(lsb_release -sr)
-        if grep -sqi "release 6" /etc/redhat-release
-        then
-          platform="slf6"
-        elif [ "${plat_id}" == "Ubuntu" ] && [ "${plat_release}" == "14.04" ]
-        then
-          platform="u14"
-        fi
-        ;;
+      plat_id=$(lsb_release -si)
+      plat_release=$(lsb_release -sr)
+      if grep -sqi "release 6" /etc/redhat-release
+      then
+        platform="slf6"
+      elif grep -sqi "release 7" /etc/redhat-release
+      then
+        platform="slf7"
+      elif [ "${plat_id}" == "Ubuntu" ] && [ "${plat_release}" == "14.04" ]
+      then
+        platform="u14"
+      elif [ "${plat_id}" == "Ubuntu" ] && [ "${plat_release}" == "16.04" ]
+      then
+        platform="u16"
+      elif [ "${plat_id}" == "Ubuntu" ] && [ "${plat_release}" == "18.04" ]
+      then
+        platform="u18"
+      else
+        echo "Sorry, this bootstrap works only for CentOS {6,7} and Ubuntu {16.04, 18.04}"
+        echo "Linux distributions. Please see the CosmoSIS wiki for installation on other systems."
+        die "Unable to continue on non-supported distribution."
+      fi
+      ;;
   esac
 
   if [ "unknown" == "$platform" ]

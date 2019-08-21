@@ -1,3 +1,20 @@
+cosmosis_dir=$( (builtin cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
+cosmosis_dir=${cosmosis_dir%/config}
+echo
+echo "The latest Cori OS upgrade has caused strange errors that have broken python in ways that hit cosmosis"
+echo "Instead, please use shifter.  To compile:"
+echo
+echo "shifter --image=docker:joezuntz/cosmosis-nersc --volume=${cosmosis_dir}:/cosmosis bash"
+echo
+echo "Then you will be in a bash shell where you can run 'make' and cosmosis without MPI"
+echo
+echo "To run jobs from a batch script, for example 8 processes with 4 threads each on demo 9:"
+echo
+echo "OMP_NUM_THREADS=4 srun -n 8 shifter --image=docker:joezuntz/cosmosis-nersc --volume=${cosmosis_dir}:/cosmosis cosmosis --mpi demos/demo9.ini"
+echo
+return
+
+
 # detect COSMOSIS_SRC_DIR
 cosmosis_dir=$( (builtin cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
 cosmosis_dir=${cosmosis_dir%/config}

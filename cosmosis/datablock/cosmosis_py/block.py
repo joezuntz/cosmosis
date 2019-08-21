@@ -1233,6 +1233,52 @@ class DataBlock(object):
 		#Return a list of lists of parameter first used in each section
 		return params_by_module
 
+	@classmethod
+	def from_yaml(cls, filename_or_stream):
+		import yaml
+		block = cls()
+		if isinstance(filename_or_stream, basestring):
+			stream = open(filename_or_stream)
+		else:
+			stream = filename_or_stream
+
+		data = yaml.load(stream)
+
+		if not isinstance(data, dict) or (not all(isinstance(k, str) for k in data.keys())) or (not all(isinstance(v, dict) for v in data.values())):
+			raise ValueError("Wrong format yaml file {}".format(filename_or_stream))
+
+		for section, contents in data.items():
+			for key, value in contents.items():
+				if isinstance(value, list):
+					value = np.array(value)
+				block[section, key] = value
+
+		return block
+
+	def to_yaml(self, filename_or_stream):
+		import yaml
+		if isinstance(filename_or_stream, basestring):
+			stream = open(filename_or_stream, 'w')
+		else:
+			stream = filename_or_stream
+
+		data = {}
+		for section in self.sections():
+			data[section] = {}
+			for (_, key) in self.keys(section):
+				value = self[section, key]
+				if isinstance(value, np.ndarray):
+					value = value.tolist()
+				data[section][key] = value
+
+		yaml.dump(data, stream)
+
+
+
+
+
+
+
 
 
 class SectionOptions(object):
