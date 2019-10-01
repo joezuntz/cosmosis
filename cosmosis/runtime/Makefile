@@ -7,7 +7,7 @@ USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 all: experimental_fault_handler.so
 
 experimental_fault_handler.so:
-	-$(CC) -fPIC -shared handler.c -o experimental_fault_handler.so
+	$(CC) $(CFLAGS) -shared handler.c -o $(CURDIR)/experimental_fault_handler.so
 
 clean:
 	rm -f experimental_fault_handler.so

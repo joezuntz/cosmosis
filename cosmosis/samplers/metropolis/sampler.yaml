@@ -26,7 +26,7 @@ explanation: >
     approximately describing the distribution provides a significant speed up.
 
     The CosmoSIS metropolis sampler tries to mirror the
-    CosmoMC MH implementation (though we do not yet have the fast-slow split).
+    CosmoMC MH implementation.
 
     Metropolis-Hastings is intrinsically a serial (non-parallel) algorithm. Like
     CosmoMC, CosmoSIS parallelizes it by running several independent chains in parallel
@@ -43,3 +43,7 @@ params:
     Rconverge: "(float; default=-1.0) when multiple chains are run, use this as the Gelman-Rubin statistic"
     covmat: "(string; default='') load a covariance matrix from this file.  The parameter order should match the order of varied parameters in the ini file"
     nsteps: "(integer; default=100) number of points between saving data and testing convergence"
+    tuning_frequency: "(int; default=-1) How often to update the proposal during the tuning period"
+    tuning_grace: "(int; default=5000) Number of samples before starting the tuning period"
+    tuning_end: "(int; default=100000) Number of samples before ending the tuning period"
+    exponential_probability: "(float; default=0.333) Fraction of an exponential proposal to mix into the Gaussian"

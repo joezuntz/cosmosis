@@ -58,7 +58,7 @@ import config
 
 #create text file for output
 output = tempfile.NamedTemporaryFile(prefix='cosmosis-error-report.', suffix='.txt',
-	dir='.', delete=False)
+	dir='.', delete=False, mode='w')
 
 
 print("Saving environment variables")
@@ -160,7 +160,7 @@ output.write(cmd + '\n')
 output.write("COSMOSIS_ERROR_BEGIN_OUTPUT\n")
 job = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
 	stderr=subprocess.STDOUT, shell=True)
-output.write(job.communicate()[0])
+output.write(job.communicate()[0].decode('ascii'))
 output.write("\n")
 status = job.wait()
 if status:

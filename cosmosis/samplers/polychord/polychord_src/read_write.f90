@@ -257,6 +257,8 @@ module read_write_module
         ! Close the writing file
         close(write_resume_unit)
 
+        write(*, *) "Resume data written to ", trim(resume_file(settings,.true.))
+
     end subroutine write_resume_file
 
 
@@ -444,6 +446,9 @@ module read_write_module
         RTI%nposterior_stack = 0 ! Initialise number of posterior points at 0
 
         RTI%maxlogweight_global = maxval(RTI%maxlogweight)
+
+        write(*, *) "Resume data read from ", trim(resume_file(settings,.true.))
+
 
     end subroutine read_resume_file
 

@@ -19,9 +19,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-void test_scalar_<%= @current_type %>()
+void test_scalar_<%= @current_type_simplified %>()
 {
-  printf("In test_scalar_<%= @current_type %>\n");
+  printf("In test_scalar_<%= @current_type_simplified %>\n");
   typedef char* string;
   c_datablock* s = make_c_datablock();
   assert(s);

@@ -1,0 +1,168 @@
+# This file must be sourced, so that it can establish the appropriate
+# environment for a development session.
+# Note: this currently only supports bash
+
+
+# Detect whether CosmoSIS is already set up; if so, do not repeat the
+# setup.
+cosmo_cmd=$(type cosmosis 2> /dev/null)
+if [ ! -z "$cosmo_cmd" ]
+then
+  echo CosmoSIS is already set up.
+  return 0
+fi
+
+# detect COSMOSIS_SRC_DIR
+if [ -z "$COSMOSIS_SRC_DIR" ]
+then
+  cosmosis_dir=$( (builtin cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
+  cosmosis_dir=${cosmosis_dir%/config}
+  export COSMOSIS_SRC_DIR="$cosmosis_dir"
+fi
+
+if [ ! -z "${PRODUCTS}" ]
+then
+  echo "You have PRODUCTS defined to be ${PRODUCTS}"
+  echo "We will assume this is a valid UPS product search path"
+fi
+
+product_db=`cat $COSMOSIS_SRC_DIR/config/ups`
+if [ ! -f "${product_db}/.upsfiles/dbconfig" ]
+then
+    echo "The directory ${product_db} does not appear to contain the UPS products."
+    return 1
+fi
+
+# Initialize UPS, if needed. If 'setup' is defined to be a shell
+# function, we have UPS already setup.
+
+# The way Canonical manages the kernel versions does not play well
+# with UPS. To handle this, on Ubuntu 14.04 machines we have to set an
+# environment variable that determines the result given by the 'ups
+# flavor' command.
+OS=$(uname -s)
+if [ $OS == "Linux" ]
+then
+  flv=$(lsb_release -r | cut -f2)
+  if [ $flv == "14.04" ]
+    then
+    export UPS_OVERRIDE="-H Linux64bit+3.19-2.19"
+  fi
+fi
+
+if [ -z "${UPS_DIR}" ]
+then
+  echo "We are setting up UPS from $product_db"
+  source "${product_db}/setups"
+  if [ -z "${PRODUCTS}" ]
+  then
+    echo "The setup of the UPS system has failed; please ask a local expert for assistance."
+    return 1
+  fi
+else
+  setups_dir="${UPS_DIR}/../../.."
+  source "${setups_dir}/setups"  || \
+    echo "The setup of the UPS system from ${setups_dir} failed. Try unsetting PRODUCTS and UPS_DIR and re-installing CosmoSIS"
+    return 1
+  PRODUCTS="${product_db}:${PRODUCTS}"
+fi
+
+# Set the library path appropriate for our flavor.
+libdir=${COSMOSIS_SRC_DIR}/cosmosis/datablock
+flavor=$(ups flavor -1)
+if [ "$flavor" == "Darwin64bit" ]
+then
+    export DYLD_LIBRARY_PATH="${libdir}${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}"
+else
+    export LD_LIBRARY_PATH="${libdir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+fi
+
+export PATH=${COSMOSIS_SRC_DIR}/bin:$PATH
+
+# On OS X, we use the Anaconda python we have installed.
+if [ "$flavor" == "Darwin64bit" ]
+then
+  export PATH=${COSMOSIS_SRC_DIR}/conda/bin:$PATH
+fi
+
+export PYTHONPATH=${COSMOSIS_SRC_DIR}
+
+# don't allow this as it probably causes problems
+# during installation. Maybe support it later as
+# an advanced feature
+#
+# allow user to override our PYTHONUSERBASE
+#if [ -z "$PYTHONUSERBASE" ]
+#then
+export PYTHONUSERBASE=${COSMOSIS_SRC_DIR}
+#fi
+
+# setup UPS packages
+COSMOSIS_UPS_VERS=$(cat ${COSMOSIS_SRC_DIR}/config/cosmosis_ups_vers)
+
+setup -B cosmosis_ups ${COSMOSIS_UPS_VERS}  2> /dev/null
+
+if [ $? -ne 0 ]
+then
+  echo "It looks like you may just have updated CosmoSIS to a new version."
+  echo "This new version requires new versions of some dependencies."
+  echo "In a new terminal please run these commands one after the other:"
+  echo "  source ups/setups"
+  echo "  ./config/pull-new-cosmosis-dependencies"
+  echo "They will take some time to download, but then"
+  echo "in a new terminal you should then be able to source config/setup-cosmosis"
+  echo
+  echo "If you do not want to do this now you can go back to the older version"
+  echo "by typing: git checkout v1.3"
+  echo "in both the main and cosmosis-standard-library directories."
+  return 1
+fi
+
+
+
+if [ -d "$SETUPS_DIR/planckdata/v1_1" ]
+then
+	setup -B planckdata v1_1
+fi
+
+if [ -d "$SETUPS_DIR/wmapdata/v5_00" ]
+then
+	setup -B wmapdata v5_00
+fi
+
+function git-show-top-level {
+    local __toplevel=`git rev-parse --show-toplevel 2> /dev/null`
+    if [ -z "$__toplevel" ]
+    then
+        :
+    else
+        echo "(`basename $__toplevel 2> /dev/null`) "
+    fi
+}
+
+function set-git-prompt-repo-name {
+  if [ ! -z "${PS1-}" ] 
+  then
+    export OLD_PS1="$PS1"
+    local __git_repo='`git-show-top-level`'
+    export PS1="\[$(tput setaf 4)\]$__git_repo\[$(tput sgr0)\]${OLD_PS1}"
+  echo "Your prompt will now show which repository (part of cosmosis) you are in"
+  echo "Use the command reset-prompt to undo this"
+  echo
+  fi
+}
+
+function reset-prompt {
+  export PS1="$OLD_PS1"
+}
+
+
+echo
+echo "CosmoSIS initialized"
+echo
+
+set-git-prompt-repo-name
+
+
+#Additional setup. Should maybe be moved into UPS
+export LAPACK_LINK="-L${LAPACK_LIB} -llapack -lblas"

@@ -141,13 +141,13 @@ cosmosis_py/section_names.py: section_names.txt generate_sections.py
 # libcomsosis_fortran.so. The tradeoff is worthwhile, unless so many source
 # files are added that the build time is excessive.
 libcosmosis_fortran.so: cosmosis_f90/cosmosis_section_names.F90 cosmosis_f90/cosmosis_types.F90 cosmosis_f90/cosmosis_wrappers.F90 cosmosis_f90/cosmosis_modules.F90 libcosmosis.so
-	$(FC) $(FFLAGS) -shared -o $@ $+
+	$(FC) $(FFLAGS) -shared -o $(CURDIR)/$@ $+
 
 fortran_t: libcosmosis_fortran.so  cosmosis_f90/cosmosis_test.F90
 	$(FC) $(FFLAGS)  -o $@ cosmosis_f90/cosmosis_test.F90  -L. -lcosmosis_fortran -lcosmosis
 
 libcosmosis.so: datablock.o entry.o section.o c_datablock.o datablock_logging.o
-	$(CXX) $(CXXFLAGS) -shared -o $@ $+
+	$(CXX) $(CXXFLAGS) -shared -o $(CURDIR)/$@ $+
 
 datablock_t: datablock_test.cc datablock.hh libcosmosis.so
 	$(CXX) $(CXXFLAGS) -o $@ datablock_test.cc -L . -lcosmosis
@@ -173,11 +173,11 @@ c_datablock_multidim_int_array_t: c_datablock_multidim_int_array_test.c c_databl
 c_datablock_multidim_complex_array_t: c_datablock_multidim_complex_array_test.c c_datablock.h datablock_types.h libcosmosis.so
 	$(CC) $(CFLAGS) -o $@ $< -L . -lcosmosis
 
-entry_t: entry_test.o libcosmosis.so
-	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
+entry_t: entry_test.o entry.o
+	$(CXX) $(CXXFLAGS) -o $@ $< entry.o
 
-section_t: section_test.o libcosmosis.so
-	$(CXX) $(CXXFLAGS) -o $@ $< -L . -lcosmosis
+section_t: section_test.o section.o entry.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Note: ndarray_t does not make use of libcosmosis!
 ndarray_t: ndarray_test.o
@@ -191,4 +191,3 @@ entry_test.o: entry_test.cc entry.hh
 section.o: section.cc section.hh entry.hh datablock_status.h datablock_types.h
 section_test.o: section_test.cc section.hh datablock_types.h
 ndarray_test.o: ndarray_test.cc ndarray.hh
-

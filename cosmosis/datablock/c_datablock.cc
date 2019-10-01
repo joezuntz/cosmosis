@@ -1,5 +1,6 @@
 #include <assert.h>
-#include <complex.h>
+#include <complex.h> // the C header
+#include <complex>   // the C++ header
 #include <string.h>
 #include <iostream>
 #include <functional>
@@ -24,6 +25,38 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+namespace
+{
+  // clang seems to have different support for C-language _Complex
+  // than does gcc, so we have the following conversion functions
+  // that work under both compilers. They rely on the fact that both
+  // C "double _Complex" and C++ "std::complex<double>" have the same
+  // layout as double[2].
+  std::complex<double> from_Complex(double _Complex z)
+  {
+    double const* p = reinterpret_cast<double*>(&z);
+    return {p[0], p[1]};
+  }
+  
+  double _Complex from_complex(std::complex<double> z)
+  {
+    double _Complex res;
+    double tmp[] = { z.real(), z.imag()};
+    res = *reinterpret_cast<double _Complex*>(tmp);  
+    return res;
+  }
+  
+  std::vector<std::complex<double>> from_Complex(double _Complex const* first, std::size_t sz)
+  {
+    std::vector<std::complex<double>> res(sz);
+    for (std::size_t i = 0; i != sz; ++i)
+    {
+      res[i] = from_Complex(first[i]);
+    }
+    return res;
+  }
+}
+
 extern "C"
 {
   // This seems to be the appropriate incantation to export this
@@ -41,7 +74,7 @@ extern "C"
   }
 
 
-  _Bool c_datablock_has_section(c_datablock const* s, const char* name)
+  bool c_datablock_has_section(c_datablock const* s, const char* name)
   {
     if (s == nullptr || name == nullptr) return false;
     DataBlock const* p = static_cast<DataBlock const*>(s);
@@ -82,7 +115,7 @@ extern "C"
     return clamp(p->num_values(section));
   }
 
-  _Bool c_datablock_has_value(c_datablock const* s,
+  bool c_datablock_has_value(c_datablock const* s,
                                          const char* section,
                                          const char* name)
   {
@@ -122,13 +155,6 @@ extern "C"
       case DBT_COMPLEX1D:
       case DBT_STRING1D:
         *ndim=1;
-        return DBS_SUCCESS;
-        break;
-      case DBT_INT2D:
-      case DBT_DOUBLE2D:
-      case DBT_COMPLEX2D:
-      case DBT_STRING2D:
-        *ndim=2;
         return DBS_SUCCESS;
         break;
       case DBT_INTND:
@@ -335,18 +361,7 @@ extern "C"
     auto p = static_cast<DataBlock *>(s);
     complex_t z;
     auto rc = p->get_val(section, name, z);
-    // C11 provides a function macro to create a double _Complex from
-    // real and imaginary parts, but we don't require a C11-compliant
-    // compiler. I would expect
-    //
-    //    *val = z.real() + z.imag() * _Complex_I;
-    //
-    // to work, but it produces a compilation failure with
-    // GCC 4.8.2.  The cast below is unattractive, but works because
-    // C++11 promises layout compatibility between
-    // std::complex<double> and double[2], and C makes the similar
-    // guarantee for double _Complex.
-    if (rc == DBS_SUCCESS) *val = * reinterpret_cast<double _Complex*>(&z);
+    if (rc == DBS_SUCCESS) *val = from_complex(z);
     return rc;
   }
 
@@ -363,12 +378,10 @@ extern "C"
     if (val == nullptr) return DBS_VALUE_NULL;
 
     auto p = static_cast<DataBlock *>(s);
-    complex_t default_z(def);
+    complex_t default_z = from_Complex(def);
     complex_t z;
     auto rc = p->get_val(section, name, default_z, z);
-    // See comment in c_datablock_get_complex for an explanation of this
-    // reinterpret_cast.
-    if (rc == DBS_SUCCESS) *val = * reinterpret_cast<double _Complex*>(&z);
+    if (rc == DBS_SUCCESS) *val = from_complex(z);
     return rc;
   }
 
@@ -576,7 +589,7 @@ extern "C"
     //std::copy(r.cbegin(), r.cend(), val);
     for (size_t i = 0, n = r.size(); i != n; ++i)
       {
-	val[i] = *reinterpret_cast<double _Complex const*>(&(r[i]));
+        val[i] = from_complex(r[i]);
       }
 
     // If we are asked to clear out the remainder of the input buffer,
@@ -638,7 +651,7 @@ extern "C"
     if (name == nullptr) return DBS_NAME_NULL;
 
     auto p = static_cast<DataBlock*>(s);
-    complex_t z(val);
+    complex_t z = from_Complex(val);
     return p->put_val(section, name, z);
   }
 
@@ -705,7 +718,8 @@ extern "C"
     if (sz < 1) return DBS_SIZE_NONPOSITIVE;
 
     auto p = static_cast<DataBlock*>(s);
-    return p->put_val(section, name, vector<complex_t>(val, val+sz));
+    std::vector<complex_t> zs = from_Complex(val, sz);
+    return p->put_val(section, name, zs);
   }
 
   DATABLOCK_STATUS
@@ -762,7 +776,7 @@ extern "C"
     if (name == nullptr) return DBS_NAME_NULL;
 
     auto p = static_cast<DataBlock*>(s);
-    complex_t z { val };
+    complex_t z = from_Complex(val);
     return p->replace_val(section, name, z);
   }
 
@@ -829,7 +843,8 @@ extern "C"
     if (sz  < 1) return DBS_SIZE_NONPOSITIVE;
 
     auto p = static_cast<DataBlock*>(s);
-    return p->replace_val(section, name, vector<complex_t>(val, val+sz));
+    vector<complex_t> zs = from_Complex(val, sz);
+    return p->replace_val(section, name, zs);
   }
 
   DATABLOCK_STATUS
@@ -1047,7 +1062,8 @@ extern "C"
     size_t num_elements =
       std::accumulate(extents, extents+ndims, 1, std::multiplies<int>());
 
-    vector<complex_t> z(val, val + num_elements);
+    //vector<complex_t> z(val, val + num_elements);
+    vector<complex_t> z = from_Complex(val, num_elements);
     vector<size_t> local_extents(extents, extents+ndims);
     ndarray<complex_t> tmp(z, local_extents);
     return p->put_val(section, name, tmp);

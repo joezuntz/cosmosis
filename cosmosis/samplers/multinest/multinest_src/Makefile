@@ -29,16 +29,10 @@ NSOBJECTS_MPI = $(patsubst %.o,mpi/%.o,$(NSOBJECTS))
 
 
 %.o: %.f90
-	$(FC) $(FFLAGS) -c -o $@ $^ 
-
-%.o: %.F90
-	$(FC) $(FFLAGS) -c -o $@ $^ 
+	$(FC) $(FFLAGS) -cpp -c -o $@ $^
 
 mpi/%.o: %.f90 mpi/.phony
-	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
-
-mpi/%.o: %.F90 mpi/.phony
-	$(MPIFC) $(FFLAGS) -DMPI -c -o $@ $<
+	$(MPIFC) $(FFLAGS) -cpp -DMPI -c -o $@ $<
 
 mpi/.phony:
 	@mkdir -p mpi
@@ -48,10 +42,10 @@ test:
 	@echo "Alas, MultiNest has no tests"
 
 libnest3_mpi.so: $(NSOBJECTS_MPI)
-	$(MPIFC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB) $(LDFLAGS)
+	$(MPIFC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LAPACKLIB) $(LDFLAGS)
 	
 libnest3.so: $(NSOBJECTS) 
-	$(FC) -shared -o  $@ $^ $(LIBS) $(LAPACKLIB)  $(LDFLAGS)
+	$(FC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LAPACKLIB)  $(LDFLAGS)
 
 obj_detect:
 	make -C example_obj_detect

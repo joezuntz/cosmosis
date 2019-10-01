@@ -2,24 +2,56 @@
 cosmosis_dir=$( (builtin cd $( dirname ${BASH_SOURCE[0]}); /bin/pwd) )
 cosmosis_dir=${cosmosis_dir%/config}
 export COSMOSIS_SRC_DIR="$cosmosis_dir"
+export COSMOSIS_OMP=1
+
+
+if [ "$1" == "2" ]
+then
+	PY2=1
+elif [ "$1" == "3" ]
+then
+	PY2=0
+elif [ -d env2 ]
+then
+	PY2=1
+elif [ -d env3 ]
+then
+	PY2=0
+elif [ "$1" == "" ]
+then
+	PY2=0
+else
+	echo "Argument #1 should be 2, 3, or left blank (same as 3) to indicate python version"
+	return
+fi
+
+if [ "$PY2" == "1" ]
+then
+	ENVDIR=env2
+	PYVER=python2.7
+	echo "Setting up python 2 environment (if you are cool and want to change to python3, source this script with the argument '3')"
+else
+	ENVDIR=env3
+	PYVER=python3.7
+	echo "Setting up python 3 environment (if you are old-fashioned and want python2, source this script with the argument '2' and delete env3 if present)"
+fi
 
 # Modules - depends on the machine
-if [ $NERSC_HOST == "cori" ]
+if [ "$NERSC_HOST" == "cori" ]
 then
-	module swap PrgEnv-intel PrgEnv-gnu
-	module load gsl/2.1
-	module load cray-fftw/3.3.6.2
-	module load cfitsio/3.410
-	module load python/2.7-anaconda-4.4
-elif [ $NERSC_HOST == "edison" ]
-then
-	module swap PrgEnv-intel PrgEnv-gnu
-	module load gsl/2.3
-	module load python/2.7-anaconda-4.4
-	module load cray-fftw/3.3.6.2
-	module load cfitsio/3.410
+        module swap PrgEnv-intel PrgEnv-gnu
+        module load gsl/2.5
+        module load cray-fftw/3.3.8.2
+        module load cfitsio/3.47
+	module unload craype-hugepages2M
+	if  [ $PY2 == 1 ]
+	then
+	        module load python/2.7-anaconda-2019.07
+	else
+		module load python/3.7-anaconda-2019.07
+	fi
 else
-	echo "Unknown NERSC host - was expecting NERSC_HOST variable to be one of cori,edison"
+	echo "Unknown NERSC host - was expecting NERSC_HOST variable to be 'cori'"
 	return
 fi
 
@@ -50,9 +82,9 @@ PRE_CONDA_PS1=$PS1
 # Might find we need to add more to the files here.
 # If this has already been run then a conda environment should exist here already
 # Otherwise create it
-if [ -d $COSMOSIS_SRC_DIR/env ]
+if [ -d $COSMOSIS_SRC_DIR/$ENVDIR ]
 then
-	source activate $COSMOSIS_SRC_DIR/env
+	source activate $COSMOSIS_SRC_DIR/$ENVDIR
 else
 	echo "Creating conda environment (one-off)"
 	# We seem to have to do this in two pieces because conda doesn't have some 
@@ -60,9 +92,9 @@ else
 	# Might need to revisit this.
 
 	# Create the environment with some basic conda stuff in
-	conda create -p env python=2.7  --file config/nersc-conda-req.txt
+	conda create --yes -p $ENVDIR  --file config/nersc-conda-req.txt
 	#Activate it
-	source activate $COSMOSIS_SRC_DIR/env
+	source activate $COSMOSIS_SRC_DIR/$ENVDIR
 
 	# Now this pip points to the one in the environment.
 	# Install most of the rest of the requirements

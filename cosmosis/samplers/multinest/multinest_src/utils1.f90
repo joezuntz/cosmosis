@@ -10,6 +10,8 @@ module utils1
       logical setBlk
       data setBlk /.false./
 
+    integer, parameter :: root_max_len = 512
+
 contains
 
 !---------------------------------------------------------------------- 

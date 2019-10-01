@@ -12,19 +12,40 @@ cosmosis::Entry::Entry(Entry const& e) :
   type_(e.type_),
   i(0)
 {
-  if      (type_ == typeid(int)) i = e.i;
-  else if (type_ == typeid(bool)) b = e.b;
-  else if (type_ == typeid(double)) d = e.d;
-  else if (type_ == typeid(string)) emplace(&s, e.s);
-  else if (type_ == typeid(complex_t)) z = e.z;
-  else if (type_ == typeid(vint_t)) emplace(&vi, e.vi);
-  else if (type_ == typeid(vdouble_t)) emplace(&vd, e.vd);
-  else if (type_ == typeid(vstring_t)) emplace(&vs, e.vs);
-  else if (type_ == typeid(vcomplex_t)) emplace(&vz,  e.vz);
-  else if (type_ == typeid(nd_int_t)) emplace(&ndi, e.ndi);
-  else if (type_ == typeid(nd_double_t)) emplace(&ndd, e.ndd);
-  else if (type_ == typeid(nd_complex_t)) emplace(&ndz, e.ndz);
+  if      (type_ == enum_for_type<int>()) i = e.i;
+  else if (type_ == enum_for_type<bool>()) b = e.b;
+  else if (type_ == enum_for_type<double>()) d = e.d;
+  else if (type_ == enum_for_type<string>()) emplace(&s, e.s);
+  else if (type_ == enum_for_type<complex_t>()) z = e.z;
+  else if (type_ == enum_for_type<vint_t>()) emplace(&vi, e.vi);
+  else if (type_ == enum_for_type<vdouble_t>()) emplace(&vd, e.vd);
+  else if (type_ == enum_for_type<vstring_t>()) emplace(&vs, e.vs);
+  else if (type_ == enum_for_type<vcomplex_t>()) emplace(&vz,  e.vz);
+  else if (type_ == enum_for_type<nd_int_t>()) emplace(&ndi, e.ndi);
+  else if (type_ == enum_for_type<nd_double_t>()) emplace(&ndd, e.ndd);
+  else if (type_ == enum_for_type<nd_complex_t>()) emplace(&ndz, e.ndz);
   else throw BadEntry();
+}
+
+cosmosis::Entry&
+cosmosis::Entry::operator=(cosmosis::Entry const& e)
+{
+  _destroy_if_managed();
+  type_ = e.type_;
+  if      (type_ == enum_for_type<int>()) i = e.i;
+  else if (type_ == enum_for_type<bool>()) b = e.b;
+  else if (type_ == enum_for_type<double>()) d = e.d;
+  else if (type_ == enum_for_type<string>()) emplace(&s, e.s);
+  else if (type_ == enum_for_type<complex_t>()) z = e.z;
+  else if (type_ == enum_for_type<vint_t>()) emplace(&vi, e.vi);
+  else if (type_ == enum_for_type<vdouble_t>()) emplace(&vd, e.vd);
+  else if (type_ == enum_for_type<vstring_t>()) emplace(&vs, e.vs);
+  else if (type_ == enum_for_type<vcomplex_t>()) emplace(&vz,  e.vz);
+  else if (type_ == enum_for_type<nd_int_t>()) emplace(&ndi, e.ndi);
+  else if (type_ == enum_for_type<nd_double_t>()) emplace(&ndd, e.ndd);
+  else if (type_ == enum_for_type<nd_complex_t>()) emplace(&ndz, e.ndz);
+  else throw BadEntry();  
+  return *this;
 }
 
 cosmosis::Entry::~Entry()
@@ -36,18 +57,18 @@ bool
 cosmosis::Entry::operator==(Entry const& rhs) const
 {
   if (type_ != rhs.type_) return false;
-  if (type_ == typeid(int)) return i == rhs.i;
-  else if (type_ == typeid(bool)) return b == rhs.b;
-  else if (type_ == typeid(double)) return d == rhs.d;
-  else if (type_ == typeid(string)) return s == rhs.s;
-  else if (type_ == typeid(complex_t)) return z == rhs.z;
-  else if (type_ == typeid(vint_t)) return vi == rhs.vi;
-  else if (type_ == typeid(vdouble_t)) return vd == rhs.vd;
-  else if (type_ == typeid(vstring_t)) return vs == rhs.vs;
-  else if (type_ == typeid(vcomplex_t)) return vz == rhs.vz;
-  else if (type_ == typeid(nd_int_t)) return ndi == rhs.ndi;
-  else if (type_ == typeid(nd_double_t)) return ndd == rhs.ndd;
-  else if (type_ == typeid(nd_complex_t)) return ndz == rhs.ndz;
+  if (type_ == enum_for_type<int>()) return i == rhs.i;
+  else if (type_ == enum_for_type<bool>()) return b == rhs.b;
+  else if (type_ == enum_for_type<double>()) return d == rhs.d;
+  else if (type_ == enum_for_type<string>()) return s == rhs.s;
+  else if (type_ == enum_for_type<complex_t>()) return z == rhs.z;
+  else if (type_ == enum_for_type<vint_t>()) return vi == rhs.vi;
+  else if (type_ == enum_for_type<vdouble_t>()) return vd == rhs.vd;
+  else if (type_ == enum_for_type<vstring_t>()) return vs == rhs.vs;
+  else if (type_ == enum_for_type<vcomplex_t>()) return vz == rhs.vz;
+  else if (type_ == enum_for_type<nd_int_t>()) return ndi == rhs.ndi;
+  else if (type_ == enum_for_type<nd_double_t>()) return ndd == rhs.ndd;
+  else if (type_ == enum_for_type<nd_complex_t>()) return ndz == rhs.ndz;
   else throw BadEntry();
 }
 
@@ -61,14 +82,14 @@ cosmosis::Entry::operator==(Entry const& rhs) const
 // type.
 
 void cosmosis::Entry::_destroy_if_managed() {
-  if      (type_ == typeid(string)) s.~string();
-  else if (type_ == typeid(vint_t)) vi.~vector<int>();
-  else if (type_ == typeid(vdouble_t)) vd.~vector<double>();
-  else if (type_ == typeid(vstring_t)) vs.~vector<string>();
-  else if (type_ == typeid(vcomplex_t)) vz.~vector<complex_t>();
-  else if (type_ == typeid(nd_int_t)) ndi.~ndarray<int>();
-  else if (type_ == typeid(nd_double_t)) ndd.~ndarray<double>();
-  else if (type_ == typeid(nd_complex_t)) ndz.~ndarray<complex_t>();
+  if      (type_ == enum_for_type<string>()) s.~string();
+  else if (type_ == enum_for_type<vint_t>()) vi.~vector<int>();
+  else if (type_ == enum_for_type<vdouble_t>()) vd.~vector<double>();
+  else if (type_ == enum_for_type<vstring_t>()) vs.~vector<string>();
+  else if (type_ == enum_for_type<vcomplex_t>()) vz.~vector<complex_t>();
+  else if (type_ == enum_for_type<nd_int_t>()) ndi.~ndarray<int>();
+  else if (type_ == enum_for_type<nd_double_t>()) ndd.~ndarray<double>();
+  else if (type_ == enum_for_type<nd_complex_t>()) ndz.~ndarray<complex_t>();
 }
 
 template <class V>
@@ -81,10 +102,10 @@ int clamped_size(V const& v)
 // return?
 int cosmosis::Entry::size() const
 {
-  if      (type_ == typeid(vint_t))     return clamped_size(vi);
-  else if (type_ == typeid(vdouble_t))  return clamped_size(vd);
-  else if (type_ == typeid(vstring_t))  return clamped_size(vs);
-  else if (type_ == typeid(vcomplex_t)) return clamped_size(vz);
+  if      (type_ == enum_for_type<vint_t>())     return clamped_size(vi);
+  else if (type_ == enum_for_type<vdouble_t>())  return clamped_size(vd);
+  else if (type_ == enum_for_type<vstring_t>())  return clamped_size(vs);
+  else if (type_ == enum_for_type<vcomplex_t>()) return clamped_size(vz);
   else return -1;  
 }
 

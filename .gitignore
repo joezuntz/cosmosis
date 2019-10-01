@@ -9,7 +9,12 @@ cosmosis/datablock/cosmosis_py/section_names.py
 cosmosis/datablock/cosmosis_section_names.mod
 cosmosis/datablock/section_names.h
 cosmosis-standard-library/
+examples/des-y1/des-y1-test/
+examples/lsst_forecast/lsst1/
+examples/lsst_forecast/lsst_simulation.fits
 cosmosis/names.py
+.bash_history
+.ipynb_checkpoints/
 *.mod
 plots/*.png
 demo*_output/
@@ -35,3 +40,5 @@ cosmosis/samplers/multinest/multinest_src/mpi
 config/shifter-make.log
 config/make.temp.sub
 *~
+.DS_Store
+output/*

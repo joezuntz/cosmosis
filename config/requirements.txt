@@ -1,0 +1,15 @@
+numpy
+scipy
+matplotlib
+future
+configparser
+astropy
+sklearn
+CosmoloPy
+emcee==2.2.1
+fitsio
+astropy
+Cython
+PyYAML
+six
+kombine

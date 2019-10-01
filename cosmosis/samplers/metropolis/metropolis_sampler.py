@@ -16,12 +16,13 @@ METROPOLIS_INI_SECTION = "metropolis"
 
 def posterior(p):
     p = pipeline.denormalize_vector(p, raise_exception=False)
-    return pipeline.posterior(p)
+    r = pipeline.run_results(p)
+    return r.post, (r.prior, r.extra)
 
 
 class MetropolisSampler(ParallelSampler):
     parallel_output = True
-    sampler_outputs = [("post", float)]
+    sampler_outputs = [("prior", float),("post", float)]
     understands_fast_subspaces = True
 
     def config(self):
@@ -96,7 +97,8 @@ class MetropolisSampler(ParallelSampler):
         likes = np.empty((self.n))
         for i, (vector, like, extra) in enumerate(samples):
             vector = self.pipeline.denormalize_vector(vector)
-            self.output.parameters(vector, extra, like)
+            prior, extra = extra
+            self.output.parameters(vector, extra, prior, like)
             traces[i,:] = vector
         self.analytics.add_traces(traces)	
 

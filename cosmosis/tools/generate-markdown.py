@@ -13,8 +13,8 @@ import os
 import collections
 import sys
 import codecs
-UTF8Writer = codecs.getwriter('utf8')
-sys.stdout = UTF8Writer(sys.stdout)
+# UTF8Writer = codecs.getwriter('utf8')
+# sys.stdout = UTF8Writer(sys.stdout)
 
 #From stack overflow!
 def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=collections.OrderedDict):
@@ -156,7 +156,7 @@ def make_page(info):
 		parameter_lines=parameter_lines,
 		filepath=info['dirname'] + "/" + info['interface'],
 		**info)
-	open("wiki/default_modules/{}.md".format(info['page_name']),"w").write(markdown.encode("utf-8"))
+	open("wiki/default_modules/{}.md".format(info['page_name']),"wb").write(markdown.encode("utf-8"))
 
 
 

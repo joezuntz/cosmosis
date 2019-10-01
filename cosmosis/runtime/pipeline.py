@@ -36,6 +36,18 @@ except ImportError:
     pass
 
 
+class PipelineResults(object):
+    def __init__(self, number_extra):
+        self.prior = -np.inf
+        self.extra = np.repeat(np.nan, number_extra)
+        self.block = None
+        self.post = -np.inf
+        self.like = -np.inf
+
+    def set_like(self, L):
+        self.like = L
+        self.post = self.prior + self.like
+
 
 PIPELINE_INI_SECTION = "pipeline"
 NO_LIKELIHOOD_NAMES = "no_likelihood_names_sentinel"
@@ -296,7 +308,6 @@ class SlowSubspaceCache(object):
         return index
 
 
-
 class Pipeline(object):
 
     u"""A container of :class:`DataBlock`-processing :class:`Module`ʼs.
@@ -386,6 +397,11 @@ class Pipeline(object):
                 if index == 0:
                     print("You set a shortcut in the pipeline but it was the first module.")
                     print("It will make no difference.")
+                else:
+                    print("Shortcut mode activated: the first pipeline run will proceed as normal.")
+                    print("Subsequent runs will use module {}, {}, as their first module".format(index,shortcut))
+                    print("and use the cached results from the first run for everything before that.")
+                    print("except the input parameter values. Think about this to check it's what you want.")
                 self.shortcut_module = index
 
 
@@ -583,7 +599,11 @@ class Pipeline(object):
             if self.shortcut_data is None:
                 first_module = 0
             else:
-                first_module = shortcut_module_index
+                first_module = self.shortcut_module
+                existing_keys = set(data_package.keys())
+                for (sec, name) in self.shortcut_data.keys():
+                    if (sec,name) not in existing_keys:
+                        data_package[sec, name] = self.shortcut_data[sec,name]
         elif self.slow_subspace_cache:
             first_module = self.slow_subspace_cache.start_pipeline(data_package)
             if first_module != 0 and (self.debug or self.timing):
@@ -644,7 +664,7 @@ class Pipeline(object):
                 self.slow_subspace_cache.next_module_results(module_number, data_package)
 
             # Alternatively we will do the shortcut thing
-            elif self.shortcut_module and not self.has_run and module_number==self.shortcut_module-1:
+            elif self.shortcut_module and (not self.has_run) and module_number==self.shortcut_module-1:
                 print("Saving shortcut data")
                 self.shortcut_data = data_package.clone()
 
@@ -1071,15 +1091,85 @@ class LikelihoodPipeline(Pipeline):
         else:
             return priors
 
+    def run_results(self, p, all_params=False):
+        u"""Run the pipeline on the given parameters and get a results object.
+
+        The argument `p` is a vector or list of the input parameters.
+        if (as in the default) `all_params` is False, then it should be the
+        same length and order as `self.varied_params`.
+
+        Otherwise, if all_params is False, then it should match the length and order
+        of `self.parameters`.
+
+        The method returns a `PipelineResults` object with the following attributes:
+
+        * results.post, the posterior (float);
+
+        * results.extra, the reqiured additional output parameters (numpy array)
+
+        * results.prior, the total prior (float)
+
+        * results.block, the updated data block
+
+        If there is a problem anywhere in the computations which does
+        *not* cause a run-time exception to be raised—including the case
+        where a parameter goes outside of its alloted range—, then
+        `-numpy.inf` will be returned as the final posterior (i.e., zero
+        probability of this set of parameter values being correct).
+
+        """
+        r = PipelineResults(self.number_extra)
+
+        priors = self.prior(p, all_params=all_params, total_only=False)
+        r.prior = sum(pr[1] for pr in priors)
+
+        if np.isnan(r.prior):
+            r.prior = -np.inf
+
+        if not np.isfinite(r.prior):
+            if not self.quiet:
+                print("Proposed outside bounds: prior -infinity")
+            return r
+        try:
+            like, r.extra, r.block = self.likelihood(p, return_data=True, all_params=all_params)
+            r.set_like(like)
+
+            if r.block is not None:
+                for name,pr in priors:
+                    r.block["priors", name] = pr
+
+        except Exception:
+            if self.debug:
+                sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
+                sys.stderr.write("\nBecause you have debug=T I will let this kill the chain.\n")
+                sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
+                raise
+
+            sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
+            sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
+
+        if np.isnan(r.post):
+            r.post = -np.inf
+
+        if np.isnan(r.like):
+            r.like = -np.inf
+
+        return r
+
+
 
 
     def posterior(self, p, return_data=False, all_params=False):
         u"""Use the above methods to obtain prior and updated log-likelihoods, sum together to get Bayesian posterior.
 
-        The argument `p` is the set of :class:`Parameter`s which shadows
-        `self.varied_params`, unless `all_params` is specified as `True`
-        in which case it shadows `self.parameters`.
+        The argument `p` is a vector or list of the input parameters.
+        if (as in the default) `all_params` is False, then it should be the
+        same length and order as `self.varied_params`.
 
+        Otherwise, if all_params is False, then it should match the length and order
+        of `self.parameters`.
         The method returns two or three values depending on `return_data`:
 
         * The posterior;
@@ -1097,51 +1187,13 @@ class LikelihoodPipeline(Pipeline):
 
         """
 
-        priors = self.prior(p, all_params=all_params, total_only=False)
-        # The total prior
-        prior = sum(pr[1] for pr in priors)
-        if prior == -np.inf:
-            if not self.quiet:
-                sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
-            if return_data:
-                return prior, np.repeat(np.nan, self.number_extra), None
-            return prior, np.repeat(np.nan, self.number_extra)
-
-        try:
-            results = self.likelihood(p, return_data=return_data, all_params=all_params)
-            error = False
-
-            like = results[0]
-            extra = results[1]
-            
-            if return_data:
-                data = results[2]
-                for name,pr in priors:
-                    data["priors", name] = pr
-
-        except Exception:
-            error = True
-            # If we are 
-            if self.debug:
-                sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
-                sys.stderr.write("\n\Because you have debug=T I will let this kill the chain.\n")
-                sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
-                raise
-
-            sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
-            sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
-            traceback.print_exc(file=sys.stderr)
-            sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
-
-            # Replace with bad values
-            like = -np.inf
-            data = None
-            extra = np.repeat(np.nan, self.number_extra)
-
+        r = self.run_results(p, all_params=all_params)
         if return_data:
-            return prior + like, extra, data
+            return r.post, r.extra, r.block
         else:
-            return prior + like, extra
+            return r.post, r.extra
+
+
 
     def _set_likelihood_names_from_block(self, data):
         likelihood_names = []
