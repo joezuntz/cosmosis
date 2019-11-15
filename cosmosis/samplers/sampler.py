@@ -3,6 +3,11 @@ from builtins import str
 from builtins import range
 from builtins import object
 from cosmosis.runtime.attribution import PipelineAttribution
+import datetime
+import platform
+import getpass
+import os
+import uuid
 from .hints import Hints
 
 # Sampler metaclass that registers each of its subclasses
@@ -44,11 +49,37 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             for p,ptype in self.sampler_outputs:
                 self.output.add_column(p, ptype)
             self.output.metadata("n_varied", len(self.pipeline.varied_params))
-
             self.attribution.write_output(self.output)
+            for key, value in self.collect_run_metadata().items():
+                self.output.metadata(key, value)
         blinding_header = self.ini.getboolean("output","blinding-header", fallback=False)
         if blinding_header and self.output:
             self.output.blinding_header()
+
+    def collect_run_metadata(self):
+        info = {
+            'timestamp': datetime.datetime.now().isoformat(),
+            'platform': platform.platform(),
+            'platform_version': platform.version(),
+            'uuid': uuid.uuid4().hex,
+        }
+        try:
+            info['cosmosis_git_version'] = os.popen("cd $COSMOSIS_SRC_DIR; git rev-parse HEAD").read().strip()
+            info['csl_git_version'] = os.popen("cd $COSMOSIS_SRC_DIR/cosmosis-standard-library; git rev-parse HEAD").read().strip()
+            info['cwd_git_version'] = os.popen("git rev-parse HEAD").read().strip()
+        except:
+            pass
+
+        # The host name and username are (potentially) private information
+        # so we only save those if privacy=False, which is not the default
+        privacy = self.ini.getboolean('output','privacy', fallback=True)
+        save_username = not privacy
+        if save_username:
+            info['hostname'] = platform.node()
+            info['username'] = getpass.getuser()
+
+
+        return info
 
     def read_ini(self, option, option_type, default=None):
         """
