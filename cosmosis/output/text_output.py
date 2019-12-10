@@ -106,6 +106,8 @@ In the last case you can set lock=F in the [output] section to disable this feat
     def _write_comment(self, comment):
         #save comments along with the metadata - nice as 
         #preserves order
+        # remove line breaks in comments
+        comment = comment.replace("\n", " ")
         self._metadata[comment_indicator +
                        "_%d" % (len(self._metadata))] = (comment,None)
 
