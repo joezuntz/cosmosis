@@ -115,7 +115,8 @@ def run_cosmosis(args, pool=None):
     post_script = ini.get(RUNTIME_INI_SECTION, "post_script", fallback="")
 
     if (pool is None) or pool.is_master():
-        status = os.system(pre_script)
+        # This decodes the exist status
+        status = os.WEXITSTATUS(os.system(pre_script))
         if status:
             raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
                 pre_script, status))
@@ -315,7 +316,8 @@ def run_cosmosis(args, pool=None):
     # often chains time-out instead of actually completing.
     # But we still offer it
     if (pool is None) or pool.is_master():
-        status = os.system(post_script)
+        # This decodes the exist status
+        status = os.WEXITSTATUS(os.system(post_script))
         if status:
             sys.stdout.write("WARNING: The post-run script {} failed with error {}".format(
                 post_script, error))
