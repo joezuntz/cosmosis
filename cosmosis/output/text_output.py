@@ -24,10 +24,11 @@ class TextColumnOutput(OutputBase):
             filename = filename[:-len(self.FILE_EXTENSION)]
 
         if nchain > 1:
-            self._filename = "%s_%d%s" % (filename, rank+1, 
-                                          self.FILE_EXTENSION)
-        else:
-            self._filename = filename + self.FILE_EXTENSION
+            filename = filename + "_{}".format(rank+1)
+
+        self.filename_base = filename
+
+        self._filename = filename + self.FILE_EXTENSION
 
         dirname, _ = os.path.split(self._filename)
         mkdir(dirname)
@@ -106,6 +107,8 @@ In the last case you can set lock=F in the [output] section to disable this feat
     def _write_comment(self, comment):
         #save comments along with the metadata - nice as 
         #preserves order
+        # remove line breaks in comments
+        comment = comment.replace("\n", " ")
         self._metadata[comment_indicator +
                        "_%d" % (len(self._metadata))] = (comment,None)
 
@@ -128,6 +131,11 @@ In the last case you can set lock=F in the [output] section to disable this feat
         self._file.seek(self._start_mark)
         self._file.truncate()
         self._file.flush()
+
+    def name_for_sampler_resume_info(self):
+        return self.filename_base + '.sampler_status'
+
+
 
     @classmethod
     def from_options(cls, options, resume=False):

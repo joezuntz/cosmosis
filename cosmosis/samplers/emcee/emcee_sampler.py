@@ -24,6 +24,9 @@ class EmceeSampler(ParallelSampler):
             import emcee
             self.emcee = emcee
 
+            self.emcee_version = int(self.emcee.__version__[0])
+
+
             # Parameters of the emcee sampler
             self.nwalkers = self.read_ini("walkers", int, 2)
             self.samples = self.read_ini("samples", int, 1000)
@@ -130,10 +133,20 @@ class EmceeSampler(ParallelSampler):
 
     def execute(self):
         #Run the emcee sampler.
+        if self.num_samples == 0:
+            print("Begun sampling")
         outputs = []
-        for (pos, prob, rstate, extra_info) in self.ensemble.sample(
-                self.p0, lnprob0=self.prob0, blobs0=self.blob0,
-                iterations=self.nsteps, storechain=False):
+        if self.emcee_version < 3:
+            kwargs = dict(lnprob0=self.prob0, blobs0=self.blob0, 
+                          iterations=self.nsteps, storechain=False)
+        else:
+            # In emcee3 we have to enable storing the chain because
+            # we want the acceptance fraction.  Also the name of one
+            # of the parameters has changed.
+            kwargs = dict(log_prob0=self.prob0, blobs0=self.blob0, 
+                          iterations=self.nsteps, store=True)
+
+        for (pos, prob, rstate, extra_info) in self.ensemble.sample(self.p0, **kwargs):
             outputs.append((pos.copy(), prob.copy(), extra_info[:]))
     
         for (pos, prob, extra_info) in outputs:
@@ -146,7 +159,8 @@ class EmceeSampler(ParallelSampler):
         self.blob0 = extra_info
         self.num_samples += self.nsteps
         acceptance_fraction = self.ensemble.acceptance_fraction.mean()
-        print("Done {} iterations of emcee. Acceptance fraction {:.3f}".format(self.num_samples, acceptance_fraction))
+        print("Done {} iterations of emcee. Acceptance fraction {:.3f}".format(
+            self.num_samples, acceptance_fraction))
         sys.stdout.flush()
         self.output.final("mean_acceptance_fraction", acceptance_fraction)
 

@@ -100,7 +100,7 @@ def demo_20b_special (args):
         print ("********************************************************")
         print ("*** YOU MUST RUN demo20a BEFORE YOU CAN RUN demo20b. ***")
         print ("********************************************************")
-        
+
 
 def run_cosmosis(args, pool=None):
 
@@ -111,6 +111,15 @@ def run_cosmosis(args, pool=None):
     # Load configuration.
     ini = Inifile(args.inifile, override=args.params)
 
+    pre_script = ini.get(RUNTIME_INI_SECTION, "pre_script", fallback="")
+    post_script = ini.get(RUNTIME_INI_SECTION, "post_script", fallback="")
+
+    if (pool is None) or pool.is_master():
+        # This decodes the exist status
+        status = os.WEXITSTATUS(os.system(pre_script))
+        if status:
+            raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
+                pre_script, status))
 
 
     # Create pipeline.
@@ -165,7 +174,7 @@ def run_cosmosis(args, pool=None):
 
         # The resume feature lets us restart from an existing file.
         # It's not fully rolled out to all the suitable samplers yet though.
-        resume = ini.get(RUNTIME_INI_SECTION, "resume", fallback=False)
+        resume = ini.getboolean(RUNTIME_INI_SECTION, "resume", fallback=False)
 
         # Not all samplers can be resumed.
         if resume and not sampler_class.supports_resume:
@@ -301,6 +310,17 @@ def run_cosmosis(args, pool=None):
     # Extra-special actions we take to mollycoddle a brand-new user!
     demo_1_special (args)
     demo_20a_special (args)
+
+    # User can specify in the runtime section a post-run script to launch.
+    # In general this may be less useful than the pre-run script, because
+    # often chains time-out instead of actually completing.
+    # But we still offer it
+    if (pool is None) or pool.is_master():
+        # This decodes the exist status
+        status = os.WEXITSTATUS(os.system(post_script))
+        if status:
+            sys.stdout.write("WARNING: The post-run script {} failed with error {}".format(
+                post_script, error))
 
     return 0
 
