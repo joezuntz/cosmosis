@@ -44,6 +44,8 @@ class FitsOutput(OutputBase):
         if nchain > 1:
             filename = filename + "_{}".format(rank+1)
 
+        self._filename = filename + self.FILE_EXTENSION
+
         self.filename_base = filename
 
         check_fitsio()
