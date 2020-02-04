@@ -120,7 +120,10 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
         raise NotImplementedError
 
     def write_resume_info(self, info):
-        filename = self.output.name_for_sampler_resume_info()
+        try:
+            filename = self.output.name_for_sampler_resume_info()
+        except NotImplementedError:
+            return
         with open(filename, 'wb') as f:
             pickle.dump(info, f)
 

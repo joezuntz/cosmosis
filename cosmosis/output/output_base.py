@@ -180,11 +180,9 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
         Return a file name or directory name for an auxiliary file
         where the sampler can save information it needs to resume.
 
-        This base class implementation just uses the time stamp and pid.
-
-        Sub-classes can choose a more sensible file name
+        This base class errors
         """
-        raise NotImplementedError("You need to use a text output format to use the resume feature with this sampler")
+        raise NotImplementedError("You need to use a supported output format to use the resume feature with this sampler")
 
 
     def comment_file_wrapper(self):
