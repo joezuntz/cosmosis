@@ -122,10 +122,11 @@ class MCMC(object):
         if self.use_cobaya:
             from .proposal import cobaya
             self.proposal = cobaya.CobayaProposalWrapper(
-                blocks=[self.slow_indices, self.fast_indices], 
+                parameter_blocks=[self.slow_indices, self.fast_indices], 
                 oversampling_factors=[1, oversampling],
                 i_last_slow_block=0,
                 proposal_scale=self.scaling)
+            self.proposal.set_covariance(self.covariance)
         else:
             self.proposal = FastSlowProposal(self.covariance, fast_indices, slow_indices, oversampling, scaling=self.scaling, exponential_probability=self.exponential_probability)
         self.tuning_frequency = self.original_tuning_frequency * oversampling
