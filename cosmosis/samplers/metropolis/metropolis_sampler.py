@@ -31,11 +31,12 @@ class MetropolisSampler(ParallelSampler):
         pipeline = self.pipeline
         self.samples = self.read_ini("samples", int, default=20000)
         random_start = self.read_ini("random_start", bool, default=False)
+        use_cobaya = self.read_ini("cobaya", bool, default=False)
         self.Rconverge = self.read_ini("Rconverge", float, -1.0)
         self.oversampling = self.read_ini("oversampling", int, 5)
         tuning_frequency = self.read_ini("tuning_frequency", int, -1)
         tuning_grace = self.read_ini("tuning_grace", int, 5000)
-        tuning_end = self.read_ini("tuning_end", int, 100000)
+        self.tuning_end = self.read_ini("tuning_end", int, 100000)
         self.n = self.read_ini("nsteps", int, default=100)
         self.exponential_probability = self.read_ini("exponential_probability", float, default=0.333)
         self.split = None #work out later
@@ -44,6 +45,8 @@ class MetropolisSampler(ParallelSampler):
         self.interrupted = False
         self.num_samples = 0
         self.ndim = len(self.pipeline.varied_params)
+        self.num_samples_post_tuning = 0
+        self.last_accept_count = 0
         #Any other options go here
 
         #start values from prior
@@ -60,12 +63,18 @@ class MetropolisSampler(ParallelSampler):
         start_norm = self.pipeline.normalize_vector(start)
         covmat_norm = self.pipeline.normalize_matrix(covmat)
 
+        if use_cobaya:
+            print("Using the Cobaya proposal")
+
+
         self.sampler = metropolis.MCMC(start_norm, posterior, covmat_norm, 
             quiet=quiet, 
             tuning_frequency=tuning_frequency, # Will be multiplied by the oversampling
             tuning_grace=tuning_grace,         # within the sampler if needed
-            tuning_end=tuning_end,
-            exponential_probability=self.exponential_probability)
+            tuning_end=self.tuning_end,
+            exponential_probability=self.exponential_probability,
+            use_cobaya=use_cobaya,
+        )
         self.analytics = Analytics(self.pipeline.varied_params, self.pool)
         self.fast_slow_done = False
 
@@ -89,7 +98,9 @@ class MetropolisSampler(ParallelSampler):
 
             self.analytics.add_traces(data)
 
-            self.num_samples += num_samples
+            self.num_samples = num_samples
+            self.num_samples_post_tuning = num_samples
+            
             if self.num_samples >= self.samples:
                 print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
                 print("Increase the 'samples' parameter to keep going.")
@@ -119,18 +130,35 @@ class MetropolisSampler(ParallelSampler):
             self.interrupted=True
             return
         self.num_samples += self.n
-        traces = np.empty((self.n, self.ndim))
-        likes = np.empty((self.n))
-        for i, (vector, like, extra) in enumerate(samples):
-            vector = self.pipeline.denormalize_vector(vector)
-            prior, extra = extra
-            self.output.parameters(vector, extra, prior, like)
-            traces[i,:] = vector
-        self.analytics.add_traces(traces)	
+        self.num_samples_post_tuning = self.num_samples - self.tuning_end
 
-        rate = self.sampler.accepted * 100.0 / self.sampler.iterations
-        print("Accepted %d / %d samples (%.2f%%)\n" % \
-            (self.sampler.accepted, self.sampler.iterations, rate))
+
+        # Only output samples once tuning is complete
+        if self.num_samples_post_tuning > 0:
+            traces = np.empty((self.n, self.ndim))
+            likes = np.empty((self.n))
+
+
+            samples = samples[-self.num_samples_post_tuning:]
+            for i, (vector, like, extra) in enumerate(samples):
+                vector = self.pipeline.denormalize_vector(vector)
+                prior, extra = extra
+                self.output.parameters(vector, extra, prior, like)
+                traces[i,:] = vector
+
+            self.analytics.add_traces(traces)
+
+            overall_rate = self.sampler.accepted / self.sampler.iterations
+            recent_accepted = self.sampler.accepted - self.last_accept_count
+            recent_rate = recent_accepted / self.n
+            print("Overall accepted {} / {} samples ({:.1%})" .format(
+                self.sampler.accepted, self.sampler.iterations, overall_rate))
+            print("Last {0} accepted {1} / {0} samples ({2:.1%})\n" .format(
+                self.n, recent_accepted, recent_rate))
+            self.last_accept_count = self.sampler.accepted
+        else:
+            print("Done {} samples. Tuning proposal until {} so no output yet\n".format(
+                self.num_samples, self.tuning_end))
 
         self.write_resume_info(self.sampler)
 
@@ -141,9 +169,10 @@ class MetropolisSampler(ParallelSampler):
         if self.num_samples >= self.samples:
             print("Full number of samples generated; sampling complete")
             return True
-        elif self.num_samples > 0 and \
-                self.pool is not None and \
-                self.Rconverge is not None:
+        elif (self.num_samples > 0 and
+              self.pool is not None and
+              self.Rconverge is not None and
+              self.num_samples_post_tuning > 0):
             R = self.analytics.gelman_rubin(quiet=False)
             R1 = abs(R - 1)
             return np.all(R1 <= self.Rconverge)
