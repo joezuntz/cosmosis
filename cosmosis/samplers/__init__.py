@@ -22,4 +22,3 @@ from .list import list_sampler
 from .star import star_sampler
 from .apriori import apriori_sampler
 from .dynesty import dynesty_sampler
-from .cobaya import cobaya_sampler
