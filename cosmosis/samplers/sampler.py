@@ -8,6 +8,7 @@ import platform
 import getpass
 import os
 import uuid
+import pickle
 from .hints import Hints
 
 # Sampler metaclass that registers each of its subclasses
@@ -117,6 +118,20 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
         ''' Run one (self-determined) iteration of sampler.
             Should be enough to test convergence '''
         raise NotImplementedError
+
+    def write_resume_info(self, info):
+        filename = self.output.name_for_sampler_resume_info()
+        with open(filename, 'wb') as f:
+            pickle.dump(info, f)
+
+    def read_resume_info(self):
+        filename = self.output.name_for_sampler_resume_info()
+        if not os.path.exists(filename):
+            return None
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
+
+
 
     def resume(self):
         raise NotImplementedError("The sampler {} does not support resuming".format(self.name))

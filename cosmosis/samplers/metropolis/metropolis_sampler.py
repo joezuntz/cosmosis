@@ -24,6 +24,7 @@ class MetropolisSampler(ParallelSampler):
     parallel_output = True
     sampler_outputs = [("prior", float),("post", float)]
     understands_fast_subspaces = True
+    supports_resume = True
 
     def config(self):
         global pipeline
@@ -42,6 +43,7 @@ class MetropolisSampler(ParallelSampler):
             self.Rconverge=None
         self.interrupted = False
         self.num_samples = 0
+        self.ndim = len(self.pipeline.varied_params)
         #Any other options go here
 
         #start values from prior
@@ -74,6 +76,30 @@ class MetropolisSampler(ParallelSampler):
                 self.output.flush()
 
 
+    def resume(self):
+        if self.output.resumed:
+            sampler = self.read_resume_info()
+            if sampler is None:
+                return
+
+            self.sampler = sampler
+
+            data = np.genfromtxt(self.output._filename, invalid_raise=False)[:, :self.ndim]
+            num_samples = len(data)
+
+            self.analytics.add_traces(data)
+
+            self.num_samples += num_samples
+            if self.num_samples >= self.samples:
+                print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
+                print("Increase the 'samples' parameter to keep going.")
+            elif self.is_converged():
+                print("The resumed chain was already converged.  You can change the converged testing parameters to extend it.")
+            else:
+                print("Continuing metropolois from existing chain - have {} samples already".format(len(data)))
+
+
+
 
 
 
@@ -93,7 +119,7 @@ class MetropolisSampler(ParallelSampler):
             self.interrupted=True
             return
         self.num_samples += self.n
-        traces = np.empty((self.n,len(self.pipeline.varied_params)))
+        traces = np.empty((self.n, self.ndim))
         likes = np.empty((self.n))
         for i, (vector, like, extra) in enumerate(samples):
             vector = self.pipeline.denormalize_vector(vector)
@@ -105,6 +131,8 @@ class MetropolisSampler(ParallelSampler):
         rate = self.sampler.accepted * 100.0 / self.sampler.iterations
         print("Accepted %d / %d samples (%.2f%%)\n" % \
             (self.sampler.accepted, self.sampler.iterations, rate))
+
+        self.write_resume_info(self.sampler)
 
     def is_converged(self):
          # user has pressed Ctrl-C
