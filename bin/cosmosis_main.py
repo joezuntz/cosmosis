@@ -174,7 +174,7 @@ def run_cosmosis(args, pool=None):
 
         # The resume feature lets us restart from an existing file.
         # It's not fully rolled out to all the suitable samplers yet though.
-        resume = ini.get(RUNTIME_INI_SECTION, "resume", fallback=False)
+        resume = ini.getboolean(RUNTIME_INI_SECTION, "resume", fallback=False)
 
         # Not all samplers can be resumed.
         if resume and not sampler_class.supports_resume:
