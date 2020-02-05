@@ -37,7 +37,8 @@ except ImportError:
 
 
 class PipelineResults(object):
-    def __init__(self, number_extra):
+    def __init__(self, vector, number_extra):
+        self.vector = vector
         self.prior = -np.inf
         self.extra = np.repeat(np.nan, number_extra)
         self.block = None
@@ -236,9 +237,9 @@ class SlowSubspaceCache(object):
         time_save_percent = 100-100*self.fast_time/self.full_time
         print("Time saving: {:.2f}%".format(time_save_percent))
 
-        worth_splitting = time_save_percent > 10.
+        self.worth_splitting = time_save_percent > 10.
 
-        if not worth_splitting:
+        if not self.worth_splitting:
             print("")
             print("No significant time saving (<10%) from a fast-slow split.")
             print("Not splitting pipeline into fast and slow parts.")
@@ -250,7 +251,7 @@ class SlowSubspaceCache(object):
         self.slow_params = sum(list(first_use.values())[:self.split_index], [])
         self.fast_params = sum(list(first_use.values())[self.split_index:], [])
 
-        if worth_splitting:
+        if self.worth_splitting:
             print("")
             print("Based on this we have decided: ")
             print("   Slow modules ({}):".format(self.slow_modules))
@@ -483,6 +484,13 @@ class Pipeline(object):
 
             self.slow_subspace_cache = SlowSubspaceCache(first_fast_module=first_fast_index)
             self.slow_subspace_cache.analyze_pipeline(self, all_params=all_params, grid=grid)
+
+            if not self.slow_subspace_cache.worth_splitting:
+                self.slow_subspace_cache = None
+                self.do_fast_slow = False
+                return
+
+
             self.fast_time = self.slow_subspace_cache.fast_time
             self.slow_time = self.slow_subspace_cache.slow_time
             # This looks a bit weird but makes sure that self.fast_params
@@ -1118,7 +1126,7 @@ class LikelihoodPipeline(Pipeline):
         probability of this set of parameter values being correct).
 
         """
-        r = PipelineResults(self.number_extra)
+        r = PipelineResults(p, self.number_extra)
 
         priors = self.prior(p, all_params=all_params, total_only=False)
         r.prior = sum(pr[1] for pr in priors)
