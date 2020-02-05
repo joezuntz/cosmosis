@@ -19,4 +19,12 @@ class CobayaProposalWrapper(BlockedProposer):
     def propose(self, p):
         q = p.copy()
         self.get_proposal(q)
-        return q    
+        return q
+    def propose_slow(self, p):
+        q = p.copy()
+        self.get_proposal_slow(q)
+        return q
+    def propose_fast(self, p):
+        q = p.copy()
+        self.get_proposal_fast(q)
+        return q

@@ -17,7 +17,8 @@ METROPOLIS_INI_SECTION = "metropolis"
 def posterior(p):
     p = pipeline.denormalize_vector(p, raise_exception=False)
     r = pipeline.run_results(p)
-    return r.post, (r.prior, r.extra)
+    return r
+    #r.post, (r.prior, r.extra)
 
 
 class MetropolisSampler(ParallelSampler):
@@ -33,6 +34,7 @@ class MetropolisSampler(ParallelSampler):
         random_start = self.read_ini("random_start", bool, default=False)
         use_cobaya = self.read_ini("cobaya", bool, default=False)
         self.Rconverge = self.read_ini("Rconverge", float, -1.0)
+        self.drag = self.read_ini("drag", int, 0)
         self.oversampling = self.read_ini("oversampling", int, 5)
         tuning_frequency = self.read_ini("tuning_frequency", int, -1)
         tuning_grace = self.read_ini("tuning_grace", int, 5000)
@@ -74,6 +76,7 @@ class MetropolisSampler(ParallelSampler):
             tuning_end=self.tuning_end,
             exponential_probability=self.exponential_probability,
             use_cobaya=use_cobaya,
+            n_drag = self.drag,
         )
         self.analytics = Analytics(self.pipeline.varied_params, self.pool)
         self.fast_slow_done = False
@@ -140,10 +143,9 @@ class MetropolisSampler(ParallelSampler):
 
 
             samples = samples[-self.num_samples_post_tuning:]
-            for i, (vector, like, extra) in enumerate(samples):
-                vector = self.pipeline.denormalize_vector(vector)
-                prior, extra = extra
-                self.output.parameters(vector, extra, prior, like)
+            for i, result in enumerate(samples):
+                vector = self.pipeline.denormalize_vector(result.vector)
+                self.output.parameters(vector, result.extra, result.prior, result.post)
                 traces[i,:] = vector
 
             self.analytics.add_traces(traces)
