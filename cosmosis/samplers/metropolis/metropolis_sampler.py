@@ -51,6 +51,11 @@ class MetropolisSampler(ParallelSampler):
         self.last_accept_count = 0
         #Any other options go here
 
+        if (self.drag > 0) and not self.pipeline.do_fast_slow:
+            print("You asked for dragging, but the pipeline does not have fast/slow enabled"
+                  ", so no draggng will be done."
+                )
+
         #start values from prior
         start = self.define_parameters(random_start)
         print("MCMC starting point:")
