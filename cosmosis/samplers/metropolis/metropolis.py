@@ -7,6 +7,10 @@ from .proposal.standard import Proposal, FastSlowProposal
 from copy import copy
 
 
+class Bad(object):
+    def __init__(self):
+        self.post = -np.inf
+
 
 class MCMC(object):
     def __init__(self, start, posterior, covariance, quiet=False,
@@ -129,6 +133,12 @@ class MCMC(object):
         r_start = copy(self.Lp)
         r_end = self.posterior(end)
 
+        if not np.isfinite(r_end.post):
+            if not self.quiet:
+                print("[Reject: nan/-inf posterior]\n")
+            return self.Lp
+
+
         # coordinates of current start and end
         p1 = copy(start)
         p2 = copy(end)
@@ -145,7 +155,11 @@ class MCMC(object):
             q2 = p2 + delta_fast
 
             s1 = self.posterior(q1)
-            s2 = self.posterior(q2)
+
+            if np.isfinite(s1.post):
+                s2 = self.posterior(q2)
+            else:
+                s2 = Bad()
 
 
             f = (1+i) /(1+self.n_drag)
@@ -153,7 +167,7 @@ class MCMC(object):
             P1 = (1-f)*r1.post + f*r2.post
             Q1 = (1-f)*s1.post + f*s2.post
 
-            accept_drag = accept(Q1, P1)
+            accept_drag = accept(Q1, P1) and np.isfinite(s1.post) and np.isfinite(s2.post)
 
             if accept_drag:
                 p1 = q1

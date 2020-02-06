@@ -149,9 +149,8 @@ class MetropolisSampler(ParallelSampler):
 
             samples = samples[-self.num_samples_post_tuning:]
             for i, result in enumerate(samples):
-                vector = self.pipeline.denormalize_vector(result.vector)
-                self.output.parameters(vector, result.extra, result.prior, result.post)
-                traces[i,:] = vector
+                self.output.parameters(result.vector, result.extra, result.prior, result.post)
+                traces[i,:] = result.vector
 
             self.analytics.add_traces(traces)
 
