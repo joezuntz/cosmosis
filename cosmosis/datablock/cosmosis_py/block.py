@@ -20,6 +20,8 @@ import os
 import collections
 import tarfile
 import io
+from io import StringIO
+
 
 option_section = "module_options"
 metadata_prefix = "cosmosis_metadata:"
@@ -1242,7 +1244,7 @@ class DataBlock(object):
 		else:
 			stream = filename_or_stream
 
-		data = yaml.load(stream)
+		data = yaml.safe_load(stream)
 
 		if not isinstance(data, dict) or (not all(isinstance(k, str) for k in data.keys())) or (not all(isinstance(v, dict) for v in data.values())):
 			raise ValueError("Wrong format yaml file {}".format(filename_or_stream))
@@ -1272,6 +1274,21 @@ class DataBlock(object):
 				data[section][key] = value
 
 		yaml.dump(data, stream)
+
+	@classmethod
+	def from_string(cls, s):
+		sio = StringIO(s)
+		return cls.from_yaml(sio)
+
+	def to_string(self):
+		sio = StringIO()
+		self.to_yaml(sio)
+		sio.seek(0)
+		return sio.read()
+
+	def __reduce__(self):
+		return (DataBlock.from_string, (self.to_string(),))
+
 
 
 
