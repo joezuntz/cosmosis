@@ -47,9 +47,9 @@ class MCMC(object):
             raise ValueError('You must set use_cobaya=T to have n_drag>0')
 
         if self.use_cobaya:
-            from .proposal import cobaya
+            from .proposal import cobaya_proposal
             # Initial proposer, without block - replace below
-            self.proposal = cobaya.CobayaProposalWrapper(
+            self.proposal = cobaya_proposal.CobayaProposalWrapper(
                 parameter_blocks=[np.arange(self.ndim)],
                 proposal_scale=self.scaling)
             self.proposal.set_covariance(covariance)
@@ -227,8 +227,8 @@ class MCMC(object):
         self.fast_slow_is_ready = True
 
         if self.use_cobaya:
-            from .proposal import cobaya
-            self.proposal = cobaya.CobayaProposalWrapper(
+            from .proposal import cobaya_proposal
+            self.proposal = cobaya_proposal.CobayaProposalWrapper(
                 parameter_blocks=[self.slow_indices, self.fast_indices], 
                 oversampling_factors=[1, oversampling],
                 i_last_slow_block=0,
