@@ -20,7 +20,9 @@ import os
 import collections
 import tarfile
 import io
-from io import StringIO
+from io import StringIO, BytesIO
+import sys
+
 
 
 option_section = "module_options"
@@ -1277,21 +1279,29 @@ class DataBlock(object):
 
 	@classmethod
 	def from_string(cls, s):
-		sio = StringIO(s)
+		if sys.version_info[0]==2:
+			sio = BytesIO(s)
+		else:
+			sio = StringIO(s)
 		return cls.from_yaml(sio)
 
 	def to_string(self):
-		sio = StringIO()
+		if sys.version_info[0]==2:
+			sio = BytesIO()
+		else:
+			sio = StringIO()
 		self.to_yaml(sio)
 		sio.seek(0)
 		return sio.read()
 
 	def __reduce__(self):
-		return (DataBlock.from_string, (self.to_string(),))
+		return (datablock_from_string, (self.to_string(),))
 
 
-
-
+# This is not needed under python 3, where, the __reduce__ method
+# above can return the class method, but it is under python 2.
+def datablock_from_string(s):
+	return DataBlock.from_string(s)
 
 
 
