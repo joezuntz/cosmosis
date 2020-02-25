@@ -94,28 +94,32 @@ class MetropolisSampler(ParallelSampler):
 
 
     def resume(self):
-        if self.output.resumed:
-            sampler = self.read_resume_info()
-            if sampler is None:
-                return
+        resume_info = self.read_resume_info()
+        if resume_info is None:
+            return
 
-            self.sampler = sampler
+        sampler, self.num_samples, self.num_samples_post_tuning = resume_info
 
+        self.sampler = sampler
+
+        # If we started main sampling (as opposed to tuning phase)
+        # then we will have some existing chain, but this is not always the case
+        try:
             data = np.genfromtxt(self.output._filename, invalid_raise=False)[:, :self.ndim]
-            num_samples = len(data)
-
             self.analytics.add_traces(data)
+        except IndexError:
+            data = None
 
-            self.num_samples = num_samples
-            self.num_samples_post_tuning = num_samples
-            
-            if self.num_samples >= self.samples:
-                print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
-                print("Increase the 'samples' parameter to keep going.")
-            elif self.is_converged():
-                print("The resumed chain was already converged.  You can change the converged testing parameters to extend it.")
-            else:
-                print("Continuing metropolois from existing chain - have {} samples already".format(len(data)))
+        
+        if self.num_samples >= self.samples:
+            print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
+            print("Increase the 'samples' parameter to keep going.")
+        elif self.is_converged():
+            print("The resumed chain was already converged.  You can change the converged testing parameters to extend it.")
+        elif data is None:
+            print("Continuing metropolis from existing chain - you were in the tuning phase, which will continue")
+        else:
+            print("Continuing metropolis from existing chain - have {} samples already".format(len(data)))
 
 
 
@@ -166,7 +170,7 @@ class MetropolisSampler(ParallelSampler):
             print("Done {} samples. Tuning proposal until {} so no output yet\n".format(
                 self.num_samples, self.tuning_end))
 
-        self.write_resume_info(self.sampler)
+        self.write_resume_info([self.sampler, self.num_samples, self.num_samples_post_tuning])
 
     def is_converged(self):
          # user has pressed Ctrl-C
