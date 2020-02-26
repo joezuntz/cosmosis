@@ -1240,6 +1240,14 @@ class DataBlock(object):
 	@classmethod
 	def from_yaml(cls, filename_or_stream):
 		import yaml
+
+		# work around problem with py2 yaml on unicode
+		# https://stackoverflow.com/questions/27518976/how-can-i-get-pyyaml-safe-load-to-handle-python-unicode-tag
+		if sys.version_info[0]==2:
+			def constructor(loader, node):
+				return node.value
+			yaml.SafeLoader.add_constructor("tag:yaml.org,2002:python/unicode", constructor)
+
 		block = cls()
 		if isinstance(filename_or_stream, basestring):
 			stream = open(filename_or_stream)
