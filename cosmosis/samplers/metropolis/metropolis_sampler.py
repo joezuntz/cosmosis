@@ -158,7 +158,7 @@ class MetropolisSampler(ParallelSampler):
 
             self.analytics.add_traces(traces)
 
-            overall_rate = self.sampler.accepted / self.sampler.iterations
+            overall_rate = (self.sampler.accepted * 1.0) / self.sampler.iterations
             recent_accepted = self.sampler.accepted - self.last_accept_count
             recent_rate = recent_accepted / self.n
             print("Overall accepted {} / {} samples ({:.1%})" .format(
