@@ -11,6 +11,7 @@ import uuid
 import pickle
 from .hints import Hints
 import numpy as np
+import shutil
 # Sampler metaclass that registers each of its subclasses
 
 class RegisteredSampler(type):
@@ -124,8 +125,15 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             filename = self.output.name_for_sampler_resume_info()
         except NotImplementedError:
             return
-        with open(filename, 'wb') as f:
+
+        # in some fast pipelines like demo 5 a keyboard interrupt
+        # is likely to happen in the middle of this dump operation
+        tmp_filename = filename + '.tmp'
+
+        with open(tmp_filename, 'wb') as f:
             pickle.dump(info, f)
+
+        shutil.move(tmp_filename, filename)
 
     def read_resume_info(self):
         filename = self.output.name_for_sampler_resume_info()
