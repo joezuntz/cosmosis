@@ -51,6 +51,10 @@ class MaxlikeSampler(Sampler):
         start_vector = self.pipeline.normalize_vector(self.start_estimate())
         bounds = [(0.0, 1.0) for p in self.pipeline.varied_params]
 
+        # check that the starting position is a valid point
+        start_like = likefn(start_vector)
+        if not np.isfinite(start_like):
+            raise RuntimeError('invalid starting point for maxlike')
 
         result = scipy.optimize.minimize(likefn, start_vector, method=self.method, 
           jac=False, tol=self.tolerance,  #bounds=bounds, 
