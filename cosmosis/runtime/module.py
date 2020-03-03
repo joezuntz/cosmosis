@@ -158,6 +158,7 @@ class Module(object):
             if not quiet:
                 print('-- Setting up module %s --' % (self.name))
             self.data = self.setup_function(config)
+            print("")
         else:
             self.data = None
 
