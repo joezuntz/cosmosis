@@ -723,7 +723,7 @@ class LikelihoodPipeline(Pipeline):
 
     """
 
-    def __init__(self, arg=None, id="",override=None, load=True):
+    def __init__(self, arg=None, id="", override=None, load=True, only=None):
         u"""Construct a :class:`LikelihoodPipeline`.
 
         The arguments `arg` and `load` are used in the base-class
@@ -751,6 +751,15 @@ class LikelihoodPipeline(Pipeline):
                                                               priors_files,
                                                               override,
                                                               )
+        if only:
+            for p in only:
+                if p not in self.parameters:
+                    raise ValueError("You used --only but the parameter "
+                        "you named ({}) is not in the pipeline".format(p))
+            for p in self.parameters:
+                if p not in only:
+                    p.fix()
+
         self.reset_fixed_varied_parameters()
 
         self.print_priors()

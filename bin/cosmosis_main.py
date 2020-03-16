@@ -125,16 +125,18 @@ def run_cosmosis(args, pool=None):
     # Create pipeline.
     pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
     if (pool is None) or pool.is_master() or pool_stdout:
-        pipeline = LikelihoodPipeline(ini, override=args.variables)
+        pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only)
         if pipeline.do_fast_slow:
             pipeline.setup_fast_subspaces()
 
     else:
         # Suppress output on everything except the master process
         with stdout_redirected():
-            pipeline = LikelihoodPipeline(ini, override=args.variables) 
+            pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only) 
             if pipeline.do_fast_slow:
                 pipeline.setup_fast_subspaces()
+
+
 
 
     # determine the type(s) of sampling we want.
@@ -335,6 +337,7 @@ def main():
         parser.add_argument("--experimental-fault-handling",action='store_true',help="Activate an experimental fault handling mode.")
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
+        parser.add_argument("--only", nargs="*", help="Fix all parameters except the ones listed")
         args = parser.parse_args(sys.argv[1:])
 
         if args.experimental_fault_handling:

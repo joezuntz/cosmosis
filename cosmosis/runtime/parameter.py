@@ -109,7 +109,15 @@ class Parameter(object):
         u"""Return __str__."""
         return self.__str__()
 
+    def fix(self, value=None):
+        """
+        Switch this parameter to being fixed, optionally to
+        a new specified value.
+        """
+        if value is not None:
+            self.start = value
 
+        self.limits = self.start, self.start
 
     def is_fixed(self):
         u"""Test whether this parameter is fixed or varied.
