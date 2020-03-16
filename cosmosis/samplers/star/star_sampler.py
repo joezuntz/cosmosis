@@ -23,6 +23,7 @@ LARGE_JOB_SIZE = 1000000
 class StarSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("prior", float),("post", float)]
+    understands_fast_subspaces = True
 
     def config(self):
         global star_sampler
