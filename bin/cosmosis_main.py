@@ -30,16 +30,6 @@ from cosmosis import output as output_module
 RUNTIME_INI_SECTION = "runtime"
 
 
-# TODO: find better home for this.  Utils?
-class ParseExtraParameters(argparse.Action):
-    def __call__(self, parser, args, values, option_string=None):
-        result = {}
-        for arg in values:
-            section, param_value = arg.split('.',1)
-            param,value = param_value.split('=',1)
-            result[(section,param)] = value
-        setattr(args, self.dest, result)
-
 def experimental_fault_handling():
     import  cosmosis.runtime.handler
     cosmosis.runtime.handler.activate_experimental_fault_handling()
@@ -109,6 +99,9 @@ def run_cosmosis(args, pool=None):
     demo_20b_special (args)
 
     # Load configuration.
+    print(args.params)
+    print(args.variables)
+
     ini = Inifile(args.inifile, override=args.params)
 
     pre_script = ini.get(RUNTIME_INI_SECTION, "pre_script", fallback="")
@@ -120,7 +113,6 @@ def run_cosmosis(args, pool=None):
         if status:
             raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
                 pre_script, status))
-
 
     # Create pipeline.
     pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
