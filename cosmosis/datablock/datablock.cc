@@ -101,6 +101,7 @@ cosmosis::DataBlock::copy_section(std::string source, std::string dest)
   auto& source_section = sections_[source];
   auto& dest_section = source_section;
   sections_[dest] = dest_section;
+  log_access(BLOCK_LOG_COPY, source, dest, typeid(source));
   return DBS_SUCCESS;
 }
 
