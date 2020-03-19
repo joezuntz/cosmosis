@@ -67,9 +67,9 @@ namespace nested
 		bool initMPI, double logZero, int maxiter, void (*LogLike)(double *Cube, int &n_dim, int &n_par, double &lnew, void *),
 		void (*dumper)(int &, int &, int &, double **, double **, double **, double &, double &, double &, double &, void *), void *context)
 	{
-		char t_root[100];
-		std::fill(t_root, t_root + 100, ' ');
-		snprintf(t_root, 99, "%s", root.c_str());
+		char t_root[512];
+		std::fill(t_root, t_root + 512, ' ');
+		snprintf(t_root, 511, "%s", root.c_str());
 		int root_len = strlen(t_root);
 		t_root[strlen(t_root)] = ' ';
 	
@@ -104,7 +104,7 @@ void (*dumper)(int *, int *, int *, double **, double **, double **, double *, d
 void *context)
 {
 	int i;
-	for (i = strlen(root); i < 100; i++) root[i] = ' ';
+	for (i = strlen(root); i < 512; i++) root[i] = ' ';
 
         NESTRUN(&IS, &mmodal, &ceff, &nlive, &tol, &efr, &ndims, &nPar, &nClsPar, &maxModes, &updInt, &Ztol,
         root, &seed, pWrap, &fb, &resume, &outfile, &initMPI, &logZero, &maxiter, LogLike, dumper, context);

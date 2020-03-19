@@ -30,16 +30,6 @@ from . import output as output_module
 RUNTIME_INI_SECTION = "runtime"
 
 
-# TODO: find better home for this.  Utils?
-class ParseExtraParameters(argparse.Action):
-    def __call__(self, parser, args, values, option_string=None):
-        result = {}
-        for arg in values:
-            section, param_value = arg.split('.',1)
-            param,value = param_value.split('=',1)
-            result[(section,param)] = value
-        setattr(args, self.dest, result)
-
 def experimental_fault_handling():
     import  cosmosis.runtime.handler
     cosmosis.runtime.handler.activate_experimental_fault_handling()
@@ -101,7 +91,6 @@ def demo_20b_special (args):
         print ("********************************************************")
         print ("*** YOU MUST RUN demo20a BEFORE YOU CAN RUN demo20b. ***")
         print ("********************************************************")
-
 
 def sampler_main_loop(sampler, output, pool):
     # Run the sampler until convergence
@@ -202,26 +191,37 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
     if ini is None:
         ini = Inifile(args.inifile, override=args.params)
 
+    pre_script = ini.get(RUNTIME_INI_SECTION, "pre_script", fallback="")
+    post_script = ini.get(RUNTIME_INI_SECTION, "post_script", fallback="")
 
+    if (pool is None) or pool.is_master():
+        # This decodes the exist status
+        status = os.WEXITSTATUS(os.system(pre_script))
+        if status:
+            raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
+                pre_script, status))
 
     # Create pipeline.
     if pipeline is None:
         cleanup_pipeline = True
         pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
         if (pool is None) or pool.is_master() or pool_stdout:
-            pipeline = LikelihoodPipeline(ini, override=args.variables, values=values)
-            if pipeline.do_fast_slow:
-                pipeline.setup_fast_subspaces()
-
+            pipeline = LikelihoodPipeline(ini, override=args.variables, values=values, only=args.only)
         else:
             # Suppress output on everything except the master process
-            with stdout_redirected():
-                pipeline = LikelihoodPipeline(ini, override=args.variables, values=values)
-                if pipeline.do_fast_slow:
-                    pipeline.setup_fast_subspaces()
+            if pool_stdout:
+                pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only) 
+            else:
+                with stdout_redirected():
+                    pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only) 
+
+        if pipeline.do_fast_slow:
+            pipeline.setup_fast_subspaces()
     else:
         # We should not cleanup a pipeline which we didn't make
         cleanup_pipeline = False
+
+
 
 
     # determine the type(s) of sampling we want.
@@ -261,7 +261,7 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
 
         # The resume feature lets us restart from an existing file.
         # It's not fully rolled out to all the suitable samplers yet though.
-        resume = ini.get(RUNTIME_INI_SECTION, "resume", fallback=False)
+        resume = ini.getboolean(RUNTIME_INI_SECTION, "resume", fallback=False)
 
         # Not all samplers can be resumed.
         if resume and not sampler_class.supports_resume:
@@ -311,6 +311,17 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
         pipeline.cleanup()
 
 
+    # User can specify in the runtime section a post-run script to launch.
+    # In general this may be less useful than the pre-run script, because
+    # often chains time-out instead of actually completing.
+    # But we still offer it
+    if (pool is None) or pool.is_master():
+        # This decodes the exist status
+        status = os.WEXITSTATUS(os.system(post_script))
+        if status:
+            sys.stdout.write("WARNING: The post-run script {} failed with error {}".format(
+                post_script, error))
+
     return 0
 
 
@@ -324,6 +335,7 @@ def main():
         parser.add_argument("--experimental-fault-handling",action='store_true',help="Activate an experimental fault handling mode.")
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
+        parser.add_argument("--only", nargs="*", help="Fix all parameters except the ones listed")
         args = parser.parse_args(sys.argv[1:])
 
 

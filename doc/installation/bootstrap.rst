@@ -71,7 +71,7 @@ Running the bootstrap
 
 Run these lines to get and run the script::
 
-    curl -L --remote-name https://bitbucket.org/joezuntz/cosmosis/downloads/cosmosis-bootstrap
+    curl -L --remote-name https://bitbucket.org/mpaterno/cosmosis-bootstrap/raw/master/cosmosis-bootstrap-linux
     chmod u+x cosmosis-bootstrap
     ./cosmosis-bootstrap cosmosis
     cd cosmosis

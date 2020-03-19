@@ -42,3 +42,10 @@ def file_exists_and_is_empty(fpath):
     from https://stackoverflow.com/questions/2507808/how-to-check-whether-a-file-is-empty-or-not
     """
     return os.path.isfile(fpath) and os.path.getsize(fpath) == 0
+
+def file_exists_and_is_not_empty(fpath):
+    """
+    
+    from https://stackoverflow.com/questions/2507808/how-to-check-whether-a-file-is-empty-or-not
+    """
+    return os.path.isfile(fpath) and os.path.getsize(fpath) > 0

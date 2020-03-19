@@ -4,6 +4,7 @@
 
 #include "section.hh"
 #include "entry.hh"
+#include "datablock_types.h"
 
 using cosmosis::Entry;
 using cosmosis::Section;
@@ -147,4 +148,10 @@ int main()
   test_size();
   test_section_size();
   test_type_finding();
+  
+  Section s;
+  Section s2(s);
+  Section s3;
+  s3 = s;
+  //assert(s2 == s3);
 }

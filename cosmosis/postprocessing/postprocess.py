@@ -150,7 +150,7 @@ class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 		plots.WeightedMetropolisPlots1D,
 		plots.WeightedMetropolisPlots2D,
 		statistics.WeightedMetropolisStatistics,
-		#statistics.WeightedMetropolisHastingsCovariance,
+		statistics.WeightedMetropolisHastingsCovariance,
 		#statistics.DunkleyTest,
 		statistics.Citations,		
 		]

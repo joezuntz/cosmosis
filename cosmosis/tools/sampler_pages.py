@@ -76,8 +76,8 @@ def generate_sampler_wiki(info):
 			dtype, default, rest = parse_parameter_description(description)
 			parameter_lines.append("{}|{}|{}|{}".format(pname, dtype, rest, default))
 		except (IndexError, ValueError):
-			print "ERROR: Could not parse in {0}".format(name)
-			print description
+			print("ERROR: Could not parse in {0}".format(name))
+			print(description)
 			continue
 		
 	parameter_lines = '\n'.join(parameter_lines)
@@ -112,7 +112,7 @@ def main():
 	#Find and parse all the files
 	search_path = "{}/*/sampler.yaml".format(sampler_dir)
 	yaml_files = glob.glob(search_path)
-	infos = [yaml.load(open(f)) for f in yaml_files]
+	infos = [yaml.safe_load(open(f)) for f in yaml_files]
 	#Make the ordering the same every time
 	try:
 		os.mkdir('wiki')

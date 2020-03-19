@@ -36,6 +36,19 @@ except ImportError:
     pass
 
 
+class PipelineResults(object):
+    def __init__(self, vector, number_extra):
+        self.vector = vector
+        self.prior = -np.inf
+        self.extra = np.repeat(np.nan, number_extra)
+        self.block = None
+        self.post = -np.inf
+        self.like = -np.inf
+
+    def set_like(self, L):
+        self.like = L
+        self.post = self.prior + self.like
+
 
 PIPELINE_INI_SECTION = "pipeline"
 NO_LIKELIHOOD_NAMES = "no_likelihood_names_sentinel"
@@ -214,19 +227,19 @@ class SlowSubspaceCache(object):
         # So we can divide up the parameters into fast and slow.
         self.split_index = self._choose_fast_slow_split(first_use_count, timings, grid)
 
-        full_time = sum(timings)
-        slow_time = sum(timings[:self.split_index])
-        fast_time = sum(timings[self.split_index:])
+        self.full_time = sum(timings)
+        self.slow_time = sum(timings[:self.split_index])
+        self.fast_time = sum(timings[self.split_index:])
 
-        print("Time for full pipeline:  {:.2f}s".format(full_time))
-        print("Time for slow pipeline:  {:.2f}s".format(slow_time))
-        print("Time for fast pipeline:  {:.2f}s".format(fast_time))
-        time_save_percent = 100-100*fast_time/full_time
+        print("Time for full pipeline:  {:.2f}s".format(self.full_time))
+        print("Time for slow pipeline:  {:.2f}s".format(self.slow_time))
+        print("Time for fast pipeline:  {:.2f}s".format(self.fast_time))
+        time_save_percent = 100-100*self.fast_time/self.full_time
         print("Time saving: {:.2f}%".format(time_save_percent))
 
-        worth_splitting = time_save_percent > 10.
+        self.worth_splitting = time_save_percent > 10.
 
-        if not worth_splitting:
+        if not self.worth_splitting:
             print("")
             print("No significant time saving (<10%) from a fast-slow split.")
             print("Not splitting pipeline into fast and slow parts.")
@@ -238,7 +251,7 @@ class SlowSubspaceCache(object):
         self.slow_params = sum(list(first_use.values())[:self.split_index], [])
         self.fast_params = sum(list(first_use.values())[self.split_index:], [])
 
-        if worth_splitting:
+        if self.worth_splitting:
             print("")
             print("Based on this we have decided: ")
             print("   Slow modules ({}):".format(self.slow_modules))
@@ -294,7 +307,6 @@ class SlowSubspaceCache(object):
         print("Will use module {} as the first in the fast block".format(index))
 
         return index
-
 
 
 class Pipeline(object):
@@ -381,6 +393,11 @@ class Pipeline(object):
                 if index == 0:
                     print("You set a shortcut in the pipeline but it was the first module.")
                     print("It will make no difference.")
+                else:
+                    print("Shortcut mode activated: the first pipeline run will proceed as normal.")
+                    print("Subsequent runs will use module {}, {}, as their first module".format(index,shortcut))
+                    print("and use the cached results from the first run for everything before that.")
+                    print("except the input parameter values. Think about this to check it's what you want.")
                 self.shortcut_module = index
         else:
             self.shortcut_module=0
@@ -441,6 +458,15 @@ class Pipeline(object):
 
             self.slow_subspace_cache = SlowSubspaceCache(first_fast_module=first_fast_index)
             self.slow_subspace_cache.analyze_pipeline(self, all_params=all_params, grid=grid)
+
+            if not self.slow_subspace_cache.worth_splitting:
+                self.slow_subspace_cache = None
+                self.do_fast_slow = False
+                return
+
+
+            self.fast_time = self.slow_subspace_cache.fast_time
+            self.slow_time = self.slow_subspace_cache.slow_time
             # This looks a bit weird but makes sure that self.fast_params
             # and self.slow_params contain objects of type Parameter
             # not just the (section,name) tuples.
@@ -555,7 +581,11 @@ class Pipeline(object):
             if self.shortcut_data is None:
                 first_module = 0
             else:
-                first_module = shortcut_module_index
+                first_module = self.shortcut_module
+                existing_keys = set(data_package.keys())
+                for (sec, name) in self.shortcut_data.keys():
+                    if (sec,name) not in existing_keys:
+                        data_package[sec, name] = self.shortcut_data[sec,name]
         elif self.slow_subspace_cache:
             first_module = self.slow_subspace_cache.start_pipeline(data_package)
             if first_module != 0 and (self.debug or self.timing):
@@ -616,7 +646,7 @@ class Pipeline(object):
                 self.slow_subspace_cache.next_module_results(module_number, data_package)
 
             # Alternatively we will do the shortcut thing
-            elif self.shortcut_module and not self.has_run and module_number==self.shortcut_module-1:
+            elif self.shortcut_module and (not self.has_run) and module_number==self.shortcut_module-1:
                 print("Saving shortcut data")
                 self.shortcut_data = data_package.clone()
 
@@ -667,7 +697,7 @@ class LikelihoodPipeline(Pipeline):
 
     """
 
-    def __init__(self, arg=None, id="",override=None, load=True, values=None, priors=None):
+    def __init__(self, arg=None, id="", override=None, load=True, values=None, priors=None, only=None):
         u"""Construct a :class:`LikelihoodPipeline`.
 
         The arguments `arg` and `load` are used in the base-class
@@ -703,6 +733,15 @@ class LikelihoodPipeline(Pipeline):
                                                               self.priors_files,
                                                               override,
                                                               )
+        if only:
+            for p in only:
+                if p not in self.parameters:
+                    raise ValueError("You used --only but the parameter "
+                        "you named ({}) is not in the pipeline".format(p))
+            for p in self.parameters:
+                if p not in only:
+                    p.fix()
+
         self.reset_fixed_varied_parameters()
 
         self.print_priors()
@@ -712,11 +751,16 @@ class LikelihoodPipeline(Pipeline):
                                        "extra_output", fallback="")
 
         self.extra_saves = []
+        self.number_extra = 0
         for extra_save in extra_saves.split():
             section, name = extra_save.upper().split('/')
             self.extra_saves.append((section, name))
+            # To load an array-type extra_output, we should know beforehand its size
+            # So, it reads from the name especification
+            # e.g. data_vector/2pt_theory#457, in which case #457 specifies the size
+            self.number_extra += int(name.split('#')[-1]) if '#' in name else 1
 
-        self.number_extra = len(self.extra_saves)
+
         #pull out all the section names and likelihood names for later
 
         likelihood_names = self.options.get(PIPELINE_INI_SECTION,
@@ -789,7 +833,14 @@ class LikelihoodPipeline(Pipeline):
     def output_names(self):
         u"""Return a list of strings, each the name of a non-fixed parameter."""
         param_names = [str(p) for p in self.varied_params]
-        extra_names = ['%s--%s'%p for p in self.extra_saves]
+        extra_names = []
+        for section,name in self.extra_saves:
+            if ('#' in name):
+                n,l = name.split('#')
+                for i in range(l):
+                    extra_names.append('{}--{}_{}'.format(section,n,i))
+            else:
+                extra_names.append('%s--%s'%(section,name))
         return param_names + extra_names
 
 
@@ -1051,15 +1102,85 @@ class LikelihoodPipeline(Pipeline):
         else:
             return priors
 
+    def run_results(self, p, all_params=False):
+        u"""Run the pipeline on the given parameters and get a results object.
+
+        The argument `p` is a vector or list of the input parameters.
+        if (as in the default) `all_params` is False, then it should be the
+        same length and order as `self.varied_params`.
+
+        Otherwise, if all_params is False, then it should match the length and order
+        of `self.parameters`.
+
+        The method returns a `PipelineResults` object with the following attributes:
+
+        * results.post, the posterior (float);
+
+        * results.extra, the reqiured additional output parameters (numpy array)
+
+        * results.prior, the total prior (float)
+
+        * results.block, the updated data block
+
+        If there is a problem anywhere in the computations which does
+        *not* cause a run-time exception to be raised—including the case
+        where a parameter goes outside of its alloted range—, then
+        `-numpy.inf` will be returned as the final posterior (i.e., zero
+        probability of this set of parameter values being correct).
+
+        """
+        r = PipelineResults(p, self.number_extra)
+
+        priors = self.prior(p, all_params=all_params, total_only=False)
+        r.prior = sum(pr[1] for pr in priors)
+
+        if np.isnan(r.prior):
+            r.prior = -np.inf
+
+        if not np.isfinite(r.prior):
+            if not self.quiet:
+                print("Proposed outside bounds: prior -infinity")
+            return r
+        try:
+            like, r.extra, r.block = self.likelihood(p, return_data=True, all_params=all_params)
+            r.set_like(like)
+
+            if r.block is not None:
+                for name,pr in priors:
+                    r.block["priors", name] = pr
+
+        except Exception:
+            if self.debug:
+                sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
+                sys.stderr.write("\nBecause you have debug=T I will let this kill the chain.\n")
+                sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
+                raise
+
+            sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
+            sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
+            traceback.print_exc(file=sys.stderr)
+            sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
+
+        if np.isnan(r.post):
+            r.post = -np.inf
+
+        if np.isnan(r.like):
+            r.like = -np.inf
+
+        return r
+
+
 
 
     def posterior(self, p, return_data=False, all_params=False):
         u"""Use the above methods to obtain prior and updated log-likelihoods, sum together to get Bayesian posterior.
 
-        The argument `p` is the set of :class:`Parameter`s which shadows
-        `self.varied_params`, unless `all_params` is specified as `True`
-        in which case it shadows `self.parameters`.
+        The argument `p` is a vector or list of the input parameters.
+        if (as in the default) `all_params` is False, then it should be the
+        same length and order as `self.varied_params`.
 
+        Otherwise, if all_params is False, then it should match the length and order
+        of `self.parameters`.
         The method returns two or three values depending on `return_data`:
 
         * The posterior;
@@ -1077,51 +1198,13 @@ class LikelihoodPipeline(Pipeline):
 
         """
 
-        priors = self.prior(p, all_params=all_params, total_only=False)
-        # The total prior
-        prior = sum(pr[1] for pr in priors)
-        if prior == -np.inf:
-            if not self.quiet:
-                sys.stdout.write("Proposed outside bounds\nPrior -infinity\n")
-            if return_data:
-                return prior, np.repeat(np.nan, self.number_extra), None
-            return prior, np.repeat(np.nan, self.number_extra)
-
-        try:
-            results = self.likelihood(p, return_data=return_data, all_params=all_params)
-            error = False
-
-            like = results[0]
-            extra = results[1]
-            
-            if return_data:
-                data = results[2]
-                for name,pr in priors:
-                    data["priors", name] = pr
-
-        except Exception:
-            error = True
-            # If we are 
-            if self.debug:
-                sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
-                sys.stderr.write("\n\Because you have debug=T I will let this kill the chain.\n")
-                sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
-                raise
-
-            sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
-            sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
-            traceback.print_exc(file=sys.stderr)
-            sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
-
-            # Replace with bad values
-            like = -np.inf
-            data = None
-            extra = np.repeat(np.nan, self.number_extra)
-
+        r = self.run_results(p, all_params=all_params)
         if return_data:
-            return prior + like, extra, data
+            return r.post, r.extra, r.block
         else:
-            return prior + like, extra
+            return r.post, r.extra
+
+
 
     def _set_likelihood_names_from_block(self, data):
         likelihood_names = []
@@ -1212,11 +1295,24 @@ class LikelihoodPipeline(Pipeline):
         for option in self.extra_saves:
             try:
                 #JAZ - should this be just .get(*option) ?
-                value = data.get_double(*option)
+                # If the # symbol is present, we have an array-type extra_output and it is
+                # read as numpy.ndarray. We append all of its elements to the extra_saves.
+                # If the total array size does not match the sum of the sizes indicated in the
+                # name #, an exception will be raised.
+                if('#' in option[1]):
+                    value = data.get(option[0], option[1].split('#')[0])
+                else:
+                    value = data.get(*option)
+
             except block.BlockError:
                 value = np.nan
 
-            extra_saves.append(value)
+            if (type(value)==np.ndarray):
+                for e in value:
+                    extra_saves.append(e)
+            else:
+                extra_saves.append(value)
+                # ---------------------------- otavio end ---------------------------
 
         self.n_iterations += 1
         if return_data:

@@ -80,10 +80,14 @@ class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
             for d in self.data:
                 chain = SingleChainData(d,self.colnames)
                 col, code = f(chain)
+                if col is None:
+                    break
                 #insert a new column into the chain, second from the end
                 d = np.insert(d, -2, col, axis=1)
                 #save the new chain
                 new_data.append(d)
+            if code is None:
+                continue
             self.colnames.insert(-2, code)
             print("Added a new column called ", code)
             self.data = new_data

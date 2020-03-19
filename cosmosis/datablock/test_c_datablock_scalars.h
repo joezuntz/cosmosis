@@ -443,12 +443,12 @@ void test_scalar_complex()
   /* Get with a default returns the supplied default when no such
      parameter is found. */
   string section_name = "x";
-  complex val = 0.0;
+  double complex val = 0.0;
   assert(c_datablock_get_complex_default(s, section_name, "no_such_param", -1.0e-6+10.5*_Complex_I, &val) == DBS_SUCCESS);
   assert(val == -1.0e-6+10.5*_Complex_I);
   // no cleanup needed ;
 
-  complex expected = -1.0e-6+10.5*_Complex_I;
+  double complex expected = -1.0e-6+10.5*_Complex_I;
 
  /* Put with no previous value should save the right value. */
   assert(c_datablock_put_complex(s, section_name, "param_1", expected) == DBS_SUCCESS);
@@ -506,7 +506,7 @@ void test_scalar_complex()
 
   /* Replacement of an existing value with one of the same type should
      save the right value. */
-  complex new_expected = 5.5*_Complex_I;
+  double complex new_expected = 5.5*_Complex_I;
   val = 0.0;
   assert(c_datablock_replace_complex(s, section_name, "param_1", new_expected) == DBS_SUCCESS);
   assert(c_datablock_get_complex(s, section_name, "param_1", &val) == DBS_SUCCESS);
@@ -525,7 +525,7 @@ void test_scalar_complex()
      type should not succeed, and the stored value should not be
      changed. */
   assert(c_datablock_put_complex(s, section_name, "a value", 1.25-2.5*_Complex_I) == DBS_SUCCESS);
-  complex a_value;
+  double complex a_value;
   
   assert(c_datablock_replace_bool(s, section_name, "a value", false) == DBS_WRONG_VALUE_TYPE);
   assert(c_datablock_get_complex(s, section_name, "a value", &a_value) == DBS_SUCCESS);

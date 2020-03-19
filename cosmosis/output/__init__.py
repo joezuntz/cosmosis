@@ -17,7 +17,7 @@ verbosity_levels = {
 	"quiet":50-logging.ERROR,    #10
 	"silent":50-logging.FATAL,   #-1
 }
-#logging.basicConfig(format="- %(message)s",level=logging.DEBUG)
+
 
 def set_verbosity(verb):
 	try:

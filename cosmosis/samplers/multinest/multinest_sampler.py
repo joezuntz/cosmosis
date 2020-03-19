@@ -65,7 +65,7 @@ MULTINEST_SECTION='multinest'
 
 class MultinestSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("like", float), ("post", float), ("weight", float)]
+    sampler_outputs = [("prior", float), ("like", float), ("post", float), ("weight", float)]
     supports_smp=False
 
     def config(self):
@@ -95,7 +95,7 @@ class MultinestSampler(ParallelSampler):
 
         # We add one to the output to save the posterior as well as the
         # likelihood.
-        self.npar = self.ndim + len(self.pipeline.extra_saves) + 1
+        self.npar = self.ndim + len(self.pipeline.extra_saves) + 2
 
         #Required options
         self.max_iterations = self.read_ini("max_iterations", int)
@@ -107,6 +107,9 @@ class MultinestSampler(ParallelSampler):
         self.multinest_outfile_root = self.read_ini("multinest_outfile_root", str, "")
         self.update_interval        = self.read_ini("update_interval", int, 200)
 
+        if len(self.multinest_outfile_root)>511:
+            raise ValueError("Multinest parameter 'multinest_outfile_root'"
+                " cannot be longer than 511 characters.")
         #General run options
         self.random_seed = self.read_ini("random_seed", int, -1)
         self.importance  = self.read_ini("ins", bool, True)
@@ -158,15 +161,13 @@ class MultinestSampler(ParallelSampler):
 
         def likelihood(cube_p, ndim, nparam, context_p):
             # The -1 is because we store the likelihood separately.
-            nextra = nparam-ndim-1
+            nextra = nparam-ndim-2
             #pull out values from cube
             cube_vector = np.array([cube_p[i] for i in range(ndim)])
             vector = self.pipeline.denormalize_vector_from_prior(cube_vector)
 
-            # For information only
-            prior = self.pipeline.prior(vector)
             try:
-                like, extra = self.pipeline.likelihood(vector)
+                results = self.pipeline.run_results(vector)
             except KeyboardInterrupt:
                 raise sys.exit(1)
 
@@ -174,12 +175,13 @@ class MultinestSampler(ParallelSampler):
                 cube_p[i] = vector[i]
 
             for i in range(nextra):
-                cube_p[ndim+i] = extra[i]
+                cube_p[ndim+i] = results.extra[i]
 
             # posterior column
-            cube_p[ndim+nextra] = prior + like
+            cube_p[ndim+nextra] = results.prior
+            cube_p[ndim+nextra+1] = results.post
 
-            return like
+            return results.like
         self.wrapped_likelihood = loglike_type(likelihood)
 
     def worker(self):
@@ -218,16 +220,18 @@ class MultinestSampler(ParallelSampler):
         self.converged = True
 
     def output_params(self, n, live, posterior, log_z, ins_log_z, log_z_err):
+        self.output.reset_to_chain_start()
         self.log_z = ins_log_z if self.importance else log_z
         self.log_z_err = log_z_err
         data = np.array([posterior[i] for i in range(n*(self.npar+2))]).reshape((self.npar+2, n))
         for row in data.T:
             params = row[:self.ndim]
-            extra_vals = row[self.ndim:self.npar-1]
+            extra_vals = row[self.ndim:self.npar-2]
+            prior = row[self.npar-2]
             post = row[self.npar-1]
             like = row[self.npar]
             importance = row[self.npar+1]
-            self.output.parameters(params, extra_vals, like, post, importance)
+            self.output.parameters(params, extra_vals, prior, like, post, importance)
         self.output.final("nsample", n)
         self.output.flush()
 

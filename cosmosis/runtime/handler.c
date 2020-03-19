@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-sig_t default_handler;
+void (*default_handler) (int);
 
 
 void segfault_handler(int sig) {

@@ -11,13 +11,13 @@ global pipeline
 
 def posterior(p):
     # PMC code needs posterior not log posterior
-    post, extra = pipeline.posterior(p)
-    return post, extra
+    r = pipeline.run_results(p)
+    return r.post, (r.prior, r.extra)
 
 
 class PMCSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("component", int), ("post",float), ("log_weight",float)]
+    sampler_outputs = [("component", int), ("prior", float), ("post",float), ("log_weight",float)]
 
     def config(self):
         global pipeline
@@ -78,8 +78,9 @@ class PMCSampler(ParallelSampler):
         self.iterations += 1
         self.samples += n
 
-        for (vector, like, extra, component, weight) in zip(*results):
-            self.output.parameters(vector, extra, (component, like,weight))
+        for (vector, post, extra, component, weight) in zip(*results):
+            prior, extra = extra
+            self.output.parameters(vector, extra, (component, prior, post, weight))
 
         print("Done %d iterations, %d samples" % (self.iterations, self.samples))
 

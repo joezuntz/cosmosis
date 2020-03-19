@@ -56,7 +56,7 @@ def posterior_and_gradient(p_in):
 
 class PMaxlikeSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("like", float)]
+    sampler_outputs = [("prior", float), ("like", float), ("post", float)]
 
     def config(self):
         self.method = self.read_ini("method", str, "CG")
@@ -86,15 +86,15 @@ class PMaxlikeSampler(ParallelSampler):
         opt_norm = result.x
         opt = self.pipeline.denormalize_vector(opt_norm)
         
-        like, extra = self.pipeline.likelihood(opt)
+        results = self.pipeline.run_results(opt)
 
         #Some output - first log the parameters to the screen.
         #It's not really a warning - that's just a level name
         self.output.log_warning("Best fit:\n%s"%'   '.join(str(x) for x in opt))
-        self.output.log_warning("Best likelihood: %f\n", like)
+        self.output.log_warning("Best likelihood: %f\n", results.like)
 
         #Next save them to the proper table file
-        self.output.parameters(opt, extra, like)
+        self.output.parameters(opt, results.extra, results.prior, results.like, results.post)
 
         #If requested, create a new ini file for the
         #best fit.

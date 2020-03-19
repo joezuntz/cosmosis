@@ -342,15 +342,15 @@ class MatterPower2D(ShearSpectrumPlot):
         self.plot_section("matter_cl")
 
 
-class ShearCorrelationPlot(Plot):
-    "Shear-shear power spectrum"
-    filename = "shear_correlation"
+class ShearCorrelationPlusPlot(Plot):
+    "Shear-shear correlation xi plus"
+    filename = "shear_xi_plus"
     def plot(self):
-        super(ShearCorrelationPlot, self).plot()
+        super(ShearCorrelationPlusPlot, self).plot()
         nbin = 0
         for i in range(1,100):
-            filename = self.file_path("shear_xi",
-                                      "xiplus_{0}_{0}".format(i))
+            filename = self.file_path("shear_xi_plus",
+                                      "bin_{0}_{0}".format(i))
             if os.path.exists(filename):
                 nbin += 1
             else:
@@ -358,7 +358,7 @@ class ShearCorrelationPlot(Plot):
         if nbin==0:
             IOError("No data for plot: %s"% self.__class__.__name__[:-4])
 
-        theta = self.load_file("shear_xi", "theta")
+        theta = self.load_file("shear_xi_plus", "theta")
         sz = 1.0/(nbin+2)
         for i in range(1, nbin+1):
             for j in range(1, i+1):
@@ -366,8 +366,55 @@ class ShearCorrelationPlot(Plot):
                 self.figure.add_axes(rect)
                 #pylab.ploy()
                 #pylab.subplot(nbin, nbin, (nbin*nbin)-nbin*(j-1)+i)
-                xi = self.load_file("shear_xi",
-                                "xiplus_{0}_{1}".format(i,j))
+                xi = self.load_file("shear_xi_plus",
+                                "bin_{0}_{1}".format(i,j))
+                pylab.loglog(theta, xi)
+                pylab.xlim(1e-4,1e-1)
+                pylab.ylim(2e-7,1e-3)
+                if i==1 and j==1:
+                    pylab.xlabel("$\\theta$")
+                    pylab.ylabel("$\\xi_+(\\theta)$")
+                else:
+                    pylab.gca().xaxis.set_ticklabels([])
+                    pylab.gca().yaxis.set_ticklabels([])
+
+                pylab.gca().tick_params(length=0.0, which='minor')
+                pylab.gca().tick_params(length=3.0, which='major')
+                pylab.gca().tick_params(labelsize=10)
+
+                pylab.text(1.5e-3,1.8e-4, "(%d,%d)"%(i,j), fontsize=8,
+                           color='red')
+
+                pylab.grid()
+
+
+
+class ShearCorrelationMinusPlot(Plot):
+    "Shear-shear correlation xi minus"
+    filename = "shear_xi_minus"
+    def plot(self):
+        super(ShearCorrelationMinusPlot, self).plot()
+        nbin = 0
+        for i in range(1,100):
+            filename = self.file_path("shear_xi_minus",
+                                      "bin_{0}_{0}".format(i))
+            if os.path.exists(filename):
+                nbin += 1
+            else:
+                break
+        if nbin==0:
+            IOError("No data for plot: %s"% self.__class__.__name__[:-4])
+
+        theta = self.load_file("shear_xi_minus", "theta")
+        sz = 1.0/(nbin+2)
+        for i in range(1, nbin+1):
+            for j in range(1, i+1):
+                rect = (i*sz,j*sz,sz,sz)
+                self.figure.add_axes(rect)
+                #pylab.ploy()
+                #pylab.subplot(nbin, nbin, (nbin*nbin)-nbin*(j-1)+i)
+                xi = self.load_file("shear_xi_minus",
+                                "bin_{0}_{1}".format(i,j))
                 pylab.loglog(theta, xi)
                 pylab.xlim(1e-4,1e-1)
                 pylab.ylim(2e-7,1e-3)

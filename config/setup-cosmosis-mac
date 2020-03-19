@@ -1,0 +1,34 @@
+# This script is only used for setting up to use a native macOS build
+# of CosmoSIS.
+
+export COSMOSIS_SRC_DIR=$PWD
+
+#The gnu science library
+export GSL_INC=/usr/local/include
+export GSL_LIB=/usr/local/lib
+
+#The cfitsio FITS library
+export CFITSIO_INC=/usr/local/include
+export CFITSIO_LIB=/usr/local/lib
+
+#The fftw3 Fourier transform library
+export FFTW_LIBRARY=/usr/local
+export FFTW_INCLUDE_DIR=/usr/local
+
+# Minuit2
+export MINUIT2_LIB=/usr/local
+export MINUIT2_INC=/usr/local
+
+# BLAS and LAPACK are used from OpenBLAS, rather than
+# from the macOS Accelerate framework. In this, we are
+# following the lead of SciPy and NumPy.
+export LAPACK_LINK=/usr/local/opt/openblas/lib/liblapack.dylib
+
+export PYTHONPATH=${COSMOSIS_SRC_DIR}:${PYTHONPATH}
+export PATH=${COSMOSIS_SRC_DIR}/bin:${PATH}
+
+export CXX=clang++
+export CC=clang
+export FC=gfortran
+export MPIFC=mpifort
+export COSMOSIS_ALT_COMPILERS=1

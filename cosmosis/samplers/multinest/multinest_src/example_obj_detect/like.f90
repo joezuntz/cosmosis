@@ -18,7 +18,7 @@ subroutine sCreateData(var,sdata,spredict)
 	logical spredict
 	integer i,j,k
 	double precision gap!pixel gap in each direction between clusters
-	character(len=100) datafile
+	character(len=root_max_len) datafile
 
 	sdata=0.
 	   

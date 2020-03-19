@@ -53,6 +53,7 @@ installation: >
 # List of configuration options for this sampler
 params:
     step_size: "(float; default=0.01) The size, as a fraction of the total parameter range, of steps to use in the derivative calculation. You should investigate stability wrt this."
+    use_numdifftools: "(bool; default=False) Use the library numdifftools instead of the default code (should be little difference)"
 # Not currently working:
 #    tolerance: "(float; default=0.01) tolerance of the iterative process to find the right step size"
 #    maxiter: "(integer; default=10) Max number of iterations to use"

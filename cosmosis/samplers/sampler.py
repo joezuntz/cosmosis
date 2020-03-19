@@ -3,8 +3,15 @@ from builtins import str
 from builtins import range
 from builtins import object
 from cosmosis.runtime.attribution import PipelineAttribution
+import datetime
+import platform
+import getpass
+import os
+import uuid
+import pickle
 from .hints import Hints
-
+import numpy as np
+import shutil
 # Sampler metaclass that registers each of its subclasses
 
 class RegisteredSampler(type):
@@ -44,11 +51,37 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             for p,ptype in self.sampler_outputs:
                 self.output.add_column(p, ptype)
             self.output.metadata("n_varied", len(self.pipeline.varied_params))
-
             self.attribution.write_output(self.output)
+            for key, value in self.collect_run_metadata().items():
+                self.output.metadata(key, value)
         blinding_header = self.ini.getboolean("output","blinding-header", fallback=False)
         if blinding_header and self.output:
             self.output.blinding_header()
+
+    def collect_run_metadata(self):
+        info = {
+            'timestamp': datetime.datetime.now().isoformat(),
+            'platform': platform.platform(),
+            'platform_version': platform.version(),
+            'uuid': uuid.uuid4().hex,
+        }
+        try:
+            info['cosmosis_git_version'] = os.popen("cd $COSMOSIS_SRC_DIR; git rev-parse HEAD").read().strip()
+            info['csl_git_version'] = os.popen("cd $COSMOSIS_SRC_DIR/cosmosis-standard-library; git rev-parse HEAD").read().strip()
+            info['cwd_git_version'] = os.popen("git rev-parse HEAD").read().strip()
+        except:
+            pass
+
+        # The host name and username are (potentially) private information
+        # so we only save those if privacy=False, which is not the default
+        privacy = self.ini.getboolean('output','privacy', fallback=True)
+        save_username = not privacy
+        if save_username:
+            info['hostname'] = platform.node()
+            info['username'] = getpass.getuser()
+
+
+        return info
 
     def read_ini(self, option, option_type, default=None):
         """
@@ -87,6 +120,30 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             Should be enough to test convergence '''
         raise NotImplementedError
 
+    def write_resume_info(self, info):
+        try:
+            filename = self.output.name_for_sampler_resume_info()
+        except NotImplementedError:
+            return
+
+        # in some fast pipelines like demo 5 a keyboard interrupt
+        # is likely to happen in the middle of this dump operation
+        tmp_filename = filename + '.tmp'
+
+        with open(tmp_filename, 'wb') as f:
+            pickle.dump(info, f)
+
+        shutil.move(tmp_filename, filename)
+
+    def read_resume_info(self):
+        filename = self.output.name_for_sampler_resume_info()
+        if not os.path.exists(filename):
+            return None
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
+
+
+
     def resume(self):
         raise NotImplementedError("The sampler {} does not support resuming".format(self.name))
 
@@ -99,6 +156,43 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
         else:
             start = self.pipeline.start_vector()
         return start
+
+    def cov_estimate(self):
+        covmat_file = self.read_ini("covmat", str, "")
+        n = len(self.pipeline.varied_params)
+
+        if self.distribution_hints.has_cov():
+            # hints from a previous sampler take
+            # precendence
+            covmat = self.distribution_hints.get_cov()
+
+        elif covmat_file:
+            covmat = np.loadtxt(covmat_file)
+            # Fix the size.
+            # If there is only one sample parameter then 
+            # we assume it is a 1x1 matrix
+            # If it's a 1D vector then assume these are
+            # standard deviations
+            if covmat.ndim == 0:
+                covmat = covmat.reshape((1, 1))
+            elif covmat.ndim == 1:
+                covmat = np.diag(covmat ** 2)
+
+            # Error on incorrect shapes or sizes
+            if covmat.shape[0] != covmat.shape[1]:
+                raise ValueError("Covariance matrix from {}"
+                                 "not square".format(covmat_file))
+            if covmat.shape[0] != n:
+                raise ValueError("Covariance matrix from {} "
+                                 "is the wrong shape ({}x{}) "
+                                 "for the {} varied params".format(
+                                    covmat_file, covmat.shape[0], n))
+        else:
+            # Just try a minimal estimate - 5% of prior width as standard deviation
+            covmat_scale = self.read_ini("covmat_scale", float, 0.05)
+            covmat = np.diag([covmat_scale*p.width() for p in self.pipeline.varied_params])**2
+
+        return covmat
 
 
 

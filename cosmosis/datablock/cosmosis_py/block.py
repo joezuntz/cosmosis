@@ -13,12 +13,17 @@ import ctypes as ct
 from . import lib
 from . import errors
 from . import dbt_types as types
+from ...runtime.utils import mkdir
 from .errors import BlockError
 import numpy as np
 import os
 import collections
 import tarfile
 import io
+from io import StringIO, BytesIO
+import sys
+
+
 
 option_section = "module_options"
 metadata_prefix = "cosmosis_metadata:"
@@ -612,7 +617,7 @@ class DataBlock(object):
 		method = self._method_for_datatype_code(type_code,self.GET)
 		if method:
 			return method(section,name)
-		raise ValueError("Cosmosis internal error; unknown type of data")
+		raise ValueError("Cosmosis internal error; unknown type of data. section: %s, name: %s, type_code: %s" % (section, name, type_code))
 
 	def put(self, section, name, value, **meta):
 		u"""Add a parameter with `value` at (`section`, `name`) in the map.
@@ -671,7 +676,7 @@ class DataBlock(object):
 		in this case.
 
 		"""
-		status = lib.c_datablock_replace_int(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
+		status = lib.c_datablock_replace_bool(self._ptr,section.encode('ascii'),name.encode('ascii'),value)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
@@ -884,7 +889,7 @@ class DataBlock(object):
 		base_dirname,base_filename=os.path.split(filename)
 		if base_dirname:
 			try:
-				os.mkdir(base_dirname)
+				mkdir(base_dirname)
 			except OSError:
 				pass
 
@@ -946,7 +951,7 @@ class DataBlock(object):
 
 		"""
 		try:
-			os.mkdir(dirname)
+			mkdir(dirname)
 		except OSError:
 			if not clobber:
 				print("Not clobbering", clobber)
@@ -956,7 +961,7 @@ class DataBlock(object):
 			#Create the sub-directory for this 
 			#section
 			try:
-				os.mkdir(os.path.join(dirname,section))
+				mkdir(os.path.join(dirname,section))
 			except OSError:
 				if not clobber:
 					raise
@@ -1233,6 +1238,83 @@ class DataBlock(object):
 				params.remove((section,name))
 		#Return a list of lists of parameter first used in each section
 		return params_by_module
+
+	@classmethod
+	def from_yaml(cls, filename_or_stream):
+		import yaml
+
+		# work around problem with py2 yaml on unicode
+		# https://stackoverflow.com/questions/27518976/how-can-i-get-pyyaml-safe-load-to-handle-python-unicode-tag
+		if sys.version_info[0]==2:
+			def constructor(loader, node):
+				return node.value
+			yaml.SafeLoader.add_constructor("tag:yaml.org,2002:python/unicode", constructor)
+
+		block = cls()
+		if isinstance(filename_or_stream, basestring):
+			stream = open(filename_or_stream)
+		else:
+			stream = filename_or_stream
+
+		data = yaml.safe_load(stream)
+
+		if not isinstance(data, dict) or (not all(isinstance(k, str) for k in data.keys())) or (not all(isinstance(v, dict) for v in data.values())):
+			raise ValueError("Wrong format yaml file {}".format(filename_or_stream))
+
+		for section, contents in data.items():
+			for key, value in contents.items():
+				if isinstance(value, list):
+					value = np.array(value)
+				block[section, key] = value
+
+		return block
+
+	def to_yaml(self, filename_or_stream):
+		import yaml
+		if isinstance(filename_or_stream, basestring):
+			stream = open(filename_or_stream, 'w')
+		else:
+			stream = filename_or_stream
+
+		data = {}
+		for section in self.sections():
+			data[section] = {}
+			for (_, key) in self.keys(section):
+				value = self[section, key]
+				if isinstance(value, np.ndarray):
+					value = value.tolist()
+				data[section][key] = value
+
+		yaml.dump(data, stream)
+
+	@classmethod
+	def from_string(cls, s):
+		if sys.version_info[0]==2:
+			sio = BytesIO(s)
+		else:
+			sio = StringIO(s)
+		return cls.from_yaml(sio)
+
+	def to_string(self):
+		if sys.version_info[0]==2:
+			sio = BytesIO()
+		else:
+			sio = StringIO()
+		self.to_yaml(sio)
+		sio.seek(0)
+		return sio.read()
+
+	def __reduce__(self):
+		return (datablock_from_string, (self.to_string(),))
+
+
+# This is not needed under python 3, where, the __reduce__ method
+# above can return the class method, but it is under python 2.
+def datablock_from_string(s):
+	return DataBlock.from_string(s)
+
+
+
 
 
 

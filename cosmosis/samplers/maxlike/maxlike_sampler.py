@@ -4,7 +4,7 @@ import numpy as np
 
 
 class MaxlikeSampler(Sampler):
-    sampler_outputs = [("like", float)]
+    sampler_outputs = [("prior", float), ("like", float), ("post", float)]
 
     def config(self):
         self.tolerance = self.read_ini("tolerance", float, 1e-3)
@@ -40,16 +40,21 @@ class MaxlikeSampler(Sampler):
             p = self.pipeline.denormalize_vector(p_in)
             if self.max_posterior:
                 like, extra = self.pipeline.posterior(p)
-                self.output.log_debug("%s  post=%le"%('   '.join(str(x) for x in p),like))
+                self.output.log_debug("%s  post=%f"%('   '.join(str(x) for x in p),like))
             else:
                 like, extra = self.pipeline.likelihood(p)
-                self.output.log_debug("%s  like=%le"%('   '.join(str(x) for x in p),like))
+                self.output.log_debug("%s  like=%f"%('   '.join(str(x) for x in p),like))
             return -like
 
-        #starting position in the normalized space
-        start_vector = self.pipeline.normalize_vector(self.pipeline.start_vector())
+        # starting position in the normalized space.  This will be taken from
+        # a previous sampler if available, or the values file if not.
+        start_vector = self.pipeline.normalize_vector(self.start_estimate())
         bounds = [(0.0, 1.0) for p in self.pipeline.varied_params]
 
+        # check that the starting position is a valid point
+        start_like = likefn(start_vector)
+        if not np.isfinite(start_like):
+            raise RuntimeError('invalid starting point for maxlike')
 
         result = scipy.optimize.minimize(likefn, start_vector, method=self.method, 
           jac=False, tol=self.tolerance,  #bounds=bounds, 
@@ -61,17 +66,17 @@ class MaxlikeSampler(Sampler):
 
         #Some output - first log the parameters to the screen.
         #It's not really a warning - that's just a level name
+        results = self.pipeline.run_results(opt)
         if self.max_posterior:
-            like, extra = self.pipeline.posterior(opt)
-            self.output.log_warning("Best fit:\n%s"%'   '.join(str(x) for x in opt))
-            self.output.log_warning("Posterior: {}\n".format(like))
+
+            self.output.log_warning("Best fit (by posterior):\n%s"%'   '.join(str(x) for x in opt))
         else:
-            like, extra = self.pipeline.likelihood(opt)
-            self.output.log_warning("Best fit:\n%s"%'   '.join(str(x) for x in opt))
-            self.output.log_warning("Likelihood: {}\n".format(like))
+            self.output.log_warning("Best fit (by likelihood):\n%s"%'   '.join(str(x) for x in opt))
+        self.output.log_warning("Posterior: {}\n".format(results.post))
+        self.output.log_warning("Likelihood: {}\n".format(results.like))
 
         #Next save them to the proper table file
-        self.output.parameters(opt, extra, like)
+        self.output.parameters(opt, results.extra, results.prior, results.like, results.post)
 
         #If requested, create a new ini file for the
         #best fit.

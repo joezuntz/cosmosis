@@ -27,7 +27,7 @@ class ModuleAttribution(object):
 	@classmethod
 	def from_yaml(cls,filename):
 		if os.path.exists(filename):
-			data = yaml.load(open(filename))
+			data = yaml.safe_load(open(filename))
 		else:
 			data = {}
 		return cls(data)

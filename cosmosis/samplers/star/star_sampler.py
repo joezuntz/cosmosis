@@ -10,11 +10,11 @@ from .. import ParallelSampler
 
 def task(p):
     i,p = p
-    results = star_sampler.pipeline.posterior(p, return_data=star_sampler.save_name)
+    results = star_sampler.pipeline.run_results(p)
     #If requested, save the data to file
-    if star_sampler.save_name and results[2] is not None:
-        results[2].save_to_file(star_sampler.save_name+"_%d"%i, clobber=True)
-    return (results[0], results[1])
+    if star_sampler.save_name and results.block is not None:
+        results.block.save_to_file(star_sampler.save_name+"_%d"%i, clobber=True)
+    return (results.post, results.prior, results.extra)
 
 LARGE_JOB_SIZE = 1000000
 
@@ -22,7 +22,8 @@ LARGE_JOB_SIZE = 1000000
 
 class StarSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("post", float)]
+    sampler_outputs = [("prior", float),("post", float)]
+    understands_fast_subspaces = True
 
     def config(self):
         global star_sampler
@@ -118,9 +119,9 @@ class StarSampler(ParallelSampler):
         for sample, result  in zip(samples, results):
             #Optionally save all the results calculated by each
             #pipeline run to files
-            (prob, extra) = result
+            (post, prior, extra) = result
             #always save the usual text output
-            self.output.parameters(sample, extra, prob)
+            self.output.parameters(sample, extra, prior, post)
 
     def is_converged(self):
         return self.converged

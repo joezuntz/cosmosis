@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+import argparse
+import astropy.table
+import numpy as np
+
+parser = argparse.ArgumentParser(description="Convert a cosmomc-format chain (with the chain text file and the paramnames file) into a cosmosis format")
+parser.add_argument("input_name", help="Base name of the cosmomc file.  We will look for X_1.txt, X_2.txt, ..., and X.paramnames")
+parser.add_argument("output_name", help="CosmoSIS chain output name")
+args = parser.parse_args()
+#cosmological_parameters--log1e10as	cosmological_parameters--omega_m	
+#cosmological_parameters--omega_b	cosmological_parameters--h0	cosmological_parameters--tau	
+#cosmological_parameters--n_s	planck--a_planck	post	weight
+
+
+
+def load_names(name_filename):
+	names = ['weight', 'post']
+	for line in open(name_filename):
+		words = line.split()
+		if not words:
+			continue
+		name = words[0].rstrip("*")
+		names.append(name)
+	return names
+
+
+def translate_parameters(chain):
+	output = {}
+	h = chain["H0"]/100.0
+	output["cosmological_parameters--n_s"] = chain['ns']
+	output["cosmological_parameters--a_s"] = 1e-10 * np.exp(chain['logA'])
+	output["cosmological_parameters--ommh2"] = chain['omegam'] * h**2
+	output["cosmological_parameters--tau"] = chain['tau']
+	output["cosmological_parameters--ombh2"] = chain['omegabh2']
+	output["cosmological_parameters--h0"] = h
+	output["planck--a_planck"] = chain['calPlanck']
+	output["post"] = chain["post"]
+	output["weight"] = chain["weight"]
+	return output
+
+names = load_names(args.input_name + ".paramnames")
+data = np.loadtxt(args.input_name + "_1.txt").T
+chain = {}
+for (name, col) in zip(names, data):
+	chain[name] = col
+
+chain = translate_parameters(chain)
+names = chain.keys()
+data = np.vstack([chain[name] for name in names])
+header = "  ".join(names)
+np.savetxt(args.output_name, data.T, header=header)
+

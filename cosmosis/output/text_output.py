@@ -2,6 +2,7 @@ from __future__ import print_function
 from builtins import str
 from .output_base import OutputBase
 from . import utils
+from ..runtime.utils import mkdir
 import numpy as np
 import os
 from glob import glob
@@ -23,10 +24,14 @@ class TextColumnOutput(OutputBase):
             filename = filename[:-len(self.FILE_EXTENSION)]
 
         if nchain > 1:
-            self._filename = "%s_%d%s" % (filename, rank+1, 
-                                          self.FILE_EXTENSION)
-        else:
-            self._filename = filename + self.FILE_EXTENSION
+            filename = filename + "_{}".format(rank+1)
+
+        self.filename_base = filename
+
+        self._filename = filename + self.FILE_EXTENSION
+
+        dirname, _ = os.path.split(self._filename)
+        mkdir(dirname)
 
         if resume and utils.file_exists_and_is_empty(self._filename):
             print("You set resume=T but the file {} is empty so I will start afresh".format(self._filename))
@@ -61,6 +66,9 @@ In the last case you can set lock=F in the [output] section to disable this feat
         self._metadata = OrderedDict()
         self._final_metadata = OrderedDict()
 
+        # For resetting
+        self._start_mark = None
+
     def _close(self):
         self._flush_metadata(self._final_metadata)
         self._final_metadata={}
@@ -85,6 +93,7 @@ In the last case you can set lock=F in the [output] section to disable this feat
             #text mode does not support comments
             self._flush_metadata(self._metadata)
         self._metadata={}
+        self._start_mark = self._file.tell()
 
     def _write_metadata(self, key, value, comment=''):
         #We save the metadata until we get the first 
@@ -98,6 +107,8 @@ In the last case you can set lock=F in the [output] section to disable this feat
     def _write_comment(self, comment):
         #save comments along with the metadata - nice as 
         #preserves order
+        # remove line breaks in comments
+        comment = comment.replace("\n", " ")
         self._metadata[comment_indicator +
                        "_%d" % (len(self._metadata))] = (comment,None)
 
@@ -111,6 +122,20 @@ In the last case you can set lock=F in the [output] section to disable this feat
 
     def _flush(self):
         self._file.flush()
+
+    def reset_to_chain_start(self):
+        # On the first iteration the start mark is not set until we call
+        # output the first time.
+        if self._start_mark is None:
+            return
+        self._file.seek(self._start_mark)
+        self._file.truncate()
+        self._file.flush()
+
+    def name_for_sampler_resume_info(self):
+        return self.filename_base + '.sampler_status'
+
+
 
     @classmethod
     def from_options(cls, options, resume=False):

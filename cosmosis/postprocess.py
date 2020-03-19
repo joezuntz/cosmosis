@@ -15,6 +15,7 @@ mcmc=parser.add_argument_group(title="MCMC", description="Options for MCMC-type 
 mcmc.add_argument("--burn", default=0.0, type=float, help="Fraction or number of samples to burn at the start")
 mcmc.add_argument("--thin", default=1, type=int, help="Keep every n'th sampler in MCMC")
 mcmc.add_argument("--weights", action='store_true', help="Look for a weight column in a generic MCMC file")
+mcmc.add_argument("-gd","--getdist", action='store_true', default=False, help="Use getdist for the statistics of MCMC chain. Not implemented for polychord and grid sampler yet.")
 
 general=parser.add_argument_group(title="General", description="General options for controlling postprocessing")
 general.add_argument("-o","--outdir", default=".", help="Output directory for all generated files")
@@ -74,7 +75,7 @@ def main(args):
 
 	for i,ini_filename in enumerate(args.inifile):
 		sampler, ini = read_input(ini_filename, args.text, args.weights)
-		processor_class = postprocessor_for_sampler(sampler.strip ())
+		processor_class = postprocessor_for_sampler(sampler.split()[-1])
 
 		#We do not know how to postprocess everything.
 		if processor_class is None:

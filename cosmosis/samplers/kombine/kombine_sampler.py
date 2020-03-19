@@ -8,7 +8,8 @@ import numpy as np
 pipeline = None
 def log_probability_function(p):
     global pipeline
-    return pipeline.posterior(p)
+    r = pipeline.run_results(p)
+    return r.post, (r.extra, r.prior)
 
 
 
@@ -31,7 +32,7 @@ def sample_ball(p0, std, size=1):
 
 class KombineSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("post", float)]
+    sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
         global pipeline
@@ -92,7 +93,8 @@ class KombineSampler(ParallelSampler):
 
     def output_samples(self, pos, prob, extra_info):
         for p,l,e in zip(pos,prob,extra_info):
-            self.output.parameters(p, e, l)
+            e, pr = e
+            self.output.parameters(p, e, pr, l)
 
     def execute(self):
         if not self.burned_in:

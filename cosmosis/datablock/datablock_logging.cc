@@ -12,5 +12,6 @@ const char * BLOCK_LOG_REPLACE_FAIL = "REPLACE-FAIL";
 const char * BLOCK_LOG_CLEAR = "CLEAR";
 const char * BLOCK_LOG_DELETE = "DELETE";
 const char * BLOCK_LOG_START_MODULE = "MODULE-START";
+const char * BLOCK_LOG_COPY = "COPY";
 
 }

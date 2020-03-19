@@ -5,6 +5,8 @@ import logging
 import numpy as np
 import fcntl
 from future.utils import with_metaclass
+import datetime
+import os
 
 output_registry = {}
 LOG_LEVEL_NOISY = 15
@@ -139,6 +141,14 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
         #Pass to the subclasses to write output
         self._write_parameters(params)
 
+    def reset_to_chain_start(self):
+        """
+        Seek the start of the chain so previous output can be overwritten.
+
+        Subclasses can override this to actually do something.
+        """
+        pass
+
     def flush(self):
         """
         For supported output classes, flush all pending output
@@ -164,6 +174,16 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
         if self.closed:
             raise RuntimeError("Tried to write final info to closed output")
         self._write_final(key, value, comment)
+
+    def name_for_sampler_resume_info(self):
+        """
+        Return a file name or directory name for an auxiliary file
+        where the sampler can save information it needs to resume.
+
+        This base class errors
+        """
+        raise NotImplementedError("You need to use a supported output format to use the resume feature with this sampler")
+
 
     def comment_file_wrapper(self):
         return CommentFileWrapper(self)
@@ -221,7 +241,7 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
     @classmethod
     def from_options(cls, options, resume=False):
         """ This method should create an output object from the section of ini file it is given"""
-        raise NotImplemented("The format mode you tried to use is incomplete - sorry")
+        raise NotImplementedError("The format mode you tried to use is incomplete - sorry")
 
     @classmethod
     def load_from_options(cls, options):
@@ -234,4 +254,4 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
             The latter three lists will have one element for any data chain
             identified within the data.
         """
-        raise NotImplemented("The format mode you tried to use is incomplete - sorry")
+        raise NotImplementedError("The format mode you tried to use is incomplete - sorry")
