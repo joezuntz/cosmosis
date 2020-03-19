@@ -99,9 +99,6 @@ def run_cosmosis(args, pool=None):
     demo_20b_special (args)
 
     # Load configuration.
-    print(args.params)
-    print(args.variables)
-
     ini = Inifile(args.inifile, override=args.params)
 
     pre_script = ini.get(RUNTIME_INI_SECTION, "pre_script", fallback="")
