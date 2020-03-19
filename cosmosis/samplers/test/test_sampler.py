@@ -15,6 +15,7 @@ class TestSampler(Sampler):
         self.save_dir = self.read_ini("save_dir", str, "")
         self.graph = self.read_ini("graph", str, "")
         self.analyze_fast_slow = self.read_ini("analyze_fast_slow", bool, False)
+        self.print_log = self.read_ini("print_log", bool, False)
 
     def execute(self):
         # load initial parameter values
@@ -73,6 +74,9 @@ class TestSampler(Sampler):
 
         if data is None and self.fatal_errors:
             raise RuntimeError("Pipeline failed at some stage")
+
+        if self.print_log and data is not None:
+            data.print_log()
 
 
         self.converged = True
