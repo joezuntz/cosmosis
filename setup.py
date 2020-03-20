@@ -75,21 +75,21 @@ def get_COSMOSIS_SRC_DIR():
     cosmosis_src_dir = os.path.join(os.getcwd(), "cosmosis")
     return cosmosis_src_dir
 
-def compile_library(env):
+def compile_library():
     cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
+    env = os.environ.copy()
     env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
+    env['FC'] = env.get('FC', 'gfortran')
+
     subprocess.check_call(["make"], env=env, cwd="cosmosis")
     
 
 def clean_library():
     cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
-    env = {}
-    env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
+    env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir}
     subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
 
 def check_compilers():
-    default_cc    = "gcc"
-    default_cxx   = "g++"
     default_fc    = "gfortran"
     default_mpifc = "" # Disable MPI be default, else set to "mpif90"
 
@@ -118,8 +118,8 @@ def check_compilers():
 
 class my_build(build):
     def run(self):
-        env = check_compilers()
-        compile_library(env)
+        #env = check_compilers()
+        compile_library()
         super().run()
 
 
