@@ -14,7 +14,7 @@ from timeit import default_timer
 import sys
 from contextlib import contextmanager
 import tempfile
-
+import subprocess
 
 
 
@@ -292,3 +292,27 @@ class PriorFunction(object):
         or a 2D array of shape (nsample, nparam)
         """
         return self._evaluate(p_in, self.all_priors)
+
+
+def get_git_revision(directory):
+    # Turn e.g. $COSMOSIS_SRC_DIR into a proper path
+    directory = os.path.expandvars(directory)
+    if not os.path.isdir(directory):
+        return ""
+    # this git command gives the current commit ID of the
+    # directory it is run from
+    cmd = "git rev-parse HEAD".split()
+
+    # run, capturing stderr and stdout to read the hash from
+    p = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
+        cwd=directory, encoding='utf-8')
+
+    # Read stdout.  Discard stderr, which will be None
+    rev, _ = p.communicate()
+
+    # If there are any errors then we ignore everything
+    if p.returncode:
+        return ""
+    # There shouldn't be any newlines here, but in case there are in future
+    # we replace them with spaces to avoid messing up output file formats
+    return rev.strip().replace("\n", " ")

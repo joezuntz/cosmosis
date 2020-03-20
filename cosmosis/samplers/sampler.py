@@ -2,7 +2,8 @@ from future.utils import with_metaclass
 from builtins import str
 from builtins import range
 from builtins import object
-from cosmosis.runtime.attribution import PipelineAttribution
+from ..runtime.attribution import PipelineAttribution
+from ..runtime.utils import get_git_revision
 import datetime
 import platform
 import getpass
@@ -65,12 +66,9 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
             'platform_version': platform.version(),
             'uuid': uuid.uuid4().hex,
         }
-        try:
-            info['cosmosis_git_version'] = os.popen("cd $COSMOSIS_SRC_DIR; git rev-parse HEAD").read().strip()
-            info['csl_git_version'] = os.popen("cd $COSMOSIS_SRC_DIR/cosmosis-standard-library; git rev-parse HEAD").read().strip()
-            info['cwd_git_version'] = os.popen("git rev-parse HEAD").read().strip()
-        except:
-            pass
+        info['cosmosis_git_version'] = get_git_revision("$COSMOSIS_SRC_DIR")
+        info['csl_git_version'] = get_git_revision("$COSMOSIS_SRC_DIR/cosmosis-standard-library")
+        info['cwd_git_version'] = get_git_revision("$PWD")
 
         # The host name and username are (potentially) private information
         # so we only save those if privacy=False, which is not the default
