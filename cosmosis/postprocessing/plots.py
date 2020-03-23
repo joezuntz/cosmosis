@@ -452,7 +452,7 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
         x_axis, like = kde.grid_evaluate(n, (x.min(), x.max()) )
         return n, x_axis, like
 
-    def make_1d_plot(self, name, figure):
+    def make_1d_plot(self, name, figure=None):
         x = self.reduced_col(name)
         if not self.quiet:
             print(" - 1D plot ", name)
