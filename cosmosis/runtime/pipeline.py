@@ -40,7 +40,7 @@ class PipelineResults(object):
     def __init__(self, vector, number_extra):
         self.vector = vector
         self.prior = -np.inf
-        self.extra = np.repeat(np.nan, number_extra)
+        self.extra = [np.nan for i in range(number_extra)]
         self.block = None
         self.post = -np.inf
         self.like = -np.inf
@@ -1303,9 +1303,9 @@ class LikelihoodPipeline(Pipeline):
         data = self.run_parameters(p, all_params=all_params)
         if data is None:
             if return_data:
-                return -np.inf, np.repeat(np.nan, self.number_extra), data
+                return -np.inf, [np.nan for i in range(number_extra)], data
             else:
-                return -np.inf, np.repeat(np.nan, self.number_extra)
+                return -np.inf, [np.nan for i in range(number_extra)]
 
         like = self._extract_likelihoods(data)
 
