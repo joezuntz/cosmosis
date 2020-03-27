@@ -102,18 +102,18 @@ class Module(object):
             filename = os.path.join(rootpath, filename)
         self.filename = filename
 
-        self.library, language = Module.load_library(filename)
+        self.library, language = self.load_library(filename)
         self.is_python = (language == MODULE_LANG_PYTHON)
         self.is_julia = (language == MODULE_LANG_JULIA)
         self.is_dynamic = (language == MODULE_LANG_DYLIB)
 
         # attempt to load setup and cleanup functions
-        self.setup_function = Module.load_function(self.library,
+        self.setup_function = self.load_function(self.library,
                                                    setup_function,
                                                    MODULE_TYPE_SETUP,
                                                    set_types=self.is_dynamic,
                                                    )
-        self.cleanup_function = Module.load_function(self.library,
+        self.cleanup_function = self.load_function(self.library,
                                                      cleanup_function,
                                                      MODULE_TYPE_CLEANUP,
                                                      set_types=self.is_dynamic)
@@ -161,7 +161,7 @@ class Module(object):
         else:
             module_type = MODULE_TYPE_EXECUTE_SIMPLE
 
-        self.execute_function = Module.load_function(self.library,
+        self.execute_function = self.load_function(self.library,
                                                      self.execute_function,
                                                      module_type,
                                                      set_types=self.is_dynamic)
@@ -324,3 +324,51 @@ class Module(object):
     def find_module_file(base_directory, path):
         u"""Find a module file, which is assumed to be either absolute or relative to COSMOSIS_SRC_DIR."""
         return os.path.join(base_directory, path)
+
+
+
+
+
+class FunctionModule(Module):
+    """
+    This subclass, which is designed for when you're using CosmoSIS as a library
+    in other applications, lets you manually construct a python module from functions
+    you have imported.
+    """
+
+    def __init__(self, name, setup_function, execute_function,
+                 cleanup_function=None):
+        """
+        Initialize the subclass from the functions themselves.
+
+        name is a string name.
+        
+        setup_function, execute_function must be python functions
+        matching the expected signature
+        def setup(config):
+            data = ...
+            return data
+
+        def execute(block, config):
+            ...
+            return 0
+    
+        """
+        self.name = name
+        self.filename='missing'
+
+        self.setup_function = setup_function
+        self.execute_function = execute_function
+        self.cleanup_function = cleanup_function
+
+        self.library = None
+
+        self.is_python = True
+        self.is_julia = False
+        self.is_dynamic = True
+
+    @staticmethod
+    def load_function(library, function_name,
+                      module_type=MODULE_TYPE_EXECUTE_SIMPLE, set_types=True):
+        return function_name
+
