@@ -8,8 +8,7 @@ import subprocess
 import os
 import sys
 
-import cosmosis
-version = cosmosis.__version__
+version = open('cosmosis/version.py').read().split('=')[1].strip().strip("'")
 
 minimum_cc_version = pkg_resources.parse_version("5.0.0")
 minimum_cxx_version = pkg_resources.parse_version("5.0.0")
