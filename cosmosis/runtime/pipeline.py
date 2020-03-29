@@ -1303,9 +1303,9 @@ class LikelihoodPipeline(Pipeline):
         data = self.run_parameters(p, all_params=all_params)
         if data is None:
             if return_data:
-                return -np.inf, [np.nan for i in range(number_extra)], data
+                return -np.inf, [np.nan for i in range(self.number_extra)], data
             else:
-                return -np.inf, [np.nan for i in range(number_extra)]
+                return -np.inf, [np.nan for i in range(self.number_extra)]
 
         like = self._extract_likelihoods(data)
 
