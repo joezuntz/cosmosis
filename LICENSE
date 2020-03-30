@@ -1,6 +1,6 @@
 Copyright 2014-19 The CosmoSIS Team
 
-The CosmoSIS core is licensed as described below.  Some individual components within the software have their own licenses - see the notices in their directories.
+The CosmoSIS core is licensed as described below.  Some individual components within the software have their own licenses - see the notices in their directories.  Notably, Polychord and Multinest are licensed only for academic use.
 
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
