@@ -142,6 +142,7 @@ setup(name = 'cosmosis-standalone',
         description       = "A testbed stand-alone installation of the CosmoSIS project. Not ready for primetime!",
         author            = "Joe Zuntz",
         author_email      = "joezuntz@googlemail.com",
+        url               = "https://bitbucket.org/joezuntz/cosmosis",
         packages = find_packages(),
         package_data = {"" : datablock_libs + sampler_libs + runtime_libs 
                             + c_headers + cc_headers + f90_mods 
