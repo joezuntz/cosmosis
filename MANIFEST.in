@@ -65,3 +65,4 @@ include cosmosis/samplers/polychord/polychord_src/run_time_info.f90
 include cosmosis/samplers/polychord/polychord_src/settings.f90
 include cosmosis/samplers/polychord/polychord_src/utils.F90
 include cosmosis/samplers/minuit/Makefile
+include cosmosis/samplers/minuit/minuit_wrapper.cpp
