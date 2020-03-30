@@ -305,7 +305,7 @@ def get_git_revision(directory):
 
     # run, capturing stderr and stdout to read the hash from
     p = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
-        cwd=directory, encoding='utf-8')
+        cwd=directory)
 
     # Read stdout.  Discard stderr, which will be None
     rev, _ = p.communicate()
@@ -315,4 +315,4 @@ def get_git_revision(directory):
         return ""
     # There shouldn't be any newlines here, but in case there are in future
     # we replace them with spaces to avoid messing up output file formats
-    return rev.strip().replace("\n", " ")
+    return rev.decode('utf-8').strip().replace("\n", " ")

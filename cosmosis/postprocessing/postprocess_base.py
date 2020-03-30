@@ -67,6 +67,24 @@ class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
         for d in self.data:
             d[:,c] *= (1+value)
 
+    def derive_extra_column(self, function):
+        new_data = []
+        for d in self.data:
+            chain = SingleChainData(d,self.colnames)
+            col, code = function(chain)
+            if col is None:
+                break
+            #insert a new column into the chain, second from the end
+            d = np.insert(d, -2, col, axis=1)
+            #save the new chain
+            new_data.append(d)
+        if code is None:
+            return
+
+        self.colnames.insert(-2, code)
+        self.data = new_data
+
+
 
     def derive_extra_columns(self):
         if not self.derive_file: return
@@ -75,23 +93,7 @@ class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
         functions = [getattr(module,f) for f in dir(module) if f.startswith('derive_')]
         print("Deriving new columns from these functions in {}:".format(self.derive_file))
         for f in functions:
-            print("    - ", f.__name__)
-            new_data = []
-            for d in self.data:
-                chain = SingleChainData(d,self.colnames)
-                col, code = f(chain)
-                if col is None:
-                    break
-                #insert a new column into the chain, second from the end
-                d = np.insert(d, -2, col, axis=1)
-                #save the new chain
-                new_data.append(d)
-            if code is None:
-                continue
-            self.colnames.insert(-2, code)
-            print("Added a new column called ", code)
-            self.data = new_data
-
+            self.derive_extra_column(f)
     def load_tuple(self, inputs):
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs
         self.name = "Data"

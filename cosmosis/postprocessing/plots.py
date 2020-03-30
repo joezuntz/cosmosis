@@ -45,6 +45,7 @@ class Plots(PostProcessorElement):
         self.plot_set = self.source.index
         if self.source.cosmosis_standard_output and not self.no_latex:
             self.load_latex(latex_file)
+        self.quiet =  False
 
     def finalize(self):
         super(Plots, self).finalize()
@@ -119,7 +120,14 @@ class Plots(PostProcessorElement):
 
 
     def line_color(self):
-        possible_colors = ['b','g','r', 'k', 'c', 'm','y']
+        # From https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+        # removing white
+        possible_colors = [
+            '#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#42d4f4', 
+            '#f032e6', '#fabebe', '#469990', '#e6beff', '#9A6324', '#fffac8',
+            '#800000', '#aaffc3', '#000075', '#a9a9a9', '#000000'
+        ]
+
         col = possible_colors[self.plot_set%len(possible_colors)]
         return col
 
@@ -444,23 +452,26 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
         x_axis, like = kde.grid_evaluate(n, (x.min(), x.max()) )
         return n, x_axis, like
 
-    def make_1d_plot(self, name):
+    def make_1d_plot(self, name, figure=None):
         x = self.reduced_col(name)
-        print(" - 1D plot ", name)
-        figure,filename = self.figure(name)
+        if not self.quiet:
+            print(" - 1D plot ", name)
+        if figure is None:
+            figure, filename = self.figure(name)
+        else:
+            filename = None
         if x.max()-x.min()==0: return
 
         n, x_axis, like = self.smooth_likelihood(x)
         like/=like.max()
 
         #Choose colors
-        possible_colors = ['b','g','r','m','y']
-        color = possible_colors[self.plot_set%len(possible_colors)]
+        color = self.line_color()
 
         #Make the plot
         pylab.figure(figure.number)
         keywords = self.keywords_1d()
-        pylab.plot(x_axis, like, color+'-', label=self.source.label,  **keywords)
+        pylab.plot(x_axis, like, '-', color=color, lw=2, label=self.source.label,  **keywords)
         pylab.xlabel(self.latex(name, dollar=True))
 
         return filename
@@ -506,7 +517,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
         return n, x_axis, y_axis, like        
 
-    def make_2d_plot(self, name1, name2):
+    def make_2d_plot(self, name1, name2, figure=None):
         #Get the data
         x = self.reduced_col(name1)
         y = self.reduced_col(name2)
@@ -514,7 +525,9 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
         if x.max()-x.min()==0 or y.max()-y.min()==0:
             return
-        print("  (making %s vs %s)" % (name1, name2))
+
+        if not self.quiet:
+            print("  (making %s vs %s)" % (name1, name2))
 
 
         #Interpolate using KDE
@@ -525,7 +538,10 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
             print("Not making a 2D plot of them")
             return []
 
-        figure,filename = self.figure("2D", name1, name2)
+        if figure is None:
+            figure, filename = self.figure("2D", name1, name2)
+        else:
+            filename = None
 
 
         #Choose levels at which to plot contours
