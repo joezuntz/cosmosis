@@ -127,7 +127,9 @@ def write_header_output(output, params, values, pipeline):
     # Do the same with the values file.
     # Unfortunately that means reading it in again;
     # if we ever refactor this bit we could eliminate that.
-    if values is None:
+    if isinstance(values, Inifile):
+        values_ini = values
+    elif values is None:
         values_ini=Inifile(pipeline.values_filename)
     else:
         values_ini=values
@@ -138,7 +140,10 @@ def write_header_output(output, params, values, pipeline):
     # And the same with the priors
     output.comment("START_OF_PRIORS_INI")
     for priors_file in pipeline.priors_files:
-        prior_ini=Inifile(priors_file)
+        if isinstance(priors_file, Inifile):
+            prior_ini = priors_file
+        else:
+            prior_ini=Inifile(priors_file)
         prior_ini.write(comment_wrapper)
     output.comment("END_OF_PRIORS_INI")
 

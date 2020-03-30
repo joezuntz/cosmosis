@@ -123,10 +123,14 @@ class Prior(object):
         method is the applicationʼs sole constructor of :class:`Prior`
         objects.
 
+        Can also pass in an ini file directly
         """
         priors = {}
         for f in prior_files:
-            ini = config.Inifile(f) 
+            if isinstance(f, config.Inifile):
+                ini = f
+            else:
+                ini = config.Inifile(f) 
             for option, value in ini:
                 if option in priors:
                     raise ValueError("Duplicate prior identified")

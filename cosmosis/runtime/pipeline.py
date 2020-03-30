@@ -728,6 +728,8 @@ class LikelihoodPipeline(Pipeline):
                                             "priors", fallback="").split()
             self.priors_files = priors_files
         else:
+            if isinstance(priors, config.Inifile):
+                priors = [priors]
             self.priors_files = priors
         self.parameters = parameter.Parameter.load_parameters(self.values_file,
                                                               self.priors_files,
