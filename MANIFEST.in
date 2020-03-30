@@ -13,7 +13,6 @@ include cosmosis/datablock/section_names.h
 include cosmosis/datablock/section_names.txt
 include cosmosis/config/compilers.mk
 include cosmosis/config/subdirs.mk
-include Makefile
 include LICENSE
 include cosmosis/Makefile
 include cosmosis/runtime/Makefile
