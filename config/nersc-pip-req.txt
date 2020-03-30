@@ -1,6 +1,0 @@
-CosmoloPy
-emcee
-fitsio
-kombine
-future
-configparser
