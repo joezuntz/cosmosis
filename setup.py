@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from distutils.command.install import install
+from setuptools.command.install import install
 from distutils.command.build import build
 from distutils.command.clean import clean
 import pkg_resources
@@ -88,36 +88,9 @@ def clean_library():
     env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir}
     subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
 
-def check_compilers():
-    default_fc    = "gfortran"
-    default_mpifc = "" # Disable MPI be default, else set to "mpif90"
-
-    env = {"PATH"  : os.environ["PATH"] if "PATH" in os.environ else "/usr/bin/",
-           "CC"    : os.environ["CC"] if "CC" in os.environ else default_cc,
-           "CXX"   : os.environ["CXX"] if "CXX" in os.environ else default_cxx,
-           "FC"    : os.environ["FC"] if "FC" in os.environ else default_fc,
-           "MPIFC" : os.environ["MPIFC"] if "MPIFC" in os.environ else default_mpifc,}
-
-    cc_version = subprocess.check_output("${CC} -dumpversion", shell=True, env=env).decode("utf-8")
-    cxx_version = subprocess.check_output("${CXX} -dumpversion", shell=True, env=env).decode("utf-8")
-    fc_version = subprocess.check_output("${FC} -dumpversion", shell=True, env=env).decode("utf-8")
-
-    cc_version = pkg_resources.parse_version(cc_version)
-    cxx_version = pkg_resources.parse_version(cxx_version)
-
-    if cc_version < minimum_cc_version:
-        raise RuntimeError(f"GCC compiler version ({cc_version}) does not meet requirements ({minimum_cc_version}).")
-    if cxx_version < minimum_cxx_version:
-        raise RuntimeError(f"G++ compiler version ({cxx_version}) does not meet requirements ({minimum_cxx_version}).")
-    
-    if env["MPIFC"] == "":
-        print("Compiling CosmoSIS without MPI support. If MPI support is required, set MPIFC.")
-    
-    return env
 
 class my_build(build):
     def run(self):
-        #env = check_compilers()
         compile_library()
         super().run()
 
@@ -134,7 +107,6 @@ class my_install(install):
 
 class my_clean(clean):
     def run(self):
-        #env = check_compilers()
         clean_library()
         super().run()
 
@@ -142,7 +114,7 @@ setup(name = 'cosmosis-standalone',
         description       = "A testbed stand-alone installation of the CosmoSIS project. Not ready for primetime!",
         author            = "Joe Zuntz",
         author_email      = "joezuntz@googlemail.com",
-        url               = "https://bitbucket.org/joezuntz/cosmosis",
+        url               = "https://bitbucket.org/joezuntz/cosmosis",  
         packages = find_packages(),
         package_data = {"" : datablock_libs + sampler_libs + runtime_libs 
                             + c_headers + cc_headers + f90_mods 
