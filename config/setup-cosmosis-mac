@@ -16,8 +16,8 @@ export FFTW_LIBRARY=/usr/local
 export FFTW_INCLUDE_DIR=/usr/local
 
 # Minuit2
-export MINUIT2_LIB=/usr/local
-export MINUIT2_INC=/usr/local
+export MINUIT2_LIB=/usr/local/lib
+export MINUIT2_INC=/usr/local/include
 
 # BLAS and LAPACK are used from OpenBLAS, rather than
 # from the macOS Accelerate framework. In this, we are
