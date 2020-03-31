@@ -274,7 +274,7 @@ def run_cosmosis(args, pool=None):
         # which really means "finished" here - 
         # a sampler can "converge" just by reaching the 
         # limit of the number of samples it is allowed.
-        if not pool or pool.is_master():
+        if (not pool) or pool.is_master():
             while not sampler.is_converged():
                 sampler.execute()
                 #Flush any output. This is to stop
@@ -306,7 +306,7 @@ def run_cosmosis(args, pool=None):
     # In general this may be less useful than the pre-run script, because
     # often chains time-out instead of actually completing.
     # But we still offer it
-    if (pool is None) or pool.is_master():
+    if post_script and ((pool is None) or pool.is_master()):
         # This decodes the exist status
         status = os.WEXITSTATUS(os.system(post_script))
         if status:
