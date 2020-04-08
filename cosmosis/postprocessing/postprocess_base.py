@@ -205,6 +205,7 @@ class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
                     print("Failed in one of the postprocessing steps: ", e)
                     print("Here is the error stack:")
                     print(traceback.format_exc())
+        return files
 
     def finalize(self):
         print("Finalizing:")
