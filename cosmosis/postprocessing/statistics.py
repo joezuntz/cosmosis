@@ -886,7 +886,7 @@ class CovarianceMatrixEllipseAreas(Statistics):
                 if j>=i: continue
                 #Get the 2x2 sub-matrix
                 C = covmat_estimate[:,[i,j]][[i,j],:]
-                area = np.pi * np.linalg.det(C)
+                area = 6.17 * np.pi * np.sqrt(np.linalg.det(C))
                 fom = 1.0/area
                 f.write("{0}  {1}  {2}  {3}\n".format(p1, p2, area, fom))
 
