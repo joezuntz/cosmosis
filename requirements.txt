@@ -1,0 +1,6 @@
+pyyaml
+future
+configparser
+emcee
+numpy
+scipy
