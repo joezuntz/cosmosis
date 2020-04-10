@@ -80,7 +80,7 @@ POLYCHORD_SECTION='polychord'
 
 class PolyChordSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("prior", float), ("post", float), ("weight", float)]
+    sampler_outputs = [("prior", float), ("like", float), ("post", float), ("weight", float)]
     supports_smp=False
     understands_fast_subspaces = True
 
@@ -305,9 +305,10 @@ class PolyChordSampler(ParallelSampler):
             extra_vals = row[self.ndim:self.ndim+self.nderived-1]
             prior = row[self.ndim+self.nderived-1]
             birth_like = row[self.ndim+self.nderived]
-            post = row[self.ndim+self.nderived+1]
+            like = row[self.ndim+self.nderived+1]
             importance = np.exp(w)
-            self.output.parameters(params, extra_vals, prior, post, importance)
+            post = like + prior
+            self.output.parameters(params, extra_vals, prior, like, post, importance)
         self.output.final("nsample", ndead)
         self.output.flush()
 
