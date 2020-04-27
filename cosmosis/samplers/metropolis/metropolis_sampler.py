@@ -60,6 +60,10 @@ class MetropolisSampler(ParallelSampler):
                   ", so no draggng will be done."
                 )
 
+        if (self.pipeline.do_fast_slow) and not (self.pipeline.first_fast_module):
+            raise ValueError("To use fast/slow splitting with metropolis please "
+                             "manually define first_fast_module in the pipeline "
+                             "section.")
         #start values from prior
         start = self.define_parameters(random_start)
         print("MCMC starting point:")
@@ -102,9 +106,10 @@ class MetropolisSampler(ParallelSampler):
         if resume_info is None:
             return
 
-        sampler, self.num_samples, self.num_samples_post_tuning = resume_info
+        self.sampler, self.num_samples, self.num_samples_post_tuning = resume_info
 
-        self.sampler = sampler
+        # Fast slow is already configured on the sampler.
+        self.fast_slow_done = True
 
         # If we started main sampling (as opposed to tuning phase)
         # then we will have some existing chain, but this is not always the case
