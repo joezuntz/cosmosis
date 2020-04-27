@@ -239,7 +239,15 @@ class SlowSubspaceCache(object):
 
         self.worth_splitting = time_save_percent > 10.
 
-        if not self.worth_splitting:
+        if (not self.worth_splitting) and (self.first_fast_module is not None):
+            print("")
+            print("No significant time saving (<10%) from a fast-slow split.")
+            print("But you told me specifically which module to use, so I will")
+            print("split the pipeline anyway, though it may be slower.")
+            print("You may wish to reconsider your choices, but I do what I'm told.")
+            print("")
+            self.worth_splitting = True
+        elif not self.worth_splitting:
             print("")
             print("No significant time saving (<10%) from a fast-slow split.")
             print("Not splitting pipeline into fast and slow parts.")
