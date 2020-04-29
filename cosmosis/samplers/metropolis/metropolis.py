@@ -59,7 +59,8 @@ class MCMC(object):
         #For adaptive sampling
         self.last_covariance_estimate = covariance.copy()       
         self.covariance_estimate = covariance.copy()
-        self.S_estimate = np.zeros((self.ndim,self.ndim))
+        self.chain = []
+
         #self.covariance_estimate.copy()
         self.mean_estimate = start.copy()
         self.tuning_frequency = tuning_frequency
@@ -92,10 +93,11 @@ class MCMC(object):
             self.iterations_since_tuning += 1
 
             # generate a new sample
-            samples.append(sample_method())
+            s = sample_method()
+            samples.append(s)
+            # hack - should unify these
+            self.chain.append(s.vector)
 
-            # update covariance and tune
-            self.update_covariance_estimate()
             if self.should_tune_now():
                 self.tune()
 
@@ -212,10 +214,13 @@ class MCMC(object):
 
     def update_covariance_estimate(self):
         n = self.iterations
-        delta = (self.p - self.mean_estimate)
-        self.mean_estimate += delta / n
-        self.S_estimate  += np.outer(delta, delta)
-        self.covariance_estimate = self.S_estimate / n
+        self.mean_estimate = np.mean(self.chain, axis=0)
+        C = np.cov(np.transpose(self.chain))
+        if is_positive_definite(C):
+            self.covariance_estimate = np.cov(np.transpose(self.chain))
+        else:
+            print("Cov esimate not SPD.  If this keeps happening, be concerned.")
+
 
     def set_fast_slow(self, fast_indices, slow_indices, oversampling):
         if self.n_drag:
@@ -239,6 +244,8 @@ class MCMC(object):
         self.tuning_frequency = self.original_tuning_frequency * oversampling
 
     def tune(self):
+        self.update_covariance_estimate()
+
         f = (self.covariance_estimate.diagonal()**0.5-self.last_covariance_estimate.diagonal()**0.5)/self.last_covariance_estimate.diagonal()**0.5
         i = abs(f).argmax()
         print("Largest parameter sigma fractional change = {:.1f}% for param {}".format(100*f[i], i))
@@ -267,3 +274,10 @@ class MCMC(object):
 
 def accept(post1, post0):
     return (post1 > post0) or (post1-post0 > np.log(np.random.uniform(0,1)))
+
+def is_positive_definite(M):
+    try:
+        np.linalg.cholesky(M)
+        return True
+    except np.linalg.LinAlgError:
+        return False
