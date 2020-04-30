@@ -60,6 +60,7 @@ class MCMC(object):
         self.last_covariance_estimate = covariance.copy()       
         self.covariance_estimate = covariance.copy()
         self.chain = []
+        self.n_cov_fail = 0
 
         #self.covariance_estimate.copy()
         self.mean_estimate = start.copy()
@@ -217,9 +218,15 @@ class MCMC(object):
         self.mean_estimate = np.mean(self.chain, axis=0)
         C = np.cov(np.transpose(self.chain))
         if is_positive_definite(C):
-            self.covariance_estimate = np.cov(np.transpose(self.chain))
+            self.covariance_estimate = C
         else:
             print("Cov esimate not SPD.  If this keeps happening, be concerned.")
+            chain_outfile = 'joe_dump_chain_{}.txt'.format(self.n_cov_fail)
+            cov_outfile = 'joe_dump_cov_{}.txt'.format(self.n_cov_fail)
+            self.n_cov_fail += 1
+            np.savetxt(chain_outfile, self.chain)
+            np.savetxt(cov_outfile, np.transpose(C))
+            print("TEMPORARY (JOE - REMOVE LATER) - dumping to file")
 
 
     def set_fast_slow(self, fast_indices, slow_indices, oversampling):
@@ -262,7 +269,7 @@ class MCMC(object):
         elif isinstance(self.proposal, FastSlowProposal):
             print("Tuning fast/slow sampler proposal.")
             self.proposal = FastSlowProposal(self.covariance_estimate, 
-                self.fast_indices, self.slow_indices, self.oversampling, scaling=self.scaling, exponential_probability=self.exponential_probability)
+                self.fast_indices, self.slow_indices, self.oversampling,scaling=self.scaling, exponential_probability=self.exponential_probability)
         elif isinstance(self.proposal, Proposal):
             print("Tuning standard sampler proposal.")
             cholesky = np.linalg.cholesky(self.covariance_estimate)
@@ -276,8 +283,4 @@ def accept(post1, post0):
     return (post1 > post0) or (post1-post0 > np.log(np.random.uniform(0,1)))
 
 def is_positive_definite(M):
-    try:
-        np.linalg.cholesky(M)
-        return True
-    except np.linalg.LinAlgError:
-        return False
+    return np.all(np.linalg.eigvals(M) > 0)
