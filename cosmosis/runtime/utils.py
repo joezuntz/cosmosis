@@ -15,6 +15,7 @@ import sys
 from contextlib import contextmanager
 import tempfile
 import subprocess
+from functools import wraps
 
 
 
@@ -316,3 +317,24 @@ def get_git_revision(directory):
     # There shouldn't be any newlines here, but in case there are in future
     # we replace them with spaces to avoid messing up output file formats
     return rev.decode('utf-8').strip().replace("\n", " ")
+
+
+def requires_python3(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if sys.version_info[0] < 3:
+            raise RuntimeError(
+                "You are using a CosmoSIS function ({}) "
+                " only available in python 3 and above".format(f))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+@requires_python3
+def import_by_path(name, path):
+    # https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module

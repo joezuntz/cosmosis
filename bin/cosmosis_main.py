@@ -22,7 +22,7 @@ from cosmosis.runtime.config import Inifile, CosmosisConfigurationError
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.runtime import mpi_pool
 from cosmosis.runtime import process_pool
-from cosmosis.runtime.utils import ParseExtraParameters, stdout_redirected
+from cosmosis.runtime.utils import ParseExtraParameters, stdout_redirected, import_by_path
 from cosmosis.samplers.sampler import Sampler, ParallelSampler, Hints
 from cosmosis import output as output_module
 
@@ -125,6 +125,12 @@ def run_cosmosis(args, pool=None):
             if pipeline.do_fast_slow:
                 pipeline.setup_fast_subspaces()
 
+    # This feature lets us import additional samplers at runtime
+    sampler_files = ini.get(RUNTIME_INI_SECTION, "import_samplers", fallback="").split()
+    for i, sampler_file in enumerate(sampler_files):
+        # give the module a new name to avoid name clashes if people
+        # just call their thing by the same name
+        import_by_path('additional_samplers_{}'.format(i), sampler_file)
 
 
 
