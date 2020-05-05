@@ -104,6 +104,9 @@ class GaussianLikelihood(object):
         for example, the simple inverse is not the best estimate.
 
         """
+        # inverse of symmetric matrix should remain symmetric
+        if np.allclose(self.cov, self.cov.T):
+            return np.linalg.pinv(self.cov, hermitian=True)
         return np.linalg.inv(self.cov)
 
 
