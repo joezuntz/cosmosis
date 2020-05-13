@@ -32,7 +32,7 @@ if nthread == 0:
 
 
 if nproc > 1:
-    preamble = 'srun -u -n {nproc} -c {nthread} '.format(nproc=nproc, nthread=nthread)
+    preamble = 'srun -u -n {nproc} -c {nthread} --cpu-bind=cores '.format(nproc=nproc, nthread=nthread)
     mpi = '--mpi'
 else:
     preamble = ''
