@@ -15,10 +15,7 @@ pipeline=None
 METROPOLIS_INI_SECTION = "metropolis"
 
 def posterior(p):
-    p = pipeline.denormalize_vector(p, raise_exception=False)
-    r = pipeline.run_results(p)
-    return r
-    #r.post, (r.prior, r.extra)
+    return pipeline.run_results(p)
 
 
 class MetropolisSampler(ParallelSampler):
@@ -75,14 +72,12 @@ class MetropolisSampler(ParallelSampler):
 
         #Sampler object itself.
         quiet = self.pipeline.quiet
-        start_norm = self.pipeline.normalize_vector(start)
-        covmat_norm = self.pipeline.normalize_matrix(covmat)
 
         if use_cobaya:
             print("Using the Cobaya proposal")
 
 
-        self.sampler = metropolis.MCMC(start_norm, posterior, covmat_norm, 
+        self.sampler = metropolis.MCMC(start, posterior, covmat,
             quiet=quiet, 
             tuning_frequency=tuning_frequency, # Will be multiplied by the oversampling
             tuning_grace=tuning_grace,         # within the sampler if needed
