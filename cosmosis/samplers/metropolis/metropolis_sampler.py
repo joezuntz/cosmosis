@@ -199,12 +199,15 @@ class MetropolisSampler(ParallelSampler):
         covmat_filename = self.read_ini("covmat", str, "").strip()
         if covmat_filename == "" and self.distribution_hints.has_cov():
                 covmat =  self.distribution_hints.get_cov() 
+                print("Using covariance from previous sampler")
         elif covmat_filename == "":
+            print("Using default covariance 1% of param widths")
             covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
         elif not os.path.exists(covmat_filename):
             raise ValueError(
             "Covariance matrix %s not found" % covmat_filename)
         else:
+            print("Loading covariance from {}".format(covmat_filename))
             covmat = np.loadtxt(covmat_filename)
 
         if covmat.ndim == 0:
