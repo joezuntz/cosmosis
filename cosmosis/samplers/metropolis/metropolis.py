@@ -220,13 +220,13 @@ class MCMC(object):
         if is_positive_definite(C):
             self.covariance_estimate = C
         else:
-            print("Cov esimate not SPD.  If this keeps happening, be concerned.")
-            chain_outfile = 'joe_dump_chain_{}.txt'.format(self.n_cov_fail)
-            cov_outfile = 'joe_dump_cov_{}.txt'.format(self.n_cov_fail)
-            self.n_cov_fail += 1
-            np.savetxt(chain_outfile, self.chain)
-            np.savetxt(cov_outfile, np.transpose(C))
-            print("TEMPORARY (JOE - REMOVE LATER) - dumping to file")
+            print("Cov estimate not SPD.  If this keeps happening, be concerned.")
+            # chain_outfile = 'joe_dump_chain_{}.txt'.format(self.n_cov_fail)
+            # cov_outfile = 'joe_dump_cov_{}.txt'.format(self.n_cov_fail)
+            # self.n_cov_fail += 1
+            # np.savetxt(chain_outfile, self.chain)
+            # np.savetxt(cov_outfile, np.transpose(C))
+            # print("TEMPORARY (JOE - REMOVE LATER) - dumping to file")
 
 
     def set_fast_slow(self, fast_indices, slow_indices, oversampling):
