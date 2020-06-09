@@ -147,8 +147,8 @@ class MCMC(object):
         p2 = copy(end)
 
         # results for current start and end
-        r1 = r_start
-        r2 = r_end
+        r1 = copy(r_start)
+        r2 = copy(r_end)
 
         drag_accepts = 0
 
