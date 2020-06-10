@@ -36,6 +36,7 @@ class MetropolisSampler(ParallelSampler):
         tuning_frequency = self.read_ini("tuning_frequency", int, -1)
         tuning_grace = self.read_ini("tuning_grace", int, 5000)
         self.tuning_end = self.read_ini("tuning_end", int, 100000)
+        self.save_during_tuning = self.read_ini("save_during_tuning", bool, False)
         self.n = self.read_ini("nsteps", int, default=100)
         self.exponential_probability = self.read_ini("exponential_probability", float, default=0.333)
         self.split = None #work out later
@@ -149,30 +150,28 @@ class MetropolisSampler(ParallelSampler):
         self.num_samples_post_tuning = self.num_samples - self.tuning_end
 
 
-        # Only output samples once tuning is complete
+        overall_rate = (self.sampler.accepted * 1.0) / self.sampler.iterations
+        recent_accepted = self.sampler.accepted - self.last_accept_count
+        recent_rate = recent_accepted / self.n
+        print("Overall accepted {} / {} samples ({:.1%})" .format(
+            self.sampler.accepted, self.sampler.iterations, overall_rate))
+        print("Last {0} accepted {1} / {0} samples ({2:.1%})\n" .format(
+            self.n, recent_accepted, recent_rate))
+        self.last_accept_count = self.sampler.accepted
+
+        # Regardless of save settings we never use tuning samples
+        # for analytics
         if self.num_samples_post_tuning > 0:
-            traces = np.empty((self.n, self.ndim))
-            likes = np.empty((self.n))
-
-
-            samples = samples[-self.num_samples_post_tuning:]
-            for i, result in enumerate(samples):
-                self.output.parameters(result.vector, result.extra, result.prior, result.post)
-                traces[i,:] = result.vector
-
+            traces = np.array([r.vector for r in samples[-self.num_samples_post_tuning:]])
             self.analytics.add_traces(traces)
 
-            overall_rate = (self.sampler.accepted * 1.0) / self.sampler.iterations
-            recent_accepted = self.sampler.accepted - self.last_accept_count
-            recent_rate = recent_accepted / self.n
-            print("Overall accepted {} / {} samples ({:.1%})" .format(
-                self.sampler.accepted, self.sampler.iterations, overall_rate))
-            print("Last {0} accepted {1} / {0} samples ({2:.1%})\n" .format(
-                self.n, recent_accepted, recent_rate))
-            self.last_accept_count = self.sampler.accepted
-        else:
-            print("Done {} samples. Tuning proposal until {} so no output yet\n".format(
-                self.num_samples, self.tuning_end))
+
+        if (self.num_samples_post_tuning > 0) or self.save_during_tuning:
+            for i, result in enumerate(samples):
+                self.output.parameters(result.vector, result.extra, result.prior, result.post)
+
+        if self.num_samples_post_tuning <= 0:
+            print("Tuning ends at {} samples\n".format(self.tuning_end))
 
         self.write_resume_info([self.sampler, self.num_samples, self.num_samples_post_tuning])
 
