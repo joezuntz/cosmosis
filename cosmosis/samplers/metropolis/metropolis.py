@@ -129,12 +129,18 @@ class MCMC(object):
 
     def _sample_dragging(self):
         # get params with same fast params but different slow ones
+        if not self.quiet:
+            print("starting drag")
+            print("Current post = ", self.Lp.post)
         start = self.p
         end = self.proposal.propose_slow(start)
+
 
         # posteriors and derived parameters etc.
         r_start = copy(self.Lp)
         r_end = self.posterior(end)
+        if not self.quiet:
+            print("slow proposal post = ", r_end.post)
 
         if not np.isfinite(r_end.post):
             if not self.quiet:
@@ -150,10 +156,15 @@ class MCMC(object):
         r1 = copy(r_start)
         r2 = copy(r_end)
 
+        start_post = r1.post
+        end_post = r2.post
+
         drag_accepts = 0
 
         for i in range(self.n_drag):
             delta_fast = self.proposal.propose_fast(p1) - p1
+            if not self.quiet:
+                print("delta fast", delta_fast)
             q1 = p1 + delta_fast
             q2 = p2 + delta_fast
 
@@ -178,28 +189,34 @@ class MCMC(object):
                 r1 = s1
                 r2 = s2
                 drag_accepts += 1
+                if not self.quiet:
+                    print("[Accept drag step delta={:.3g}]\n".format(Q1 - P1))
+            elif not self.quiet:
+                print("[Reject drag step delta={:.3g}]\n".format(Q1 - P1))
 
-            r_start.post += r1.post
-            r_end.post += r2.post
+            start_post += r1.post
+            end_post += r2.post
 
         if not self.quiet:
             print("[Accepted {}/{} drag steps]".format(drag_accepts,self.n_drag))
 
-        r_start.post /= self.n_drag
-        r_end.post /= self.n_drag
-        accept_overall = accept(r_end.post, r_start.post)
+        start_post /= self.n_drag
+        end_post /= self.n_drag
+        accept_overall = accept(end_post, start_post)
 
+        if not self.quiet:
+            print("Done drag")
         if accept_overall:
             self.p = p2
             self.Lp = r_end
             self.accepted += 1
             self.accepted_since_tuning += 1
             if not self.quiet:
-                print("[Accept delta={:.3g}]\n".format(r_end.post - r_start.post))
+                print("[Accept delta={:.3g}]\n".format(end_post - start_post))
             return r2
         else:
             if not self.quiet:
-                print("[Reject delta={:.3g}]\n".format(r_end.post - r_start.post))
+                print("[Reject delta={:.3g}]\n".format(end_post - start_post))
             return self.Lp
 
 
