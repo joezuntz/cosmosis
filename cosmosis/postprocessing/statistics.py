@@ -252,7 +252,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
             self.best_fit_index = self.source.get_col("like").argmax()
         
         n = 0
-        for col in self.source.colnames:
+        for col in self.source.colnames[:self.source.metadata[0]['n_varied']]:
             n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
