@@ -228,7 +228,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         n = len(data)
         try:
             peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data)
-        except ValueError:
+        except (RuntimeError, ValueError, sp.linalg.LinAlgError):
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
             peak1d = np.nan
         return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.), lerr68, uerr68, lerr95, uerr95, peak1d
@@ -252,7 +252,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
             self.best_fit_index = self.source.get_col("like").argmax()
         
         n = 0
-        for col in self.source.colnames[:self.source.metadata[0]['n_varied']]:
+        for col in self.source.colnames:
             n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
@@ -694,7 +694,7 @@ class WeightedStatistics(object):
         try:
             print(col)
             peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data, weight)
-        except (RuntimeError, ValueError):
+        except (RuntimeError, ValueError, sp.linalg.LinAlgError):
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
             peak1d = np.nan
 
@@ -820,7 +820,7 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
             self.best_fit_index = self.source.get_col("like").argmax()
         
         n = 0
-        for col in self.source.colnames[:self.source.metadata[0]['n_varied']]:
+        for col in self.source.colnames:
             n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
