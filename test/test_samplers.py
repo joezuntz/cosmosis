@@ -57,7 +57,6 @@ def run(sampler, check_prior, check_extra=True, **options):
         p1 = output['parameters--p1']
         p2 = output['parameters--p2']
         p3 = output['PARAMETERS--P3']
-
         assert np.all((p1+p2==p3)|(np.isnan(p3)))
 
     return output
@@ -68,7 +67,7 @@ def test_apriori():
 
 def test_dynesty():
     # dynesty does not support extra params
-    run('dynesty', False, check_extra=False, nlive=50)
+    run('dynesty', False, check_extra=False, nlive=50, sample='unif')
 
 def test_emcee():
     run('emcee', True, walkers=8, samples=100)
