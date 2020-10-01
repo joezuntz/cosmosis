@@ -147,7 +147,7 @@ class EmceeSampler(ParallelSampler):
                           iterations=self.nsteps, store=True)
 
         for (pos, prob, rstate, extra_info) in self.ensemble.sample(self.p0, **kwargs):
-            outputs.append((pos.copy(), prob.copy(), extra_info[:]))
+            outputs.append((pos.copy(), prob.copy(), np.copy(extra_info)))
     
         for (pos, prob, extra_info) in outputs:
             self.output_samples(pos, prob, extra_info)
