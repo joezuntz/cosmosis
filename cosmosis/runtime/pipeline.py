@@ -462,6 +462,12 @@ class Pipeline(object):
                 relevant_sections.append(global_section)
 
             config_block = config_to_block(relevant_sections, self.options)
+            # we need to store an ID here to allow a hack to add new parameters
+            # from the modules themselves.  Unfortunately cosmosis stores ints, whereas
+            # python IDs are long.  So we split the ID into two parts here
+            config_block[PIPELINE_INI_SECTION, "_cosmosis_pipeline_instance_id1"] = id(self) // 2**32
+            config_block[PIPELINE_INI_SECTION, "_cosmosis_pipeline_instance_id2"] = id(self) % 2**32
+            config_block[PIPELINE_INI_SECTION, "_cosmosis_active_module"] = module.name
             module.setup(config_block, quiet=self.quiet)
 
             if self.timing:
@@ -759,6 +765,10 @@ class LikelihoodPipeline(Pipeline):
                                                               priors_files,
                                                               override,
                                                               )
+        # We set up the modules first, so that if they want to e.g.
+        # add parameters then they can.
+        self.setup()
+
         if only:
             for p in only:
                 if p not in self.parameters:
@@ -797,8 +807,6 @@ class LikelihoodPipeline(Pipeline):
         else:
             self.likelihood_names = likelihood_names.split()
 
-        # now that we've set up the pipeline properly, initialize modules
-        self.setup()
 
 
 
@@ -815,6 +823,33 @@ class LikelihoodPipeline(Pipeline):
             s = "{}--{}".format(param.section,param.name)
             print("{0:{1}}  ~ {2}" .format(s, n, param.prior))
         print("")
+
+    def _register_new_parameter(self,
+                                module_name,
+                                section,
+                                name,
+                                start,
+                                min_value,
+                                max_value,
+                                prior_name,
+                                prior_args):
+        # This is designed to be called by the register_new_parameter
+        # function below, from modules themselves, to support the case
+        # where modules create their own parameter
+        limits = (min_value, max_value)
+        if prior_name == "":
+            prior_obj = None
+        else:
+            if prior_args is None:
+                prior_args = []
+            prior_text = prior_name + " " + " ".join([str(x) for x in prior_args])
+            prior_obj = prior.Prior.parse_prior(prior_text)
+        param = parameter.Parameter(section, name, start, limits, prior_obj)
+        print("Pipeline module {} created new parameter {}".format(module_name, param))
+        print("    with start:", param.start)
+        print("    with limits:", param.limits)
+        print("    with prior:", param.prior)
+        self.parameters.append(param)
 
     def reset_fixed_varied_parameters(self):
         u"""Identify the sub-set of parameters which are fixed, and those which are to be varied."""

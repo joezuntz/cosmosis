@@ -292,3 +292,59 @@ class Parameter(object):
             raise ValueError("Unable to parse numeric value for "
                              "parameter value %s, error %s" %
                              (line, error))
+
+
+def register_new_parameter(options,
+                           section,
+                           name,
+                           min_value,
+                           start_value,
+                           max_value,
+                           prior_name="",
+                           prior_args=None):
+    """
+    Add a parameter to the pipeline from a module setup function.
+
+    We allow modules to define and add parameters to the pipeline,
+    either fixed or sampled.  This function can be called to do this.
+
+    It will only affect the pipeline from which setup was called.
+
+    options is the datablock passed to setup(options).
+    section is the string setting the datablock section for the new parameter
+    name is the name of the new parameter
+    min_value is the lower limit of the parameter's range
+    max_value is the upper limit of the parameter's range
+    prior_name (optional) is a string - see prior.py
+    prior_args (optional) is any additional arguments to create the prior
+    """
+
+    # This is dark magic, but is the only way to get a generic
+    # python object from the block right now.  If you're looking
+    # at this for inspiration of something else you would like
+    # to do to abuse the data block strucure then stop now and
+    # reconsider.
+    import _ctypes
+    from ..datablock import BlockError
+    # need to reconstruct the (usually) 64 bit ID from the two
+    # 32 bit values we save
+    try:
+        id1 = options["pipeline", "_cosmosis_pipeline_instance_id1"]
+        id2 = options["pipeline", "_cosmosis_pipeline_instance_id2"]
+    except BlockError:
+        print("Tried to register_new_parameter from a module not in a pipeline: skipping.")
+        return
+    obj_id = id1 * 2**32 + id2
+    pipeline = _ctypes.PyObj_FromPtr(obj_id)
+
+    # now back to sanity
+    caller = options["pipeline", "_cosmosis_active_module"]
+
+    pipeline._register_new_parameter(caller,
+                           section,
+                           name,
+                           start_value,
+                           min_value,
+                           max_value,
+                           prior_name,
+                           prior_args)
