@@ -2,9 +2,9 @@ from cosmosis.runtime import register_new_parameter
 def setup(options):
 
     register_new_parameter(
-        options,
-        "new_parameters",
-        "p3",
+        options, # the options datablock we were just passed
+        "new_parameters", # section
+        "p3",  # name
         -1.0,  # min value
         0.0,   # start value
         1.0,   # max value
