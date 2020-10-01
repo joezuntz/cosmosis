@@ -1,6 +1,8 @@
 from cosmosis.runtime import register_new_parameter
-def setup(options):
 
+def setup(options):
+    # example of how to register a new parameter in the pipeline
+    # from where.
     register_new_parameter(
         options, # the options datablock we were just passed
         "new_parameters", # section
@@ -8,8 +10,8 @@ def setup(options):
         -1.0,  # min value
         0.0,   # start value
         1.0,   # max value
-        "normal",  # prior name, optional, defaults to uniform or delta if min==max
-        [0.1, 0.2] # prior parameters, in this case mu, sigma, see prior.py
+        "normal",  # prior name, optional, defaults to uniform or delta if min==max.  see prior.py
+        [0.1, 0.2] # prior parameters, optional, in this case [mu, sigma], see prior.py
     )
     return {}
 
