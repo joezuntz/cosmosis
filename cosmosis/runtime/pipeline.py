@@ -462,6 +462,7 @@ class Pipeline(object):
                 relevant_sections.append(global_section)
 
             config_block = config_to_block(relevant_sections, self.options)
+            config_block[PIPELINE_INI_SECTION, 'current_module'] = module.name
             # we need to store an ID here to allow a hack to add new parameters
             # from the modules themselves.  Unfortunately cosmosis stores ints, whereas
             # python IDs are long.  So we split the ID into two parts here
