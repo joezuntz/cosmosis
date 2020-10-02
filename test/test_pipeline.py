@@ -1,7 +1,7 @@
 from cosmosis.runtime import Inifile, register_new_parameter, LikelihoodPipeline, Parameter, Module
 from cosmosis.datablock import DataBlock
 from cosmosis.samplers.sampler import Sampler
-from cosmosis.runtime.prior import TruncatedGaussianPrior
+from cosmosis.runtime.prior import TruncatedGaussianPrior, DeltaFunctionPrior
 from cosmosis.output.in_memory_output import InMemoryOutput
 import numpy as np
 import os
@@ -45,6 +45,12 @@ def test_add_param():
     assert np.isclose(p.prior.mu, 0.1)
     assert np.isclose(p.prior.sigma, 0.2)
 
+    assert len(pipeline.fixed_params) == 1
+    p = pipeline.fixed_params[0]
+    assert isinstance(p, Parameter)
+    assert isinstance(p.prior, DeltaFunctionPrior)
+
+
     output = InMemoryOutput()
     sampler = sampler_class(ini, pipeline, output)
     sampler.config()
@@ -72,4 +78,5 @@ def test_missing_setup():
 
 
 if __name__ == '__main__':
+    test_add_param()
     test_missing_setup()

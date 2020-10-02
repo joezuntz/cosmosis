@@ -848,7 +848,10 @@ class LikelihoodPipeline(Pipeline):
         # This is designed to be called by the register_new_parameter
         # function below, from modules themselves, to support the case
         # where modules create their own parameter
-        limits = (min_value, max_value)
+        if max_value == min_value:
+            limits = None
+        else:
+            limits = (min_value, max_value)
         if prior_name == "":
             prior_obj = None
         else:
