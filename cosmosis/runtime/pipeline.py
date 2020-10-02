@@ -465,10 +465,16 @@ class Pipeline(object):
             # we need to store an ID here to allow a hack to add new parameters
             # from the modules themselves.  Unfortunately cosmosis stores ints, whereas
             # python IDs are long.  So we split the ID into two parts here
-            config_block[PIPELINE_INI_SECTION, "_cosmosis_pipeline_instance_id1"] = id(self) // 2**32
-            config_block[PIPELINE_INI_SECTION, "_cosmosis_pipeline_instance_id2"] = id(self) % 2**32
-            config_block[PIPELINE_INI_SECTION, "_cosmosis_active_module"] = module.name
-            module.setup(config_block, quiet=self.quiet)
+
+            LikelihoodPipeline.pipeline_being_set_up.append(self)
+            LikelihoodPipeline.module_being_set_up.append(module.name)
+            try:
+                module.setup(config_block, quiet=self.quiet)
+            finally:
+                # This should only go wrong if someone is doing something
+                # ridiculous, so I won't catch any error in it.
+                LikelihoodPipeline.pipeline_being_set_up.remove(self)
+                LikelihoodPipeline.module_being_set_up.remove(module.name)
 
             if self.timing:
                 timings.append(time.time())
@@ -737,6 +743,11 @@ class LikelihoodPipeline(Pipeline):
 
     """
 
+    # These class-level variables are used by the
+    # register_new_parameter function.
+    pipeline_being_set_up = []
+    module_being_set_up = []
+
     def __init__(self, arg=None, id="", override=None, load=True, only=None):
         u"""Construct a :class:`LikelihoodPipeline`.
 
@@ -941,7 +952,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def denormalize_vector_from_prior(self, p):
-        u"""Convert an array of normalized parameter values, one for each varied parameter,
+        r"""Convert an array of normalized parameter values, one for each varied parameter,
         in the range [0.0,1.0] into their original values according to the prior for each parameter.
 
         i.e. 

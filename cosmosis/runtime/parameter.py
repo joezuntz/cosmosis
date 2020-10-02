@@ -318,27 +318,24 @@ def register_new_parameter(options,
     prior_name (optional) is a string - see prior.py
     prior_args (optional) is any additional arguments to create the prior
     """
+    from .pipeline import LikelihoodPipeline
 
-    # This is dark magic, but is the only way to get a generic
-    # python object from the block right now.  If you're looking
-    # at this for inspiration of something else you would like
-    # to do to abuse the data block strucure then stop now and
-    # reconsider.
-    import _ctypes
-    from ..datablock import BlockError
-    # need to reconstruct the (usually) 64 bit ID from the two
-    # 32 bit values we save
-    try:
-        id1 = options["pipeline", "_cosmosis_pipeline_instance_id1"]
-        id2 = options["pipeline", "_cosmosis_pipeline_instance_id2"]
-    except BlockError:
+    n = len(LikelihoodPipeline.pipeline_being_set_up)
+
+    if n == 0:
         print("Tried to register_new_parameter from a module not in a pipeline: skipping.")
         return
-    obj_id = id1 * 2**32 + id2
-    pipeline = _ctypes.PyObj_FromPtr(obj_id)
+    elif n != 1:
+        raise RuntimeError("Multiple pipelines are currently being set up, cannot register new parameter")
 
-    # now back to sanity
-    caller = options["pipeline", "_cosmosis_active_module"]
+    if len(LikelihoodPipeline.module_being_set_up) != n:
+        raise RuntimeError("Internal error: not clear what module is being set up.")
+
+    # Now we have established the numbers are right we
+    # register the parameter
+    pipeline = LikelihoodPipeline.pipeline_being_set_up[0]
+    caller = LikelihoodPipeline.module_being_set_up[0]
+
 
     pipeline._register_new_parameter(caller,
                            section,
