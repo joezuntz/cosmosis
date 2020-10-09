@@ -1,36 +1,44 @@
 from builtins import zip
 from builtins import range
 from builtins import str
-from .. import ParallelSampler, sample_ellipsoid
+from .. import ParallelSampler, sample_ellipsoid, sample_ball
 import numpy as np
 import sys
 
 
 def log_probability_function(p):
-    r = emcee_pipeline.run_results(p)
-    return r.post, (r.prior, r.extra)
+    r = zeus_pipeline.run_results(p)
+    return r.post
+    # zeus does not yet support derived params
+    #, (r.prior, r.extra)
 
 
-class EmceeSampler(ParallelSampler):
+class ZeusSampler(ParallelSampler):
     parallel_output = False
     supports_resume = True
     sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
-        global emcee_pipeline
-        emcee_pipeline = self.pipeline
+        global zeus_pipeline
+        zeus_pipeline = self.pipeline
 
         if self.is_master():
+            # we still import emcee, to use some of its
+            # tools
             import emcee
+            import zeus
             self.emcee = emcee
+            self.zeus = zeus
 
-            self.emcee_version = int(self.emcee.__version__[0])
+            if not hasattr(zeus, "EnsembleSampler"):
+                raise ImportError("There are two python packages called Zeus, and you"
+                    " have the wrong one.  Uninstall zeus and install zeus-mcmc.")
 
 
-            # Parameters of the emcee sampler
-            self.nwalkers = self.read_ini("walkers", int, 2)
-            self.samples = self.read_ini("samples", int, 1000)
-            self.nsteps = self.read_ini("nsteps", int, 100)
+            # Parameters of the zeus sampler
+            self.nwalkers = self.read_ini("walkers", int)
+            self.samples = self.read_ini("samples", int)
+            self.nsteps = self.read_ini("nsteps", int, 50)
 
             assert self.nsteps>0, "You specified nsteps<=0 in the ini file - please set a positive integer"
             assert self.samples>0, "You specified samples<=0 in the ini file - please set a positive integer"
@@ -61,7 +69,7 @@ class EmceeSampler(ParallelSampler):
                 n=0
                 p0 = []
                 for i in range(iterations_limit):
-                    p = self.emcee.utils.sample_ellipsoid(center, cov)[0]
+                    p = sample_ellipsoid(center, cov)[0]
                     if np.isfinite(self.pipeline.prior(p)):
                         p0.append(p)
                     if len(p0)==self.nwalkers:
@@ -76,14 +84,14 @@ class EmceeSampler(ParallelSampler):
             else:
                 center_norm = self.pipeline.normalize_vector(self.start_estimate())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
-                p0_norm = self.emcee.utils.sample_ball(center_norm, sigma_norm, size=self.nwalkers)
+                p0_norm = sample_ball(center_norm, sigma_norm, size=self.nwalkers)
                 p0_norm[p0_norm<=0] = 0.001
                 p0_norm[p0_norm>=1] = 0.999
                 self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
                 self.output.log_info("Generating starting positions in small ball around starting point")
 
             #Finally we can create the sampler
-            self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, self.ndim,
+            self.sampler = self.zeus.EnsembleSampler(self.nwalkers, self.ndim,
                                                        log_probability_function,
                                                        pool=self.pool)
 
@@ -97,7 +105,7 @@ class EmceeSampler(ParallelSampler):
                 print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
                 print("Increase the 'samples' parameter to keep going.")
             else:
-                print("Continuing emcee from existing chain - have {} samples already".format(len(data)))
+                print("Continuing zeus from existing chain - have {} samples already".format(len(data)))
 
     def load_start(self, filename):
         #Load the data and cut to the bits we need.
@@ -126,43 +134,39 @@ class EmceeSampler(ParallelSampler):
         return covmat
 
 
-    def output_samples(self, pos, prob, extra_info):
-        for params, post, extra in zip(pos,prob,extra_info):
-            prior, extra = extra      
-            self.output.parameters(params, extra, prior, post)
-
     def execute(self):
         #Run the emcee sampler.
         if self.num_samples == 0:
             print("Begun sampling")
-        outputs = []
-        if self.emcee_version < 3:
-            kwargs = dict(lnprob0=self.prob0, blobs0=self.blob0, 
-                          iterations=self.nsteps, storechain=False)
+            start = 0
         else:
-            # In emcee3 we have to enable storing the chain because
-            # we want the acceptance fraction.  Also the name of one
-            # of the parameters has changed.
-            kwargs = dict(log_prob0=self.prob0, blobs0=self.blob0, 
-                          iterations=self.nsteps, store=True)
+            start = self.sampler.chain.shape[0]
+        self.sampler.run(self.p0, self.nsteps)
+        end = self.sampler.chain.shape[0]
 
-        for (pos, prob, rstate, extra_info) in self.ensemble.sample(self.p0, **kwargs):
-            outputs.append((pos.copy(), prob.copy(), np.copy(extra_info)))
-    
-        for (pos, prob, extra_info) in outputs:
-            self.output_samples(pos, prob, extra_info)
+        post = self.sampler.get_log_prob()
+        chain = self.sampler.get_chain()
+
+            # zeus does not support derived params.  make them nan
+        extra = np.repeat(np.nan, self.pipeline.number_extra)
+        prior = np.nan
+        for i in range(start, end):
+            for j in range(self.nwalkers):
+                # move the prior and extra here
+                # zeus does not support derived params.  make them nan
+                self.output.parameters(chain[i, j], extra, prior, post[i, j])
 
         #Set the starting positions for the next chunk of samples
         #to the last ones for this chunk
-        self.p0 = pos
-        self.prob0 = prob
-        self.blob0 = extra_info
+        self.p0 = self.sampler.get_last_sample
         self.num_samples += self.nsteps
-        acceptance_fraction = self.ensemble.acceptance_fraction.mean()
-        print("Done {} iterations of emcee. Acceptance fraction {:.3f}".format(
-            self.num_samples, acceptance_fraction))
+        taus = self.zeus.AutoCorrTime(chain)
+        print("\nHave {} samples from zeus. Current auto-correlation estimates are:".format(
+            self.num_samples*self.nwalkers))
+        for par, tau in zip(self.pipeline.varied_params, taus):
+            print("   {}:  {:.2f}".format(par, tau))
         sys.stdout.flush()
-        self.output.final("mean_acceptance_fraction", acceptance_fraction)
 
     def is_converged(self):
         return self.num_samples >= self.samples
+

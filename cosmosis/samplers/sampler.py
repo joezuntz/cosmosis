@@ -13,6 +13,7 @@ import pickle
 from .hints import Hints
 import numpy as np
 import shutil
+import numpy as np
 # Sampler metaclass that registers each of its subclasses
 
 class RegisteredSampler(type):
@@ -211,3 +212,31 @@ class ParallelSampler(Sampler):
 
     def is_master(self):
         return self.pool is None or self.pool.is_master()
+
+
+# These are marked as deprecated in emcee, so I moved them here.
+# I think I wrote the first one.  And I've rewritten the second
+# to use the first
+def sample_ellipsoid(p0, covmat, size=1):
+    """
+    Produce an ellipsoid of walkers around an initial parameter value,
+    according to a covariance matrix.
+    :param p0: The initial parameter value.
+    :param covmat:
+        The covariance matrix.  Must be symmetric-positive definite or
+        it will raise the exception numpy.linalg.LinAlgError
+    :param size: The number of samples to produce.
+    """
+    return np.random.multivariate_normal(
+        np.atleast_1d(p0), np.atleast_2d(covmat), size=size
+    )
+
+def sample_ball(p0, std, size=1):
+    """
+    Produce a ball of walkers around an initial parameter value.
+    :param p0: The initial parameter value.
+    :param std: The axis-aligned standard deviation.
+    :param size: The number of samples to produce.
+    """
+    covmat = np.diag(std**2)
+    return sample_ellipsoid(p0, covmat, size)

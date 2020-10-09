@@ -122,6 +122,9 @@ class EmceeProcessor(MetropolisHastingsProcessor):
 		else:
 			return cols
 
+class ZeusProcessor(EmceeProcessor):
+	sampler="zeus"
+
 class KombineProcessor(MetropolisHastingsProcessor):
 	sampler="kombine"
 	pass
