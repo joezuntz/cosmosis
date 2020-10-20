@@ -72,9 +72,22 @@ def test_add_param():
     return output
 
 def test_missing_setup():
+    # check the register_new_parameter feature when no
+    # setup is currently happening
     module = Module("test2", root + "/test_module2.py")
     config = DataBlock()
     module.setup(config)
+
+def test_unused_param_warning(capsys):
+    # check that an appropriate warning is generated
+    # when a parameter is unused
+    module = Module("test", root + "/test_module.py")
+    config = DataBlock()
+    config['test', 'unused'] = "unused_parameter"
+    module.setup(config)
+    _, err = capsys.readouterr()
+    assert "**** WARNING: Parameter 'unused'" in err
+
 
 
 if __name__ == '__main__':

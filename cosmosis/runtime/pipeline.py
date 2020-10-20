@@ -1408,4 +1408,13 @@ def config_to_block(relevant_sections, options):
             val = options.gettyped(section, name)
             if val is not None:
                 config_block.put(section, name, val)
+    # For book-keeping stuff later we also need to record
+    # which keys were in the default section.  If
+    # we want to keep track of unused parameters in
+    # Module.access_check_report then we need to ensure
+    # we don't include parameters that are only in the section
+    # because they are in every section.  So we keep track of
+    # such parameters by including them here
+    for (key, val) in options.items("DEFAULT"):
+        config_block.put("_cosmosis_default_section", key, val)
     return config_block
