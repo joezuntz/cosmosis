@@ -211,9 +211,9 @@ class SlowSubspaceCache(object):
         first_use = block.get_first_parameter_use(params)
         first_use_count = [len(f) for f in first_use.values()]
         if sum(first_use_count)!=len(params):
-            print(first_use)
-            print(params)
-            raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline (used {}, have{})".format(sum(first_use_count), len(params)))
+            used = sum(first_use.values(), [])
+            unused = [p for p in params if p not in used]
+            raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline: (unused: {})".format(unused))
         print("\n")
         print("Parameters first used in each module:")
         for f, n in zip(first_use.items(), first_use_count):
