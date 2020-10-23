@@ -198,6 +198,9 @@ class SlowSubspaceCache(object):
         pipeline.timing = original_timing
         timings = pipeline.timings
 
+        if timings is None:
+            raise ValueError("Pipeline did not complete, so cannot do fast/slow")
+
         #Now we have the datablock, which has the log in it, and the timing.
         #The only information that can be of relevance is the fraction
         #of the time pipeline before a given module, and the list of 
@@ -622,6 +625,8 @@ class Pipeline(object):
 
         """
         modules = self.modules
+        if self.timing:
+            self.timings = None
 
         timings = []
         if self.shortcut_module:
