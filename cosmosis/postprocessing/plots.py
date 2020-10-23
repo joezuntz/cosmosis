@@ -10,7 +10,9 @@ from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement, W
 from .elements import Loadable
 from .outputs import PostprocessPlot
 from ..plotting.kde import KDE
+from ..runtime import Parameter
 from .utils import std_weight, mean_weight
+from .density import smooth_density_estimate_1d
 from . import cosmology_theory_plots
 import configparser
 import numpy as np
@@ -444,13 +446,42 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
     def keywords_1d(self):
         return {}
 
-    def smooth_likelihood(self, x):
+    def smooth_likelihood(self, x, name):
         #Interpolate using KDE
+        if self.options.get("fix_edges"):
+            return self.smooth_likelihood_with_boundaries(x, name)
         n = self.options.get("n_kde", 100)
         factor = self.options.get("factor_kde", 2.0)
         kde = KDE(x, factor=factor)
         x_axis, like = kde.grid_evaluate(n, (x.min(), x.max()) )
         return n, x_axis, like
+
+    def smooth_likelihood_with_boundaries(self, x, name,):
+        # find the limits on this parameter
+        values = self.source.extract_ini("VALUES")
+        priors = self.source.extract_ini("PRIORS")
+        params = Parameter.load_parameters(values, [priors])
+        i = params.index(name)
+        param = params[i]
+        xmin, xmax = param.limits
+        factor = self.options.get("factor_kde", 2.0)
+        std = x.std()
+        mu = x.mean()
+        fix = False
+        if xmax - x.max() < std:
+            fix = True
+        else:
+            xmax = x.max()
+
+        if x.min() - xmin < std:
+            fix = True
+        else:
+            xmin = x.min()
+
+        x, like = smooth_density_estimate_1d(x, xmin, xmax,
+                            smoothing=factor, fix_boundary=fix)
+        return x.size, x, like
+
 
     def make_1d_plot(self, name, figure=None):
         x = self.reduced_col(name)
@@ -462,7 +493,7 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
             filename = None
         if x.max()-x.min()==0: return
 
-        n, x_axis, like = self.smooth_likelihood(x)
+        n, x_axis, like = self.smooth_likelihood(x, name)
         like/=like.max()
 
         #Choose colors
@@ -637,11 +668,13 @@ class TestPlots(Plots):
 
 
 class WeightedPlots1D(object):
-    def smooth_likelihood(self, x):
+    def smooth_likelihood(self, x, name):
         #Interpolate using KDE
         n = self.options.get("n_kde", 100)
         weights = self.weight_col()
         #speed things up by removing zero-weighted samples
+        if self.options.get("fix_edges"):
+            return self.smooth_likelihood_with_boundaries(x, name, weights)
 
         dx = std_weight(x, weights)*4
         mu_x = mean_weight(x, weights)
@@ -651,6 +684,32 @@ class WeightedPlots1D(object):
         kde = KDE(x, factor=factor, weights=weights)
         x_axis, like = kde.grid_evaluate(n, x_range )
         return n, x_axis, like
+
+    def smooth_likelihood_with_boundaries(self, x, name, weights):
+        # find the limits on this parameter
+        values = self.source.extract_ini("VALUES")
+        priors = self.source.extract_ini("PRIORS")
+        params = Parameter.load_parameters(values, [priors])
+        i = params.index(name)
+        param = params[i]
+        xmin, xmax = param.limits
+        factor = self.options.get("factor_kde", 2.0)
+        std = std_weight(x, weights)
+        mu = mean_weight(x, weights)
+        fix = False
+        if xmax - x.max() < std:
+            fix = True
+        else:
+            xmax = x.max()
+
+        if x.min() - xmin < std:
+            fix = True
+        else:
+            xmin = x.min()
+
+        x, like = smooth_density_estimate_1d(x, xmin, xmax, weights=weights,
+                            smoothing=factor, fix_boundary=fix)
+        return x.size, x, like
 
 
 class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
