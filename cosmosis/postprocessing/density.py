@@ -162,11 +162,12 @@ def smooth_density_estimate_2d(x, y, xmin, xmax, ymin, ymax, weights=None, N=256
     # make the correlation matrix from the covariance
     corr = covmat.copy()
     for i in range(2):
-        corr[i, :] /= corr[i, i]**0.5
-        corr[:, i] /= corr[i, i]**0.5
+        si = corr[i, i]**0.5
+        corr[i, :] /= si
+        corr[:, i] /= si
     rho = corr[0, 1]
     
-    if rho > 0.85:
+    if rho > 0.6:
         N = max(512, N)
         
     # This is a standard factor for 1D KDEs
