@@ -12,7 +12,7 @@ from .outputs import PostprocessPlot
 from ..plotting.kde import KDE
 from ..runtime import Parameter
 from .utils import std_weight, mean_weight
-from .density import smooth_density_estimate_1d
+from .density import smooth_density_estimate_1d, smooth_density_estimate_2d
 from . import cosmology_theory_plots
 import configparser
 import numpy as np
@@ -441,6 +441,35 @@ class SnakePlots2D(GridPlots2D):
 class MetropolisHastingsPlots(Plots, MCMCPostProcessorElement):
     excluded_columns = ["like","post", "prior"]
 
+def get_param_limits(source, name):
+    values = source.extract_ini("VALUES")
+    priors = source.extract_ini("PRIORS")
+    params = Parameter.load_parameters(values, [priors])
+    i = params.index(name)
+    param = params[i]
+    return param.limits
+
+def select_limits(x, source, name):
+    try:
+        xmin, xmax = get_param_limits(source, name)
+    except ValueError:
+        return (x.min(), x.max(), False)
+    std = x.std()
+    mu = x.mean()
+    near_boundary = False
+    if abs(xmax - x.max()) < 2 * std:
+        near_boundary = True
+    else:
+        xmax = x.max()
+
+    if abs(x.min() - xmin) < 2 * std:
+        near_boundary = True
+    else:
+        xmin = x.min()
+
+    return xmin, xmax, near_boundary
+
+
 
 class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
     def keywords_1d(self):
@@ -456,28 +485,10 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
         x_axis, like = kde.grid_evaluate(n, (x.min(), x.max()) )
         return n, x_axis, like
 
-    def smooth_likelihood_with_boundaries(self, x, name,):
+    def smooth_likelihood_with_boundaries(self, x, name):
         # find the limits on this parameter
-        values = self.source.extract_ini("VALUES")
-        priors = self.source.extract_ini("PRIORS")
-        params = Parameter.load_parameters(values, [priors])
-        i = params.index(name)
-        param = params[i]
-        xmin, xmax = param.limits
         factor = self.options.get("factor_kde", 2.0)
-        std = x.std()
-        mu = x.mean()
-        fix = False
-        if xmax - x.max() < std:
-            fix = True
-        else:
-            xmax = x.max()
-
-        if x.min() - xmin < std:
-            fix = True
-        else:
-            xmin = x.min()
-
+        xmin, xmax, fix = select_limits(x, self.source, name)
         x, like = smooth_density_estimate_1d(x, xmin, xmax,
                             smoothing=factor, fix_boundary=fix)
         return x.size, x, like
@@ -539,7 +550,11 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
 
-    def smooth_likelihood(self, x, y):
+    def smooth_likelihood(self, x, y, xname, yname):
+        if self.options.get("fix_edges"):
+            x, y, like = self.smooth_likelihood_with_boundaries(x, y, xname, yname)
+            return x.size, x, y, like
+
         n = self.options.get("n_kde", 100)
         factor = self.options.get("factor_kde", 2.0)
         kde = KDE([x,y], factor=factor)
@@ -547,6 +562,14 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         y_range = (y.min(), y.max())
         (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
         return n, x_axis, y_axis, like        
+
+    def smooth_likelihood_with_boundaries(self, x, y, xname, yname):
+        factor = self.options.get("factor_kde", 2.0)
+        xmin, xmax, fix_x = select_limits(x, self.source, xname)
+        ymin, ymax, fix_y = select_limits(y, self.source, yname)
+        x, y, like = smooth_density_estimate_2d(x, y, xmin, xmax, ymin, ymax,
+                            smoothing=factor, fix_boundary=fix_x or fix_y)
+        return x, y, like
 
     def make_2d_plot(self, name1, name2, figure=None):
         #Get the data
@@ -563,7 +586,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
         #Interpolate using KDE
         try:
-            n, x_axis, y_axis, like = self.smooth_likelihood(x, y)
+            n, x_axis, y_axis, like = self.smooth_likelihood(x, y, name1, name2)
         except np.linalg.LinAlgError:
             print("  -- these two parameters have singular covariance - probably a linear relation")
             print("Not making a 2D plot of them")
@@ -687,27 +710,10 @@ class WeightedPlots1D(object):
 
     def smooth_likelihood_with_boundaries(self, x, name, weights):
         # find the limits on this parameter
-        values = self.source.extract_ini("VALUES")
-        priors = self.source.extract_ini("PRIORS")
-        params = Parameter.load_parameters(values, [priors])
-        i = params.index(name)
-        param = params[i]
-        xmin, xmax = param.limits
+        # find the limits on this parameter
         factor = self.options.get("factor_kde", 2.0)
-        std = std_weight(x, weights)
-        mu = mean_weight(x, weights)
-        fix = False
-        if xmax - x.max() < std:
-            fix = True
-        else:
-            xmax = x.max()
-
-        if x.min() - xmin < std:
-            fix = True
-        else:
-            xmin = x.min()
-
-        x, like = smooth_density_estimate_1d(x, xmin, xmax, weights=weights,
+        xmin, xmax, fix = select_limits(x, self.source, name)
+        x, like = smooth_density_estimate_1d(x, xmin, xmax,
                             smoothing=factor, fix_boundary=fix)
         return x.size, x, like
 
@@ -726,11 +732,16 @@ class WeightedMetropolisPlots1D(WeightedPlots1D, WeightedMCMCPostProcessorElemen
 
 class WeightedPlots2D(object):
     excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
-    def smooth_likelihood(self, x, y):
+    def smooth_likelihood(self, x, y, xname, yname):
+        weights = self.weight_col()
+
+        if self.options.get("fix_edges"):
+            x, y, like = self.smooth_likelihood_with_boundaries(x, y, weights, xname, yname)
+            return x.size, x, y, like
+
         n = self.options.get("n_kde", 100)
         fill = self.options.get("fill", True)
         factor = self.options.get("factor_kde", 2.0)
-        weights = self.weight_col()
         kde = KDE([x,y], factor=factor, weights=weights)
         dx = std_weight(x, weights)*4
         dy = std_weight(y, weights)*4
@@ -739,7 +750,16 @@ class WeightedPlots2D(object):
         x_range = (max(x.min(), mu_x-dx), min(x.max(), mu_x+dx))
         y_range = (max(y.min(), mu_y-dy), min(y.max(), mu_y+dy))
         (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
-        return n, x_axis, y_axis, like        
+        return n, x_axis, y_axis, like
+
+    def smooth_likelihood_with_boundaries(self, x, y, weights, xname, yname):
+        factor = self.options.get("factor_kde", 2.0)
+        xmin, xmax, fix_x = select_limits(x, self.source, xname)
+        ymin, ymax, fix_y = select_limits(y, self.source, yname)
+        x, y, like = smooth_density_estimate_2d(x, y, xmin, xmax, ymin, ymax, weights=weights,
+                            smoothing=factor, fix_boundary=fix_x or fix_y)
+        return x, y, like
+
 
     def _find_contours(self, like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
         N = len(x)
