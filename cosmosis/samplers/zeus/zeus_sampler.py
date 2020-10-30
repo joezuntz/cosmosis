@@ -13,7 +13,7 @@ def log_probability_function(p):
 
 class ZeusSampler(ParallelSampler):
     parallel_output = False
-    supports_resume = True
+    supports_resume = False
     sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
@@ -32,7 +32,6 @@ class ZeusSampler(ParallelSampler):
                 raise ImportError("There are two python packages called Zeus, and you"
                     " have the wrong one.  Uninstall zeus and install zeus-mcmc.")
 
-
             # Parameters of the zeus sampler
             self.nwalkers = self.read_ini("walkers", int)
             self.samples = self.read_ini("samples", int)
@@ -45,6 +44,43 @@ class ZeusSampler(ParallelSampler):
             start_file = self.read_ini("start_points", str, "")
             covmat_file = self.read_ini("covmat", str, "")
             self.ndim = len(self.pipeline.varied_params)
+
+            # Zeus move options
+            move_names = {
+                "differential": zeus.moves.DifferentialMove,
+                "gaussian": zeus.moves.GaussianMove,
+                "global": zeus.moves.GlobalMove,
+                "random": zeus.moves.RandomMove,
+                "kde": zeus.moves.KDEMove,
+            }
+
+            moves = self.read_ini("moves", str, "differential").strip()
+
+            # parse the moves into the list self.moves.
+            # Expected format is, e.g. "differential:1.0  global:0.5"
+            # but the weights default to 1
+            self.moves = []
+            moves = moves.split()
+            for move in moves:
+                # split if weighting present
+                if ':' in move:
+                    move_name, move_weight = move.split(':')
+                else:
+                    move_name = move
+                    move_weight = 1.0
+                move_cls = move_names[move_name]
+                self.moves.append((move_cls(), move_weight))
+
+            print("Running zeus with moves:")
+            print(self.moves)
+
+            # Other zeus options
+            self.tune = self.read_ini("tune", bool, True)
+            self.tolerance = self.read_ini("tolerance", float, 0.05)
+            self.maxsteps = self.read_ini("maxsteps", int, 10000)
+            self.patience = self.read_ini("patience", int, 5)
+            self.maxiter = self.read_ini("maxiter", int, 10000)
+            self.verbose = self.read_ini("verbose", bool, False)
 
             #Starting positions and values for the chain
             self.num_samples = 0
@@ -90,8 +126,14 @@ class ZeusSampler(ParallelSampler):
 
             #Finally we can create the sampler
             self.sampler = self.zeus.EnsembleSampler(self.nwalkers, self.ndim,
-                                                       log_probability_function,
-                                                       pool=self.pool)
+                                                     log_probability_function,
+                                                     tune=self.tune,
+                                                     tolerance=self.tolerance,
+                                                     maxsteps=self.maxsteps,
+                                                     patience=self.patience,
+                                                     maxiter=self.maxiter,
+                                                     verbose=self.verbose,
+                                                     pool=self.pool)
 
     def resume(self):
         if self.output.resumed:

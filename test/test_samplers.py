@@ -103,6 +103,16 @@ def test_pmc():
     old_settings = np.seterr(invalid='ignore', divide='ignore')
     run('pmc', True, iterations=10)
     np.seterr(**old_settings)  
+
+def test_zeus():
+    run('zeus', True, walkers=10, samples=100, nsteps=50)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, verbose=True)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, tune=False)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, tolerance=0.1)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, patience=5000)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, maxiter=5000)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global")
+
 def test_polychord():
     run('polychord', True, live_points=20, feedback=0)
 
