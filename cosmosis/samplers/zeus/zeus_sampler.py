@@ -8,9 +8,7 @@ import sys
 
 def log_probability_function(p):
     r = zeus_pipeline.run_results(p)
-    return r.post
-    # zeus does not yet support derived params
-    #, (r.prior, r.extra)
+    return r.post, (r.prior, r.extra)
 
 
 class ZeusSampler(ParallelSampler):
@@ -146,14 +144,12 @@ class ZeusSampler(ParallelSampler):
 
         post = self.sampler.get_log_prob()
         chain = self.sampler.get_chain()
+        blobs = self.sampler.get_blobs()
 
             # zeus does not support derived params.  make them nan
-        extra = np.repeat(np.nan, self.pipeline.number_extra)
-        prior = np.nan
         for i in range(start, end):
             for j in range(self.nwalkers):
-                # move the prior and extra here
-                # zeus does not support derived params.  make them nan
+                prior, extra = blobs[i, j]
                 self.output.parameters(chain[i, j], extra, prior, post[i, j])
 
         #Set the starting positions for the next chunk of samples
