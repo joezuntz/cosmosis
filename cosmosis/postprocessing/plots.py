@@ -10,7 +10,9 @@ from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement, W
 from .elements import Loadable
 from .outputs import PostprocessPlot
 from ..plotting.kde import KDE
+from ..runtime import Parameter
 from .utils import std_weight, mean_weight
+from .density import smooth_density_estimate_1d, smooth_density_estimate_2d
 from . import cosmology_theory_plots
 import configparser
 import numpy as np
@@ -346,7 +348,6 @@ class GridPlots2D(GridPlots):
 
     def plot_2d(self, name1, name2):
         extent, like = self.get_grid_like(name1, name2) 
-        print(like.shape)
 
         #Choose a color mapping
         norm = pylab.matplotlib.colors.Normalize(like.min(), like.max())
@@ -439,18 +440,59 @@ class SnakePlots2D(GridPlots2D):
 class MetropolisHastingsPlots(Plots, MCMCPostProcessorElement):
     excluded_columns = ["like","post", "prior"]
 
+def get_param_limits(source, name):
+    values = source.extract_ini("VALUES")
+    priors = source.extract_ini("PRIORS")
+    params = Parameter.load_parameters(values, [priors])
+    i = params.index(name)
+    param = params[i]
+    return param.limits
+
+def select_limits(x, source, name):
+    try:
+        xmin, xmax = get_param_limits(source, name)
+    except ValueError:
+        return (x.min(), x.max(), False)
+    std = x.std()
+    mu = x.mean()
+    near_boundary = False
+    if abs(xmax - x.max()) < std:
+        near_boundary = True
+    else:
+        xmax = x.max()
+
+    if abs(x.min() - xmin) < std:
+        near_boundary = True
+    else:
+        xmin = x.min()
+
+    return xmin, xmax, near_boundary
+
+
 
 class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
     def keywords_1d(self):
         return {}
 
-    def smooth_likelihood(self, x):
+    def smooth_likelihood(self, x, name):
         #Interpolate using KDE
+        if self.options.get("fix_edges"):
+            return self.smooth_likelihood_with_boundaries(x, name)
         n = self.options.get("n_kde", 100)
         factor = self.options.get("factor_kde", 2.0)
         kde = KDE(x, factor=factor)
         x_axis, like = kde.grid_evaluate(n, (x.min(), x.max()) )
-        return n, x_axis, like
+        return x_axis, like
+
+    def smooth_likelihood_with_boundaries(self, x, name):
+        # find the limits on this parameter
+        factor = self.options.get("factor_kde", 2.0)
+        xmin, xmax, fix = select_limits(x, self.source, name)
+        xout, like = smooth_density_estimate_1d(x, xmin, xmax,
+                            smoothing=factor, fix_boundary=fix)
+        cut = (xout >= x.min()) & (xout <= x.max())
+        return xout[cut], like[cut]
+
 
     def make_1d_plot(self, name, figure=None):
         x = self.reduced_col(name)
@@ -462,7 +504,7 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
             filename = None
         if x.max()-x.min()==0: return
 
-        n, x_axis, like = self.smooth_likelihood(x)
+        x_axis, like = self.smooth_likelihood(x, name)
         like/=like.max()
 
         #Choose colors
@@ -492,11 +534,14 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
     def keywords_2d(self):
         return {}
 
-    def _find_contours(self, like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
+    def _find_contours(self, like, x, y, x_axis, y_axis, contour1, contour2):
         N = len(x)
-        x_axis = np.linspace(xmin, xmax, n+1)
-        y_axis = np.linspace(ymin, ymax, n+1)
-        histogram, _, _ = np.histogram2d(x, y, bins=[x_axis, y_axis])
+        hx = 0.5 * (x_axis[1] - x_axis[0])
+        hy = 0.5 * (y_axis[1] - y_axis[0])
+        xedge = np.concatenate([x_axis - hx, [x_axis[-1] + hx]])
+        yedge = np.concatenate([y_axis - hy, [y_axis[-1] + hy]])
+
+        histogram, _, _ = np.histogram2d(x, y, bins=[xedge, yedge])
 
         def objective(limit, target):
             w = np.where(like>limit)
@@ -508,14 +553,31 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
 
-    def smooth_likelihood(self, x, y):
+    def smooth_likelihood(self, x, y, xname, yname):
+        if self.options.get("fix_edges"):
+            return self.smooth_likelihood_with_boundaries(x, y, xname, yname)
+
         n = self.options.get("n_kde", 100)
         factor = self.options.get("factor_kde", 2.0)
         kde = KDE([x,y], factor=factor)
         x_range = (x.min(), x.max())
         y_range = (y.min(), y.max())
         (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
-        return n, x_axis, y_axis, like        
+        return x_axis, y_axis, like
+
+    def smooth_likelihood_with_boundaries(self, x, y, xname, yname):
+        factor = self.options.get("factor_kde", 2.0)
+        xmin, xmax, fix_x = select_limits(x, self.source, xname)
+        ymin, ymax, fix_y = select_limits(y, self.source, yname)
+        xout, yout, like = smooth_density_estimate_2d(x, y, xmin, xmax, ymin, ymax,
+                            smoothing=factor, fix_boundary=fix_x or fix_y)
+        xcut = np.where((xout >= x.min()) & (xout <= x.max()))[0]
+        ycut = np.where((yout >= y.min()) & (yout <= y.max()))[0]
+        xcut0 = xcut.min()
+        xcut1 = xcut.max() + 1
+        ycut0 = ycut.min()
+        ycut1 = ycut.max() + 1
+        return x[xcut0:xcut1], y[ycut0:ycut1], like[xcut0:xcut1, ycut0:ycut1]
 
     def make_2d_plot(self, name1, name2, figure=None):
         #Get the data
@@ -532,7 +594,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
         #Interpolate using KDE
         try:
-            n, x_axis, y_axis, like = self.smooth_likelihood(x, y)
+            x_axis, y_axis, like = self.smooth_likelihood(x, y, name1, name2)
         except np.linalg.LinAlgError:
             print("  -- these two parameters have singular covariance - probably a linear relation")
             print("Not making a 2D plot of them")
@@ -547,7 +609,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         #Choose levels at which to plot contours
         contour1=1-0.68
         contour2=1-0.95
-        level1, level2, total_mass = self._find_contours(like, x, y, n, x_axis[0], x_axis[-1], y_axis[0], y_axis[-1], contour1, contour2)
+        level1, level2, total_mass = self._find_contours(like, x, y, x_axis, y_axis, contour1, contour2)
 
         level0 = np.inf
         levels = [level2, level1, level0]
@@ -637,20 +699,30 @@ class TestPlots(Plots):
 
 
 class WeightedPlots1D(object):
-    def smooth_likelihood(self, x):
+    def smooth_likelihood(self, x, name):
         #Interpolate using KDE
         n = self.options.get("n_kde", 100)
         weights = self.weight_col()
         #speed things up by removing zero-weighted samples
+        if self.options.get("fix_edges"):
+            return self.smooth_likelihood_with_boundaries(x, name, weights)
 
-        dx = std_weight(x, weights)*4
-        mu_x = mean_weight(x, weights)
-        x_range = (max(x.min(), mu_x-dx), min(x.max(), mu_x+dx))
+        x_range = get_plot_range(x, weights)
 
         factor = self.options.get("factor_kde", 2.0)
         kde = KDE(x, factor=factor, weights=weights)
         x_axis, like = kde.grid_evaluate(n, x_range )
-        return n, x_axis, like
+        return x_axis, like
+
+    def smooth_likelihood_with_boundaries(self, x, name, weights):
+        # find the limits on this parameter
+        factor = self.options.get("factor_kde", 2.0)
+        xmin, xmax, fix = select_limits(x, self.source, name)
+        xout, like = smooth_density_estimate_1d(x, xmin, xmax, weights=weights,
+                            smoothing=factor, fix_boundary=fix)
+        xmin0, xmax0 = get_plot_range(x, weights)
+        cut = (xout >= xmin0) & (xout <= xmax0)
+        return xout[cut], like[cut]
 
 
 class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
@@ -663,31 +735,56 @@ class PolychordPlots1D(MultinestPlots1D):
 class WeightedMetropolisPlots1D(WeightedPlots1D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots1D):
     excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
 
+def get_plot_range(x, weights):
+    dx = std_weight(x, weights)*4
+    mu_x = mean_weight(x, weights)
+    return (max(x.min(), mu_x-dx), min(x.max(), mu_x+dx))
 
 
 class WeightedPlots2D(object):
     excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
-    def smooth_likelihood(self, x, y):
+    def smooth_likelihood(self, x, y, xname, yname):
+        weights = self.weight_col()
+
+        if self.options.get("fix_edges"):
+            return self.smooth_likelihood_with_boundaries(x, y, weights, xname, yname)
+
         n = self.options.get("n_kde", 100)
         fill = self.options.get("fill", True)
         factor = self.options.get("factor_kde", 2.0)
-        weights = self.weight_col()
         kde = KDE([x,y], factor=factor, weights=weights)
-        dx = std_weight(x, weights)*4
-        dy = std_weight(y, weights)*4
-        mu_x = mean_weight(x, weights)
-        mu_y = mean_weight(y, weights)
-        x_range = (max(x.min(), mu_x-dx), min(x.max(), mu_x+dx))
-        y_range = (max(y.min(), mu_y-dy), min(y.max(), mu_y+dy))
+        x_range = get_plot_range(x, weights)
+        y_range = get_plot_range(y, weights)
         (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
-        return n, x_axis, y_axis, like        
+        return x_axis, y_axis, like
 
-    def _find_contours(self, like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
+    def smooth_likelihood_with_boundaries(self, x, y, weights, xname, yname):
+        factor = self.options.get("factor_kde", 2.0)
+        xmin, xmax, fix_x = select_limits(x, self.source, xname)
+        ymin, ymax, fix_y = select_limits(y, self.source, yname)
+        xout, yout, like = smooth_density_estimate_2d(x, y, xmin, xmax, ymin, ymax, weights=weights,
+                            smoothing=factor, fix_boundary=fix_x or fix_y)
+        xmin0, xmax0 = get_plot_range(x, weights)
+        ymin0, ymax0 = get_plot_range(y, weights)
+        xcut = np.where((xout >= xmin0) & (xout <= xmax0))[0]
+        ycut = np.where((yout >= ymin0) & (yout <= ymax0))[0]
+        xcut0 = xcut.min()
+        xcut1 = xcut.max() + 1
+        ycut0 = ycut.min()
+        ycut1 = ycut.max() + 1
+
+        return xout[xcut0:xcut1], yout[ycut0:ycut1], like[xcut0:xcut1, ycut0:ycut1]
+
+
+    def _find_contours(self, like, x, y, x_axis, y_axis, contour1, contour2):
         N = len(x)
-        x_axis = np.linspace(xmin, xmax, n+1)
-        y_axis = np.linspace(ymin, ymax, n+1)
         weights = self.weight_col()
-        histogram, _, _ = np.histogram2d(x, y, bins=[x_axis, y_axis], weights=weights)
+        hx = 0.5 * (x_axis[1] - x_axis[0])
+        hy = 0.5 * (y_axis[1] - y_axis[0])
+        xedge = np.concatenate([x_axis - hx, [x_axis[-1] + hx]])
+        yedge = np.concatenate([y_axis - hy, [y_axis[-1] + hy]])
+
+        histogram, _, _ = np.histogram2d(x, y, bins=[xedge, yedge], weights=weights)
         def objective(limit, target):
             w = np.where(like>=limit)
             count = histogram[w]

@@ -157,7 +157,7 @@ class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
             elif in_:
                 lines.append(line)
 
-        s = StringIO("\n".join(lines))
+        s = StringIO(u"\n".join(lines))
         ini = Inifile(None)
         ini.read_file(s)
         return ini

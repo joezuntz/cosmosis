@@ -138,6 +138,54 @@ class Module(object):
         for (section, name) in config.keys(self.name):
             config[option_section, name] = config[section, name]
 
+    def access_check_report(self, config):
+        """Check for parameters defined but not used in setup.
+
+        This method scans through the block access logs and records
+        all parameters that were accessed.  If any parameters are never
+        accessed then it prints a warning.
+
+        The fiddly part of this is accounting for parameters that appear
+        in the [DEFAULT] section, since they are usually only used by a
+        subset of modules.
+        """
+        # Read the logs of all parameters that have been read.  This includes
+        # everything from all module setups.  We trim it down below.
+        nlog = config.get_log_count()
+        logs = [config.get_log_entry(i) for i in range(nlog)]
+
+        # get the names of all parameters that came from the
+        # DEFAULT section of the config file
+        defaults = {k for s,k in config.keys('_cosmosis_default_section')}
+
+        # get all the accesses since the last new-module command
+        # The "file" argument doesn't get read during setup because
+        # it was used earlier, but should not be in this list.
+        # so we explicity include it.
+        accesses_by_last_module = {"file"}
+        for (log_type, section, name, dtype) in logs:
+            # if this is the start of a new module then clear the list
+            # because we only want the last one.
+            # It's a bit inefficient to loop through the entire
+            # list just to get the last chunk of it.  We could go backwards
+            # or something like that.  But this is all super fast and only
+            # happens once at the start of the pipeline.
+            if log_type == "MODULE-START":
+                accesses_by_last_module = {"file"}
+            # keep only logs that are READs and for the current section
+            elif (log_type == "READ-OK") and (section == option_section):
+                accesses_by_last_module.add(name)
+
+        # now compare to all the config entries that we have.  If any
+        # here are not accessed then there may have been a mistake.
+        for (section, name) in config.keys(self.name):
+            # Skip the default section.
+            if (name not in accesses_by_last_module) and (name not in defaults):
+                msg = ("**** WARNING: Parameter '{}' in the [{}] section never used!\n"
+                        .format(
+                       name, section))
+                sys.stderr.write(msg)
+
 
 
     def setup(self, config, quiet=True):
@@ -151,6 +199,9 @@ class Module(object):
 
         """
         self.copy_section_to_module_options(config)
+        # We need to keep a reference to the full
+        # config object for the access check report
+        config_orig = config
         if not self.is_python:
             config = config._ptr
 
@@ -158,6 +209,7 @@ class Module(object):
             if not quiet:
                 print('-- Setting up module %s --' % (self.name))
             self.data = self.setup_function(config)
+            self.access_check_report(config_orig)
             print("")
         else:
             self.data = None

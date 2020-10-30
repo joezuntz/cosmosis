@@ -198,6 +198,9 @@ class SlowSubspaceCache(object):
         pipeline.timing = original_timing
         timings = pipeline.timings
 
+        if timings is None:
+            raise ValueError("Pipeline did not complete, so cannot do fast/slow")
+
         #Now we have the datablock, which has the log in it, and the timing.
         #The only information that can be of relevance is the fraction
         #of the time pipeline before a given module, and the list of 
@@ -211,9 +214,9 @@ class SlowSubspaceCache(object):
         first_use = block.get_first_parameter_use(params)
         first_use_count = [len(f) for f in first_use.values()]
         if sum(first_use_count)!=len(params):
-            print(first_use)
-            print(params)
-            raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline (used {}, have{})".format(sum(first_use_count), len(params)))
+            used = sum(first_use.values(), [])
+            unused = [p for p in params if p not in used]
+            raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline: (unused: {})".format(unused))
         print("\n")
         print("Parameters first used in each module:")
         for f, n in zip(first_use.items(), first_use_count):
@@ -622,6 +625,8 @@ class Pipeline(object):
 
         """
         modules = self.modules
+        if self.timing:
+            self.timings = None
 
         timings = []
         if self.shortcut_module:
@@ -1408,4 +1413,13 @@ def config_to_block(relevant_sections, options):
             val = options.gettyped(section, name)
             if val is not None:
                 config_block.put(section, name, val)
+    # For book-keeping stuff later we also need to record
+    # which keys were in the default section.  If
+    # we want to keep track of unused parameters in
+    # Module.access_check_report then we need to ensure
+    # we don't include parameters that are only in the section
+    # because they are in every section.  So we keep track of
+    # such parameters by including them here
+    for (key, val) in options.items("DEFAULT"):
+        config_block.put("_cosmosis_default_section", key, val)
     return config_block
