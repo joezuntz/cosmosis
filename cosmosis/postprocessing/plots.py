@@ -595,7 +595,6 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         #Interpolate using KDE
         try:
             x_axis, y_axis, like = self.smooth_likelihood(x, y, name1, name2)
-            print(x_axis.shape, y_axis.shape, like.shape)
         except np.linalg.LinAlgError:
             print("  -- these two parameters have singular covariance - probably a linear relation")
             print("Not making a 2D plot of them")
