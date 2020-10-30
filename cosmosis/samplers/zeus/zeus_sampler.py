@@ -21,11 +21,8 @@ class ZeusSampler(ParallelSampler):
         zeus_pipeline = self.pipeline
 
         if self.is_master():
-            # we still import emcee, to use some of its
-            # tools
             import emcee
             import zeus
-            self.emcee = emcee
             self.zeus = zeus
 
             if not hasattr(zeus, "EnsembleSampler"):
@@ -40,6 +37,7 @@ class ZeusSampler(ParallelSampler):
             assert self.nsteps>0, "You specified nsteps<=0 in the ini file - please set a positive integer"
             assert self.samples>0, "You specified samples<=0 in the ini file - please set a positive integer"
 
+            # Parameters controlling initialization
             random_start = self.read_ini("random_start", bool, False)
             start_file = self.read_ini("start_points", str, "")
             covmat_file = self.read_ini("covmat", str, "")
@@ -87,6 +85,7 @@ class ZeusSampler(ParallelSampler):
             self.prob0 = None
             self.blob0 = None
 
+            # Generate starting point
             if start_file:
                 self.p0 = self.load_start(start_file)
                 self.output.log_info("Loaded starting position from %s", start_file)
@@ -135,6 +134,9 @@ class ZeusSampler(ParallelSampler):
                                                      verbose=self.verbose,
                                                      pool=self.pool)
 
+
+    # This is not actually supported yet, and won't be run, as I assume
+    # we need to figure out how to serialize the sampler itself
     def resume(self):
         if self.output.resumed:
             data = np.genfromtxt(self.output._filename, invalid_raise=False)[:, :self.ndim]
@@ -161,11 +163,16 @@ class ZeusSampler(ParallelSampler):
     def load_covmat(self, covmat_file):
         covmat = np.loadtxt(covmat_file)
 
+        # Convert a single number to a 1x1 array,
+        # although it is ambiguous
         if covmat.ndim == 0:
             covmat = covmat.reshape((1, 1))
+
+        # Convert an array of std devs to a covmat
         elif covmat.ndim == 1:
             covmat = np.diag(covmat ** 2)
 
+        # Check the size is right.
         nparams = len(self.pipeline.varied_params)
         if covmat.shape != (nparams, nparams):
             raise ValueError("The covariance matrix was shape (%d x %d), "
@@ -175,20 +182,23 @@ class ZeusSampler(ParallelSampler):
 
 
     def execute(self):
-        #Run the emcee sampler.
+        #Run the zeus sampler.
         if self.num_samples == 0:
             print("Begun sampling")
             start = 0
         else:
             start = self.sampler.chain.shape[0]
+
+        # Main execution
         self.sampler.run(self.p0, self.nsteps)
+        # record ending point of this iteration
         end = self.sampler.chain.shape[0]
 
         post = self.sampler.get_log_prob()
         chain = self.sampler.get_chain()
         blobs = self.sampler.get_blobs()
 
-            # zeus does not support derived params.  make them nan
+        # Output results per sampler per walker
         for i in range(start, end):
             for j in range(self.nwalkers):
                 prior, extra = blobs[i, j]
