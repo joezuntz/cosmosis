@@ -33,6 +33,13 @@ class IncludingConfigParser(configparser.ConfigParser):
     comments, but still delineate sections).
     """
 
+    def __init__(self, defaults=None, print_include_messages=True):
+        configparser.ConfigParser.__init__(self,
+                                   defaults=defaults,
+                                   dict_type=collections.OrderedDict,
+                                   strict=False)
+        self.print_include_messages = print_include_messages
+
     def _read(self, fp, fpname):
         u"""Parse a sectioned setup file.
 
@@ -87,8 +94,9 @@ class IncludingConfigParser(configparser.ConfigParser):
                     if  not  getattr (self, 'no_expand_includes', False):
                         include_statement, filename = line.split()
                         filename = filename.strip('"').strip("'")
-                        sys.stdout.write("Reading included ini file: `"
-                                                           + filename + "'\n")
+                        if self.print_include_messages:
+                            sys.stdout.write("Reading included ini file: `"
+                                                               + filename + "'\n")
                         if not os.path.exists(filename):
                             # TODO: remove direct sys.stderr writes
                             raise ValueError("Tried to include non-existent "
@@ -161,7 +169,7 @@ class Inifile(IncludingConfigParser):
 
     """
 
-    def __init__(self, filename, defaults=None, override=None):
+    def __init__(self, filename, defaults=None, override=None, print_include_messages=True):
         u"""Read in a configuration from `filename`.
 
         The `defaults` will be applied if a parameter is not specified in
@@ -176,8 +184,7 @@ class Inifile(IncludingConfigParser):
 
         IncludingConfigParser.__init__(self,
                                        defaults=defaults,
-                                       dict_type=collections.OrderedDict,
-                                       strict=False)
+                                       print_include_messages=print_include_messages)
         # default read behaviour is to ignore unreadable files which
         # is probably not what we want here
         if filename is not None:

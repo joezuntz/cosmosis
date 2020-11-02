@@ -184,7 +184,7 @@ class Module(object):
                 msg = ("**** WARNING: Parameter '{}' in the [{}] section never used!\n"
                         .format(
                        name, section))
-                sys.stderr.write(msg)
+                print(msg)
 
 
 

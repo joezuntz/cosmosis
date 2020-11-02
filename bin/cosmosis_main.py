@@ -99,12 +99,13 @@ def run_cosmosis(args, pool=None):
     demo_20b_special (args)
 
     # Load configuration.
-    ini = Inifile(args.inifile, override=args.params)
+    is_root = (pool is None) or pool.is_master()
+    ini = Inifile(args.inifile, override=args.params, print_include_messages=is_root)
 
     pre_script = ini.get(RUNTIME_INI_SECTION, "pre_script", fallback="")
     post_script = ini.get(RUNTIME_INI_SECTION, "post_script", fallback="")
 
-    if (pool is None) or pool.is_master():
+    if is_root:
         # This decodes the exist status
         status = os.WEXITSTATUS(os.system(pre_script))
         if status:
@@ -113,7 +114,7 @@ def run_cosmosis(args, pool=None):
 
     # Create pipeline.
     pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
-    if (pool is None) or pool.is_master() or pool_stdout:
+    if is_root or pool_stdout:
         pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only)
         if pipeline.do_fast_slow:
             pipeline.setup_fast_subspaces()
@@ -178,14 +179,12 @@ def run_cosmosis(args, pool=None):
             print("NOTE: You set resume=T in the [runtime] section but the sampler {} does not support resuming yet.  I will ignore this option.".format(sampler_name))
             resume=False
 
-        if pool is None or pool.is_master():
+        if is_root:
             print("****************************")
             print("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name))
 
         if sampler_class.needs_output and \
-           (pool is None 
-            or pool.is_master() 
-            or sampler_class.parallel_output):
+           (is_root or sampler_class.parallel_output):
 
             #create the output files and methods.
             try:
@@ -227,7 +226,7 @@ def run_cosmosis(args, pool=None):
             output = None
 
         # Finish the printout from above
-        if pool is None or pool.is_master():
+        if is_root:
             print("****************************")
 
         #Initialize our sampler, with the class we got above.
@@ -247,9 +246,7 @@ def run_cosmosis(args, pool=None):
         # Potentially resume
         if resume and sampler_class.needs_output and \
             sampler_class.supports_resume and \
-           (pool is None 
-            or pool.is_master() 
-            or sampler_class.parallel_output):
+            (is_root or sampler_class.parallel_output):
            sampler.resume()
 
         #If there is an output file, save the ini information to
@@ -280,7 +277,7 @@ def run_cosmosis(args, pool=None):
         # which really means "finished" here - 
         # a sampler can "converge" just by reaching the 
         # limit of the number of samples it is allowed.
-        if (not pool) or pool.is_master():
+        if is_root:
             while not sampler.is_converged():
                 sampler.execute()
                 #Flush any output. This is to stop
@@ -312,7 +309,7 @@ def run_cosmosis(args, pool=None):
     # In general this may be less useful than the pre-run script, because
     # often chains time-out instead of actually completing.
     # But we still offer it
-    if post_script and ((pool is None) or pool.is_master()):
+    if post_script and is_root:
         # This decodes the exist status
         status = os.WEXITSTATUS(os.system(post_script))
         if status:
