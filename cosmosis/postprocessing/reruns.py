@@ -88,41 +88,41 @@ class Rerunner(PostProcessorElement):
 		# - save to our temp dir
 		# - read from our temp files
 
-		params_ini.update({
-			"pipeline": {
-				"values": values_file.name,
-				"priors": priors_file.name,
-				"quiet": "F",
-				"debug": "T",
-				"likelihoods":  params_ini.get('pipeline', 'likelihoods', fallback=''),
-				"modules":  params_ini.get('pipeline', 'modules', fallback=''),
-				},
-			"runtime": {
-				"sampler": "test",
-			},
-			"test": {
-				"save_dir": self.rerun_dirname,
-			},
-		})
+		try:
+			params_ini.add_section('test')
+		except:
+			pass
+
+		likes = params_ini.get('pipeline', 'likelihoods', fallback='')
+		params_ini.set('pipeline', 'values', values_file.name)
+		params_ini.set('pipeline', 'priors', priors_file.name)
+		params_ini.set('pipeline', 'quiet', 'F')
+		params_ini.set('pipeline', 'timing', 'T')
+		params_ini.set('pipeline', 'debug', 'T')
+		params_ini.set('runtime', 'sampler', 'test')
+		params_ini.set('test', 'save_dir', self.rerun_dirname)
+
 
 		params_ini.write(params_file)
 		params_file.flush()
 
 		nvaried = self.source.metadata[0]['n_varied']
 		varied_params = self.source.colnames[:nvaried]
-		values_update = defaultdict(dict)
+		values_update = []
 		i=0
 		print("Updating these parameters:")
 		for (sec,key), val in values_ini:
 			if '{}--{}'.format(sec,key) in varied_params:
 				l, _, u = val.split()
 				print("    {}--{} = {}".format(sec,key,sample[i]))
-				values_update[sec][key] = "{}  {}  {}".format(l, sample[i], u)
+				value_string = "{}  {}  {}".format(l, sample[i], u)
+				values_update.append((sec, key, value_string))
 				i+=1
 			else:
-				values_update[sec][key] = val
+				values_update.append((sec, key, val))
 		print("")
-		values_ini.update(values_update)
+		for sec, key, val in values_update:
+			values_ini.set(sec, key, val)
 
 		values_ini.write(values_file)
 		values_file.flush()
