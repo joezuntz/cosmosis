@@ -13,7 +13,7 @@ def log_probability_function(p):
 
 class ZeusSampler(ParallelSampler):
     parallel_output = False
-    supports_resume = False
+    supports_resume = True
     sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
@@ -124,6 +124,7 @@ class ZeusSampler(ParallelSampler):
                 self.output.log_info("Generating starting positions in small ball around starting point")
 
             #Finally we can create the sampler
+            self.started = False
             self.sampler = self.zeus.EnsembleSampler(self.nwalkers, self.ndim,
                                                      log_probability_function,
                                                      tune=self.tune,
@@ -138,6 +139,44 @@ class ZeusSampler(ParallelSampler):
     # This is not actually supported yet, and won't be run, as I assume
     # we need to figure out how to serialize the sampler itself
     def resume(self):
+        resume_info = self.read_resume_info()
+
+        if resume_info is None:
+            return
+
+        moves, weights, tune = resume_info
+
+        changed = False
+        old_classes = [m.__class__.__name__ for m in moves]
+        if len(self.sampler._moves) != len(moves):
+            changed = True
+        else:
+            for m, c in zip(self.sampler._moves, old_classes):
+                if m.__class__.__name__ != c:
+                    changed = True
+
+        if changed:
+            raise ValueError("You have changed the number or type of "
+                "the Move objects since re-running this chain. "
+                "You can't directly resume a chain with different moves, "
+                "so either: (a) change them back (to {}), "
+                "(b) delete the sample_status output file, "
+                "(c) switch off runtime.resume.  If you just want to restart the "
+                "walkers from old positions, set zeus.start_points")
+
+        print("Loaded 'Move' objects from resume file:")
+        for m, w in zip(moves, weights):
+            print(    "{} mu0={}  weight={}  tuning={}".format(m.__class__.__name__, m.mu0, w, m.tune))
+        self.sampler._moves = moves
+        self.sampler._weights = weights
+        self.sampler.tune = tune
+        if tune:
+            print("Resumed sampler is still tuning")
+        else:
+            print("Resumed sampler has finished tuning")
+
+        # if we have some chain, read it here and use it to get
+        # the p0 value and number of samples
         if self.output.resumed:
             data = np.genfromtxt(self.output._filename, invalid_raise=False)[:, :self.ndim]
             num_samples = len(data) // self.nwalkers
@@ -183,11 +222,12 @@ class ZeusSampler(ParallelSampler):
 
     def execute(self):
         #Run the zeus sampler.
-        if self.num_samples == 0:
-            print("Begun sampling")
-            start = 0
-        else:
+        if self.started:
             start = self.sampler.chain.shape[0]
+        else:
+            print("Begun sampling")
+            self.started = True
+            start = 0
 
         # Main execution
         self.sampler.run(self.p0, self.nsteps)
@@ -206,6 +246,7 @@ class ZeusSampler(ParallelSampler):
 
         #Set the starting positions for the next chunk of samples
         #to the last ones for this chunk
+        # despite the name, get_last_sample is a property, not a method.
         self.p0 = self.sampler.get_last_sample
         self.num_samples += self.nsteps
         taus = self.zeus.AutoCorrTime(chain)
@@ -214,6 +255,13 @@ class ZeusSampler(ParallelSampler):
         for par, tau in zip(self.pipeline.varied_params, taus):
             print("   {}:  {:.2f}".format(par, tau))
         sys.stdout.flush()
+
+        if self.sampler.tune:
+            print("Sampler is (still) tuning")
+        else:
+            print("Sampler is no longer tuning")
+
+        self.write_resume_info([self.sampler._moves, self.sampler._weights, self.sampler.tune])
 
     def is_converged(self):
         return self.num_samples >= self.samples
