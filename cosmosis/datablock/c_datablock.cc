@@ -517,6 +517,39 @@ extern "C"
   }
 
   DATABLOCK_STATUS
+  c_datablock_get_str_array_1d(c_datablock * s,
+                               const char* section,
+                               const char* name,
+                               char*** val,
+                               int* sz)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (sz == nullptr) return DBS_SIZE_NULL;
+
+    auto p = static_cast<DataBlock *>(s);
+    try {
+      vector<string> const& r = p->view<vector<string>>(section, name);
+      *val = static_cast<char**>(malloc(r.size() * sizeof(char*)));
+      *sz = r.size();
+      if (*val ==nullptr) return DBS_MEMORY_ALLOC_FAILURE;
+      for (int i=0; i<*sz; i++){
+        (*val)[i] = strdup(r[i].c_str());
+      }
+
+      *sz = r.size();
+    }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
+    return DBS_SUCCESS;
+  }
+
+
+  DATABLOCK_STATUS
   c_datablock_get_int_array_1d_preallocated(c_datablock * s,
                                             const char* section,
                                             const char* name,
@@ -595,6 +628,37 @@ extern "C"
     // If we are asked to clear out the remainder of the input buffer,
     // the following line should be used.
     //    std::fill(val + *sz, val+maxsize, 0);
+    return DBS_SUCCESS;
+  }
+
+
+  DATABLOCK_STATUS
+  c_datablock_get_str_array_1d_preallocated(c_datablock * s,
+                               const char* section,
+                               const char* name,
+                               char** val,
+                               int* sz)
+  {
+    if (s == nullptr) return DBS_DATABLOCK_NULL;
+    if (section == nullptr) return DBS_SECTION_NULL;
+    if (name == nullptr) return DBS_NAME_NULL;
+    if (val == nullptr) return DBS_VALUE_NULL;
+    if (sz == nullptr) return DBS_SIZE_NULL;
+
+    auto p = static_cast<DataBlock *>(s);
+    try {
+      vector<string> const& r = p->view<vector<string>>(section, name);
+      *sz = r.size();
+      for (int i=0; i<*sz; i++){
+        val[i] = strdup(r[i].c_str());
+      }
+
+      *sz = r.size();
+    }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
     return DBS_SUCCESS;
   }
 
@@ -721,6 +785,26 @@ extern "C"
     std::vector<complex_t> zs = from_Complex(val, sz);
     return p->put_val(section, name, zs);
   }
+
+
+    DATABLOCK_STATUS
+    c_datablock_put_str_array_1d(c_datablock* s,
+                               const char* section,
+                               const char* name,
+                               const char * const* val,
+                               int sz)
+    {
+        if (s == nullptr) return DBS_DATABLOCK_NULL;
+        if (section == nullptr) return DBS_SECTION_NULL;
+        if (name == nullptr) return DBS_NAME_NULL;
+        if (val == NULL) return DBS_VALUE_NULL;
+        if (sz < 1) return DBS_SIZE_NONPOSITIVE;
+
+        auto p = static_cast<DataBlock*>(s);
+
+        vector<string> v(val, val + sz);
+        return p->put_val(section, name, v);
+    }
 
   DATABLOCK_STATUS
   c_datablock_replace_int(c_datablock* s,

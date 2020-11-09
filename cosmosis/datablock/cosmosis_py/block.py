@@ -13,7 +13,7 @@ import ctypes as ct
 from . import lib
 from . import errors
 from . import dbt_types as types
-from ...runtime.utils import mkdir
+from ...utils import mkdir
 from .errors import BlockError
 import numpy as np
 import os
@@ -310,6 +310,45 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
+	def get_string_array_1d(self, section, name):
+		u"""Retrieve an array of strings from the datablock.
+
+		The `name`ʼd parameter in the given `section` will be understood
+		as being of 1D string array type and returned to the caller
+		as a numpy array.  If such a parameter is not found in the map,
+		then a specialized :class:`BlockError` (see errors.py) will be
+		thrown.
+
+		"""
+		section = section.encode('ascii')
+		name = name.encode('ascii')
+		n = lib.c_datablock_get_array_length(self._ptr, section, name)
+
+		# Create the array, but make it of void pointers.
+		# If you use c_char_p it just comes through as an int
+		# which we can free later
+		array = (ct.c_void_p * n)()
+		sz = lib.c_int()
+		status = lib.c_datablock_get_str_array_1d_preallocated(self._ptr, section, name, array, ct.byref(sz))
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+
+		# Parse each element into a list.  We don't yet know that max
+		# length of the strings so don't want to make a numpy array yet.
+		output = []
+		for i in range(n):
+			# Convert to a char pointer
+			c = ct.c_char_p(array[i])
+			# Decode char pointer as strings
+			output.append(c.value.decode('ascii'))
+			# Free the pointer allocated by strdup in C
+			lib.free(array[i])
+
+		# Convert to array for output
+		return np.array(output)
+
+
+
 	def _get_array_nd(self, section, name, dtype):
 
 		if dtype is complex or dtype is str:
@@ -385,6 +424,8 @@ class DataBlock(object):
 
 		"""
 		self._put_replace_array_nd(section, name, value, np.intc, self.PUT)
+
+
 
 	def replace_double_array_nd(self, section, name, value):
 		u"""Replace a floating-point array parameter in the data set.
@@ -529,6 +570,27 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
+	def put_string_array_1d(self, section, name, value):
+		u"""Add a one-dimensional floating-point array to the map.
+
+		A parameter called `name` is added to `section`, and holds `value`
+		interpreted as a simple array of floating-point values.  If this
+		interpretation cannot be made then a :class:`BlockError` will be
+		raised.
+
+		"""
+		array = (ct.c_char_p * len(value))()
+		for i, v in enumerate(value):
+			array[i] = v.encode('ascii')
+
+		status = lib.c_datablock_put_str_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), array, len(value))
+
+		if status!=0:
+			raise BlockError.exception_for_status(status, section, name)
+
+
+
+
 	def _method_for_type(self, T, method_type):
 		method={ int:    (self.get_int,     self.put_int,     self.replace_int),
 				 float:  (self.get_double,  self.put_double,  self.replace_double),
@@ -541,6 +603,7 @@ class DataBlock(object):
 		return None
 
 	def _method_for_datatype_code(self, code, method_type):
+
 		T={ 
 			types.DBT_INT:     (self.get_int,     self.put_int,     self.replace_int),
 			types.DBT_BOOL:    (self.get_bool,     self.put_bool,     self.replace_bool),
@@ -550,7 +613,7 @@ class DataBlock(object):
 			types.DBT_INT1D:   (self.get_int_array_1d,     self.put_int_array_1d,     self.replace_int_array_1d),
 			types.DBT_DOUBLE1D:(self.get_double_array_1d,  self.put_double_array_1d,  self.replace_double_array_1d),
 			# types.COMPLEX1D:   (self.get_complex_array_1d, self.put_complex_array_1d, self.replace_complex_array_1d),
-			# types.STRING1D:    (self.get_string_array_1d,  self.put_string_array_1d,  self.replace_string_array_1d)
+			types.DBT_STRING1D:    (self.get_string_array_1d,  self.put_string_array_1d,  self.replace_string_array_1d),
 			# types.DBT_INT2D:   (self.get_int_array_2d,     self.put_int_array_2d,     self.replace_int_array_2d)
 			types.DBT_DOUBLEND:(self.get_double_array_nd,  self.put_double_array_nd, None),
 			types.DBT_INTND:(self.get_int_array_nd,  self.put_int_array_nd, None),
@@ -577,7 +640,6 @@ class DataBlock(object):
 		method = self._method_for_type(T, method_type)
 		if method: 
 			return method
-
 		if hasattr(value,'__len__'):
 			#let numpy work out what type this should be.
 			array = np.array(value)
@@ -590,6 +652,8 @@ class DataBlock(object):
 					method = (self.get_int_array_1d,self.put_int_array_1d,self.replace_int_array_1d)
 				elif kind=='f':
 					method = (self.get_double_array_1d,self.put_double_array_1d,self.replace_double_array_1d)
+				elif kind == 'U':
+					method = (self.get_string_array_1d,self.put_string_array_1d,self.replace_string_array_1d)
 			#otherwise we just use the generic n-d arrays
 			elif kind=='i':
 				method = (self.get_int_array_nd,self.put_int_array_nd,self.replace_int_array_nd)
@@ -750,6 +814,14 @@ class DataBlock(object):
 		status = lib.c_datablock_replace_double_array_1d(self._ptr, section.encode('ascii'), name.encode('ascii'), value, n)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
+
+	def replace_string_array_1d(self, section, name, value):
+		u"""Replacing string arrays is not yet implemented
+
+		"""
+		raise NotImplementedError("CosmoSIS cannot yet replace string arrays. "
+								  "Please open an issue if you need this feature")
+
 
 	def has_section(self, section):
 		u"""Indicate whether or not there is a given `section` in the data set.
@@ -913,7 +985,10 @@ class DataBlock(object):
 
 				#Save this file into the tar file
 				string_output = io.BytesIO()
-				np.savetxt(string_output, value, header=header.rstrip("\n"))
+				if value.dtype.kind == "U":
+					np.savetxt(string_output, value, header=header.rstrip("\n"), fmt="%s")
+				else:
+					np.savetxt(string_output, value, header=header.rstrip("\n"))
 				string_output.seek(0)
 				info = tarfile.TarInfo(name=vector_outfile)
 				info.size=len(string_output.getvalue())
@@ -977,7 +1052,10 @@ class DataBlock(object):
 				if name in meta:
 					for key,val in list(meta[name].items()):
 						header+='%s = %s\n' % (key,val)
-				np.savetxt(vector_outfile, value, header=header.rstrip("\n"))
+				if value.dtype.kind == "U":
+					np.savetxt(vector_outfile, value, header=header.rstrip("\n"), fmt='%s')
+				else:
+					np.savetxt(vector_outfile, value, header=header.rstrip("\n"))
 
 			#Save all the scalar outputs together as a single file
 			if scalar_outputs:
