@@ -269,7 +269,9 @@ class DataBlock(object):
 			status = lib.c_datablock_get_string_default(self._ptr,section.encode('ascii'),name.encode('ascii'),default.encode('ascii'),r)
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
-		return r.value.decode('utf-8')
+		c = r.value.decode('utf-8')
+		lib.free(r)
+		return c
 
 	def get_int_array_1d(self, section, name):
 		u"""Retrieve an integer array from the parameter set.

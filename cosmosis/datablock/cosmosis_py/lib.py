@@ -18,6 +18,9 @@ c_enum = {
 	8:ct.c_int64,
 }[enum_size]
 
+free = dll.free
+free.argtypes = [ct.c_void_p]
+free.restype = None
 
 c_block = ct.c_size_t
 c_datatype = c_enum
@@ -256,4 +259,3 @@ load_library_function(
 	[c_block, c_str, c_str, c_int_p],
 	ct.c_int
 	)
- 
