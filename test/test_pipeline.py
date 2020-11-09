@@ -85,8 +85,8 @@ def test_unused_param_warning(capsys):
     config = DataBlock()
     config['test', 'unused'] = "unused_parameter"
     module.setup(config)
-    _, err = capsys.readouterr()
-    assert "**** WARNING: Parameter 'unused'" in err
+    out, _ = capsys.readouterr()
+    assert "**** WARNING: Parameter 'unused'" in out
 
 
 
