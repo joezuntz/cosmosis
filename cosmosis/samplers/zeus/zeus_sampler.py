@@ -135,16 +135,13 @@ class ZeusSampler(ParallelSampler):
                                                      verbose=self.verbose,
                                                      pool=self.pool)
 
-
-    # This is not actually supported yet, and won't be run, as I assume
-    # we need to figure out how to serialize the sampler itself
     def resume(self):
         resume_info = self.read_resume_info()
 
         if resume_info is None:
             return
 
-        moves, weights, tune = resume_info
+        moves, weights, tune, mu, mus = resume_info
 
         changed = False
         old_classes = [m.__class__.__name__ for m in moves]
@@ -170,6 +167,9 @@ class ZeusSampler(ParallelSampler):
         self.sampler._moves = moves
         self.sampler._weights = weights
         self.sampler.tune = tune
+        self.sampler.mu = mu
+        self.sampler.mus = mus
+
         if tune:
             print("Resumed sampler is still tuning")
         else:
@@ -249,6 +249,7 @@ class ZeusSampler(ParallelSampler):
         # despite the name, get_last_sample is a property, not a method.
         self.p0 = self.sampler.get_last_sample
         self.num_samples += self.nsteps
+        import scipy.fft
         taus = self.zeus.AutoCorrTime(chain)
         print("\nHave {} samples from zeus. Current auto-correlation estimates are:".format(
             self.num_samples*self.nwalkers))
@@ -261,7 +262,8 @@ class ZeusSampler(ParallelSampler):
         else:
             print("Sampler is no longer tuning")
 
-        self.write_resume_info([self.sampler._moves, self.sampler._weights, self.sampler.tune])
+        self.write_resume_info([self.sampler._moves, self.sampler._weights,
+                                self.sampler.tune, self.sampler.mu, self.sampler.mus])
 
     def is_converged(self):
         return self.num_samples >= self.samples
