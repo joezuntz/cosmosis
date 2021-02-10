@@ -1,5 +1,6 @@
 from cosmosis.runtime.config import Inifile
 from cosmosis.samplers.sampler import Sampler
+import cosmosis.samplers.minuit.minuit_sampler
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.output.in_memory_output import InMemoryOutput
 import tempfile
@@ -7,6 +8,8 @@ import os
 import sys
 import pytest
 import numpy as np
+
+minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
 
 def run(sampler, check_prior, check_extra=True, **options):
 
@@ -90,6 +93,7 @@ def test_maxlike():
 def test_metropolis():
     run('metropolis', True, samples=20)
 
+@pytest.mark.skipif(not minuit_compiled,reason="requires Minuit2")
 def test_minuit():
     run('minuit', True)
 
@@ -114,7 +118,8 @@ def test_zeus():
     run('zeus', True, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global")
 
 def test_polychord():
-    run('polychord', True, live_points=20, feedback=0)
+    with tempfile.TemporaryDirectory() as base_dir:
+        run('polychord', True, live_points=20, feedback=0, base_dir=base_dir, polychord_outfile_root='pc')
 
 def test_pymc():
     if sys.version_info.major==2:
