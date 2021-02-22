@@ -233,10 +233,11 @@ class PolyChordSampler(ParallelSampler):
         grade_dims = (ct.c_int*n_grade)()
         grade_frac = (ct.c_double*n_grade)()
 
-        if self.pipeline.n_slow_params == 0:
-            raise ValueError("All your parameters have been classified as fast.  This will now work in polychord.  Change your fast/slow settings.")
 
         if n_grade > 1:
+            if self.pipeline.n_slow_params == 0:
+                raise ValueError("All your parameters have been classified as fast.  This will now work in polychord.  Change your fast/slow settings.")
+
             grade_dims[0] = self.pipeline.n_slow_params
             grade_dims[1] = self.pipeline.n_fast_params
             grade_frac[0] = 1 - self.fast_fraction
