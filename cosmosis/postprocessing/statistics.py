@@ -371,7 +371,7 @@ class ChainCovariance(object):
     def run(self):
         #Determine the parameters to use
 
-        col_names = [p for p in self.source.colnames if p.lower() not in ["like","post", "importance", "weight"]]
+        col_names = [p for p in self.source.colnames if p.lower() not in ["like","post", "importance", "weight", "prior"]]
 
         if len(col_names)<2:
             return []
@@ -379,9 +379,14 @@ class ChainCovariance(object):
         if self.source.options.get("getdist",False):
             covmat = self.source.gdc.cov()
         else:
-            ps = self.posterior_sample()
-            cols = [self.reduced_col(p)[ps] for p in col_names]
-            covmat = np.cov(cols)
+
+            if hasattr(self, 'weight_col'):
+                w = self.weight_col()
+            else:
+                w = None
+
+            cols = [self.reduced_col(p) for p in col_names]
+            covmat = np.cov(cols, aweights=w)
 
         #For the proposal we just want the first 
         #nvaried rows/cols - we don't want to include
