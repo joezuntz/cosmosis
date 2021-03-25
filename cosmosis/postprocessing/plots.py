@@ -577,7 +577,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         xcut1 = xcut.max() + 1
         ycut0 = ycut.min()
         ycut1 = ycut.max() + 1
-        return x[xcut0:xcut1], y[ycut0:ycut1], like[xcut0:xcut1, ycut0:ycut1]
+        return xout[xcut0:xcut1], yout[ycut0:ycut1], like[xcut0:xcut1, ycut0:ycut1]
 
     def make_2d_plot(self, name1, name2, figure=None):
         #Get the data
