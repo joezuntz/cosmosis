@@ -112,6 +112,12 @@ def run_cosmosis(args, pool=None):
             raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
                 pre_script, status))
 
+    if is_root and args.mem:
+        from cosmosis.runtime.memmon import MemoryMonitor
+        # This launches a memory monitor that prints out (from a new thread)
+        # the memory usage every args.mem seconds
+        mem = MemoryMonitor.start_in_thread(interval=args.mem)
+
     # Create pipeline.
     pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
     if is_root or pool_stdout:
@@ -301,6 +307,9 @@ def run_cosmosis(args, pool=None):
 
     pipeline.cleanup()
 
+    if is_root and args.mem:
+        mem.stop()
+
     # Extra-special actions we take to mollycoddle a brand-new user!
     demo_1_special (args)
     demo_20a_special (args)
@@ -326,7 +335,8 @@ def main():
         parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
         parser.add_argument("--smp",type=int,default=0,help="Run with the given number of processes in shared memory multiprocessing (this is experimental and does not work for multinest).")
         parser.add_argument("--pdb",action='store_true',help="Start the python debugger on an uncaught error. Only in serial mode.")
-        parser.add_argument("--experimental-fault-handling",action='store_true',help="Activate an experimental fault handling mode.")
+        parser.add_argument("--experimental-fault-handling", "--faults",action='store_true',help="Activate an experimental fault handling mode.")
+        parser.add_argument("--mem", type=int, default=0, help="Print out memory usage every this many seconds from root process")
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("--only", nargs="*", help="Fix all parameters except the ones listed")
