@@ -59,7 +59,9 @@ class MCMC(object):
         #For adaptive sampling
         self.last_covariance_estimate = covariance.copy()       
         self.covariance_estimate = covariance.copy()
-        self.S_estimate = np.zeros((self.ndim,self.ndim))
+        self.chain = []
+        self.n_cov_fail = 0
+
         #self.covariance_estimate.copy()
         self.mean_estimate = start.copy()
         self.tuning_frequency = tuning_frequency
@@ -92,10 +94,11 @@ class MCMC(object):
             self.iterations_since_tuning += 1
 
             # generate a new sample
-            samples.append(sample_method())
+            s = sample_method()
+            samples.append(s)
+            # hack - should unify these
+            self.chain.append(s.vector)
 
-            # update covariance and tune
-            self.update_covariance_estimate()
             if self.should_tune_now():
                 self.tune()
 
@@ -126,12 +129,18 @@ class MCMC(object):
 
     def _sample_dragging(self):
         # get params with same fast params but different slow ones
+        if not self.quiet:
+            print("starting drag")
+            print("Current post = ", self.Lp.post)
         start = self.p
         end = self.proposal.propose_slow(start)
+
 
         # posteriors and derived parameters etc.
         r_start = copy(self.Lp)
         r_end = self.posterior(end)
+        if not self.quiet:
+            print("slow proposal post = ", r_end.post)
 
         if not np.isfinite(r_end.post):
             if not self.quiet:
@@ -144,13 +153,18 @@ class MCMC(object):
         p2 = copy(end)
 
         # results for current start and end
-        r1 = r_start
-        r2 = r_end
+        r1 = copy(r_start)
+        r2 = copy(r_end)
+
+        start_post = r1.post
+        end_post = r2.post
 
         drag_accepts = 0
 
         for i in range(self.n_drag):
             delta_fast = self.proposal.propose_fast(p1) - p1
+            if not self.quiet:
+                print("delta fast", delta_fast)
             q1 = p1 + delta_fast
             q2 = p2 + delta_fast
 
@@ -175,28 +189,34 @@ class MCMC(object):
                 r1 = s1
                 r2 = s2
                 drag_accepts += 1
+                if not self.quiet:
+                    print("[Accept drag step delta={:.3g}]\n".format(Q1 - P1))
+            elif not self.quiet:
+                print("[Reject drag step delta={:.3g}]\n".format(Q1 - P1))
 
-            r_start.post += r1.post
-            r_end.post += r2.post
+            start_post += r1.post
+            end_post += r2.post
 
         if not self.quiet:
             print("[Accepted {}/{} drag steps]".format(drag_accepts,self.n_drag))
 
-        r_start.post /= self.n_drag
-        r_end.post /= self.n_drag
-        accept_overall = accept(r_end.post, r_start.post)
+        start_post /= self.n_drag
+        end_post /= self.n_drag
+        accept_overall = accept(end_post, start_post)
 
+        if not self.quiet:
+            print("Done drag")
         if accept_overall:
             self.p = p2
             self.Lp = r_end
             self.accepted += 1
             self.accepted_since_tuning += 1
             if not self.quiet:
-                print("[Accept delta={:.3g}]\n".format(r_end.post - r_start.post))
+                print("[Accept delta={:.3g}]\n".format(end_post - start_post))
             return r2
         else:
             if not self.quiet:
-                print("[Reject delta={:.3g}]\n".format(r_end.post - r_start.post))
+                print("[Reject delta={:.3g}]\n".format(end_post - start_post))
             return self.Lp
 
 
@@ -212,10 +232,19 @@ class MCMC(object):
 
     def update_covariance_estimate(self):
         n = self.iterations
-        delta = (self.p - self.mean_estimate)
-        self.mean_estimate += delta / n
-        self.S_estimate  += np.outer(delta, delta)
-        self.covariance_estimate = self.S_estimate / n
+        self.mean_estimate = np.mean(self.chain, axis=0)
+        C = np.cov(np.transpose(self.chain))
+        if is_positive_definite(C):
+            self.covariance_estimate = C
+        else:
+            print("Cov estimate not SPD.  If this keeps happening, be concerned.")
+            # chain_outfile = 'joe_dump_chain_{}.txt'.format(self.n_cov_fail)
+            # cov_outfile = 'joe_dump_cov_{}.txt'.format(self.n_cov_fail)
+            # self.n_cov_fail += 1
+            # np.savetxt(chain_outfile, self.chain)
+            # np.savetxt(cov_outfile, np.transpose(C))
+            # print("TEMPORARY (JOE - REMOVE LATER) - dumping to file")
+
 
     def set_fast_slow(self, fast_indices, slow_indices, oversampling):
         if self.n_drag:
@@ -239,6 +268,8 @@ class MCMC(object):
         self.tuning_frequency = self.original_tuning_frequency * oversampling
 
     def tune(self):
+        self.update_covariance_estimate()
+
         f = (self.covariance_estimate.diagonal()**0.5-self.last_covariance_estimate.diagonal()**0.5)/self.last_covariance_estimate.diagonal()**0.5
         i = abs(f).argmax()
         print("Largest parameter sigma fractional change = {:.1f}% for param {}".format(100*f[i], i))
@@ -255,7 +286,7 @@ class MCMC(object):
         elif isinstance(self.proposal, FastSlowProposal):
             print("Tuning fast/slow sampler proposal.")
             self.proposal = FastSlowProposal(self.covariance_estimate, 
-                self.fast_indices, self.slow_indices, self.oversampling, scaling=self.scaling, exponential_probability=self.exponential_probability)
+                self.fast_indices, self.slow_indices, self.oversampling,scaling=self.scaling, exponential_probability=self.exponential_probability)
         elif isinstance(self.proposal, Proposal):
             print("Tuning standard sampler proposal.")
             cholesky = np.linalg.cholesky(self.covariance_estimate)
@@ -267,3 +298,6 @@ class MCMC(object):
 
 def accept(post1, post0):
     return (post1 > post0) or (post1-post0 > np.log(np.random.uniform(0,1)))
+
+def is_positive_definite(M):
+    return np.all(np.linalg.eigvals(M) > 0)

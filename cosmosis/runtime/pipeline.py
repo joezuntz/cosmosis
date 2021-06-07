@@ -40,7 +40,7 @@ class PipelineResults(object):
     def __init__(self, vector, number_extra):
         self.vector = vector
         self.prior = -np.inf
-        self.extra = np.repeat(np.nan, number_extra)
+        self.extra = [np.nan for i in range(number_extra)]
         self.block = None
         self.post = -np.inf
         self.like = -np.inf
@@ -198,6 +198,9 @@ class SlowSubspaceCache(object):
         pipeline.timing = original_timing
         timings = pipeline.timings
 
+        if timings is None:
+            raise ValueError("Pipeline did not complete, so cannot do fast/slow")
+
         #Now we have the datablock, which has the log in it, and the timing.
         #The only information that can be of relevance is the fraction
         #of the time pipeline before a given module, and the list of 
@@ -211,9 +214,9 @@ class SlowSubspaceCache(object):
         first_use = block.get_first_parameter_use(params)
         first_use_count = [len(f) for f in first_use.values()]
         if sum(first_use_count)!=len(params):
-            print(first_use)
-            print(params)
-            raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline (used {}, have{})".format(sum(first_use_count), len(params)))
+            used = sum(first_use.values(), [])
+            unused = [p for p in params if p not in used]
+            raise ValueError("Tried to do fast-slow split but not all varied parameters ever used in the pipeline: (unused: {})".format(unused))
         print("\n")
         print("Parameters first used in each module:")
         for f, n in zip(first_use.items(), first_use_count):
@@ -239,7 +242,15 @@ class SlowSubspaceCache(object):
 
         self.worth_splitting = time_save_percent > 10.
 
-        if not self.worth_splitting:
+        if (not self.worth_splitting) and (self.first_fast_module is not None):
+            print("")
+            print("No significant time saving (<10%) from a fast-slow split.")
+            print("But you told me specifically which module to use, so I will")
+            print("split the pipeline anyway, though it may be slower.")
+            print("You may wish to reconsider your choices, but I do what I'm told.")
+            print("")
+            self.worth_splitting = True
+        elif not self.worth_splitting:
             print("")
             print("No significant time saving (<10%) from a fast-slow split.")
             print("Not splitting pipeline into fast and slow parts.")
@@ -428,7 +439,20 @@ class Pipeline(object):
                 relevant_sections.append(global_section)
 
             config_block = config_to_block(relevant_sections, self.options)
-            module.setup(config_block, quiet=self.quiet)
+            config_block[PIPELINE_INI_SECTION, 'current_module'] = module.name
+            # we need to store an ID here to allow a hack to add new parameters
+            # from the modules themselves.  Unfortunately cosmosis stores ints, whereas
+            # python IDs are long.  So we split the ID into two parts here
+
+            LikelihoodPipeline.pipeline_being_set_up.append(self)
+            LikelihoodPipeline.module_being_set_up.append(module.name)
+            try:
+                module.setup(config_block, quiet=self.quiet)
+            finally:
+                # This should only go wrong if someone is doing something
+                # ridiculous, so I won't catch any error in it.
+                LikelihoodPipeline.pipeline_being_set_up.remove(self)
+                LikelihoodPipeline.module_being_set_up.remove(module.name)
 
             if self.timing:
                 timings.append(time.time())
@@ -575,6 +599,8 @@ class Pipeline(object):
 
         """
         modules = self.modules
+        if self.timing:
+            self.timings = None
 
         timings = []
         if self.shortcut_module:
@@ -696,6 +722,10 @@ class LikelihoodPipeline(Pipeline):
     ‘unzipped’ after computations have completed.
 
     """
+    # These class-level variables are used by the
+    # register_new_parameter function.
+    pipeline_being_set_up = []
+    module_being_set_up = []
 
     def __init__(self, arg=None, id="", override=None, load=True, values=None, priors=None, only=None):
         u"""Construct a :class:`LikelihoodPipeline`.
@@ -735,6 +765,10 @@ class LikelihoodPipeline(Pipeline):
                                                               self.priors_files,
                                                               override,
                                                               )
+        # We set up the modules first, so that if they want to e.g.
+        # add parameters then they can.
+        self.setup()
+
         if only:
             for p in only:
                 if p not in self.parameters:
@@ -773,8 +807,6 @@ class LikelihoodPipeline(Pipeline):
         else:
             self.likelihood_names = likelihood_names.split()
 
-        # now that we've set up the pipeline properly, initialize modules
-        self.setup()
 
 
 
@@ -791,6 +823,36 @@ class LikelihoodPipeline(Pipeline):
             s = "{}--{}".format(param.section,param.name)
             print("{0:{1}}  ~ {2}" .format(s, n, param.prior))
         print("")
+
+    def _register_new_parameter(self,
+                                module_name,
+                                section,
+                                name,
+                                start,
+                                min_value,
+                                max_value,
+                                prior_name,
+                                prior_args):
+        # This is designed to be called by the register_new_parameter
+        # function below, from modules themselves, to support the case
+        # where modules create their own parameter
+        if max_value == min_value:
+            limits = None
+        else:
+            limits = (min_value, max_value)
+        if prior_name == "":
+            prior_obj = None
+        else:
+            if prior_args is None:
+                prior_args = []
+            prior_text = prior_name + " " + " ".join([str(x) for x in prior_args])
+            prior_obj = prior.Prior.parse_prior(prior_text)
+        param = parameter.Parameter(section, name, start, limits, prior_obj)
+        print("Pipeline module {} created new parameter {}".format(module_name, param))
+        print("    with start:", param.start)
+        print("    with limits:", param.limits)
+        print("    with prior:", param.prior)
+        self.parameters.append(param)
 
     def reset_fixed_varied_parameters(self):
         u"""Identify the sub-set of parameters which are fixed, and those which are to be varied."""
@@ -882,7 +944,7 @@ class LikelihoodPipeline(Pipeline):
 
 
     def denormalize_vector_from_prior(self, p):
-        u"""Convert an array of normalized parameter values, one for each varied parameter,
+        r"""Convert an array of normalized parameter values, one for each varied parameter,
         in the range [0.0,1.0] into their original values according to the prior for each parameter.
 
         i.e. 
@@ -1287,9 +1349,9 @@ class LikelihoodPipeline(Pipeline):
         data = self.run_parameters(p, all_params=all_params)
         if data is None:
             if return_data:
-                return -np.inf, np.repeat(np.nan, self.number_extra), data
+                return -np.inf, [np.nan for i in range(self.number_extra)], data
             else:
-                return -np.inf, np.repeat(np.nan, self.number_extra)
+                return -np.inf, [np.nan for i in range(self.number_extra)]
 
         like = self._extract_likelihoods(data)
 
@@ -1334,4 +1396,13 @@ def config_to_block(relevant_sections, options):
             val = options.gettyped(section, name)
             if val is not None:
                 config_block.put(section, name, val)
+    # For book-keeping stuff later we also need to record
+    # which keys were in the default section.  If
+    # we want to keep track of unused parameters in
+    # Module.access_check_report then we need to ensure
+    # we don't include parameters that are only in the section
+    # because they are in every section.  So we keep track of
+    # such parameters by including them here
+    for (key, val) in options.items("DEFAULT"):
+        config_block.put("_cosmosis_default_section", key, val)
     return config_block

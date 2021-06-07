@@ -1,5 +1,6 @@
 from cosmosis.runtime.config import Inifile
 from cosmosis.samplers.sampler import Sampler
+import cosmosis.samplers.minuit.minuit_sampler
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.output.in_memory_output import InMemoryOutput
 import tempfile
@@ -7,6 +8,8 @@ import os
 import sys
 import pytest
 import numpy as np
+
+minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
 
 def run(sampler, check_prior, check_extra=True, **options):
 
@@ -57,7 +60,6 @@ def run(sampler, check_prior, check_extra=True, **options):
         p1 = output['parameters--p1']
         p2 = output['parameters--p2']
         p3 = output['PARAMETERS--P3']
-
         assert np.all((p1+p2==p3)|(np.isnan(p3)))
 
     return output
@@ -68,7 +70,7 @@ def test_apriori():
 
 def test_dynesty():
     # dynesty does not support extra params
-    run('dynesty', False, check_extra=False, nlive=50)
+    run('dynesty', False, check_extra=False, nlive=50, sample='unif')
 
 def test_emcee():
     run('emcee', True, walkers=8, samples=100)
@@ -91,6 +93,7 @@ def test_maxlike():
 def test_metropolis():
     run('metropolis', True, samples=20)
 
+@pytest.mark.skipif(not minuit_compiled,reason="requires Minuit2")
 def test_minuit():
     run('minuit', True)
 
@@ -104,8 +107,19 @@ def test_pmc():
     old_settings = np.seterr(invalid='ignore', divide='ignore')
     run('pmc', True, iterations=10)
     np.seterr(**old_settings)  
+
+def test_zeus():
+    run('zeus', True, walkers=10, samples=100, nsteps=50)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, verbose=True)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, tune=False)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, tolerance=0.1)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, patience=5000)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, maxiter=5000)
+    run('zeus', True, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global")
+
 def test_polychord():
-    run('polychord', True, live_points=20, feedback=0)
+    with tempfile.TemporaryDirectory() as base_dir:
+        run('polychord', True, live_points=20, feedback=0, base_dir=base_dir, polychord_outfile_root='pc')
 
 def test_pymc():
     if sys.version_info.major==2:

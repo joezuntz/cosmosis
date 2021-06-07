@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import sys
+
+
+
+script_path = os.path.dirname(os.path.abspath( __file__ ))
+cosmosis_dir =os.path.abspath(os.path.join(script_path, os.pardir))
+
+#cosmosis-shifter -n 4 -c 8 params.ini
+
+
+parser = argparse.ArgumentParser(description='Run CosmoSIS under shifter, optionally with MPI')
+parser.add_argument('-c', default=0, type=int, help='Number of OpenMP threads per process (default is to make n * c = 64)')
+parser.add_argument('-n', default=1, type=int, help='Number of MPI processes.  Default = 1 (no MPI)')
+parser.add_argument('-N', default=0, type=int, help='Number of nodes - default is to let srun decide.')
+parser.add_argument('-v', default="2.1", type=str, help='Docker image version. Default="0.2"')
+parser.add_argument('args', nargs='+', type=str, help='Arguments to pass to cosmosis. --mpi is not needed.')
+
+args = parser.parse_args()
+
+nproc = args.n
+nthread = args.c
+version = args.v
+nodes = args.N
+cmd_args = ' '.join(args.args)
+
+if nthread == 0:
+    nthread = 64 // nproc
+
+
+if nproc > 1:
+    preamble = 'srun -u -n {nproc} -c {nthread} --cpu-bind=cores '.format(nproc=nproc, nthread=nthread)
+    mpi = '--mpi'
+else:
+    preamble = ''
+    mpi = ''
+
+if nodes != 0:
+    preamble += '-N {nodes}'.format(nodes=nodes)
+
+cmd = ('{preamble}'
+       'shifter --env OMP_NUM_THREADS={nthread} --image joezuntz/cosmosis:{version} '
+       '-V ${cosmosis_dir}:/cosmosis '
+       'cosmosis {mpi} {cmd_args}').format(
+            preamble=preamble,
+            nthread=nthread,
+            version=version,
+            cosmosis_dir=cosmosis_dir,
+            mpi=mpi,
+            cmd_args=cmd_args)
+
+print(cmd)
+status = os.system(cmd)
+sys.exit(status)

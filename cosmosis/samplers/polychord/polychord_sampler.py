@@ -80,7 +80,7 @@ POLYCHORD_SECTION='polychord'
 
 class PolyChordSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("prior", float), ("post", float), ("weight", float)]
+    sampler_outputs = [("prior", float), ("like", float), ("post", float), ("weight", float)]
     supports_smp=False
     understands_fast_subspaces = True
 
@@ -219,11 +219,25 @@ class PolyChordSampler(ParallelSampler):
 
     def sample(self):
 
-        n_grade = 2 if self.pipeline.do_fast_slow else 1        
+        if self.pipeline.do_fast_slow and (self.pipeline.n_fast_params > 0):
+            print("Using two grades of parameter speed in polychord.")
+            n_grade = 2
+        elif self.pipeline.do_fast_slow:
+            print("You asked for fast/slow, but there were no fast parameters, so "
+                  "I have switched off Polychord's fast/slow mechanism to avoid a hang")
+            n_grade = 1
+        else:
+            print("Using a single grade of parameter speeds in polychord.")
+            n_grade = 1
+
         grade_dims = (ct.c_int*n_grade)()
         grade_frac = (ct.c_double*n_grade)()
 
-        if self.pipeline.do_fast_slow:
+
+        if n_grade > 1:
+            if self.pipeline.n_slow_params == 0:
+                raise ValueError("All your parameters have been classified as fast.  This will now work in polychord.  Change your fast/slow settings.")
+
             grade_dims[0] = self.pipeline.n_slow_params
             grade_dims[1] = self.pipeline.n_fast_params
             grade_frac[0] = 1 - self.fast_fraction
@@ -305,9 +319,10 @@ class PolyChordSampler(ParallelSampler):
             extra_vals = row[self.ndim:self.ndim+self.nderived-1]
             prior = row[self.ndim+self.nderived-1]
             birth_like = row[self.ndim+self.nderived]
-            post = row[self.ndim+self.nderived+1]
+            like = row[self.ndim+self.nderived+1]
             importance = np.exp(w)
-            self.output.parameters(params, extra_vals, prior, post, importance)
+            post = like + prior
+            self.output.parameters(params, extra_vals, prior, like, post, importance)
         self.output.final("nsample", ndead)
         self.output.flush()
 

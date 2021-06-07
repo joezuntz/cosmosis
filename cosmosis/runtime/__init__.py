@@ -1,7 +1,7 @@
+from .parameter import Parameter, register_new_parameter
+from .config import CosmosisConfigurationError, Inifile
+from .module import Module, SetupError, FunctionModule
+from .prior import Prior
+from .pipeline import LikelihoodPipeline, MissingLikelihoodError
 from .mpi_pool import MPIPool
-from .pipeline import LikelihoodPipeline
-from .module import FunctionModule
 from .utils import stdout_redirected
-from .config import Inifile, CosmosisConfigurationError
-from .mpi_pool import MPIPool
-from .module import Module, FunctionModule

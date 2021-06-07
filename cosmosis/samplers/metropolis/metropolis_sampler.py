@@ -15,10 +15,7 @@ pipeline=None
 METROPOLIS_INI_SECTION = "metropolis"
 
 def posterior(p):
-    p = pipeline.denormalize_vector(p, raise_exception=False)
-    r = pipeline.run_results(p)
-    return r
-    #r.post, (r.prior, r.extra)
+    return pipeline.run_results(p)
 
 
 class MetropolisSampler(ParallelSampler):
@@ -39,6 +36,7 @@ class MetropolisSampler(ParallelSampler):
         tuning_frequency = self.read_ini("tuning_frequency", int, -1)
         tuning_grace = self.read_ini("tuning_grace", int, 5000)
         self.tuning_end = self.read_ini("tuning_end", int, 100000)
+        self.save_during_tuning = self.read_ini("save_during_tuning", bool, False)
         self.n = self.read_ini("nsteps", int, default=100)
         self.exponential_probability = self.read_ini("exponential_probability", float, default=0.333)
         self.split = None #work out later
@@ -60,6 +58,10 @@ class MetropolisSampler(ParallelSampler):
                   ", so no draggng will be done."
                 )
 
+        if (self.pipeline.do_fast_slow) and not (self.pipeline.first_fast_module):
+            raise ValueError("To use fast/slow splitting with metropolis please "
+                             "manually define first_fast_module in the pipeline "
+                             "section.")
         #start values from prior
         start = self.define_parameters(random_start)
         print("MCMC starting point:")
@@ -71,14 +73,12 @@ class MetropolisSampler(ParallelSampler):
 
         #Sampler object itself.
         quiet = self.pipeline.quiet
-        start_norm = self.pipeline.normalize_vector(start)
-        covmat_norm = self.pipeline.normalize_matrix(covmat)
 
         if use_cobaya:
             print("Using the Cobaya proposal")
 
 
-        self.sampler = metropolis.MCMC(start_norm, posterior, covmat_norm, 
+        self.sampler = metropolis.MCMC(start, posterior, covmat,
             quiet=quiet, 
             tuning_frequency=tuning_frequency, # Will be multiplied by the oversampling
             tuning_grace=tuning_grace,         # within the sampler if needed
@@ -102,9 +102,10 @@ class MetropolisSampler(ParallelSampler):
         if resume_info is None:
             return
 
-        sampler, self.num_samples, self.num_samples_post_tuning = resume_info
+        self.sampler, self.num_samples, self.num_samples_post_tuning = resume_info
 
-        self.sampler = sampler
+        # Fast slow is already configured on the sampler.
+        self.fast_slow_done = True
 
         # If we started main sampling (as opposed to tuning phase)
         # then we will have some existing chain, but this is not always the case
@@ -149,30 +150,28 @@ class MetropolisSampler(ParallelSampler):
         self.num_samples_post_tuning = self.num_samples - self.tuning_end
 
 
-        # Only output samples once tuning is complete
+        overall_rate = (self.sampler.accepted * 1.0) / self.sampler.iterations
+        recent_accepted = self.sampler.accepted - self.last_accept_count
+        recent_rate = recent_accepted / self.n
+        print("Overall accepted {} / {} samples ({:.1%})" .format(
+            self.sampler.accepted, self.sampler.iterations, overall_rate))
+        print("Last {0} accepted {1} / {0} samples ({2:.1%})\n" .format(
+            self.n, recent_accepted, recent_rate))
+        self.last_accept_count = self.sampler.accepted
+
+        # Regardless of save settings we never use tuning samples
+        # for analytics
         if self.num_samples_post_tuning > 0:
-            traces = np.empty((self.n, self.ndim))
-            likes = np.empty((self.n))
-
-
-            samples = samples[-self.num_samples_post_tuning:]
-            for i, result in enumerate(samples):
-                self.output.parameters(result.vector, result.extra, result.prior, result.post)
-                traces[i,:] = result.vector
-
+            traces = np.array([r.vector for r in samples[-self.num_samples_post_tuning:]])
             self.analytics.add_traces(traces)
 
-            overall_rate = (self.sampler.accepted * 1.0) / self.sampler.iterations
-            recent_accepted = self.sampler.accepted - self.last_accept_count
-            recent_rate = recent_accepted / self.n
-            print("Overall accepted {} / {} samples ({:.1%})" .format(
-                self.sampler.accepted, self.sampler.iterations, overall_rate))
-            print("Last {0} accepted {1} / {0} samples ({2:.1%})\n" .format(
-                self.n, recent_accepted, recent_rate))
-            self.last_accept_count = self.sampler.accepted
-        else:
-            print("Done {} samples. Tuning proposal until {} so no output yet\n".format(
-                self.num_samples, self.tuning_end))
+
+        if (self.num_samples_post_tuning > 0) or self.save_during_tuning:
+            for i, result in enumerate(samples):
+                self.output.parameters(result.vector, result.extra, result.prior, result.post)
+
+        if self.num_samples_post_tuning <= 0:
+            print("Tuning ends at {} samples\n".format(self.tuning_end))
 
         self.write_resume_info([self.sampler, self.num_samples, self.num_samples_post_tuning])
 
@@ -199,12 +198,15 @@ class MetropolisSampler(ParallelSampler):
         covmat_filename = self.read_ini("covmat", str, "").strip()
         if covmat_filename == "" and self.distribution_hints.has_cov():
                 covmat =  self.distribution_hints.get_cov() 
+                print("Using covariance from previous sampler")
         elif covmat_filename == "":
+            print("Using default covariance 1% of param widths")
             covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
         elif not os.path.exists(covmat_filename):
             raise ValueError(
             "Covariance matrix %s not found" % covmat_filename)
         else:
+            print("Loading covariance from {}".format(covmat_filename))
             covmat = np.loadtxt(covmat_filename)
 
         if covmat.ndim == 0:

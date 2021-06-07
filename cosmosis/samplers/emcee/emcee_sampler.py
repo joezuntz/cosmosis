@@ -1,7 +1,7 @@
 from builtins import zip
 from builtins import range
 from builtins import str
-from .. import ParallelSampler
+from .. import ParallelSampler, sample_ellipsoid
 import numpy as np
 import sys
 
@@ -51,7 +51,7 @@ class EmceeSampler(ParallelSampler):
             elif self.distribution_hints.has_cov():
                 center = self.start_estimate()
                 cov = self.distribution_hints.get_cov()
-                self.p0 = self.emcee.utils.sample_ellipsoid(center, cov, size=self.nwalkers)
+                self.p0 = sample_ellipsoid(center, cov, size=self.nwalkers)
                 self.output.log_info("Generating starting positions from covmat from earlier in pipeline")
             elif covmat_file:
                 center = self.start_estimate()
@@ -147,7 +147,7 @@ class EmceeSampler(ParallelSampler):
                           iterations=self.nsteps, store=True)
 
         for (pos, prob, rstate, extra_info) in self.ensemble.sample(self.p0, **kwargs):
-            outputs.append((pos.copy(), prob.copy(), extra_info[:]))
+            outputs.append((pos.copy(), prob.copy(), np.copy(extra_info)))
     
         for (pos, prob, extra_info) in outputs:
             self.output_samples(pos, prob, extra_info)

@@ -22,7 +22,7 @@ from .runtime.config import Inifile, CosmosisConfigurationError
 from .runtime.pipeline import LikelihoodPipeline
 from .runtime import mpi_pool
 from .runtime import process_pool
-from .runtime.utils import ParseExtraParameters, stdout_redirected
+from .runtime.utils import ParseExtraParameters, stdout_redirected, import_by_path
 from .samplers.sampler import Sampler, ParallelSampler, Hints
 from . import output as output_module
 
@@ -92,12 +92,12 @@ def demo_20b_special (args):
         print ("*** YOU MUST RUN demo20a BEFORE YOU CAN RUN demo20b. ***")
         print ("********************************************************")
 
-def sampler_main_loop(sampler, output, pool):
+def sampler_main_loop(sampler, output, pool, is_root):
     # Run the sampler until convergence
     # which really means "finished" here - 
     # a sampler can "converge" just by reaching the 
     # limit of the number of samples it is allowed.
-    if not pool or pool.is_master():
+    if is_root:
         while not sampler.is_converged():
             sampler.execute()
             #Flush any output. This is to stop
@@ -147,7 +147,7 @@ def write_header_output(output, params, values, pipeline):
         prior_ini.write(comment_wrapper)
     output.comment("END_OF_PRIORS_INI")
 
-def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method):
+def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume):
 
     needs_output = sampler_class.needs_output and \
        (pool is None or pool.is_master() or sampler_class.parallel_output)
@@ -180,7 +180,7 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
 
 
     #Generate the output from a factory
-    output = output_module.output_from_options(output_options)
+    output = output_module.output_from_options(output_options, resume)
     output.metadata("sampler", sample_method)
 
     if ("filename" in output_options):
@@ -193,24 +193,31 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
     # In case we need to hand-hold a naive demo-10 user.
 
     # Load configuration.
+    is_root = (pool is None) or pool.is_master()
     if ini is None:
-        ini = Inifile(args.inifile, override=args.params)
+        ini = Inifile(args.inifile, override=args.params, print_include_messages=is_root)
 
     pre_script = ini.get(RUNTIME_INI_SECTION, "pre_script", fallback="")
     post_script = ini.get(RUNTIME_INI_SECTION, "post_script", fallback="")
 
-    if (pool is None) or pool.is_master():
+    if is_root:
         # This decodes the exist status
         status = os.WEXITSTATUS(os.system(pre_script))
         if status:
             raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
                 pre_script, status))
 
+    if is_root and args.mem:
+        from cosmosis.runtime.memmon import MemoryMonitor
+        # This launches a memory monitor that prints out (from a new thread)
+        # the memory usage every args.mem seconds
+        mem = MemoryMonitor.start_in_thread(interval=args.mem)
+
     # Create pipeline.
     if pipeline is None:
         cleanup_pipeline = True
         pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
-        if (pool is None) or pool.is_master() or pool_stdout:
+        if is_root or pool_stdout:
             pipeline = LikelihoodPipeline(ini, override=args.variables, values=values, only=args.only)
         else:
             # Suppress output on everything except the master process
@@ -226,6 +233,12 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
         # We should not cleanup a pipeline which we didn't make
         cleanup_pipeline = False
 
+    # This feature lets us import additional samplers at runtime
+    sampler_files = ini.get(RUNTIME_INI_SECTION, "import_samplers", fallback="").split()
+    for i, sampler_file in enumerate(sampler_files):
+        # give the module a new name to avoid name clashes if people
+        # just call their thing by the same name
+        import_by_path('additional_samplers_{}'.format(i), sampler_file)
 
 
 
@@ -273,11 +286,11 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
             print("NOTE: You set resume=T in the [runtime] section but the sampler {} does not support resuming yet.  I will ignore this option.".format(sampler_name))
             resume=False
 
-        if pool is None or pool.is_master():
+        if is_root:
             print("****************************")
             print("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name))
 
-        output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method)
+        output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume)
         print("****************************")
 
         #Initialize our sampler, with the class we got above.
@@ -297,16 +310,14 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
         # Potentially resume
         if resume and sampler_class.needs_output and \
             sampler_class.supports_resume and \
-           (pool is None 
-            or pool.is_master() 
-            or sampler_class.parallel_output):
+            (is_root or sampler_class.parallel_output):
            sampler.resume()
 
         if output:
             write_header_output(output, ini, values, pipeline)
 
-        sampler_main_loop(sampler, output, pool)
 
+        sampler_main_loop(sampler, output, pool)
         distribution_hints.update(sampler.distribution_hints)
 
         if output:
@@ -316,11 +327,18 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
         pipeline.cleanup()
 
 
+    if is_root and args.mem:
+        mem.stop()
+
+    # Extra-special actions we take to mollycoddle a brand-new user!
+    demo_1_special (args)
+    demo_20a_special (args)
+
     # User can specify in the runtime section a post-run script to launch.
     # In general this may be less useful than the pre-run script, because
     # often chains time-out instead of actually completing.
     # But we still offer it
-    if (pool is None) or pool.is_master():
+    if post_script and is_root:
         # This decodes the exist status
         status = os.WEXITSTATUS(os.system(post_script))
         if status:
@@ -337,7 +355,8 @@ def main():
         parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
         parser.add_argument("--smp",type=int,default=0,help="Run with the given number of processes in shared memory multiprocessing (this is experimental and does not work for multinest).")
         parser.add_argument("--pdb",action='store_true',help="Start the python debugger on an uncaught error. Only in serial mode.")
-        parser.add_argument("--experimental-fault-handling",action='store_true',help="Activate an experimental fault handling mode.")
+        parser.add_argument("--experimental-fault-handling", "--faults",action='store_true',help="Activate an experimental fault handling mode.")
+        parser.add_argument("--mem", type=int, default=0, help="Print out memory usage every this many seconds from root process")
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("--only", nargs="*", help="Fix all parameters except the ones listed")

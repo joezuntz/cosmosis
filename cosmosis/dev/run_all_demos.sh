@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
+if [ -n "$1" ]
+then
+	start=$1
+else
+	start=1
+fi
+
+echo Starting from demo $start
+
 # This is used in demo 10
 export HALOFIT=halofit_takahashi
 
 # Loop through all demos
-for (( D=1 ; D<=24 ; D++ ))
+for (( D=$start ; D<=24 ; D++ ))
 do
 	# There is no demo 23 yet
 	if [[ $D == 23 ]]
@@ -21,7 +30,7 @@ do
 	fi
 
 	# Also check we can postprocess okay
-	postprocess demos/demo$D.ini -o plots -p demo$D
+	postprocess demos/demo$D.ini -o output/plots -p demo$D
 	if [ $? -ne 0 ]
 		then
 		echo "Error postprocessing Demo $D"

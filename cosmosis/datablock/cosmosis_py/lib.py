@@ -17,6 +17,9 @@ c_enum = {
 	8:ct.c_int64,
 }[enum_size]
 
+free = dll.free
+free.argtypes = [ct.c_void_p]
+free.restype = None
 
 c_block = ct.c_size_t
 c_datatype = c_enum
@@ -255,4 +258,20 @@ load_library_function(
 	[c_block, c_str, c_str, c_int_p],
 	ct.c_int
 	)
- 
+
+load_library_function(
+	locals(),
+	"c_datablock_put_str_array_1d",
+	[c_block, c_str, c_str, ct.POINTER(c_str), ct.c_int],
+	ct.c_int
+)
+
+
+# Python will auto-convert returned char pointers to strings,
+# but that will leak memory here, so use a void pointer instead
+load_library_function(
+	locals(),
+	"c_datablock_get_str_array_1d_preallocated",
+	[c_block, c_str, c_str, ct.POINTER(ct.c_void_p), c_int_p],
+	ct.c_int
+)

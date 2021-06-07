@@ -1,11 +1,10 @@
 module mpi_module
     use utils_module, only: dp, normal_fb
-
-    implicit none
 #ifdef MPI
-    include 'mpif.h'
+    use mpi
 #endif
 
+    implicit none
     integer :: mpierror
     logical :: finalize
 
@@ -127,10 +126,10 @@ module mpi_module
         implicit none
         integer, intent(in) :: mpi_communicator
         integer :: root
-        integer :: myrank
+        integer, dimension(1) :: myrank
 
         ! Get the rank of the process
-        myrank = get_rank(mpi_communicator)
+        myrank(1) = get_rank(mpi_communicator)
 
 #ifdef MPI
         call MPI_ALLREDUCE(    &
@@ -143,7 +142,7 @@ module mpi_module
             mpierror           &!error flag
             )
 #else
-        root = myrank
+        root = myrank(1)
 #endif
 
     end function get_root
@@ -253,13 +252,15 @@ module mpi_module
         real(dp), intent(in) :: db_local
         type(mpi_bundle), intent(in) :: mpi_information
         real(dp) :: db
+        real(dp), dimension(1) :: mpi_db_local
 
+        mpi_db_local(1) = db_local
         call MPI_ALLREDUCE(       &
-            db_local,             &!send buffer 
+            mpi_db_local,         &!send buffer
             db,                   &!recieve buffer
             1,                    &!number of elements sent
             MPI_DOUBLE_PRECISION, &!type of element sent
-            MPI_SUM,              &!reduce by finding the minimum
+            MPI_SUM,              &!reduce by finding the sum
             mpi_information%communicator,     &!handle
             mpierror              &!error flag
             )
@@ -551,14 +552,18 @@ module mpi_module
         logical, intent(in) :: keep_going                        !> Further signal whether to keep going 
 
         integer :: tag ! tag variable to
+        real(dp), dimension(1) :: mpi_logL !> for use with MPI_SEND
+        integer, dimension(1) :: mpi_epoch !> for use with MPI_SEND
+
+        mpi_logL(1) = logL
+        mpi_epoch(1) = epoch
 
         tag = tag_run_stop                 ! Default tag is stop tag
         if(keep_going) tag = tag_run_seed  ! If we want to keep going then change this to the seed tag
 
-
         call MPI_SEND(             &!  
             seed_point,            &!  
-            size(seed_point),      &!  
+            size(seed_point),      &!
             MPI_DOUBLE_PRECISION,  &!  
             slave_id,              &!  
             tag,                   &!  
@@ -578,7 +583,7 @@ module mpi_module
             mpierror                            &!  
             )
         call MPI_SEND(              &!  
-            logL,                   &!  
+            mpi_logL,               &!
             1,                      &!  
             MPI_DOUBLE_PRECISION,   &!  
             slave_id,               &!  
@@ -587,7 +592,7 @@ module mpi_module
             mpierror                &!  
             )
         call MPI_SEND(         &!  
-            epoch,             &!  
+            mpi_epoch,         &!
             1,                 &!  
             MPI_INTEGER,           &!  
             slave_id,          &!  
@@ -620,12 +625,12 @@ module mpi_module
         integer, intent(in) :: slave_id         !> Slave to request a new point from
 
 
-        integer :: empty_buffer(0) ! empty buffer to send
+        integer, dimension(0):: empty_buffer ! empty buffer to send
 
         call MPI_SEND(         &
             empty_buffer,      &! not sending anything
             0,                 &! size of nothing
-            MPI_INTEGER,           &! sending no integers
+            MPI_INTEGER,       &! sending no integers
             slave_id,          &! process id to send to
             tag_gen_request,   &! continuation tag
             mpi_information%communicator,  &! mpi handle
@@ -644,12 +649,12 @@ module mpi_module
         integer, intent(in) :: slave_id         !> Slave to request a new point from
 
 
-        integer :: empty_buffer(0) ! empty buffer to send
+        integer, dimension(1) :: empty_buffer ! empty buffer to send
 
         call MPI_SEND(         &
             empty_buffer,      &! not sending anything
             0,                 &! size of nothing
-            MPI_INTEGER,           &! sending no integers
+            MPI_INTEGER,       &! sending no integers
             slave_id,          &! process id to send to
             tag_gen_stop,      &! continuation tag
             mpi_information%communicator,  &! mpi handle

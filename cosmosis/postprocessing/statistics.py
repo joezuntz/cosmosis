@@ -228,7 +228,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         n = len(data)
         try:
             peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data)
-        except ValueError:
+        except (RuntimeError, ValueError, sp.linalg.LinAlgError):
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
             peak1d = np.nan
         return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.), lerr68, uerr68, lerr95, uerr95, peak1d
@@ -371,7 +371,7 @@ class ChainCovariance(object):
     def run(self):
         #Determine the parameters to use
 
-        col_names = [p for p in self.source.colnames if p.lower() not in ["like","post", "importance", "weight"]]
+        col_names = [p for p in self.source.colnames if p.lower() not in ["like","post", "importance", "weight", "prior"]]
 
         if len(col_names)<2:
             return []
@@ -379,9 +379,14 @@ class ChainCovariance(object):
         if self.source.options.get("getdist",False):
             covmat = self.source.gdc.cov()
         else:
-            ps = self.posterior_sample()
-            cols = [self.reduced_col(p)[ps] for p in col_names]
-            covmat = np.cov(cols)
+
+            if hasattr(self, 'weight_col'):
+                w = self.weight_col()
+            else:
+                w = None
+
+            cols = [self.reduced_col(p) for p in col_names]
+            covmat = np.cov(cols, aweights=w)
 
         #For the proposal we just want the first 
         #nvaried rows/cols - we don't want to include
@@ -694,7 +699,7 @@ class WeightedStatistics(object):
         try:
             print(col)
             peak1d, ((lerr68, uerr68), (lerr95, uerr95)) = find_asymmetric_errorbars([0.68, 0.95], data, weight)
-        except (RuntimeError, ValueError):
+        except (RuntimeError, ValueError, sp.linalg.LinAlgError):
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
             peak1d = np.nan
 
@@ -886,7 +891,7 @@ class CovarianceMatrixEllipseAreas(Statistics):
                 if j>=i: continue
                 #Get the 2x2 sub-matrix
                 C = covmat_estimate[:,[i,j]][[i,j],:]
-                area = np.pi * np.linalg.det(C)
+                area = 6.17 * np.pi * np.sqrt(np.linalg.det(C))
                 fom = 1.0/area
                 f.write("{0}  {1}  {2}  {3}\n".format(p1, p2, area, fom))
 

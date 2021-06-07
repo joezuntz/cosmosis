@@ -292,3 +292,56 @@ class Parameter(object):
             raise ValueError("Unable to parse numeric value for "
                              "parameter value %s, error %s" %
                              (line, error))
+
+
+def register_new_parameter(options,
+                           section,
+                           name,
+                           min_value,
+                           start_value,
+                           max_value,
+                           prior_name="",
+                           prior_args=None):
+    """
+    Add a parameter to the pipeline from a module setup function.
+
+    We allow modules to define and add parameters to the pipeline,
+    either fixed or sampled.  This function can be called to do this.
+
+    It will only affect the pipeline from which setup was called.
+
+    options is the datablock passed to setup(options).
+    section is the string setting the datablock section for the new parameter
+    name is the name of the new parameter
+    min_value is the lower limit of the parameter's range
+    max_value is the upper limit of the parameter's range
+    prior_name (optional) is a string - see prior.py
+    prior_args (optional) is any additional arguments to create the prior
+    """
+    from .pipeline import LikelihoodPipeline
+
+    n = len(LikelihoodPipeline.pipeline_being_set_up)
+
+    if n == 0:
+        print("Tried to register_new_parameter from a module not in a pipeline: skipping.")
+        return
+    elif n != 1:
+        raise RuntimeError("Multiple pipelines are currently being set up, cannot register new parameter")
+
+    if len(LikelihoodPipeline.module_being_set_up) != n:
+        raise RuntimeError("Internal error: not clear what module is being set up.")
+
+    # Now we have established the numbers are right we
+    # register the parameter
+    pipeline = LikelihoodPipeline.pipeline_being_set_up[0]
+    caller = LikelihoodPipeline.module_being_set_up[0]
+
+
+    pipeline._register_new_parameter(caller,
+                           section,
+                           name,
+                           start_value,
+                           min_value,
+                           max_value,
+                           prior_name,
+                           prior_args)
