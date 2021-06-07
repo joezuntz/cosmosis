@@ -5,7 +5,7 @@ future
 configparser
 astropy
 sklearn
-CosmoloPy
+#CosmoloPy
 emcee==2.2.1
 fitsio
 astropy
@@ -13,3 +13,5 @@ Cython
 PyYAML
 six
 kombine
+configparser
+future
