@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 from .postprocessing.postprocess import postprocessor_for_sampler
 from .postprocessing.inputs import read_input
 from .postprocessing.plots import Tweaks

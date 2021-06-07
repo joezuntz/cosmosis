@@ -1,4 +1,3 @@
-from builtins import object
 import ctypes
 import sys
 import os

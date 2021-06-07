@@ -1,8 +1,3 @@
-from __future__ import print_function
-from builtins import map
-from builtins import zip
-from builtins import range
-from builtins import object
 from numpy import pi, dot, exp, einsum
 import numpy as np
 

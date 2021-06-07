@@ -11,7 +11,6 @@ and :class:`DeltaFunctionPrior`.
 Applications can get by only knowing about the :class:`Prior` superclass.
 
 """
-from builtins import object
 
 from . import config
 import numpy as np

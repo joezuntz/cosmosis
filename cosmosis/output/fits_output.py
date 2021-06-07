@@ -1,4 +1,3 @@
-from __future__ import print_function
 from .output_base import OutputBase
 from . import utils
 import numpy as np

@@ -1,8 +1,3 @@
-from __future__ import print_function
-from builtins import zip
-from builtins import map
-from builtins import range
-from builtins import str
 import itertools
 import numpy as np
 from cosmosis.output.text_output import TextColumnOutput

@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 from future.utils import with_metaclass
-from builtins import range
-from builtins import object
 import os
 import argparse
 import numpy as np

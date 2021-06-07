@@ -3,8 +3,6 @@
 
 u"""Definition of `everythingisnan`, :class:`ParseExtraParameters`, :func:`mkdir`, :class:`Timer`, :func:`symmetrized_matrix` and :func:`symmetric_positive_definite_inverse`."""
 
-from __future__ import print_function
-from builtins import object
 
 import numpy as np
 import argparse
@@ -19,7 +17,7 @@ from functools import wraps
 
 
 
-class EverythingIsNan(object):
+class EverythingIsNan:
 
     u"""An object which, when iterated over or indexed directly, always returns NumPyʼs `np.nan` as a value."""
     

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from builtins import range
 from .cosmomc_output import CosmoMCOutput
 import string
 import numpy as np

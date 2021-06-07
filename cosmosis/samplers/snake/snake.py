@@ -4,12 +4,7 @@ Mikkelsen et al
 http://arxiv.org/pdf/1211.3126.pdf
 
 """
-from __future__ import print_function
 
-from builtins import zip
-from builtins import map
-from builtins import range
-from builtins import object
 import numpy as np
 import random
 import heapq

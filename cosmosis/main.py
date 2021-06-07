@@ -1,20 +1,15 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 
 import sys
 try:
     import configparser
-    from future import standard_library
-    import builtins
 except ImportError:
     sys.stderr.write("Updates to cosmosis mean that you now need to install some new packages.\n")
     sys.stderr.write("Please install with: pip install configparser future\n")
     sys.stderr.write("On some environments these might need to be installed separately - sorry\n")
     sys.exit(1)
 
-standard_library.install_aliases()
-from builtins import zip
 import argparse
 import os
 import pdb

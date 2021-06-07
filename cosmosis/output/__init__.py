@@ -1,4 +1,3 @@
-from __future__ import print_function
 from . import text_output
 from . import cosmomc_output
 from . import null_output

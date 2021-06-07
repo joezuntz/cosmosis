@@ -1,5 +1,4 @@
 
-from builtins import object
 class Hints(object):
     def __init__(self):
         self._peak = None

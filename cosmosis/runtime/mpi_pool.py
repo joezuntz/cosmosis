@@ -1,6 +1,3 @@
-from builtins import map
-from builtins import range
-from builtins import object
 class _close_pool_message(object):
     def __repr__(self):
         return "<Close pool message>"

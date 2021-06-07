@@ -1,5 +1,3 @@
-from __future__ import print_function
-from builtins import str
 from .output_base import OutputBase
 from . import utils
 from ..runtime.utils import mkdir

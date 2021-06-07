@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from .sampler import Sampler, ParallelSampler, sample_ball, sample_ellipsoid
 from .hints import Hints
 from .minuit import minuit_sampler

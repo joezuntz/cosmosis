@@ -1,5 +1,3 @@
-from __future__ import print_function
-from builtins import str
 from .. import Sampler
 import numpy as np
 from ...runtime import pipeline

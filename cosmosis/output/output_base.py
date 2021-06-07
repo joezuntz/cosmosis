@@ -1,5 +1,3 @@
-from past.builtins import basestring
-from builtins import object
 import abc
 import logging
 import numpy as np
@@ -27,7 +25,7 @@ class OutputMetaclass(abc.ABCMeta):
                 if alias not in output_registry:
                     output_registry[alias] = cls
 
-class CommentFileWrapper(object):
+class CommentFileWrapper:
     """
     This little wrapper object is to turn an OutputBase object
     into a write-only file-like object where .write commands
@@ -42,7 +40,7 @@ class CommentFileWrapper(object):
     def write(self, text):
         self.obj.comment(text)
 
-class OutputBase(with_metaclass(OutputMetaclass, object)):
+class OutputBase(metaclass=OutputMetaclass):
     def __init__(self):
         super(OutputBase,self).__init__()
         self._columns = []
@@ -83,7 +81,7 @@ class OutputBase(with_metaclass(OutputMetaclass, object)):
             self.columns.pop(column)
         elif isinstance(column, tuple):
             self.columns.remove(tuple)
-        elif isinstance(column, basestring):
+        elif isinstance(column, str):
             self.columns.pop(self.column_index_for_name(column))
         else:
             raise TypeError("Unknown type of column to delete")

@@ -1,5 +1,3 @@
-from __future__ import print_function
-from builtins import range
 from cosmosis import DataBlock
 from cosmosis.datablock.cosmosis_py.errors import BlockSectionNotFound
 import numpy as np

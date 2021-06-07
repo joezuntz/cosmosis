@@ -4,8 +4,6 @@
 u"""Definition of the :class:`Inifile` class."""
 
 
-from future import standard_library
-standard_library.install_aliases()
 import os
 import sys
 import collections

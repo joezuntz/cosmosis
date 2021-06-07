@@ -1,6 +1,3 @@
-from __future__ import print_function
-from builtins import zip
-from builtins import map
 import itertools
 import collections
 import numpy as np

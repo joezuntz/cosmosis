@@ -1,9 +1,4 @@
 #coding: utf-8
-from __future__ import print_function
-from builtins import zip
-from builtins import str
-from builtins import range
-from builtins import object
 from cosmosis.runtime.parameter import Parameter
 from .elements import PostProcessorElement, MCMCPostProcessorElement, WeightedMCMCPostProcessorElement, MultinestPostProcessorElement
 try: 

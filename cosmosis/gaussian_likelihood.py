@@ -1,5 +1,3 @@
-from __future__ import print_function
-from builtins import object
 import scipy.interpolate
 import scipy.integrate
 import numpy as np
@@ -17,7 +15,7 @@ except ImportError: # fall back to not using hermitian
 MISSING = "if_you_see_this_there_was_a_mistake_creating_a_gaussian_likelihood"
 
 
-class GaussianLikelihood(object):
+class GaussianLikelihood:
     """
     Gaussian likelihood with a fixed covariance.  
     

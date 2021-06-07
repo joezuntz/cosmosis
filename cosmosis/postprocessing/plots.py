@@ -1,10 +1,3 @@
-from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
-from builtins import zip
-from builtins import hex
-from builtins import range
-from builtins import object
 from .elements import PostProcessorElement
 from .elements import MCMCPostProcessorElement, MultinestPostProcessorElement, WeightedMCMCPostProcessorElement
 from .elements import Loadable

@@ -1,4 +1,3 @@
-from __future__ import print_function
 from cosmosis.output.text_output import TextColumnOutput
 from cosmosis.output.fits_output import FitsOutput
 from cosmosis.runtime.config import Inifile

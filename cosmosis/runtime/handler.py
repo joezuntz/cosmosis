@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 
 dirname,_=os.path.split(__file__)

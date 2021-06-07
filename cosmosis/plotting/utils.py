@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 try:
 	from cosmosis import names as section_names

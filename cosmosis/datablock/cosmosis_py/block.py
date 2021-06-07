@@ -2,13 +2,6 @@
 
 u"""Definition of the :class:`DataBlock` class."""
 
-from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
-from builtins import str
-from builtins import range
-from past.builtins import basestring
-from builtins import object
 import ctypes as ct
 from . import lib
 from . import errors
@@ -633,7 +626,7 @@ class DataBlock(object):
 		if isinstance(value, np.int32) or isinstance(value, np.int64):
 			value = int(value)
 
-		if isinstance(value, basestring):
+		if isinstance(value, str):
 			method = (self.get_string,  self.put_string,  self.replace_string)
 			return method[method_type]
 
@@ -887,7 +880,7 @@ class DataBlock(object):
 		a parameter is present in the data set.
 
 		"""
-		if isinstance(section_name, basestring):
+		if isinstance(section_name, str):
 			return self.has_section(section_name)
 		try:
 			(section,name) = section_name
@@ -1331,7 +1324,7 @@ class DataBlock(object):
 			yaml.SafeLoader.add_constructor("tag:yaml.org,2002:python/unicode", constructor)
 
 		block = cls()
-		if isinstance(filename_or_stream, basestring):
+		if isinstance(filename_or_stream, str):
 			stream = open(filename_or_stream)
 		else:
 			stream = filename_or_stream
@@ -1351,7 +1344,7 @@ class DataBlock(object):
 
 	def to_yaml(self, filename_or_stream):
 		import yaml
-		if isinstance(filename_or_stream, basestring):
+		if isinstance(filename_or_stream, str):
 			stream = open(filename_or_stream, 'w')
 		else:
 			stream = filename_or_stream

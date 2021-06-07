@@ -1,6 +1,3 @@
-from __future__ import print_function
-from builtins import str
-from builtins import object
 import abc
 from . import elements
 from . import plots
@@ -13,8 +10,6 @@ import os
 from future.utils import with_metaclass
 postprocessor_registry = {}
 
-from future import standard_library
-standard_library.install_aliases()
 from io import StringIO
 
 

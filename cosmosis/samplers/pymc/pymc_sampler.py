@@ -1,6 +1,3 @@
-from builtins import zip
-from builtins import str
-from builtins import range
 from .. import ParallelSampler
 import numpy as np
 import os

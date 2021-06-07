@@ -1,13 +1,9 @@
-from __future__ import print_function
-from builtins import str
 from .elements import PostProcessorElement
 from cosmosis.runtime.config import Inifile
 import os
 import tempfile
 import sys
 from collections import defaultdict
-from future import standard_library
-standard_library.install_aliases()
 
 def ini_from_header(header_text):
 	"""

@@ -1,6 +1,3 @@
-from __future__ import print_function
-from builtins import map
-from builtins import object
 from .. import ParallelSampler
 from . import fisher
 from ...datablock import BlockError

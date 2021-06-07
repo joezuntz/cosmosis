@@ -1,12 +1,12 @@
 import os
-from past.builtins import basestring
+
 TRUE_STRINGS =  ["T","t","True","TRUE","true","y","Y","yes","Yes","YES","1"]
 FALSE_STRINGS = ["F","f","False","FALSE","false","n","N","no","No","NO","0"]
 
 def boolean_string(s):
 	if s is True or s is False:
 		return s
-	if not isinstance(s,basestring):
+	if not isinstance(s,str):
 		raise ValueError("Non-string passed to boolean_string for conversion to bool")
 	if s in TRUE_STRINGS:
 		return True

@@ -1,6 +1,3 @@
-from builtins import zip
-from builtins import range
-from builtins import str
 from .. import ParallelSampler, sample_ellipsoid, sample_ball
 import numpy as np
 import sys

@@ -1,7 +1,4 @@
 #coding: utf-8
-from __future__ import print_function
-from builtins import zip
-from builtins import object
 from cosmosis import output as output_module
 
 import numpy as np

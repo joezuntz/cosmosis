@@ -1,5 +1,3 @@
-from builtins import zip
-from builtins import range
 import scipy.stats
 import numpy as np
 from functools import wraps

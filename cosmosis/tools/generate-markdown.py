@@ -6,8 +6,6 @@ for the wiki page documenting the standard modules.
 It is not intended for users.
 
 """
-from __future__ import print_function
-from past.builtins import basestring
 import yaml
 import os
 import collections
@@ -126,7 +124,7 @@ f.close()
 
 def make_list(l):
 	if l is None: return ""
-	if isinstance(l, basestring):
+	if isinstance(l, str):
 		return u"- "+l
 	else:
 		return u"\n".join("- "+m for m in l)

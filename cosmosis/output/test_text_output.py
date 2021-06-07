@@ -1,4 +1,3 @@
-from builtins import range
 from .text_output import TextColumnOutput
 import string
 import numpy as np

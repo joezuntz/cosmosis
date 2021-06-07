@@ -6,9 +6,7 @@ I think I need to re-write the plotting code almost from scratch
 as it's grown pretty organically.
 
 """
-from __future__ import print_function
 
-from builtins import zip
 import matplotlib
 matplotlib.use('Agg')
 #matplotlib.rcParams['text.usetex']=True

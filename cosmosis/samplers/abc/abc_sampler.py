@@ -1,5 +1,3 @@
-from __future__ import print_function
-from builtins import str
 from .. import ParallelSampler
 import numpy as np
 from ...runtime import prior
