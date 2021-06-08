@@ -2,13 +2,7 @@
 
 
 import sys
-try:
-    import configparser
-except ImportError:
-    sys.stderr.write("Updates to cosmosis mean that you now need to install some new packages.\n")
-    sys.stderr.write("Please install with: pip install configparser future\n")
-    sys.stderr.write("On some environments these might need to be installed separately - sorry\n")
-    sys.exit(1)
+import configparser
 
 import argparse
 import os
