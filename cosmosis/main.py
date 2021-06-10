@@ -306,7 +306,7 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
             write_header_output(output, ini, values, pipeline)
 
 
-        sampler_main_loop(sampler, output, pool)
+        sampler_main_loop(sampler, output, pool, is_root)
         distribution_hints.update(sampler.distribution_hints)
 
         if output:

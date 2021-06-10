@@ -1,5 +1,0 @@
-#!/usr/bin/env python3
-import cosmosis.main
-import sys
-status = cosmosis.main.main()
-sys.exit(status)

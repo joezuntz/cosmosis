@@ -22,8 +22,6 @@ f90_mods = [
 
 scripts = [
     'bin/cosmosis',
-    'bin/cosmosis-py2',
-    'bin/cosmosis-py3',
     'bin/cosmosis-ini-from-output',
     'bin/cosmosis-sample-fisher',
     'bin/postprocess',
@@ -110,7 +108,7 @@ class my_clean(clean):
         clean_library()
         super().run()
 
-setup(name = 'cosmosis-standalone',
+setup(name = 'cosmosis',
         description       = "A testbed stand-alone installation of the CosmoSIS project. Not ready for primetime!",
         author            = "Joe Zuntz",
         author_email      = "joezuntz@googlemail.com",
