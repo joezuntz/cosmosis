@@ -22,11 +22,10 @@ f90_mods = [
 
 scripts = [
     'bin/cosmosis',
-    'bin/cosmosis-ini-from-output',
+    'bin/cosmosis-configure',
+    'bin/cosmosis-extract',
     'bin/cosmosis-sample-fisher',
-    'bin/postprocess',
-    'bin/postprocess-py3',
-    'bin/postprocess-py3',
+    'bin/cosmosis-postprocess',
 ]
 
 c_headers = [
@@ -49,9 +48,7 @@ cc_headers = [
     "datablock/section.hh"
 ]
 
-datablock_libs = ["datablock/libcosmosis.so",
-                  "datablock/libcosmosis_fortran.so"
-                 ]
+datablock_libs = ["datablock/libcosmosis.so"]
 
 sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",
                 "samplers/multinest/multinest_src/libnest3_mpi.so",
@@ -108,13 +105,15 @@ class my_clean(clean):
         clean_library()
         super().run()
 
+print("PACAKGES", find_packages())
+
 setup(name = 'cosmosis',
         description       = "A testbed stand-alone installation of the CosmoSIS project. Not ready for primetime!",
         author            = "Joe Zuntz",
         author_email      = "joezuntz@googlemail.com",
         url               = "https://bitbucket.org/joezuntz/cosmosis",  
         packages = find_packages(),
-        package_data = {"" : datablock_libs + sampler_libs + runtime_libs 
+        package_data = {"cosmosis" : datablock_libs + sampler_libs + runtime_libs 
                             + c_headers + cc_headers + f90_mods 
                             + compilers_config,},
         scripts = scripts,

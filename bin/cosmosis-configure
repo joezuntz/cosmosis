@@ -23,4 +23,5 @@ then
 fi
 
 eval $cmds
-# eval $cmds
+
+echo "Your shell is now configured to build the CosmoSIS standard library"

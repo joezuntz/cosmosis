@@ -20,24 +20,23 @@ def generate_commands(cosmosis_src_dir, debug=False, omp=True, conda=True):
 
     commands = [
         f"export COSMOSIS_SRC_DIR=\"{cosmosis_src_dir}\"",
-        "export C_INCLUDE_PATH=$C_INCLUDE_PATH:$COSMOSIS_SRC_DIR/cosmosis/datablock",
-        "export CPLUS_INCLUDE_PATH=$C_INCLUDE_PATH:$COSMOSIS_SRC_DIR/cosmosis/datablock",
-        "export LIBRARY_PATH=$LIBRARY_PATH:$COSMOSIS_SRC_DIR/cosmosis/datablock",
-        "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/cosmosis/datablock",
-        "export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/cosmosis/datablock",
-        "export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/cosmosis/datablock",
+        "export C_INCLUDE_PATH=$C_INCLUDE_PATH:$COSMOSIS_SRC_DIR/datablock",
+        "export CPLUS_INCLUDE_PATH=$C_INCLUDE_PATH:$COSMOSIS_SRC_DIR/datablock",
+        "export LIBRARY_PATH=$LIBRARY_PATH:$COSMOSIS_SRC_DIR/datablock",
+        "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/datablock",
+        "export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/datablock",
         "export COSMOSIS_ALT_COMPILERS=1",
     ]
 
     if conda:
         commands += [
             'export GSL_LIB=$CONDA_PREFIX/lib',
-            'export GSL_INC=/usr/local/include',
+            'export GSL_INC=$CONDA_PREFIX/include',
             'export FFTW_LIBRARY=$CONDA_PREFIX/lib',
-            'export FFTW_INCLUDE_DIR=/usr/local/include',
-            'export CPLUS_INCLUDE_PATH=$C_INCLUDE_PATH ',
-            'export LAPACK_LINK="-L$CONDA_PREFIX/lib -lopenblas"',
+            'export FFTW_INCLUDE_DIR=$CONDA_PREFIX/include',
+            'export LAPACK_LINK="-L$CONDA_PREFIX/lib -llapack"',
             'export CFITSIO_LIB=$CONDA_PREFIX/lib',
+            'export CFITSIO_INC=$CONDA_PREFIX/include',
         ]
 
 

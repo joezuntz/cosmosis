@@ -21,6 +21,7 @@ module cosmosis_section_names
     character(*), parameter :: wl_number_density_section = "wl_number_density"
     character(*), parameter :: matter_power_nl_section = "matter_power_nl"
     character(*), parameter :: matter_power_lin_section = "matter_power_lin"
+    character(*), parameter :: matter_power_lin_cdm_baryon_section = "matter_power_lin_cdm_baryon"
     character(*), parameter :: matter_galaxy_power_section = "matter_galaxy_power"
     character(*), parameter :: galaxy_power_section = "galaxy_power"
     character(*), parameter :: shear_xi_section = "shear_xi"

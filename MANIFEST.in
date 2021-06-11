@@ -25,6 +25,7 @@ include cosmosis/datablock/section.cc
 include cosmosis/datablock/section.hh
 include cosmosis/datablock/section_names.h
 include cosmosis/datablock/section_names.txt
+include cosmosis/datablock/cosmosis_constants.fh
 include cosmosis/runtime/Makefile
 include cosmosis/runtime/handler.c
 include cosmosis/samplers/Makefile
