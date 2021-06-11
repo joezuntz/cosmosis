@@ -1,0 +1,14 @@
+{
+   <test_scalar_string_1>
+   Memcheck:Cond
+   fun:__GI_strlen
+   fun:test_scalar_string
+   fun:main
+}
+{
+   <test_scalar_string_2>
+   Memcheck:Cond
+   fun:__GI_strlen
+   fun:test_scalar_string
+   fun:main
+}

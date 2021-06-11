@@ -1,0 +1,105 @@
+/*
+  PLEASE DO NOT MODIFY THIS HEADER.
+
+  This code is automatically generated from test_c_datablock_scalars.template,
+  by running:
+     ruby gen.rb
+
+  Because ruby is not a required part of the CosmoSIS standard platform, this
+  header has been committed to the repository. If it needs to be updated, that
+  must be done on a platform that has a ruby interpreter. It is known to work
+  with both Ruby 1.8.7 and Ruby 2.1.1. It is likely (but not verified) to work
+  with versions of Ruby between those two.
+*/
+#include "c_datablock.h"
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void test_scalar_<%= @current_type_simplified %>()
+{
+  printf("In test_scalar_<%= @current_type_simplified %>\n");
+  typedef char* string;
+  c_datablock* s = make_c_datablock();
+  assert(s);
+
+  /* Get with a default returns the supplied default when no such
+     parameter is found. */
+  string section_name = "x";
+  <%= @current_type %> val = <%= @default_val %>;
+  assert(<%= @get_def_fun %>(s, section_name, "no_such_param", <%= @values[1] %>, &val) == DBS_SUCCESS);
+  <%= send(@assert_sym, 'val', @values[1]) %>;
+  <%= send(@cleanup_sym, 'val') %>;
+
+  <%= @current_type %> expected = <%= @values[1] %>;
+
+ /* Put with no previous value should save the right value. */
+  assert(<%= @put_fun %>(s, section_name, "param_1", expected) == DBS_SUCCESS);
+  datablock_type_t tt;
+  assert(c_datablock_get_type(s, section_name, "param_1", &tt) == DBS_SUCCESS);
+  assert(tt == <%= @type_enumerator %>);
+  assert(<%= @get_fun %>(s, section_name, "param_1", &val) == DBS_SUCCESS);
+  <%= send(@assert_sym, 'val', 'expected') %>;
+  <%= send(@cleanup_sym, 'val') %>;
+  assert(<%= @get_def_fun %>(s, section_name, "param_1", <%= @uninitialized_val %>, &val) == DBS_SUCCESS);
+  <%= send(@assert_sym, 'val', 'expected') %>;
+  <%= send(@cleanup_sym, 'val') %>;
+
+  /* Put of the same name into a different section should not collide. */
+  assert(<%= @put_fun %>(s, "y", "param_1", expected) == DBS_SUCCESS);
+  assert(<%= @get_fun %>(s, "y", "param_1", &val) == DBS_SUCCESS);
+  <%= send(@assert_sym, 'val', 'expected') %>;
+  <%= send(@cleanup_sym, 'val') %>;
+
+  /* Second put of the same name with same type should fail, and the
+     value should be unaltered. */
+  assert(<%= @put_fun %>(s, section_name, "param_1", <%= @values[1] %>) == DBS_NAME_ALREADY_EXISTS);
+  val = <%= @default_val %>;
+  assert(<%= @get_fun %>(s, section_name, "param_1", &val) == DBS_SUCCESS);
+  <%= send(@assert_sym, 'val', 'expected') %>;
+  <%= send(@cleanup_sym, 'val') %>;
+
+  /* Second put of the same name with different type should fail, and
+     the value should be unaltered. */
+  <% @other_types.each do |otype, oval| %>
+  assert(c_datablock_put_<%= otype %>(s, section_name, "param_1", <%= oval %>) == DBS_NAME_ALREADY_EXISTS);
+  val = <%= @default_val %>;
+  assert(<%= @get_fun %>(s, section_name, "param_1", &val) == DBS_SUCCESS);
+  <%= send(@assert_sym, 'val', 'expected') %>;
+  <%= send(@cleanup_sym, 'val') %>;
+  <% end %>
+
+  /* Replacement of an existing value with one of the same type should
+     save the right value. */
+  <%= @current_type %> new_expected = <%= @values[3] %>;
+  val = <%= @default_val %>;
+  assert(<%= @replace_fun %>(s, section_name, "param_1", new_expected) == DBS_SUCCESS);
+  assert(<%= @get_fun %>(s, section_name, "param_1", &val) == DBS_SUCCESS);
+  <%= send(@assert_sym, 'val', 'new_expected') %>;
+  <%= send(@cleanup_sym, 'val') %>;
+
+  /* Attempted replacement using a new name should not succeed, and
+     no parameter should be stored. */
+  assert(<%= @replace_fun %>(s, section_name, "no such parameter", <%= @values[2] %>) == DBS_NAME_NOT_FOUND);
+  val = <%= @values[3] %>;
+  assert(<%= @get_fun %>(s, section_name, "no such parameter", &val) == DBS_NAME_NOT_FOUND);
+  <%= send(@assert_sym, 'val', @values[3]) %>;
+  /* No cleanup because nothing should have been allocated, even for strings. */
+
+  /* Attempted replacement using a name associated with a different
+     type should not succeed, and the stored value should not be
+     changed. */
+  assert(<%= @put_fun %>(s, section_name, "a value", <%= @values[0] %>) == DBS_SUCCESS);
+  <%= @current_type %> a_value;
+  <% @other_types.each do |otype, oval| %>
+  assert(c_datablock_replace_<%= otype %>(s, section_name, "a value", <%= oval %>) == DBS_WRONG_VALUE_TYPE);
+  assert(<%= @get_fun %>(s, section_name, "a value", &a_value) == DBS_SUCCESS);
+  <%= send(@assert_sym, 'a_value', @values[0]) %>;
+  <%= send(@cleanup_sym, 'a_value') %>;
+  <% end %>
+
+  destroy_c_datablock(s);
+}

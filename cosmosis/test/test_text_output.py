@@ -1,4 +1,4 @@
-from .text_output import TextColumnOutput
+from cosmosis.output.text_output import TextColumnOutput
 import string
 import numpy as np
 import os
@@ -23,7 +23,7 @@ def populate_table(out, nparam, ns):
     out.close()
 
 def test_text():
-    filename='temp_output_test.txt'
+    filename='cosmosis_temp_output_test.txt'
     ini = {'filename':filename, 'format':'text'}
     out = TextColumnOutput.from_options(ini)
     nparam = 8
@@ -46,11 +46,11 @@ def test_text():
 
 
         #or with our own method
-        names, cols, meta, final = TextColumnOutput.load(filename)
+        names, data, meta, comments, final = TextColumnOutput.load_from_options({"filename":filename})
         assert names == [string.ascii_uppercase[i] for i in range(nparam)]
-        assert len(cols)==nparam
-        assert len(cols[0])==ns
-        assert meta['NP']==nparam
-        assert final['FINISH'] is True
+        assert len(names)==nparam
+        assert len(data[0])==ns
+        assert meta[0]['NP']==nparam
+        assert final[0]['FINISH'] is True
     finally:
         os.remove(filename)
