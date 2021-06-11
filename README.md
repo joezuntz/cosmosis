@@ -1,3 +1,5 @@
-Welcome to CosmoSIS.  Please see our wiki for documentation:
+This version of CosmoSIS is not the right one to use.  Yet.
 
-https://bitbucket.org/joezuntz/cosmosis/wiki
+Please use the bitbucket version for now:
+https://bitbucket.org/joezuntz/cosmosis
+
