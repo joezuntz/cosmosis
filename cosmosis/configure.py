@@ -20,8 +20,8 @@ def generate_commands(cosmosis_src_dir, debug=False, omp=True, conda=True):
 
     commands = [
         f"export COSMOSIS_SRC_DIR=\"{cosmosis_src_dir}\"",
-        "export C_INCLUDE_PATH=$C_INCLUDE_PATH:$COSMOSIS_SRC_DIR/datablock",
-        "export CPLUS_INCLUDE_PATH=$C_INCLUDE_PATH:$COSMOSIS_SRC_DIR/datablock",
+        # "export C_INCLUDE_PATH=$C_INCLUDE_PATH:$COSMOSIS_SRC_DIR/datablock",
+        # "export CPLUS_INCLUDE_PATH=$C_INCLUDE_PATH:$COSMOSIS_SRC_DIR/datablock",
         "export LIBRARY_PATH=$LIBRARY_PATH:$COSMOSIS_SRC_DIR/datablock",
         "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/datablock",
         "export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$COSMOSIS_SRC_DIR/datablock",

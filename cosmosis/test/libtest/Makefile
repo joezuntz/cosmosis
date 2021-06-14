@@ -2,7 +2,19 @@ ifneq (clean,$(filter clean,$(MAKECMDGOALS)))
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 endif
 
-LDFLAGS+=-L/Users/jzuntz/src/cosmosis/conda_env3/lib -lcosmosis -Wl,-rpath,/Users/jzuntz/src/cosmosis/conda_env3/lib
+USER_LDFLAGS=-L/Users/jzuntz/src/cosmosis/conda_env3/lib -lcosmosis -Wl,-rpath,/Users/jzuntz/src/cosmosis/conda_env3/lib
+USER_CFLAGS+=-I${COSMOSIS_SRC_DIR}/datablock
+USER_FFLAGS+=-I${COSMOSIS_SRC_DIR}/datablock
+USER_CXXFLAGS+=-I${COSMOSIS_SRC_DIR}/datablock
+
+TEST_COMMANDS=ndarray_t datablock_t c_datablock_t c_datablock_int_array_t c_datablock_double_array_t \
+			  c_datablock_complex_array_t c_datablock_multidim_double_array_t c_datablock_multidim_int_array_t \
+			  c_datablock_multidim_complex_array_t section_t entry_t fortran_t
+
+
+
+clean: 
+	rm -f ${TEST_COMMANDS}
 
 test:  test_entry test_section test_datablock test_c_datablock \
 	test_ndarray \

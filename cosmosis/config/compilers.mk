@@ -8,13 +8,13 @@ else
   COMMON_FLAGS=-O3 -g -fPIC
 endif
 
-COMMON_C_FLAGS=$(COMMON_FLAGS) -I${COSMOSIS_SRC_DIR}/..
+COMMON_C_FLAGS=$(COMMON_FLAGS) -I${COSMOSIS_SRC_DIR}/
 OS=$(shell uname -s)
 PEDANTIC_C_FLAGS=-Wall -Wextra -pedantic
-CXXFLAGS+=$(COMMON_C_FLAGS) $(USER_CXXFLAGS) -std=c++14 
-CFLAGS+=$(COMMON_C_FLAGS) -std=c99 $(USER_CFLAGS)
-FFLAGS+=$(COMMON_FLAGS) -I${COSMOSIS_SRC_DIR}/datablock -std=gnu -ffree-line-length-none $(USER_FFLAGS)
-LDFLAGS+=$(USER_LDFLAGS) -L${COSMOSIS_SRC_DIR}/datablock -Wl,-rpath,$(COSMOSIS_SRC_DIR)/datablock
+CXXFLAGS=$(COMMON_C_FLAGS) $(USER_CXXFLAGS) -std=c++14 
+CFLAGS=$(COMMON_C_FLAGS) -std=c99 $(USER_CFLAGS)
+FFLAGS=$(COMMON_FLAGS) -I${COSMOSIS_SRC_DIR}/datablock -std=gnu -ffree-line-length-none $(USER_FFLAGS)
+LDFLAGS=$(USER_LDFLAGS) -L${COSMOSIS_SRC_DIR}/datablock -Wl,-rpath,$(COSMOSIS_SRC_DIR)/datablock
 PYTHON=python
 MAKEFLAGS += --print-directory
 

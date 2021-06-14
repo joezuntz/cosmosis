@@ -58,21 +58,22 @@ sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",
 
 
 testing_files = [
-    "cosmosis/test/libtest/c_datablock_complex_array_test.c",
-    "cosmosis/test/libtest/c_datablock_double_array_test.c",
-    "cosmosis/test/libtest/c_datablock_int_array_test.c",
-    "cosmosis/test/libtest/c_datablock_multidim_complex_array_test.c",
-    "cosmosis/test/libtest/c_datablock_multidim_double_array_test.c",
-    "cosmosis/test/libtest/c_datablock_multidim_int_array_test.c",
-    "cosmosis/test/libtest/c_datablock_test.c",
-    "cosmosis/test/libtest/cosmosis_test.F90",
-    "cosmosis/test/libtest/cosmosis_tests.supp",
-    "cosmosis/test/libtest/datablock_test.cc",
-    "cosmosis/test/libtest/entry_test.cc",
-    "cosmosis/test/libtest/ndarray_test.cc",
-    "cosmosis/test/libtest/section_test.cc",
-    "cosmosis/test/libtest/test_c_datablock_scalars.h",
-    "cosmosis/test/libtest/test_c_datablock_scalars.template",
+    "test/libtest/c_datablock_complex_array_test.c",
+    "test/libtest/c_datablock_double_array_test.c",
+    "test/libtest/c_datablock_int_array_test.c",
+    "test/libtest/c_datablock_multidim_complex_array_test.c",
+    "test/libtest/c_datablock_multidim_double_array_test.c",
+    "test/libtest/c_datablock_multidim_int_array_test.c",
+    "test/libtest/c_datablock_test.c",
+    "test/libtest/cosmosis_test.F90",
+    "test/libtest/cosmosis_tests.supp",
+    "test/libtest/datablock_test.cc",
+    "test/libtest/entry_test.cc",
+    "test/libtest/ndarray_test.cc",
+    "test/libtest/section_test.cc",
+    "test/libtest/test_c_datablock_scalars.h",
+    "test/libtest/test_c_datablock_scalars.template",
+    "test/libtest/Makefile",
 ]
 
 runtime_libs = ["runtime/experimental_fault_handler.so"]
@@ -95,7 +96,7 @@ def compile_library():
     # User can switch on COSMOSIS_OMP manually, but it should
     # always be on for conda
     if "CONDA_PREFIX" in env:
-        env["COSMOSIS_OMP"] = 1
+        env["COSMOSIS_OMP"] = "1"
     env['FC'] = env.get('FC', 'gfortran')
 
     subprocess.check_call(["make"], env=env, cwd="cosmosis")
