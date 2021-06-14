@@ -56,6 +56,25 @@ sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",
                 "samplers/polychord/polychord_src/libchord_mpi.so",
                 "samplers/minuit/minuit_wrapper.so"]
 
+
+testing_files = [
+    "cosmosis/test/libtest/c_datablock_complex_array_test.c",
+    "cosmosis/test/libtest/c_datablock_double_array_test.c",
+    "cosmosis/test/libtest/c_datablock_int_array_test.c",
+    "cosmosis/test/libtest/c_datablock_multidim_complex_array_test.c",
+    "cosmosis/test/libtest/c_datablock_multidim_double_array_test.c",
+    "cosmosis/test/libtest/c_datablock_multidim_int_array_test.c",
+    "cosmosis/test/libtest/c_datablock_test.c",
+    "cosmosis/test/libtest/cosmosis_test.F90",
+    "cosmosis/test/libtest/cosmosis_tests.supp",
+    "cosmosis/test/libtest/datablock_test.cc",
+    "cosmosis/test/libtest/entry_test.cc",
+    "cosmosis/test/libtest/ndarray_test.cc",
+    "cosmosis/test/libtest/section_test.cc",
+    "cosmosis/test/libtest/test_c_datablock_scalars.h",
+    "cosmosis/test/libtest/test_c_datablock_scalars.template",
+]
+
 runtime_libs = ["runtime/experimental_fault_handler.so"]
 
 compilers_config = ["config/compilers.mk", "config/subdirs.mk"]
@@ -73,6 +92,10 @@ def compile_library():
     cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
     env = os.environ.copy()
     env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
+    # User can switch on COSMOSIS_OMP manually, but it should
+    # always be on for conda
+    if "CONDA_PREFIX" in env:
+        env["COSMOSIS_OMP"] = 1
     env['FC'] = env.get('FC', 'gfortran')
 
     subprocess.check_call(["make"], env=env, cwd="cosmosis")
@@ -80,7 +103,7 @@ def compile_library():
 
 def clean_library():
     cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
-    env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir}
+    env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir,}
     subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
 
 
@@ -115,7 +138,7 @@ setup(name = 'cosmosis',
         packages = find_packages(),
         package_data = {"cosmosis" : datablock_libs + sampler_libs + runtime_libs 
                             + c_headers + cc_headers + f90_mods 
-                            + compilers_config,},
+                            + compilers_config + testing_files,},
         scripts = scripts,
         install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy'],
         cmdclass={"install"   : my_install,

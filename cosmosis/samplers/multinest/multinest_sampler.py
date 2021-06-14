@@ -77,11 +77,10 @@ class MultinestSampler(ParallelSampler):
         try:
             libnest3 = ct.cdll.LoadLibrary(libname)
         except Exception as error:
-            sys.stderr.write("Multinest could not be loaded.\n")
-            sys.stderr.write("This may mean an MPI compiler was not found to compile it,\n")
-            sys.stderr.write("or that some other error occurred.  More info below.\n")
-            sys.stderr.write(str(error)+'\n')
-            sys.exit(1)
+            raise RuntimeError("Multinest could not be loaded.\n"
+                             "This may mean an MPI compiler was not found to compile it,\n"
+                             "or that some other error occurred.  More info below:\n"
+                             + str(error)+'\n')
 
         self._run = libnest3.run
         self._run.restype=None
