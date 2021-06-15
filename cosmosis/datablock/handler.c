@@ -7,7 +7,7 @@
 void (*default_handler) (int);
 
 
-void segfault_handler(int sig) {
+void cosmosis_segfault_handler(int sig) {
   void *array[32];
   size_t size;
 
@@ -32,19 +32,7 @@ void segfault_handler(int sig) {
 }
 
 
-// Example function you can 
 
-int trigger_segfault_1(){
-  int * x = (int*) -1;
-  int y = *x;
-  return y;
-}
-
-void trigger_segfault(){
-  trigger_segfault_1();
-}
-
-
-void enable_combined_segfault_handler(){
-  default_handler = signal(SIGSEGV, segfault_handler);   // install our handler
+void enable_cosmosis_segfault_handler(){
+  default_handler = signal(SIGSEGV, cosmosis_segfault_handler);   // install our handler
 }

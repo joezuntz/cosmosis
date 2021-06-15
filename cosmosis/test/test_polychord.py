@@ -3,7 +3,7 @@ from cosmosis.samplers.sampler import Sampler
 import cosmosis.samplers.minuit.minuit_sampler
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.output.in_memory_output import InMemoryOutput
-from cosmosis.runtime.handler import activate_experimental_fault_handling
+from cosmosis.runtime.handler import activate_segfault_handling
 import tempfile
 import os
 import sys
@@ -11,7 +11,7 @@ import pytest
 import numpy as np
 
 
-activate_experimental_fault_handling()
+activate_segfault_handling()
 
 minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
 

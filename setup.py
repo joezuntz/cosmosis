@@ -94,9 +94,16 @@ def compile_library():
     env = os.environ.copy()
     env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
     # User can switch on COSMOSIS_OMP manually, but it should
-    # always be on for conda
-    if "CONDA_PREFIX" in env:
+    # always be on for conda.
+    conda = env.get('CONDA_PREFIX')
+    if conda:
         env["COSMOSIS_OMP"] = "1"
+
+        # We also need Lapack to build some of the samplers
+        env["LAPACK_LINK"] = f"-L{conda}/lib -llapack"
+        # and the MPI compiler
+        env["MPIFC"] = "mpif90"
+
     env['FC'] = env.get('FC', 'gfortran')
 
     subprocess.check_call(["make"], env=env, cwd="cosmosis")

@@ -14,14 +14,10 @@ from .runtime import process_pool
 from .runtime.utils import ParseExtraParameters, stdout_redirected, import_by_path
 from .samplers.sampler import Sampler, ParallelSampler, Hints
 from . import output as output_module
+from .runtime.handler import activate_segfault_handling
 
 
 RUNTIME_INI_SECTION = "runtime"
-
-
-def experimental_fault_handling():
-    import  cosmosis.runtime.handler
-    cosmosis.runtime.handler.activate_experimental_fault_handling()
 
 
 def demo_1_special (args):
@@ -344,7 +340,7 @@ def main():
         parser.add_argument("--mpi",action='store_true',help="Run in MPI mode.")
         parser.add_argument("--smp",type=int,default=0,help="Run with the given number of processes in shared memory multiprocessing (this is experimental and does not work for multinest).")
         parser.add_argument("--pdb",action='store_true',help="Start the python debugger on an uncaught error. Only in serial mode.")
-        parser.add_argument("--experimental-fault-handling", "--faults",action='store_true',help="Activate an experimental fault handling mode.")
+        parser.add_argument("--segfaults", "--experimental-fault-handling", action='store_true',help="Activate a mode that gives more info on segfault")
         parser.add_argument("--mem", type=int, default=0, help="Print out memory usage every this many seconds from root process")
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
@@ -355,8 +351,8 @@ def main():
         demo_10_special (args)
         demo_20b_special (args)
 
-        if args.experimental_fault_handling:
-            experimental_fault_handling()
+        if args.segfaults:
+            activate_segfault_handling()
 
         # initialize parallel workers
         if args.mpi:

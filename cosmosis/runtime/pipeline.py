@@ -19,8 +19,7 @@ from . import config
 from . import parameter
 from . import prior
 from . import module
-from cosmosis.datablock.cosmosis_py import block
-import cosmosis.datablock.cosmosis_py as cosmosis_py
+from ..datablock.cosmosis_py import block, section_names
 try:
     import faulthandler
     faulthandler.enable()
@@ -1264,7 +1263,7 @@ class LikelihoodPipeline(Pipeline):
 
     def _set_likelihood_names_from_block(self, data):
         likelihood_names = []
-        for _,key in data.keys(cosmosis_py.section_names.likelihoods):
+        for _,key in data.keys(section_names.likelihoods):
             if key.endswith("_like"):
                 name = key[:-5]
                 likelihood_names.append(name)
@@ -1281,7 +1280,7 @@ class LikelihoodPipeline(Pipeline):
     def _extract_likelihoods(self, data):
         "Extract the likelihoods from the block"
 
-        section_name = cosmosis_py.section_names.likelihoods
+        section_name = section_names.likelihoods
 
         # loop through named likelihoods and sum their values
         likelihoods = []

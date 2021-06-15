@@ -275,3 +275,10 @@ load_library_function(
 	[c_block, c_str, c_str, ct.POINTER(ct.c_void_p), c_int_p],
 	ct.c_int
 )
+
+load_library_function(
+	locals(),
+	"enable_cosmosis_segfault_handler",
+	[],
+	None
+)

@@ -2,14 +2,17 @@ ifneq ($(COSMOSIS_SRC_DIR),)
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 endif
 
+$(info $$MPIFC is ${MPIFC})
 MPI = $(shell which $(MPIFC) 2> /dev/null)
 
 TARGETS=libnest3.so
-ifneq ($(MPI),)
-TARGETS+=libnest3_mpi.so
+ifeq ($(MPI),)
+    $(info MPI Compiler not found)
+else
+    $(info MPI Compiler found so compiling MPI multinest)
+    TARGETS += libnest3_mpi.so
 endif
 
-all: $(TARGETS)
 
 ifeq ($(COSMOSIS_DEBUG),1)
 FFLAGS += -fPIC -ffree-line-length-none
@@ -20,7 +23,7 @@ endif
 ifeq ($(LAPACK_LINK),)
 LAPACKLIB = -llapack
 else
-LAPACKLIB = ${LAPACK_LINK}
+LAPACKLIB = $(LAPACK_LINK)
 endif
 
 NESTLIBDIR = ./
@@ -28,7 +31,8 @@ NESTLIBDIR = ./
 NSOBJECTS = utils.o utils1.o priors.o kmeans_clstr.o xmeans_clstr.o posterior.o nested.o cwrapper.o
 NSOBJECTS_MPI = $(patsubst %.o,mpi/%.o,$(NSOBJECTS))
 
-
+all: $(TARGETS)
+	echo Built $(TARGETS)
 
 %.o: %.f90
 	$(FC) $(FFLAGS) -cpp -c -o $@ $^
@@ -44,9 +48,11 @@ test:
 	@echo "Alas, MultiNest has no tests"
 
 libnest3_mpi.so: $(NSOBJECTS_MPI)
+	echo LAPACKLIB is $(LAPACKLIB)
 	$(MPIFC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LAPACKLIB) $(LDFLAGS)
 	
 libnest3.so: $(NSOBJECTS) 
+	echo LAPACKLIB is $(LAPACKLIB)
 	$(FC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LAPACKLIB)  $(LDFLAGS)
 
 obj_detect:
@@ -77,10 +83,8 @@ eggboxC++:
 	make -C example_eggbox_C++
 
 clean: 
-ifneq ($(MPI),)
 	-rm -f $(NESTLIBDIR)/libnest3_mpi.*
 	-rm -rf mpi
-endif
 	-rm -f $(NESTLIBDIR)/libnest3.* *.o *.mod
 
 cleanall: clean_exec clean clean_obj_detect clean_gaussian clean_gauss_shell clean_eggbox \

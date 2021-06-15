@@ -41,8 +41,8 @@ def test_text():
             A = t[0]
             B = t[1]
 
-            assert A == np.arange(ns, dtype=int)
-            assert B == np.arange(ns, dtype=int)+1
+        assert (A == np.arange(ns, dtype=int)).all()
+        assert (B == np.arange(ns, dtype=int)+1).all()
 
 
         #or with our own method
