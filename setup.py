@@ -136,7 +136,26 @@ class my_clean(clean):
         clean_library()
         super().run()
 
-print("PACAKGES", find_packages())
+requirements = [
+    "pyyaml",
+    "future",
+    "emcee",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pybind11",
+    "pyyaml",
+    "scipy",
+    "threadpoolctl",
+    "emcee",
+    "dynesty",
+    "zeus-mcmc",
+]
+
+all_package_files = (datablock_libs + sampler_libs + runtime_libs 
+                            + c_headers + cc_headers + f90_mods 
+                            + compilers_config + testing_files)
+
 
 setup(name = 'cosmosis',
         description       = "A testbed stand-alone installation of the CosmoSIS project. Not ready for primetime!",
@@ -144,11 +163,9 @@ setup(name = 'cosmosis',
         author_email      = "joezuntz@googlemail.com",
         url               = "https://bitbucket.org/joezuntz/cosmosis",  
         packages = find_packages(),
-        package_data = {"cosmosis" : datablock_libs + sampler_libs + runtime_libs 
-                            + c_headers + cc_headers + f90_mods 
-                            + compilers_config + testing_files,},
+        package_data = {"cosmosis" : all_package_files},
         scripts = scripts,
-        install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy'],
+        install_requires = requirements,
         cmdclass={"install"   : my_install,
                 "build"     : my_build,
                 "build_ext" : my_build,

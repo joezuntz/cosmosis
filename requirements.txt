@@ -1,6 +1,15 @@
 pyyaml
 future
-configparser
 emcee
 numpy
 scipy
+matplotlib
+pybind11
+pyyaml
+scipy
+threadpoolctl
+emcee
+dynesty
+zeus-mcmc
+--no-binary=mpi4py
+mpi4py

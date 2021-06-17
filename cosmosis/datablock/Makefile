@@ -5,8 +5,9 @@ endif
 USER_CFLAGS=$(PEDANTIC_C_FLAGS) -Werror
 USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 
+ifneq ($(CONDA_PREFIX),)
 LDFLAGS+= -L$(CONDA_PREFIX)/lib 
-
+endif
 
 detected_OS := $(shell uname -s)
 ifeq ($(detected_OS),Darwin)
