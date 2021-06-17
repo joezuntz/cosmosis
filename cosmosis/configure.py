@@ -9,13 +9,11 @@ parser.add_argument("--no-omp", action='store_false', dest='omp', help='Switch o
 parser.add_argument("--omp", action='store_true', dest='omp', help='Switch on OpenMP (default)')
 parser.add_argument("--debug", action='store_true', dest='debug', help='Switch on debug mode')
 parser.add_argument("--no-debug", action='store_false', dest='debug', help='Switch on debug mode')
-parser.add_argument("--no-conda", action='store_false', dest='conda', help='Switch off conda flags')
-parser.add_argument("--conda", action='store_true', dest='conda', help='Switch on conda flags (default)')
+parser.add_argument("--no-conda", action='store_false', dest='conda', help='Switch off conda flags, even if conda env is found')
 
 
 def generate_commands(cosmosis_src_dir, debug=False, omp=True, conda=True):
-    if conda and "CONDA_PREFIX" not in os.environ:
-        raise RuntimeError("Conda environment not detected")
+    conda = conda and ("CONDA_PREFIX" in os.environ)
 
     commands = [
         f"export COSMOSIS_SRC_DIR=\"{cosmosis_src_dir}\"",
@@ -32,6 +30,7 @@ def generate_commands(cosmosis_src_dir, debug=False, omp=True, conda=True):
             'export FFTW_LIBRARY=$CONDA_PREFIX/lib',
             'export FFTW_INCLUDE_DIR=$CONDA_PREFIX/include',
             'export LAPACK_LINK="-L$CONDA_PREFIX/lib -llapack"',
+            'export LAPACK_LIB="$CONDA_PREFIX/lib"',
             'export CFITSIO_LIB=$CONDA_PREFIX/lib',
             'export CFITSIO_INC=$CONDA_PREFIX/include',
         ]
