@@ -198,4 +198,4 @@ class PymcSampler(ParallelSampler):
         return priors
 
 # legacy alias
-PyMCSampler = PyPymcSampler
+PyMCSampler = PymcSampler
