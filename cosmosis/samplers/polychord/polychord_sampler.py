@@ -75,7 +75,7 @@ polychord_args = [
 POLYCHORD_SECTION='polychord'
 
 
-class PolyChordSampler(ParallelSampler):
+class PolychordSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("prior", float), ("like", float), ("post", float), ("weight", float)]
     supports_smp=False
@@ -325,3 +325,6 @@ class PolyChordSampler(ParallelSampler):
 
     def is_converged(self):
         return self.converged
+
+# legacy alias
+PolyChordSampler = PolychordSampler

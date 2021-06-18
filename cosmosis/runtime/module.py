@@ -7,8 +7,8 @@ import os
 import ctypes
 import sys
 import numpy as np
-
-from cosmosis.datablock import option_section
+import abc
+from cosmosis.datablock import option_section, DataBlock, SectionOptions
 
 MODULE_TYPE_EXECUTE_SIMPLE = "execute"
 MODULE_TYPE_EXECUTE_CONFIG = "execute_config"
@@ -206,7 +206,6 @@ class Module(object):
                 print('-- Setting up module %s --' % (self.name))
             self.data = self.setup_function(config)
             self.access_check_report(config_orig)
-            print("")
         else:
             self.data = None
 
@@ -229,6 +228,8 @@ class Module(object):
         This module is split from the main workhorse method  setup_functions
         so that Modules can be used more easily in external code.
         """
+        if isinstance(config, dict):
+            config = DataBlock.from_dict(config)
         self.copy_section_to_module_options(config)
         self.setup_functions(config)
 
@@ -242,6 +243,8 @@ class Module(object):
         """
         if not self.is_python:
             data_block = data_block._ptr
+        if not hasattr(self, 'data'):
+            raise RuntimeError("Must set up module before executing it")
         if self.data is not None:
             return self.execute_function(data_block, self.data)
         else:
@@ -426,3 +429,33 @@ class FunctionModule(Module):
                       module_type=MODULE_TYPE_EXECUTE_SIMPLE, set_types=True):
         return function_name
 
+
+
+class ClassModule(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __init__(self, options):
+        pass
+
+    @abc.abstractmethod
+    def execute(self, block, config):
+        return 0
+
+    def cleanup(config):
+        pass
+
+    @classmethod
+    def as_module(cls, name):
+        def setup(options):
+            options = SectionOptions(options)
+            mod = cls(options)
+            return mod
+
+        def execute(block, mod):
+            mod.execute(block)
+            return 0
+
+        def cleanup(mod):
+            mod.cleanup()
+
+
+        return FunctionModule(name, setup, execute, cleanup)

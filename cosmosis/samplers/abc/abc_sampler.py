@@ -27,7 +27,7 @@ def abc_model(p):
     return model
 
 
-class ABCSampler(ParallelSampler):
+class AbcSampler(ParallelSampler):
     parallel_output = False #True for 
     sampler_outputs = [("weight", float),("distance",float)]
 
@@ -168,3 +168,6 @@ class ABCSampler(ParallelSampler):
             invcovs = np.diag(inv)
 
         return  data, covs,invcovs
+
+# legacy alias
+ABCSampler = AbcSampler

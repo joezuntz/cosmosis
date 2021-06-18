@@ -333,7 +333,7 @@ class Pipeline(object):
 
     """
 
-    def __init__(self, arg=None, load=True):
+    def __init__(self, arg=None, load=True, modules=None):
 
         u"""Pipeline constructor.
 
@@ -374,16 +374,20 @@ class Pipeline(object):
         # initialize modules
         self.modules = []
         self.has_run = False
+        if modules is not None:
+            self.modules = modules
 
-        if load and PIPELINE_INI_SECTION in self.options.sections():
+        elif load and PIPELINE_INI_SECTION in self.options.sections():
             module_list = self.options.get(PIPELINE_INI_SECTION,
                                            "modules", fallback="").split()
             self.modules = [
                 module.Module.from_options(module_name,self.options,self.root_directory)
                 for module_name in module_list
             ]
+        else:
+            self.modules = []
 
-
+        if self.modules:
             self.shortcut_module=0
             self.shortcut_data=None
             if shortcut is not None:
@@ -401,7 +405,6 @@ class Pipeline(object):
                     print("and use the cached results from the first run for everything before that.")
                     print("except the input parameter values. Think about this to check it's what you want.")
                 self.shortcut_module = index
-        else:
             self.shortcut_module=0
             self.shortcut_data=None
 
@@ -718,7 +721,7 @@ class LikelihoodPipeline(Pipeline):
     pipeline_being_set_up = []
     module_being_set_up = []
 
-    def __init__(self, arg=None, id="", override=None, load=True, values=None, priors=None, only=None):
+    def __init__(self, arg=None, id="", override=None, modules=None, load=True, values=None, priors=None, only=None):
         u"""Construct a :class:`LikelihoodPipeline`.
 
         The arguments `arg` and `load` are used in the base-class
@@ -728,7 +731,7 @@ class LikelihoodPipeline(Pipeline):
         settings for those parametersʼ values in the initialization files.
         
         """
-        super(LikelihoodPipeline, self).__init__(arg=arg, load=load)
+        super().__init__(arg=arg, load=load, modules=modules)
 
         if id:
             self.id_code = "[%s] " % str(id)
@@ -738,7 +741,7 @@ class LikelihoodPipeline(Pipeline):
 
 
         if values is None:
-            self.values_file = self.options.get(PIPELINE_INI_SECTION, "values")
+            self.values_file = self.options.get(PIPELINE_INI_SECTION, "values", fallback="")
             self.values_filename = self.values_file
         else:
             self.values_file = values

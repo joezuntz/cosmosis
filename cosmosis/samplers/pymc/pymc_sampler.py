@@ -6,7 +6,7 @@ from cosmosis.runtime.analytics import Analytics
 import logging
 
 
-class PyMCSampler(ParallelSampler):
+class PymcSampler(ParallelSampler):
     sampler_outputs = [("like", float)]
 
     def config(self):
@@ -196,3 +196,6 @@ class PyMCSampler(ParallelSampler):
             else:
                 raise RuntimeError("Unknown prior type in PyMC sampler")
         return priors
+
+# legacy alias
+PyMCSampler = PyPymcSampler

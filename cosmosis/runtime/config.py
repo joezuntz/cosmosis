@@ -183,9 +183,16 @@ class Inifile(IncludingConfigParser):
         IncludingConfigParser.__init__(self,
                                        defaults=defaults,
                                        print_include_messages=print_include_messages)
+
+        # if we are pased a dict, convert it to an inifile
+        if isinstance(filename, dict):
+            for section, values in filename.items():
+                self.add_section(section)
+                for key, value in values.items():
+                    self.set(section, key, str(value))
         # default read behaviour is to ignore unreadable files which
         # is probably not what we want here
-        if filename is not None:
+        elif filename is not None:
             if isinstance(filename,str) and not os.path.exists(filename):
                 raise IOError("Unable to open configuration file `" + filename + "'")
             self.read(filename)

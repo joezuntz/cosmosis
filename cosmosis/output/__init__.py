@@ -1,8 +1,8 @@
-from . import text_output
-from . import cosmomc_output
-from . import null_output
-from . import fits_output
-from . import in_memory_output
+from .text_output import TextColumnOutput
+from .cosmomc_output import CosmoMCOutput
+from .null_output import NullOutput
+from .fits_output import FitsOutput
+from .in_memory_output import InMemoryOutput
 from .output_base import output_registry
 import logging
 

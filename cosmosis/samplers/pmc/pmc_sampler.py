@@ -12,7 +12,7 @@ def posterior(p):
     return r.post, (r.prior, r.extra)
 
 
-class PMCSampler(ParallelSampler):
+class PmcSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("component", int), ("prior", float), ("post",float), ("log_weight",float)]
 
@@ -120,3 +120,6 @@ class PMCSampler(ParallelSampler):
                     "but there are %d varied parameters." %
                     (covmat.shape[0], covmat.shape[1], nparams))
         return covmat
+
+# legacy alias
+PMCSampler = PmcSampler

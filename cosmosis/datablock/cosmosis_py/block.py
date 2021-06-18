@@ -1361,6 +1361,14 @@ class DataBlock(object):
 		yaml.dump(data, stream)
 
 	@classmethod
+	def from_dict(cls, d):
+		b = cls()
+		for section, values in d.items():
+			for key, value in values.items():
+				b[section, key] = value
+		return b
+
+	@classmethod
 	def from_string(cls, s):
 		if sys.version_info[0]==2:
 			sio = BytesIO(s)

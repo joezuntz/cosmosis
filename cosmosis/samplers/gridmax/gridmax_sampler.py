@@ -10,7 +10,7 @@ def task(p):
     return (results.prior, results.post, results.extra)
 
 
-class GridMaxSampler(ParallelSampler):
+class GridmaxSampler(ParallelSampler):
     sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
@@ -114,3 +114,6 @@ class GridMaxSampler(ParallelSampler):
 
     def is_converged(self):
         return (self.dimension==1 and (0<self.maxlike-self.previous_maxlike<self.tolerance)) or self.iterations > self.max_iterations
+
+# legay alias
+GridMaxSampler = GridmaxSampler

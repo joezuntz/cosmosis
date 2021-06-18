@@ -50,7 +50,7 @@ def posterior_and_gradient(p_in):
 
 
 
-class PMaxlikeSampler(ParallelSampler):
+class PmaxlikeSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("prior", float), ("like", float), ("post", float)]
 
@@ -121,3 +121,6 @@ class PMaxlikeSampler(ParallelSampler):
 
     def is_converged(self):
         return self.converged
+
+# legacy alias
+PMaxlikeSampler = PmaxlikeSampler

@@ -1,7 +1,8 @@
 import scipy.interpolate
 import scipy.integrate
 import numpy as np
-from cosmosis.datablock import names, SectionOptions
+from .datablock import names, SectionOptions
+from .runtime import FunctionModule
 import traceback 
 
 try:
@@ -266,8 +267,12 @@ class GaussianLikelihood:
             likelihoodCalculator = config
             likelihoodCalculator.cleanup()
 
-
         return setup, execute, cleanup
+
+    @classmethod
+    def as_module(cls, name):
+        setup, execute, cleanup = cls.build_module()
+        return FunctionModule(name, setup, execute, cleanup)
 
 
 class SingleValueGaussianLikelihood(GaussianLikelihood):

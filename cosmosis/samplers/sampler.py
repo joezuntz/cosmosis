@@ -1,6 +1,8 @@
 from future.utils import with_metaclass
 from ..runtime.attribution import PipelineAttribution
 from ..runtime.utils import get_git_revision
+from ..runtime import Inifile
+from ..output import InMemoryOutput
 import datetime
 import platform
 import getpass
@@ -34,9 +36,16 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
     supports_resume = False
 
     
-    def __init__(self, ini, pipeline, output):
-        self.ini = ini
+    def __init__(self, ini, pipeline, output=None):
+        if isinstance(ini, Inifile):
+            self.ini = ini
+        else:
+            self.ini = Inifile(ini)
+
         self.pipeline = pipeline
+        # Default to an in-memory output
+        if output is None:
+            output = InMemoryOutput()
         self.output = output
         self.attribution = PipelineAttribution(self.pipeline.modules)
         self.distribution_hints = Hints()
@@ -138,6 +147,12 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
         with open(filename, 'rb') as f:
             return pickle.load(f)
 
+    @classmethod
+    def get_sampler(cls, name):
+        try:
+            cls.registry[name.lower()]
+        except KeyError:
+            raise KeyError(f"Unknown sampler {name}")
 
 
     def resume(self):
@@ -196,7 +211,7 @@ class ParallelSampler(Sampler):
     parallel_output = True
     is_parallel_sampler = True
     supports_smp = True
-    def __init__(self, ini, pipeline, output, pool=None):
+    def __init__(self, ini, pipeline, output=None, pool=None):
         Sampler.__init__(self, ini, pipeline, output)
         self.pool = pool
 
