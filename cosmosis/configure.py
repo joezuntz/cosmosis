@@ -70,7 +70,14 @@ def generate_commands(cosmosis_src_dir, debug=False, omp=True, brew=False, brew_
 
         if brew_gcc:
             commands += homebrew_gcc_commands()
-
+        else:
+            commands += [
+                f"export CC=clang",
+                f"export CXX=clang++",
+                f"export FC=gfortran",
+                "export MPIFC=mpif90",
+                "export COSMOSIS_ALT_COMPILERS=1",
+            ]
 
     elif conda:
         commands += [
