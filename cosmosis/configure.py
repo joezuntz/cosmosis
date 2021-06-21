@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import subprocess
 
 parser = argparse.ArgumentParser(description="print commands that set up the cosmosis env")
 cosmosis_src_dir = os.path.split(__file__)[0]
@@ -10,9 +11,41 @@ parser.add_argument("--omp", action='store_true', dest='omp', help='Switch on Op
 parser.add_argument("--debug", action='store_true', dest='debug', help='Switch on debug mode')
 parser.add_argument("--no-debug", action='store_false', dest='debug', help='Switch on debug mode')
 parser.add_argument("--no-conda", action='store_false', dest='conda', help='Switch off conda flags, even if conda env is found')
+parser.add_argument("--brew", action='store_true', help='Print commands for homebrew with clang')
+parser.add_argument("--brew-gcc", action='store_true', help='Print commands for homebrew with gcc')
+
+def homebrew_gfortran_libs():
+    s = subprocess.run('gfortran -print-search-dirs', shell=True, capture_output=True)
+    if s.returncode:
+        return ""
+    s.stdout.decode().split("\n")
+
+    for line in lines:
+        if line.startswith("libraries:"):
+            break
+    else:
+        return ""
+    try:
+        libdir = line.split("=")[1].split(":")[-1]
+    except:
+        return ""
+
+    return f"-L {libdir}"
+
+def homebrew_gcc_commands():
+    s = subprocess.run('brew list --versions gcc', shell=True, capture_output=True)
+    version = s.stdout.decode().split()[1].split('.')[0]
+    return [
+        f"export CC=gcc-{version}",
+        f"export CXX=g++-{version}",
+        f"export FC=gfortran-{version}",
+        "export MPIFC=mpif90",
+        "export COSMOSIS_ALT_COMPILERS=1",
+    ]
 
 
-def generate_commands(cosmosis_src_dir, debug=False, omp=True, conda=True):
+
+def generate_commands(cosmosis_src_dir, debug=False, omp=True, brew=False, brew_gcc=False, conda=True):
     conda = conda and ("CONDA_PREFIX" in os.environ)
 
     commands = [
@@ -23,7 +56,23 @@ def generate_commands(cosmosis_src_dir, debug=False, omp=True, conda=True):
         "export COSMOSIS_ALT_COMPILERS=1",
     ]
 
-    if conda:
+    if brew:
+        commands += [
+            "export GSL_LIB=/usr/local/lib",
+            "export GSL_INC=/usr/local/include",
+            "export FFTW_LIBRARY=/usr/local/lib",
+            "export FFTW_INCLUDE_DIR=/usr/local/include",
+            "export LAPACK_LINK='-L /usr/local/opt/openblas/lib/ -l lapack'",
+            "export LAPACK_LIB=/usr/local/opt/openblas/lib/",
+            "export CFITSIO_LIB=/usr/local/lib",
+            "export CFITSIO_INC=/usr/local/include",
+        ]
+
+        if brew_gcc:
+            commands += homebrew_gcc_commands()
+
+
+    elif conda:
         commands += [
             'export GSL_LIB=$CONDA_PREFIX/lib',
             'export GSL_INC=$CONDA_PREFIX/include',
@@ -46,7 +95,7 @@ def generate_commands(cosmosis_src_dir, debug=False, omp=True, conda=True):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    cmds = generate_commands(args.source, debug=args.debug, omp=args.omp, conda=args.conda)
+    cmds = generate_commands(args.source, debug=args.debug, omp=args.omp, conda=args.conda, brew=args.brew or args.brew_gcc, brew_gcc=args.brew_gcc)
     for command in cmds:
         print(command)
 
