@@ -16,7 +16,16 @@ else
 RPATH=
 endif
 
+# Find the path to libgfortran
+GFORTRAN_LIB_PATH=$(shell ${FC} --print-file-name libgfortran.dylib)
+ifeq (${GFORTRAN_LIB_PATH},libgfortran.dylib)
+GFORTRAN_LIB_PATH=$(shell ${FC} --print-file-name libgfortran.so)
+endif
 
+ifneq ($(GFORTRAN_LIB_PATH),)
+LDFLAGS+=-L $(dir ${GFORTRAN_LIB_PATH})
+endif
+$(info ${LDFLAGS})
 all: libcosmosis.so
 
 clean:
