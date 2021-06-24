@@ -168,7 +168,7 @@ class DataBlock(object):
 	def get_int(self, section, name, default=None):
 		u"""Retrieve an integer value from the parameter set.
 
-		The `name`ʼd parameter in the given `section` will be interpreted
+		The `name` ʼd parameter in the given `section` will be interpreted
 		as an integer and returned to the caller.  If such parameter is
 		not found in the map, then the `default` will be returned if it
 		was given, or else a specialized :class:`BlockError` (see
@@ -188,7 +188,7 @@ class DataBlock(object):
 	def get_bool(self, section, name, default=None):
 		u"""Retrieve a boolean value from the parameter set.
 
-		The `name`ʼd parameter in the given `section` will be interpreted
+		The `name` parameter in the given `section` will be interpreted
 		as a boolean and returned to the caller.  If such parameter is not
 		found in the map, then the `default` will be returned if it was
 		given, or else a specialized :class:`BlockError` (see errors.py)
@@ -208,7 +208,7 @@ class DataBlock(object):
 	def get_double(self, section, name, default=None):
 		u"""Retrieve a floating-point value from the parameter set.
 
-		The `name`ʼd parameter in the given `section` will be interpreted
+		The `name` parameter in the given `section` will be interpreted
 		as a floating-point value and returned to the caller.  If such
 		parameter is not found in the map, then the `default` will be
 		returned if it was given, or else a specialized
@@ -229,7 +229,7 @@ class DataBlock(object):
 	def get_complex(self, section, name, default=None):
 		u"""Retrieve a complex value from the parameter set.
 
-		The `name`ʼd parameter in the given `section` will be interpreted
+		The `name` parameter in the given `section` will be interpreted
 		as a complex value and returned to the caller.  If such parameter
 		is not found in the map, then the `default` will be returned if it
 		was given, or else a specialized :class:`BlockError` (see
@@ -249,7 +249,7 @@ class DataBlock(object):
 	def get_string(self, section, name, default=None):
 		u"""Retrieve a string value from the parameter set.
 
-		The `name`ʼd parameter in the given `section` will be interpreted
+		The `name` parameter in the given `section` will be interpreted
 		as a string value and returned to the caller.  If such parameter
 		is not found in the map, then the `default` will be returned if it
 		was given, or else a specialized :class:`BlockError` (see
@@ -271,7 +271,7 @@ class DataBlock(object):
 	def get_int_array_1d(self, section, name):
 		u"""Retrieve an integer array from the parameter set.
 
-		The `name`ʼd parameter in the given `section` will be understood
+		The `name` parameter in the given `section` will be understood
 		as being of integer array type and returned to the caller as a
 		NumPy array.  If such a parameter is not found in the map, then a
 		specialized :class:`BlockError` (see errors.py) will be thrown.
@@ -289,7 +289,7 @@ class DataBlock(object):
 	def get_double_array_1d(self, section, name):
 		u"""Retrieve a floating-point array from the parameter set.
 
-		The `name`ʼd parameter in the given `section` will be understood
+		The `name` parameter in the given `section` will be understood
 		as being of floating-point array type and returned to the caller
 		as a *NumPy* array.  If such a parameter is not found in the map,
 		then a specialized :class:`BlockError` (see errors.py) will be
@@ -308,7 +308,7 @@ class DataBlock(object):
 	def get_string_array_1d(self, section, name):
 		u"""Retrieve an array of strings from the datablock.
 
-		The `name`ʼd parameter in the given `section` will be understood
+		The `name` parameter in the given `section` will be understood
 		as being of 1D string array type and returned to the caller
 		as a numpy array.  If such a parameter is not found in the map,
 		then a specialized :class:`BlockError` (see errors.py) will be
@@ -1113,7 +1113,7 @@ class DataBlock(object):
 		return lib.c_datablock_get_log_count(self._ptr)
 
 	def get_log_entry(self, i):
-		u"""Get the `i`ʼth log entry.
+		u"""Get the iʼth log entry.
 
 		The return is a tuple of four strings indicating the verb (i.e.,
 		logged action), section and name of the parameter, and the data
@@ -1131,7 +1131,7 @@ class DataBlock(object):
 		return ptype.value.decode('utf-8'), section.value.decode('utf-8'), name.value.decode('utf-8'), dtype.value.decode('utf-8')
 
 	def log_access(self, log_type, section, name):
-		u"""Add an entry to the end of this :class:`DataBlock`ʼs access log.
+		u"""Add an entry to the end of this :class:`DataBlock` access log.
 
 		The `log_type` describes the action performed on the parameter at
 		(`section`, `name`).  It should be one of the strings displayed in
