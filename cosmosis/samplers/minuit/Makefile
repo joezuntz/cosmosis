@@ -27,4 +27,4 @@ minuit_wrapper.so: minuit_wrapper.cpp
 	test -f $(CURDIR)/minuit_wrapper.so || echo "\n\nMINUIT sampler did not compile and will not be available\n\n"
 
 clean:
-	rm -rf minuit_wrapper.so minuit_wrapper.so.dSYM
+	rm -rf minuit_wrapper.so minuit_wrapper.so.dSYM minuit_wrapper.o

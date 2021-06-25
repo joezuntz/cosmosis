@@ -49,11 +49,11 @@ test:
 
 libnest3_mpi.so: $(NSOBJECTS_MPI)
 	echo LAPACKLIB is $(LAPACKLIB)
-	$(MPIFC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LAPACKLIB) $(LDFLAGS)
+	$(MPIFC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LAPACKLIB) $(FFLAGS) $(LDFLAGS)
 	
 libnest3.so: $(NSOBJECTS) 
 	echo LAPACKLIB is $(LAPACKLIB)
-	$(FC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LAPACKLIB)  $(LDFLAGS)
+	$(FC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LAPACKLIB) $(FFLAGS)  $(LDFLAGS)
 
 obj_detect:
 	make -C example_obj_detect

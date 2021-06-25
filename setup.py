@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 from distutils.command.build import build
 from distutils.command.clean import clean
+from distutils.command.sdist import sdist
 import pkg_resources
 import subprocess
 
@@ -74,7 +75,6 @@ testing_files = [
     "test/libtest/Makefile",
 ]
 
-runtime_libs = ["runtime/experimental_fault_handler.so"]
 
 compilers_config = ["config/compilers.mk", "config/subdirs.mk"]
 
@@ -97,8 +97,10 @@ def compile_library():
     # a user's build env then it is called CONDA_PREFIX
     if os.environ.get("CONDA_BUILD", "0") == "1":
         prefix_name = "PREFIX"
+        conda_build = True
     else:
         prefix_name = "CONDA_PREFIX"
+        conda_build = False
 
     conda = env.get(prefix_name)
     if conda:
@@ -111,6 +113,12 @@ def compile_library():
         # and minuit for that sampler
         env['MINUIT2_LIB'] = f"{conda}/lib"
         env['MINUIT2_INC'] = f"{conda}/include/Minuit2"
+
+        if conda_build:
+            env["COSMOSIS_ALT_COMPILERS"] = "1"
+            env['USER_FFLAGS'] = env['FFLAGS']
+            env['USER_CFLAGS'] = env['CFLAGS']
+            env['USER_CXXFLAGS'] = env['CXXFLAGS']
 
         # and the MPI compiler
         env["MPIFC"] = "mpif90"
@@ -131,6 +139,12 @@ class my_build(build):
         compile_library()
         super().run()
 
+class my_sdist(sdist):
+    def run(self):
+        self.distribution.package_data['cosmosis'] = [
+            d for d in self.distribution.package_data['cosmosis']
+            if d not in sampler_libs + datablock_libs + f90_mods]
+        super().run()
 
 class my_install(install):
     def __init__(self, dist):
@@ -163,7 +177,7 @@ requirements = [
     "zeus-mcmc",
 ]
 
-all_package_files = (datablock_libs + sampler_libs + runtime_libs 
+all_package_files = (datablock_libs + sampler_libs
                             + c_headers + cc_headers + f90_mods 
                             + compilers_config + testing_files)
 
@@ -180,7 +194,10 @@ setup(name = 'cosmosis',
         cmdclass={"install"   : my_install,
                 "build"     : my_build,
                 "build_ext" : my_build,
-                "clean"     : my_clean},
+                "clean"     : my_clean,
+                "sdist"     : my_sdist
+
+                },
         version=version,
         )
 

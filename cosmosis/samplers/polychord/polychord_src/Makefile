@@ -45,15 +45,13 @@ test:
 	@echo "Alas, PolyChord has no tests"
 
 libchord_mpi.so: $(PCOBJECTS_MPI)
-	$(MPIFC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LDFLAGS)
+	$(MPIFC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(FFLAGS) $(LDFLAGS)
 	
 libchord.so: $(PCOBJECTS) 
-	$(FC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(LDFLAGS)
+	$(FC) -shared -o  $(CURDIR)/$@ $^ $(LIBS) $(FFLAGS) $(LDFLAGS)
 
 clean: 
-ifneq ($(MPI),)
 	-rm -f $(CHORDLIBDIR)/libchord_mpi.*
 	-rm -rf mpi
-endif
 	-rm -f $(CHORDLIBDIR)/libchord.* *.o *.mod
 
