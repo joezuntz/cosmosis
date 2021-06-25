@@ -1,4 +1,4 @@
-ifneq (clean,$(filter clean,$(MAKECMDGOALS)))
+ifneq (clean,$(MAKECMDGOALS))
 include ${COSMOSIS_SRC_DIR}/config/compilers.mk
 endif
 
@@ -16,10 +16,12 @@ else
 RPATH=
 endif
 
-# Find the path to libgfortran
+# Find the path to libgfortran, but only if not doing make clean
+ifneq (clean,$(filter clean,$(MAKECMDGOALS)))
 GFORTRAN_LIB_PATH=$(shell ${FC} --print-file-name libgfortran.dylib)
 ifeq (${GFORTRAN_LIB_PATH},libgfortran.dylib)
 GFORTRAN_LIB_PATH=$(shell ${FC} --print-file-name libgfortran.so)
+endif
 endif
 
 ifneq ($(GFORTRAN_LIB_PATH),)

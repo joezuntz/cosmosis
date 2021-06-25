@@ -22,7 +22,8 @@ endif
 all: $(ALL)
 
 minuit_wrapper.so: minuit_wrapper.cpp
-	-${CXX} ${CXXFLAGS} -I${MINUIT2_INC} -L${MINUIT2_LIB} -shared -o $(CURDIR)/minuit_wrapper.so minuit_wrapper.cpp -lMinuit2
+	-${CXX} ${CXXFLAGS} -I${MINUIT2_INC} -c  minuit_wrapper.cpp
+	-${CXX} ${CXXFLAGS} -L${MINUIT2_LIB} -shared -o $(CURDIR)/minuit_wrapper.so minuit_wrapper.o -lMinuit2
 	test -f $(CURDIR)/minuit_wrapper.so || echo "\n\nMINUIT sampler did not compile and will not be available\n\n"
 
 clean:
