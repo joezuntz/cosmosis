@@ -45,6 +45,7 @@ include cosmosis/samplers/multinest/multinest_src/xmeans_clstr.f90
 include cosmosis/samplers/polychord/Makefile
 include cosmosis/samplers/polychord/polychord_src/Makefile
 include cosmosis/samplers/polychord/polychord_src/README
+include cosmosis/samplers/polychord/polychord_src/LICENCE
 include cosmosis/samplers/polychord/polychord_src/abort.F90
 include cosmosis/samplers/polychord/polychord_src/array_utils.f90
 include cosmosis/samplers/polychord/polychord_src/c_interface.cpp
