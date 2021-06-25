@@ -10,8 +10,6 @@ import sys
 
 version = open('cosmosis/version.py').read().split('=')[1].strip().strip("'")
 
-minimum_cc_version = pkg_resources.parse_version("5.0.0")
-minimum_cxx_version = pkg_resources.parse_version("5.0.0")
 
 f90_mods = [
     "datablock/cosmosis_section_names.mod",
@@ -93,14 +91,27 @@ def compile_library():
     cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
     env = os.environ.copy()
     env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
-    # User can switch on COSMOSIS_OMP manually, but it should
-    # always be on for conda.
-    conda = env.get('CONDA_PREFIX')
+
+    # If we are in a conda build env then the appropriate
+    # variable is called PREFIX. Otherwise if we are on
+    # a user's build env then it is called CONDA_PREFIX
+    if os.environ.get("CONDA_BUILD", "0") == "1":
+        prefix_name = "PREFIX"
+    else:
+        prefix_name = "CONDA_PREFIX"
+
+    conda = env.get(prefix_name)
     if conda:
+        # User can switch on COSMOSIS_OMP manually, but it should
+        # always be on for conda.
         env["COSMOSIS_OMP"] = "1"
 
         # We also need Lapack to build some of the samplers
         env["LAPACK_LINK"] = f"-L{conda}/lib -llapack"
+        # and minuit for that sampler
+        env['MINUIT2_LIB'] = f"{conda}/lib"
+        env['MINUIT2_INC'] = f"{conda}/include/Minuit2"
+
         # and the MPI compiler
         env["MPIFC"] = "mpif90"
 
