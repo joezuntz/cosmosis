@@ -4,17 +4,17 @@ Please use the bitbucket version for now:
 https://bitbucket.org/joezuntz/cosmosis
 
 Documentation
--------------
+=============
+
 
 You can find full documentation at https://cosmosis.readthedocs.io
 
 
 Installation
-------------
+=============
 
 Full CosmoSIS + Standard Library
-================================
-
+--------------------------------
 
 ```
 conda create -p ./conda-env -c conda-forge cosmosis cosmosis-build-standard-library
@@ -29,7 +29,7 @@ make
 
 
 Sampling tools only
-===================
+-------------------
 
 Most cosmology users will want the full CosmoSIS + Standard Library package.  See the previous section.
 
