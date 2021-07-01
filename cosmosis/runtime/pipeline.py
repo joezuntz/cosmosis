@@ -552,8 +552,8 @@ class Pipeline(object):
                 section = entry[1]
                 if section not in known_sections:
                     if section=="Results":
-                        P.add_node(norm_name(section), color='Pink', style='filled', shape='octagon', fontname='Courier')
-                    else:                        
+                        pass
+                    else:
                         P.add_node(norm_name(section), color='yellow', style='filled', fontname='Courier', shape='box')
                     known_sections.add(section)
         module="Sampler"
