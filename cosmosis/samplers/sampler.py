@@ -13,6 +13,8 @@ from .hints import Hints
 import numpy as np
 import shutil
 import numpy as np
+import configparser
+
 # Sampler metaclass that registers each of its subclasses
 
 class RegisteredSampler(type):
@@ -88,11 +90,13 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
 
         return info
 
-    def read_ini(self, option, option_type, default=None):
+    def read_ini(self, option, option_type, default=configparser._UNSET):
         """
         Read option from the ini file for this sampler
         and also save to the output file if it exists
         """
+        if default is None:
+            default = configparser._UNSET
         if option_type is float:
             val = self.ini.getfloat(self.name, option, fallback=default)
         elif option_type is int:
