@@ -75,6 +75,7 @@ testing_files = [
     "test/libtest/Makefile",
 ]
 
+other_files = ["postprocessing/latex.ini"]
 
 compilers_config = ["config/compilers.mk", "config/subdirs.mk"]
 
@@ -179,7 +180,7 @@ requirements = [
 
 all_package_files = (datablock_libs + sampler_libs
                             + c_headers + cc_headers + f90_mods 
-                            + compilers_config + testing_files)
+                            + compilers_config + testing_files + other_files)
 
 
 setup(name = 'cosmosis',
