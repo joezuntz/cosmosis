@@ -47,7 +47,10 @@ class MCMC(object):
             # Initial proposer, without block - replace below
             self.proposal = cobaya_proposal.CobayaProposalWrapper(
                 parameter_blocks=[np.arange(self.ndim)],
-                proposal_scale=self.scaling)
+                oversampling_factors=[1],
+                proposal_scale=self.scaling,
+                random_state=np.random.default_rng(),
+                )
             self.proposal.set_covariance(covariance)
         else:
             self.proposal = Proposal(cholesky, scaling=scaling, exponential_probability=exponential_probability)

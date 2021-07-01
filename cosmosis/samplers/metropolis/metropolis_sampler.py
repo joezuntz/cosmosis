@@ -74,6 +74,8 @@ class MetropolisSampler(ParallelSampler):
         if use_cobaya:
             print("Using the Cobaya proposal")
 
+        print(f"Will tune every {tuning_frequency} samples, from samples "
+              f"{tuning_grace} to {self.tuning_end}.")
 
         self.sampler = metropolis.MCMC(start, posterior, covmat,
             quiet=quiet, 
