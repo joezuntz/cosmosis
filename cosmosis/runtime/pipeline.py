@@ -535,10 +535,12 @@ class Pipeline(object):
         # G.add_subgraph(P)
         def norm_name(name):
             return name #.replace("_", " ").title()
+        known_sections = set()
         P.add_node("Sampler", color='Pink', style='filled', group='pipeline',shape='octagon', fontname='Courier')
         for module in self.modules:
             # module_node = pydot.Node(module.name, color='Yellow', style='filled')
             P.add_node(norm_name(module.name), color='lightskyblue', style='filled', group='pipeline', shape='box')
+            known_sections.add(norm_name(module.name))
         P.add_edge("Sampler", norm_name(self.modules[0].name), color='lightskyblue', style='bold', arrowhead='none')
         for i in range(len(self.modules)-1):
             P.add_edge(norm_name(self.modules[i].name),norm_name(self.modules[i+1].name), color='lightskyblue', style='bold', arrowhead='none')
@@ -546,7 +548,6 @@ class Pipeline(object):
         # G.add_subgraph(D)
         # #find
         log = [data.get_log_entry(i) for i in range(data.get_log_count())]
-        known_sections = set()
         for entry in log:
             if entry!="MODULE-START":
                 section = entry[1]

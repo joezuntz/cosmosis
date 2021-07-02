@@ -333,6 +333,33 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
     return 0
 
 
+def make_graph(inifile, dotfile, params=None, variables=None):
+    """
+    Make a graphviz "dot" format file, describing the pipeline
+    and how data is passed from section to section.
+
+    Requires pygraphviz.
+
+    Parameters
+    ----------
+
+    inifile: str
+        A path to a pipeline file or an Inifile object
+
+    dotfile: str
+        Path to the new graph output file
+
+    params: dict or None
+        Dictionary of parameter overrides
+
+    variables: dict or None
+        Dictionary of value overrides
+    """
+    ini = Inifile(inifile, override=params)
+    pipeline = LikelihoodPipeline(ini, override=variables)
+    data = pipeline.run_parameters(pipeline.start_vector())
+    pipeline.make_graph(data, dotfile)
+
 def main():
     try:
         parser = argparse.ArgumentParser(description="Run a pipeline with a single set of parameters", add_help=True)
@@ -345,8 +372,12 @@ def main():
         parser.add_argument("-p", "--params", nargs="*", action=ParseExtraParameters, help="Override parameters in inifile, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("--only", nargs="*", help="Fix all parameters except the ones listed")
+        parser.add_argument("--graph", type=str, default='', help="Do not run a sampler; instead make a graphviz dot file of the pipeline")
         args = parser.parse_args(sys.argv[1:])
 
+        if args.graph:
+            make_graph(args.inifile, args.graph, args.params, args.variables)
+            return
 
         demo_10_special (args)
         demo_20b_special (args)
