@@ -9,8 +9,8 @@ PARAM_NAME = '.paramnames'
 
 
 class CosmoMCOutput(TextColumnOutput):
-    def __init__(self, filename, rank=0, nchain=1, delimiter='    '):
-        super(CosmoMCOutput, self).__init__(filename, rank, nchain, '')
+    def __init__(self, filename, rank=0, nchain=1, delimiter='    ', lock=True, resume=False):
+        super(CosmoMCOutput, self).__init__(filename, rank, nchain, '', lock=lock, resume=resume)
         if filename.endswith(self.FILE_EXTENSION):
             filename = filename[:-len(self.FILE_EXTENSION)]
         if rank == 0: 
@@ -28,8 +28,9 @@ class CosmoMCOutput(TextColumnOutput):
 
     def _begun_sampling(self, params):
         if self._paramfile:
-            if self.columns[-1][0] != "LIKE":
-                raise RuntimeException("CosmoMC output format assumes "
+            print(self.columns)
+            if self.columns[-1][0].upper() != "POST":
+                raise RuntimeError("CosmoMC output format assumes "
                                        "likelihood is last column.")
             for c in self.columns[:-1]:
                 self._paramfile.write(c[0]+'\n')
@@ -41,7 +42,7 @@ class CosmoMCOutput(TextColumnOutput):
         pass
 
     def _write_parameters(self, params):
-        if all([p==q for (p,q) in zip(self._last_params,params)]):
+        if (self._last_params is not None) and all([p==q for (p,q) in zip(self._last_params,params)]):
             self._multiplicity += 1
         else:
             self._write_parameters_multiplicity()
