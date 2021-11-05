@@ -38,6 +38,8 @@ class MCMC(object):
         self.slow_indices = None
         self.oversampling = None
         self.fast_slow_is_ready = False
+        self.rng = np.random.default_rng()
+
 
         if self.n_drag > 0 and not self.use_cobaya:
             raise ValueError('You must set use_cobaya=T to have n_drag>0')
@@ -49,7 +51,7 @@ class MCMC(object):
                 parameter_blocks=[np.arange(self.ndim)],
                 oversampling_factors=[1],
                 proposal_scale=self.scaling,
-                random_state=np.random.default_rng(),
+                random_state=self.rng,
                 )
             self.proposal.set_covariance(covariance)
         else:
@@ -260,7 +262,9 @@ class MCMC(object):
                 parameter_blocks=[self.slow_indices, self.fast_indices], 
                 oversampling_factors=[1, oversampling],
                 i_last_slow_block=0,
-                proposal_scale=self.scaling)
+                proposal_scale=self.scaling,
+                random_state=self.rng,
+                )
             self.proposal.set_covariance(self.covariance)
         else:
             self.proposal = FastSlowProposal(self.covariance, fast_indices, slow_indices, oversampling, scaling=self.scaling, exponential_probability=self.exponential_probability)
