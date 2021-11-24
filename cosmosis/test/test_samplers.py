@@ -109,13 +109,13 @@ def test_pmc():
     np.seterr(**old_settings)  
 
 def test_zeus():
-    run('zeus', True, walkers=10, samples=100, nsteps=50)
-    run('zeus', True, walkers=10, samples=100, nsteps=50, verbose=True)
-    run('zeus', True, walkers=10, samples=100, nsteps=50, tune=False)
-    run('zeus', True, walkers=10, samples=100, nsteps=50, tolerance=0.1)
-    run('zeus', True, walkers=10, samples=100, nsteps=50, patience=5000)
-    run('zeus', True, walkers=10, samples=100, nsteps=50, maxiter=5000)
-    run('zeus', True, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global")
+    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50)
+    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, verbose=True)
+    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, tune=False)
+    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, tolerance=0.1)
+    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, patience=5000)
+    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global")
+    run('zeus', True, maxiter=50_000, walkers=10, samples=100, nsteps=50)
 
 def test_polychord():
     with tempfile.TemporaryDirectory() as base_dir:

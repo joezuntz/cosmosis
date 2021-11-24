@@ -185,6 +185,7 @@ class GaussianLikelihood:
         #It can be useful to save the chi^2 as well as the likelihood,
         #especially when the covariance is non-constant.
         block[names.data_vector, self.like_name+"_CHI2"] = chi2
+        block[names.data_vector, self.like_name+"_N"] = mu.size
 
         #if the covariance is a function of parameters then we must 
         #account for this in the likelihood.
