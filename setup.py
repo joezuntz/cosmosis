@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install
-from distutils.command.build import build
-from distutils.command.clean import clean
-from distutils.command.sdist import sdist
+from setuptools._distutils.command.build import build
+from setuptools._distutils.command.clean import clean
+from setuptools.command.sdist import sdist
 import pkg_resources
 import subprocess
 
