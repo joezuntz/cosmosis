@@ -3,7 +3,7 @@ from setuptools.command.install import install
 try:
     from setuptools._distutils.command.build import build
     from setuptools._distutils.command.clean import clean
-    from setuptools.command.sdist import sdist
+    from setuptools._distutils.command.sdist import sdist
 except:
     # remove this once newer versions of setuptools are used
     # everywhere
