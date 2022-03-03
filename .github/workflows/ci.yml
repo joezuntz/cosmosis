@@ -45,7 +45,7 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip setuptools
         python -c "import setuptools;print('Setuptools version = ', setuptools.__version__)"
         pip install -v .
         pip install --no-binary=mpi4py mpi4py
