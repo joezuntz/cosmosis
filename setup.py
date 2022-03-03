@@ -1,6 +1,7 @@
 import setuptools
 import distutils.command.build
 import distutils.command.clean
+import distutils.command.install
 import subprocess
 import os
 
@@ -149,8 +150,21 @@ class clean_cosmosis(setuptools.Command):
         # Run the original clean command
         self.run_command("clean_original")
 
+class install_cosmosis(distutils.command.install.install):
+    description = "Run the CosmoSIS install process"
+
+    def run(self):
+        print("Running CosmoSIS main library clean command")
+        cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
+        env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir,}
+        subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
+
+        # Run the original clean command
+        super().run()
+
 
 distutils.command.build.build.sub_commands.append(("build_cosmosis", None))
+# distutils.command.install.install.sub_commands.append(("install_cosmosis", None))
 #distutils.command.clean.clean.sub_commands.append(("clean_cosmosis", None))
 
 requirements = [
@@ -185,6 +199,7 @@ setuptools.setup(name = 'cosmosis',
     install_requires = requirements,
     cmdclass={
         "build_cosmosis": build_cosmosis,
+        "install": install_cosmosis,
         "clean": clean_cosmosis,
         "clean_original": distutils.command.clean.clean,
     },
