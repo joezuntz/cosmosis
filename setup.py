@@ -80,6 +80,48 @@ def get_COSMOSIS_SRC_DIR():
     cosmosis_src_dir = os.path.join(os.getcwd(), "cosmosis")
     return cosmosis_src_dir
 
+def make_cosmosis():
+    print("Running CosmoSIS main library compile command")
+    cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
+    env = os.environ.copy()
+    env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
+
+    # If we are in a conda build env then the appropriate
+    # variable is called PREFIX. Otherwise if we are on
+    # a user's build env then it is called CONDA_PREFIX
+    if os.environ.get("CONDA_BUILD", "0") == "1":
+        prefix_name = "PREFIX"
+        conda_build = True
+    else:
+        prefix_name = "CONDA_PREFIX"
+        conda_build = False
+
+    conda = env.get(prefix_name)
+    if conda:
+        # User can switch on COSMOSIS_OMP manually, but it should
+        # always be on for conda.
+        env["COSMOSIS_OMP"] = "1"
+
+        # We also need Lapack to build some of the samplers
+        env["LAPACK_LINK"] = f"-L{conda}/lib -llapack"
+        # and minuit for that sampler
+        env['MINUIT2_LIB'] = f"{conda}/lib"
+        env['MINUIT2_INC'] = f"{conda}/include/Minuit2"
+
+        if conda_build:
+            env["COSMOSIS_ALT_COMPILERS"] = "1"
+            env['USER_FFLAGS'] = env['FFLAGS']
+            env['USER_CFLAGS'] = env['CFLAGS']
+            env['USER_CXXFLAGS'] = env['CXXFLAGS']
+
+        # and the MPI compiler
+        env["MPIFC"] = "mpif90"
+
+    env['FC'] = env.get('FC', 'gfortran')
+
+    subprocess.check_call(["make"], env=env, cwd="cosmosis")
+
+
 
 class build_cosmosis(setuptools.Command):
     description = "Run the CosmoSIS build process"
@@ -91,45 +133,7 @@ class build_cosmosis(setuptools.Command):
         pass
 
     def run(self):
-        print("Running CosmoSIS main library compile command")
-        cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
-        env = os.environ.copy()
-        env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
-
-        # If we are in a conda build env then the appropriate
-        # variable is called PREFIX. Otherwise if we are on
-        # a user's build env then it is called CONDA_PREFIX
-        if os.environ.get("CONDA_BUILD", "0") == "1":
-            prefix_name = "PREFIX"
-            conda_build = True
-        else:
-            prefix_name = "CONDA_PREFIX"
-            conda_build = False
-
-        conda = env.get(prefix_name)
-        if conda:
-            # User can switch on COSMOSIS_OMP manually, but it should
-            # always be on for conda.
-            env["COSMOSIS_OMP"] = "1"
-
-            # We also need Lapack to build some of the samplers
-            env["LAPACK_LINK"] = f"-L{conda}/lib -llapack"
-            # and minuit for that sampler
-            env['MINUIT2_LIB'] = f"{conda}/lib"
-            env['MINUIT2_INC'] = f"{conda}/include/Minuit2"
-
-            if conda_build:
-                env["COSMOSIS_ALT_COMPILERS"] = "1"
-                env['USER_FFLAGS'] = env['FFLAGS']
-                env['USER_CFLAGS'] = env['CFLAGS']
-                env['USER_CXXFLAGS'] = env['CXXFLAGS']
-
-            # and the MPI compiler
-            env["MPIFC"] = "mpif90"
-
-        env['FC'] = env.get('FC', 'gfortran')
-
-        subprocess.check_call(["make"], env=env, cwd="cosmosis")
+        make_cosmosis()
 
 class clean_cosmosis(setuptools.Command):
     description = "Run the CosmoSIS clean process"
@@ -154,18 +158,11 @@ class install_cosmosis(distutils.command.install.install):
     description = "Run the CosmoSIS install process"
 
     def run(self):
-        print("Running CosmoSIS main library clean command")
-        cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
-        env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir,}
-        subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
-
-        # Run the original clean command
+        make_cosmosis()
         super().run()
 
 
 distutils.command.build.build.sub_commands.append(("build_cosmosis", None))
-# distutils.command.install.install.sub_commands.append(("install_cosmosis", None))
-#distutils.command.clean.clean.sub_commands.append(("clean_cosmosis", None))
 
 requirements = [
     "pyyaml",
