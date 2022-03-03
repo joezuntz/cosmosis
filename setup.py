@@ -162,7 +162,7 @@ class install_cosmosis(distutils.command.install.install):
         super().run()
 
 
-distutils.command.build.build.sub_commands.append(("build_cosmosis", None))
+distutils.command.build.build.sub_commands.insert(0, ("build_cosmosis", None))
 
 requirements = [
     "pyyaml",
