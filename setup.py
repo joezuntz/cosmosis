@@ -1,21 +1,8 @@
-from setuptools import setup, find_packages
-from setuptools.command.install import install
-try:
-    from setuptools._distutils.command.build import build
-    from setuptools._distutils.command.clean import clean
-    from setuptools._distutils.command.sdist import sdist
-except:
-    # remove this once newer versions of setuptools are used
-    # everywhere
-    from distutils.command.build import build
-    from distutils.command.clean import clean
-    from distutils.command.sdist import sdist
-
-import pkg_resources
+import setuptools
+import distutils.command.build
+import distutils.command.clean
 import subprocess
-
 import os
-import sys
 
 version = open('cosmosis/version.py').read().split('=')[1].strip().strip("'")
 
@@ -87,88 +74,84 @@ other_files = ["postprocessing/latex.ini"]
 
 compilers_config = ["config/compilers.mk", "config/subdirs.mk"]
 
-# if sys.platform == 'darwin':
-#     from distutils import sysconfig
-#     vars = sysconfig.get_config_vars()
-#     vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-dynamiclib')
 
 def get_COSMOSIS_SRC_DIR():
     cosmosis_src_dir = os.path.join(os.getcwd(), "cosmosis")
     return cosmosis_src_dir
 
-def compile_library():
-    cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
-    env = os.environ.copy()
-    env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
 
-    # If we are in a conda build env then the appropriate
-    # variable is called PREFIX. Otherwise if we are on
-    # a user's build env then it is called CONDA_PREFIX
-    if os.environ.get("CONDA_BUILD", "0") == "1":
-        prefix_name = "PREFIX"
-        conda_build = True
-    else:
-        prefix_name = "CONDA_PREFIX"
-        conda_build = False
+class build_cosmosis(setuptools.Command):
+    description = "Run the CosmoSIS build process"
+    user_options = []
+    def initialize_options(self):
+        pass
 
-    conda = env.get(prefix_name)
-    if conda:
-        # User can switch on COSMOSIS_OMP manually, but it should
-        # always be on for conda.
-        env["COSMOSIS_OMP"] = "1"
-
-        # We also need Lapack to build some of the samplers
-        env["LAPACK_LINK"] = f"-L{conda}/lib -llapack"
-        # and minuit for that sampler
-        env['MINUIT2_LIB'] = f"{conda}/lib"
-        env['MINUIT2_INC'] = f"{conda}/include/Minuit2"
-
-        if conda_build:
-            env["COSMOSIS_ALT_COMPILERS"] = "1"
-            env['USER_FFLAGS'] = env['FFLAGS']
-            env['USER_CFLAGS'] = env['CFLAGS']
-            env['USER_CXXFLAGS'] = env['CXXFLAGS']
-
-        # and the MPI compiler
-        env["MPIFC"] = "mpif90"
-
-    env['FC'] = env.get('FC', 'gfortran')
-
-    subprocess.check_call(["make"], env=env, cwd="cosmosis")
-    
-
-def clean_library():
-    cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
-    env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir,}
-    subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
-
-
-class my_build(build):
-    def run(self):
-        compile_library()
-        super().run()
-
-class my_sdist(sdist):
-    def run(self):
-        self.distribution.package_data['cosmosis'] = [
-            d for d in self.distribution.package_data['cosmosis']
-            if d not in sampler_libs + datablock_libs + f90_mods]
-        super().run()
-
-class my_install(install):
-    def __init__(self, dist):
-        install.__init__(self, dist)
-        self.build_args = {}
-        if self.record is None:
-            self.record = "install-record.txt"
+    def finalize_options(self):
+        pass
 
     def run(self):
-        super().run()
+        print("Running CosmoSIS main library compile command")
+        cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
+        env = os.environ.copy()
+        env["COSMOSIS_SRC_DIR"] = cosmosis_src_dir
 
-class my_clean(clean):
+        # If we are in a conda build env then the appropriate
+        # variable is called PREFIX. Otherwise if we are on
+        # a user's build env then it is called CONDA_PREFIX
+        if os.environ.get("CONDA_BUILD", "0") == "1":
+            prefix_name = "PREFIX"
+            conda_build = True
+        else:
+            prefix_name = "CONDA_PREFIX"
+            conda_build = False
+
+        conda = env.get(prefix_name)
+        if conda:
+            # User can switch on COSMOSIS_OMP manually, but it should
+            # always be on for conda.
+            env["COSMOSIS_OMP"] = "1"
+
+            # We also need Lapack to build some of the samplers
+            env["LAPACK_LINK"] = f"-L{conda}/lib -llapack"
+            # and minuit for that sampler
+            env['MINUIT2_LIB'] = f"{conda}/lib"
+            env['MINUIT2_INC'] = f"{conda}/include/Minuit2"
+
+            if conda_build:
+                env["COSMOSIS_ALT_COMPILERS"] = "1"
+                env['USER_FFLAGS'] = env['FFLAGS']
+                env['USER_CFLAGS'] = env['CFLAGS']
+                env['USER_CXXFLAGS'] = env['CXXFLAGS']
+
+            # and the MPI compiler
+            env["MPIFC"] = "mpif90"
+
+        env['FC'] = env.get('FC', 'gfortran')
+
+        subprocess.check_call(["make"], env=env, cwd="cosmosis")
+
+class clean_cosmosis(setuptools.Command):
+    description = "Run the CosmoSIS clean process"
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
     def run(self):
-        clean_library()
-        super().run()
+        print("Running CosmoSIS main library clean command")
+        cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
+        env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir,}
+        subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
+
+        # Run the original clean command
+        self.run_command("clean_original")
+
+
+distutils.command.build.build.sub_commands.append(("build_cosmosis", None))
+#distutils.command.clean.clean.sub_commands.append(("clean_cosmosis", None))
 
 requirements = [
     "pyyaml",
@@ -191,22 +174,20 @@ all_package_files = (datablock_libs + sampler_libs
                             + compilers_config + testing_files + other_files)
 
 
-setup(name = 'cosmosis',
-        description       = "A testbed stand-alone installation of the CosmoSIS project. Not ready for primetime!",
-        author            = "Joe Zuntz",
-        author_email      = "joezuntz@googlemail.com",
-        url               = "https://bitbucket.org/joezuntz/cosmosis",  
-        packages = find_packages(),
-        package_data = {"cosmosis" : all_package_files},
-        scripts = scripts,
-        install_requires = requirements,
-        cmdclass={"install"   : my_install,
-                "build"     : my_build,
-                "build_ext" : my_build,
-                "clean"     : my_clean,
-                "sdist"     : my_sdist
-
-                },
-        version=version,
-        )
+setuptools.setup(name = 'cosmosis',
+    description       = "The CosmoSIS parameter estimation library.",
+    author            = "Joe Zuntz",
+    author_email      = "joezuntz@googlemail.com",
+    url               = "https://github.com/joezuntz/cosmosis",
+    packages = setuptools.find_packages(),
+    package_data = {"cosmosis" : all_package_files},
+    scripts = scripts,
+    install_requires = requirements,
+    cmdclass={
+        "build_cosmosis": build_cosmosis,
+        "clean": clean_cosmosis,
+        "clean_original": distutils.command.clean.clean,
+    },
+    version=version,
+)
 
