@@ -22,28 +22,16 @@ RUNTIME_INI_SECTION = "runtime"
 
 def demo_1_special (args):
     if "demo1.ini" in args.inifile:
-        print()
-        print("Congratulations: you have just run cosmosis demo one!")
-        if os.path.exists("./conda"):
-            print() 
-            print("You can make plots of the outputs of this using this command:")
-            print("  postprocess demos/demo1.ini -o plots -p demo1")
-            print()
-            print("If you get a message about 'Abort Trap 6' then see the FAQ:")
-            print("https://bitbucket.org/joezuntz/cosmosis/wiki/FAQ")
-            print()
-            print("Then you can try out the other demos...")
-            print("... and read the information about plotting their output and what they are doing online.")
-            print("Please get in touch with any problems, ideally by filing an Issue. Thanks!")
-        else:
-            print("You can make plots of the outputs of this using the command:")
-            print()
-            print("postprocess demos/demo1.ini -o plots -p demo1")
-            print()
-            print("Then you can try out the other demos...")
-            print("... and read the information about plotting their output and what they are doing online.")
-            print("Please get in touch with any problems, ideally by filing an Issue. Thanks!")
-            print()
+        print("""
+Congratulations: you have just run cosmosis demo one!
+
+You can make plots of the outputs of this using this command:
+    cosmosis-postprocess demos/demo1.ini -o outputs/demo1
+
+Then you can try out the other demos...
+... and read the information about plotting their output and what they are doing online.
+Please get in touch with any problems, ideally by filing an Issue. Thanks!
+""")
 
 
 def demo_10_special (args):
