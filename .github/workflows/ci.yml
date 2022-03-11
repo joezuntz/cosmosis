@@ -52,5 +52,6 @@ jobs:
 
     - name: Test with pytest
       run: |
+        cosmosis --version
         mkdir tmp && cd tmp && pytest --pyargs cosmosis
 
