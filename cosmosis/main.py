@@ -15,6 +15,7 @@ from .runtime.utils import ParseExtraParameters, stdout_redirected, import_by_pa
 from .samplers.sampler import Sampler, ParallelSampler, Hints
 from . import output as output_module
 from .runtime.handler import activate_segfault_handling
+from .version import __version__
 
 
 RUNTIME_INI_SECTION = "runtime"
@@ -361,11 +362,12 @@ def main():
         parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters, help="Override variables in values file, with format section.name1=value1 section.name2=value2...")
         parser.add_argument("--only", nargs="*", help="Fix all parameters except the ones listed")
         parser.add_argument("--graph", type=str, default='', help="Do not run a sampler; instead make a graphviz dot file of the pipeline")
+        parser.add_argument('--version', action='version', version=__version__, help="Print out a version number")
         args = parser.parse_args(sys.argv[1:])
 
         if args.graph:
             make_graph(args.inifile, args.graph, args.params, args.variables)
-            return
+            return 0
 
         demo_10_special (args)
         demo_20b_special (args)
