@@ -14,11 +14,9 @@ class TextColumnOutput(OutputBase):
     _aliases = ["text", "txt"]
 
     def __init__(self, filename, rank=0, nchain=1, delimiter='\t', lock=True, resume=False,
-                 apply_blinding_offsets=False, blinding_offset_file=None):
+                 blinding_offset_file=None):
         super(TextColumnOutput, self).__init__()
         self.delimiter = delimiter
-
-        self.apply_blinding_offsets = apply_blinding_offsets
 
         #If filename already ends in .txt then remove it for a moment
         if filename.endswith(self.FILE_EXTENSION):
@@ -49,8 +47,10 @@ class TextColumnOutput(OutputBase):
                 print("Note: You set resume=T but the file {} does not exist so I will start a new one".format(self._filename))
             self._file = open(self._filename, "w")
             self.resumed = False
-        if apply_blinding_offsets:
+        if blinding_offset_file is not None:
             self._blinding_offsets = np.load(blinding_offset_file)
+        else:
+            self._blinding_offsets = None
         if lock:
             try:
                 self.lock_file(self._file)
@@ -148,13 +148,10 @@ In the last case you can set lock=F in the [output] section to disable this feat
         delimiter = options.get('delimiter', '\t')
         rank = options.get('rank', 0)
         nchain = options.get('parallel', 1)
-        apply_blinding_offsets = utils.boolean_string(options.get('apply_blinding_offsets', False))
         blinding_offset_file = options.get('blinding_offsets', None)
-        if apply_blinding_offsets & (blinding_offset_file is None):
-            raise RuntimeError("You set apply_blinding_offsets but did not provide blinding_offset_file")
         lock = utils.boolean_string(options.get('lock', True))
         return cls(filename, rank, nchain, delimiter=delimiter, lock=lock, resume=resume,
-                   apply_blinding_offsets=apply_blinding_offsets, blinding_offset_file=blinding_offset_file)
+                   blinding_offset_file=blinding_offset_file)
 
     @classmethod
     def load_from_options(cls, options):
