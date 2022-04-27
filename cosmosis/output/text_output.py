@@ -149,7 +149,6 @@ In the last case you can set lock=F in the [output] section to disable this feat
         rank = options.get('rank', 0)
         nchain = options.get('parallel', 1)
         apply_blinding_offsets = utils.boolean_string(options.get('apply_blinding_offsets', False))
-        print("apply_blinding_offsets", type(apply_blinding_offsets), apply_blinding_offsets)
         blinding_offset_file = options.get('blinding_offsets', None)
         if apply_blinding_offsets & (blinding_offset_file is None):
             raise RuntimeError("You set apply_blinding_offsets but did not provide blinding_offset_file")
