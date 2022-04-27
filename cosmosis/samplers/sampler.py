@@ -24,6 +24,7 @@ class RegisteredSampler(type):
             meta.registry = {name : cls for name, cls in meta.registry.items() if cls not in bases}
             config_name = name[:-len("Sampler")].lower()
             cls = type.__new__(meta, name, bases, class_dict)
+            cls.name = config_name
             meta.registry[config_name] = cls
             return cls
         else:
@@ -51,7 +52,6 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
         self.output = output
         self.attribution = PipelineAttribution(self.pipeline.modules)
         self.distribution_hints = Hints()
-        self.name = self.__class__.__name__[:-len("Sampler")].lower()
         self.write_header()
 
     def write_header(self):
