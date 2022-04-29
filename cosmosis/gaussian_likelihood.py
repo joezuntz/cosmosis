@@ -316,7 +316,7 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
         else:
             self.log_det_constant = 0.0
 
-        self.likelihood_only = options.get_bool('likelihood_only', 'False')
+        self.likelihood_only = options.get_bool('likelihood_only', False)
 
         if not self.likelihood_only:
             self.chol = sigma
