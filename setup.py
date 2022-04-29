@@ -2,6 +2,7 @@ import setuptools
 import distutils.command.build
 import distutils.command.clean
 import distutils.command.install
+import setuptools.command.develop
 import subprocess
 import os
 
@@ -161,6 +162,11 @@ class install_cosmosis(distutils.command.install.install):
         make_cosmosis()
         super().run()
 
+class develop_cosmosis(setuptools.command.develop.develop):
+    description = "Install CosmoSIS in editable mode"
+    def run(self):
+        make_cosmosis()
+        super().run()
 
 distutils.command.build.build.sub_commands.insert(0, ("build_cosmosis", None))
 
@@ -197,6 +203,7 @@ setuptools.setup(name = 'cosmosis',
     cmdclass={
         "build_cosmosis": build_cosmosis,
         "install": install_cosmosis,
+        "develop": develop_cosmosis,
         "clean": clean_cosmosis,
         "clean_original": distutils.command.clean.clean,
     },
