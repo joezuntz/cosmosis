@@ -317,7 +317,11 @@ class SingleValueGaussianLikelihood(GaussianLikelihood):
             self.log_det_constant = 0.0
 
         self.likelihood_only = options.get_bool('likelihood_only', 'False')
-            
+
+        if not self.likelihood_only:
+            self.chol = sigma
+
+
     def build_data(self):
         """Sub-classes can over-ride this if they wish, to generate 
         the data point in a more complex way"""
