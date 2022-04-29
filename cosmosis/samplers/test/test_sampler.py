@@ -5,6 +5,11 @@ import sys
 
 
 class TestSampler(Sampler):
+    # The name of this class makes pytest think that it is a
+    # test to be run, instead of a tool for testing likelhioods.
+    # This should stop that from happening.
+    __test__ = False
+
     needs_output = False
 
     def config(self):
