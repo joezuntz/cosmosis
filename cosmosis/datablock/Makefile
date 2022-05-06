@@ -28,7 +28,7 @@ ifneq ($(GFORTRAN_LIB_PATH),)
 LDFLAGS+=-L $(dir ${GFORTRAN_LIB_PATH})
 endif
 $(info ${LDFLAGS})
-all: libcosmosis.so
+all: names libcosmosis.so
 
 clean:
 	rm -f *.o *.d *.so *.log *.mod *.mod 
@@ -52,7 +52,7 @@ libcosmosis.so: datablock.o entry.o section.o c_datablock.o datablock_logging.o 
 %.o: %.F90
 	$(FC) $(FFLAGS) -c  -o $(CURDIR)/$@ $+
 
-cosmosis_modules.o: cosmosis_types.o cosmosis_wrappers.o
+cosmosis_modules.o: cosmosis_types.o cosmosis_wrappers.o cosmosis_section_names.o
 cosmosis_wrappers.o: cosmosis_types.o
 datablock.o: section_names.h datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h datablock_logging.h datablock_types.h
 c_datablock.o: section_names.h c_datablock.cc datablock.hh c_datablock.h entry.hh datablock_status.h ndarray.hh datablock_types.h
