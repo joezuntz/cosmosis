@@ -70,7 +70,7 @@ def test_single_gaussian():
     assert np.isclose(block["data_vector", "xxx_data"], 3.0)
     assert np.isclose(block["data_vector", "xxx_inverse_covariance"], 100.0)
     # sim should be within 10 sigma!
-    assert 3.8 < block["data_vector", "xxx_simulation"] < 4.2
+    assert 3.0 < block["data_vector", "xxx_simulation"] < 5.0
 
     assert np.isclose(block["likelihoods", "xxx_like"], -50.0 - np.log(0.1))
 
