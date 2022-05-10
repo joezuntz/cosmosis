@@ -28,7 +28,6 @@ class CosmoMCOutput(TextColumnOutput):
 
     def _begun_sampling(self, params):
         if self._paramfile:
-            print(self.columns)
             if self.columns[-1][0].upper() != "POST":
                 raise RuntimeError("CosmoMC output format assumes "
                                        "likelihood is last column.")
@@ -51,9 +50,10 @@ class CosmoMCOutput(TextColumnOutput):
     
     def _write_parameters_multiplicity(self):
         if self._last_params:
+            post = self._last_params[-1]
             line = self.delimiter.join(('%16.7E'%x) for x
-                                       in ([self._multiplicity] +
-                                           self._last_params)) + '\n'
+                                       in ([self._multiplicity, post] +
+                                           self._last_params[:-1])) + '\n'
             self._file.write(line)
 
     @classmethod
