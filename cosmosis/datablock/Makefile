@@ -35,11 +35,15 @@ clean:
 	rm -rf  *.dSYM/
 
 
-# This only needs to be re-run when we add sections to the standard names list.
-# It is not run during a standard build; it is a tool for the developers
-names: section_names.txt generate_sections.py
+names: section_names.h cosmosis_section_names.F90 cosmosis_py/section_names.py
+
+section_names.h: section_names.txt generate_sections.py
 	python generate_sections.py section_names.txt c section_names.h
+
+cosmosis_section_names.F90: section_names.txt generate_sections.py
 	python generate_sections.py section_names.txt fortran cosmosis_section_names.F90
+
+cosmosis_py/section_names.py: section_names.txt generate_sections.py
 	python generate_sections.py section_names.txt python cosmosis_py/section_names.py
 
 
