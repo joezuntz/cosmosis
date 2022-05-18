@@ -20,7 +20,7 @@ jobs:
           - os: ubuntu-latest
             INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
           - os: macos-latest
-            INSTALL_DEPS: brew update && brew install gfortran swig libomp open-mpi
+            INSTALL_DEPS: brew update && brew install gfortran swig libomp open-mpi && ln -s /usr/local/bin/gfortran-$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1) /usr/local/bin/gfortran
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -32,7 +32,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install apt dependencies
+    - name: Install dependencies
       run: ${{ matrix.INSTALL_DEPS }}
 
     - uses: actions/cache@v2
