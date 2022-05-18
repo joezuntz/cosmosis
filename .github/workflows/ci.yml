@@ -15,15 +15,12 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
-        os: [ubuntu-latest] # TODO: add macos-latest
+        os: [ubuntu-latest, macos-latest]
         include:
           - os: ubuntu-latest
             INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
-
-          # - os: macos-latest
-          #   INSTALL_DEPS: brew install boost lua
-          #   CC: clang
-          #   CXX: clang++
+          - os: macos-latest
+            INSTALL_DEPS: brew update && brew install gfortran swig libomp open-mpi
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
