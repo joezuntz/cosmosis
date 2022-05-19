@@ -14,7 +14,7 @@ ifeq (1,${COSMOSIS_OMP})
 		COMMON_FLAGS+=$(COSMOSIS_OMP_FLAGS)
 		LDFLAGS+=$(COSMOSIS_OMP_LDFLAGS)
 	else ifeq (Darwin, $(OS))
-		COMMON_FLAGS+= Xpreprocessor -fopenmp
+		COMMON_FLAGS+= -Xpreprocessor -fopenmp
 		LDFLAGS+= -lomp
 	else
 		COMMON_FLAGS+= -fopenmp
