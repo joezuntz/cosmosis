@@ -10,13 +10,17 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
+  build-and-test:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
-
+        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
+          - os: macos-latest
+            INSTALL_DEPS: brew update && brew install gfortran swig libomp open-mpi && ln -s /usr/local/bin/gfortran-$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1) /usr/local/bin/gfortran
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -28,12 +32,8 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install apt dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev
-        sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
-
+    - name: Install dependencies
+      run: ${{ matrix.INSTALL_DEPS }}
 
     - uses: actions/cache@v2
       name: Load pip cache
@@ -54,4 +54,3 @@ jobs:
       run: |
         cosmosis --version
         mkdir tmp && cd tmp && pytest --pyargs cosmosis
-

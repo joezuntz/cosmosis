@@ -24,9 +24,32 @@ matter_intrinsic_power
 wl_number_density
 
 # 2-pt and related quantities
-matter_power_nl
+# from camb_interface.py
 matter_power_lin
-matter_power_lin_cdm_baryon
+matter_power_nl
+dark_matter_power_lin
+dark_matter_power_nl
+baryon_power_lin
+baryon_power_nl
+photon_power_lin
+photon_power_nl
+massless_neutrino_power_lin
+massless_neutrino_power_nl
+massive_neutrino_power_lin
+massive_neutrino_power_nl
+cdm_baryon_power_lin
+cdm_baryon_power_nl
+matter_de_power_lin
+matter_de_power_nl
+weyl_curvature_power_lin
+weyl_curvature_power_nl
+cdm_velocity_power_lin
+cdm_velocity_power_nl
+baryon_velocity_power_lin
+baryon_velocity_power_nl
+baryon_cdm_relative_velocity_power_lin
+baryon_cdm_relative_velocity_power_nl
+# end from camb_interface.py
 matter_galaxy_power
 galaxy_power
 shear_xi
