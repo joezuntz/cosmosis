@@ -51,7 +51,7 @@ cosmosis_py/section_names.py: section_names.txt generate_sections.py
 
 
 libcosmosis.so: datablock.o entry.o section.o c_datablock.o datablock_logging.o cosmosis_section_names.o cosmosis_types.o cosmosis_wrappers.o cosmosis_modules.o handler.o
-	$(CXX) $(LDFLAGS) -shared -o $(CURDIR)/$@ $+ -lgfortran
+	$(CXX) $(LDFLAGS) -shared $(RPATH) -o $(CURDIR)/$@ $+ -lgfortran
 
 %.o: %.F90
 	$(FC) $(FFLAGS) -c  -o $(CURDIR)/$@ $+
