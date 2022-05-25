@@ -106,6 +106,5 @@ def generate_commands(cosmosis_src_dir, debug=False, omp=True, brew=False, brew_
 if __name__ == '__main__':
     args = parser.parse_args()
     cmds = generate_commands(args.source, debug=args.debug, omp=args.omp, conda=args.conda, brew=args.brew or args.brew_gcc, brew_gcc=args.brew_gcc)
-    for command in cmds:
-        print(command)
+    print("; ".join(cmds))
 
