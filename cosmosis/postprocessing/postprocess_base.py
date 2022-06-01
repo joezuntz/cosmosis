@@ -7,7 +7,6 @@ from cosmosis import output as output_module
 from ..runtime.config import Inifile
 import imp
 import os
-from future.utils import with_metaclass
 postprocessor_registry = {}
 
 from io import StringIO
@@ -20,7 +19,7 @@ class PostProcessMetaclass(abc.ABCMeta):
         if d is None: return
         postprocessor_registry[sampler] = cls
 
-class PostProcessor(with_metaclass(PostProcessMetaclass, object)):
+class PostProcessor(metaclass=PostProcessMetaclass):
     sampler=None
     cosmosis_standard_output=True
     def __init__(self, ini, label, index, **options):

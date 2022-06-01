@@ -44,11 +44,9 @@ def demo_10_special (args):
         print()
         print("There are two flavours of this demo, selected through an ")
         print("environment variable called `HALOFIT'; this variable is not ")
-        print("currently set, so we are giving it the value `halofit'.")
-        print("Please see the wiki for more information: ")
-        print("https://bitbucket.org/joezuntz/cosmosis/wiki/Demo10.")
+        print("currently set, so we are giving it the value `takahashi'.")
 
-        os.environ ["HALOFIT"] = "halofit"
+        os.environ ["HALOFIT"] = "takahashi"
 
 
 

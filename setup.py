@@ -172,7 +172,6 @@ distutils.command.build.build.sub_commands.insert(0, ("build_cosmosis", None))
 
 requirements = [
     "pyyaml",
-    "future",
     "emcee",
     "numpy",
     "scipy",

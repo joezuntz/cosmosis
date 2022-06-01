@@ -1,4 +1,3 @@
-from future.utils import with_metaclass
 from ..runtime.attribution import PipelineAttribution
 from ..runtime.utils import get_git_revision
 from ..runtime import Inifile
@@ -30,7 +29,7 @@ class RegisteredSampler(type):
         else:
             raise ValueError("Sampler classes must be named [Name]Sampler")
 
-class Sampler(with_metaclass(RegisteredSampler, object)):
+class Sampler(metaclass=RegisteredSampler):
     needs_output = True
     sampler_outputs = []
     understands_fast_subspaces = False
@@ -86,7 +85,7 @@ class Sampler(with_metaclass(RegisteredSampler, object)):
         if save_username:
             info['hostname'] = platform.node()
             info['username'] = getpass.getuser()
-
+            info['workdir'] = os.getcwd()
 
         return info
 
