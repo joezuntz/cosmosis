@@ -31,9 +31,11 @@ jobs:
         password: ${{ secrets.PYPI_COSMOSIS_UPLOAD }}
 
     - name: Make PR on cosmosis conda forge feedstock
-      uses: joezuntz/cosmosis-action@v0.3
+      uses: joezuntz/conda-forge-feedstock-pr-action@v0.6
       with:
+        feedstock_name: cosmosis
         token: ${{ secrets.PR_MAKER_TOKEN }}
-        which-repository: cosmosis
         version: ${{ steps.build_tarball.outputs.pypi-version }}
         hash: ${{ steps.build_tarball.outputs.tarball-sha }}
+        fork_owner: joezuntz
+        email_address: joezuntz@googlemail.com
