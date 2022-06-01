@@ -2,7 +2,6 @@ import abc
 import logging
 import numpy as np
 import fcntl
-from future.utils import with_metaclass
 import datetime
 import os
 

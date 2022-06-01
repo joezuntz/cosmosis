@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from future.utils import with_metaclass
 import os
 import argparse
 import numpy as np
@@ -44,7 +43,7 @@ class RegisteredPlot(type):
         meta.registry -= set(bases)
         return cls
 
-class Plot(with_metaclass(RegisteredPlot, object)):
+class Plot(metaclass=RegisteredPlot):
     #Subclasses should override this to specify the base
     #part of their filename
     filename = "error"
