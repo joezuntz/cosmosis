@@ -637,7 +637,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
 
     def run(self):
-        if self.options.get("no_2d", "False"):
+        if self.options.get("no_2d", False):
             print("Not making any 2D plots because you said --no-2d")
             return []
         filenames = []
