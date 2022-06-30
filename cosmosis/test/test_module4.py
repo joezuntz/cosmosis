@@ -5,5 +5,5 @@ def setup(options):
 
 def execute(block, config):
     p3 = block['parameters', 'p3']
-    # do nothing execpt read
+    # do nothing except read
     return 0
