@@ -896,7 +896,7 @@ class LikelihoodPipeline(Pipeline):
         for section,name in self.extra_saves:
             if ('#' in name):
                 n,l = name.split('#')
-                for i in range(l):
+                for i in range(int(l)):
                     extra_names.append('{}--{}_{}'.format(section,n,i))
             else:
                 extra_names.append('%s--%s'%(section,name))
