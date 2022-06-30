@@ -3,6 +3,7 @@ from cosmosis.datablock import DataBlock
 from cosmosis.samplers.sampler import Sampler
 from cosmosis.runtime.prior import TruncatedGaussianPrior, DeltaFunctionPrior
 from cosmosis.output.in_memory_output import InMemoryOutput
+from cosmosis.main import run_cosmosis, parser
 import numpy as np
 import os
 import tempfile
@@ -88,6 +89,44 @@ def test_unused_param_warning(capsys):
     out, _ = capsys.readouterr()
     assert "**** WARNING: Parameter 'unused'" in out
 
+def test_vector_extra_outputs():
+    with tempfile.TemporaryDirectory() as dirname:
+        values_file = f"{dirname}/values.ini"
+        params_file = f"{dirname}/params.ini"
+        output_file = f"{dirname}/output.txt"
+        with open(values_file, "w") as values:
+            values.write(
+                "[parameters]\n"
+                "p1=-3.0  0.0  3.0\n"
+                "p2=-3.0  0.0  3.0\n")
+
+        params = {
+            ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
+            ('runtime', 'sampler'):  "emcee",
+            ("pipeline", "debug"): "T",
+            ("pipeline", "quiet"): "F",
+            ("pipeline", "modules"): "test1",
+            ("pipeline", "extra_output"): "data_vector/test_theory#2",
+            ("pipeline", "values"): values_file,
+            ("test1", "file"): "test_module.py",
+            ("output", "filename"): output_file,
+            ("emcee", "walkers"): "8",
+            ("emcee", "samples"): "10",
+        }
+
+        args = parser.parse_args(["not_a_real_file"])
+        ini = Inifile(None, override=params)
+        status = run_cosmosis(args, ini=ini)
+
+        with open(output_file) as f:
+            header = f.readline()
+
+        assert "data_vector--test_theory_0" in header.lower()
+        assert "data_vector--test_theory_1" in header.lower()
+
+        data = np.loadtxt(output_file)
+        # two parameters, two extra saves, prior, and posterior
+        assert data.shape[1] == 6
 
 
 if __name__ == '__main__':
