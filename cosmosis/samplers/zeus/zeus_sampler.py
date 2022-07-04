@@ -228,6 +228,8 @@ class ZeusSampler(ParallelSampler):
 
         # Main execution
         self.sampler.run(self.p0, self.nsteps)
+        # Update patience (relevant when self.nsteps<self.patience)
+        self.sampler.patience-= self.nsteps
         # record ending point of this iteration
         end = self.sampler.chain.shape[0]
 
