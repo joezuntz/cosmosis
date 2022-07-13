@@ -31,7 +31,7 @@ jobs:
         password: ${{ secrets.PYPI_COSMOSIS_UPLOAD }}
 
     - name: Make PR on cosmosis conda forge feedstock
-      uses: joezuntz/conda-forge-feedstock-pr-action@v0.6
+      uses: joezuntz/conda-forge-feedstock-pr-action@v1.5
       with:
         feedstock_name: cosmosis
         token: ${{ secrets.PR_MAKER_TOKEN }}
