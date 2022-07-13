@@ -136,6 +136,9 @@ def test_star():
 def test_test():
     run('test', False)
 
+def test_poco():
+    run('poco', True, check_extra=False, n_particles=100)
+
 if __name__ == '__main__':
     import sys
     locals()[sys.argv[1]]()

@@ -1,4 +1,4 @@
-from .. import ParallelSampler, sample_ellipsoid
+from .. import ParallelSampler, sample_ellipsoid, sample_ball
 import numpy as np
 import sys
 
@@ -58,7 +58,7 @@ class EmceeSampler(ParallelSampler):
                 n=0
                 p0 = []
                 for i in range(iterations_limit):
-                    p = self.emcee.utils.sample_ellipsoid(center, cov)[0]
+                    p = sample_ellipsoid(center, cov)[0]
                     if np.isfinite(self.pipeline.prior(p)):
                         p0.append(p)
                     if len(p0)==self.nwalkers:
@@ -73,7 +73,7 @@ class EmceeSampler(ParallelSampler):
             else:
                 center_norm = self.pipeline.normalize_vector(self.start_estimate())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
-                p0_norm = self.emcee.utils.sample_ball(center_norm, sigma_norm, size=self.nwalkers)
+                p0_norm = sample_ball(center_norm, sigma_norm, size=self.nwalkers)
                 p0_norm[p0_norm<=0] = 0.001
                 p0_norm[p0_norm>=1] = 0.999
                 self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
