@@ -52,6 +52,7 @@ jobs:
         pip install -v .
         pip install --no-binary=mpi4py mpi4py
         pip install pytest
+        pip install pocomc
 
     - name: Test with pytest
       run: |
