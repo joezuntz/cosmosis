@@ -1,0 +1,40 @@
+name: "poco"
+version: "0.1.1"
+parallel: parallel
+purpose: "Preconditioned Monte Carlo with normalizing flows"
+url: "https://pocomc.readthedocs.io/"
+attribution: ["Minas Karamanis, David Nabergoj, Florian Beutler, John Peacock, Uros Seljak"]
+cite:
+    - "https://arxiv.org/abs/2207.05660"
+    - "https://arxiv.org/abs/2207.05652"
+
+explanation: >
+    pocoMC relies on the Preconditioned Monte Carlo algorithm which utilises a Normalising Flow 
+    in order to decorrelate the parameters of the posterior, and facilitates efficient sampling 
+    of probability distributions with non-trivial geometries.
+
+    It generates both posterior samples and Bayesian evidences.
+
+    PocoMC does not currently support checkpointing (all the output appears at the end of the run)
+    or derived parameters.
+    
+
+installation: >
+    if using conda, do this first to ensure consistent dependencies:
+        conda install -c conda-forge corner pytorch tqdm
+    pip install pocomc
+
+
+# List of configuration options for this sampler
+params:
+    n_particles: (integer) Number of particles/walkers
+    nsample_add: (integer; default=0) Number of extra posterior samples to draw at the end 
+    threshold: (float; default=1.0) The threshold value for the (normalised) proposal scale parameter below which normalising flow preconditioning (NFP) is enabled. Default is to always enable.
+    scale: (bool; default=N) Whether to scale the distribution of particles to have zero mean and unit variance
+    rescale: (bool; default=N) Whether to rescale the distribution of particles to have zero mean and unit variance in every iteration
+    diagonal: (bool; default=T) Use a diagonal covariance matrix when rescaling instead of a full covariance
+    ess: (float; default=0.95) The effective sample size maintained during the run
+    gamma: (float; default=0.75) Threshold for the correlation coefficient that is used to adaptively determine the number of MCMC steps
+    n_min: (int; default=ndim/2) Minimum number of MCMC steps per iteration
+    n_max: (int; default=ndim*10) Maximum number of MCMC steps per iteration
+    seed: (int; default=0) A random seed for reproducibility. Default is to generate automatically.
