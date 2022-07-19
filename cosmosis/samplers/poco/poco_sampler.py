@@ -16,7 +16,7 @@ def log_prior(p):
 
 class PocoSampler(ParallelSampler):
     parallel_output = False
-    supports_resume = True
+    supports_resume = False
     sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
