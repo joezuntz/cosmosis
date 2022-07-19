@@ -44,7 +44,6 @@ class PocoSampler(ParallelSampler):
             if seed == 0:
                 seed = None
 
-
             # Starting positions and values for the chain
             self.num_samples = 0
             self.prob0 = None
@@ -89,7 +88,9 @@ class PocoSampler(ParallelSampler):
 
     def execute(self):
         # There's no checkpointing yet
-        self.sampler.run(self.p0, n_min=self.n_min, n_max=self.n_max, gamma=self.gamma, ess=self.ess)
+        self.sampler.run(
+            self.p0, n_min=self.n_min, n_max=self.n_max, gamma=self.gamma, ess=self.ess
+        )
 
         if self.nsample_add > 0:
             self.sampler.add_samples(self.nsample_add)
