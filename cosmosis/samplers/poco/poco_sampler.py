@@ -1,7 +1,5 @@
-from .. import ParallelSampler, sample_ellipsoid, sample_ball
+from .. import ParallelSampler
 import numpy as np
-import sys
-import hashlib
 
 
 def log_likelihood(p):
