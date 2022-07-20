@@ -789,6 +789,23 @@ class WeightedPlots2D(object):
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
 
+class TracePlots(Plots, MCMCPostProcessorElement):
+    excluded_columns = []
+    def run(self):
+        return [self.plot_1d(name) for name in self.source.colnames if not name in self.excluded_columns]
+
+    def plot_1d(self, name):
+        if not self.quiet:
+            print(" - Trace plot ", name)
+        x = self.reduced_col(name)
+        fig, filename = self.figure(f"trace_{name}")
+        pylab.figure(fig.number)
+        pylab.plot(x, ',')
+        pylab.xlabel("Reduced Chain Position")
+        pylab.ylabel(self.latex(name))
+        return filename
+
+
 class WeightedMetropolisPlots2D(WeightedPlots2D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots2D):
     excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
     pass
