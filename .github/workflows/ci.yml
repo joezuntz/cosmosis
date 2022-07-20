@@ -52,6 +52,7 @@ jobs:
         pip install -v .
         pip install --no-binary=mpi4py mpi4py
         pip install pytest
+        if  [ "${{ matrix.python-version }}" != "3.6" ]; then pip install pocomc; fi
 
     - name: Test with pytest
       run: |

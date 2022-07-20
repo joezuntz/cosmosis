@@ -121,12 +121,6 @@ def test_polychord():
     with tempfile.TemporaryDirectory() as base_dir:
         run('polychord', True, live_points=20, feedback=0, base_dir=base_dir, polychord_outfile_root='pc')
 
-def test_pymc():
-    if sys.version_info.major==2:
-        run('pymc', False)
-    else:
-        pytest.skip("Skipping pymc test on python 3")
-
 def test_snake():
         run('snake', True)
 
@@ -135,6 +129,10 @@ def test_star():
 
 def test_test():
     run('test', False)
+
+@pytest.mark.skipif(sys.version_info < (3,7), reason="pocomc requires python3.6+")
+def test_poco():
+    run('poco', True, check_extra=False, n_particles=100)
 
 if __name__ == '__main__':
     import sys
