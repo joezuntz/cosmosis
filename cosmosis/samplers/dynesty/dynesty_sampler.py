@@ -88,7 +88,7 @@ class DynestySampler(ParallelSampler):
         self.output.final("efficiency", results['eff'])
         self.output.final("nsample", len(results['samples']))
         self.output.final("log_z", results['logz'][-1])
-        self.output.final("log_z_err", results['logzerr'][-1])
+        self.output.final("log_z_error", results['logzerr'][-1])
 
         self.converged = True
 
