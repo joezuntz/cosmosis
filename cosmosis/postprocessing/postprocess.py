@@ -293,6 +293,29 @@ class PolyChordProcessor(MultinestProcessor):
             ]
     sampler="polychord"
 
+class DynestyProcessor(MultinestProcessor):
+	elements = [
+			plots.PolychordPlots1D, 
+			plots.PolychordPlots2D,
+			plots.TracePlots,
+			statistics.PolychordStatistics,
+			statistics.PolychordCovariance,
+			statistics.Citations,
+			]
+	sampler="dynesty"
+
+	def weight_col(self):
+		if hasattr(self, "_weight_col"):
+			return self._weight_col
+		w = self.get_col("log_weight")
+		w = np.exp(w - w.max())
+		self._weight_col = w / w.sum()
+		return self._weight_col
+
+	def reduced_col(self, name, stacked=True):
+		col = self.get_col(name)
+		return col
+
 
 
 class PMCPostProcessor(WeightedMetropolisProcessor):
