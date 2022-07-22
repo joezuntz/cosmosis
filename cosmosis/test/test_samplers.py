@@ -3,6 +3,7 @@ from cosmosis.samplers.sampler import Sampler
 import cosmosis.samplers.minuit.minuit_sampler
 from cosmosis.runtime.pipeline import LikelihoodPipeline
 from cosmosis.output.in_memory_output import InMemoryOutput
+from cosmosis.postprocessing import postprocessor_for_sampler
 import tempfile
 import os
 import sys
@@ -11,9 +12,9 @@ import numpy as np
 
 minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
 
-def run(sampler, check_prior, check_extra=True, **options):
+def run(name, check_prior, check_extra=True, can_postprocess=True, **options):
 
-    sampler_class = Sampler.registry[sampler]
+    sampler_class = Sampler.registry[name]
 
     values = tempfile.NamedTemporaryFile('w')
     values.write(
@@ -33,7 +34,7 @@ def run(sampler, check_prior, check_extra=True, **options):
     }
 
     for k,v in options.items():
-        override[(sampler,k)] = str(v)
+        override[(name,k)] = str(v)
 
 
     ini = Inifile(None, override=override)
@@ -62,11 +63,19 @@ def run(sampler, check_prior, check_extra=True, **options):
         p3 = output['PARAMETERS--P3']
         assert np.all((p1+p2==p3)|(np.isnan(p3)))
 
+    if can_postprocess:
+        pp_class = postprocessor_for_sampler(name)
+        print(pp_class)
+        with tempfile.TemporaryDirectory() as dirname:
+            pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name)
+            pp.run()
+
+
     return output
 
 
 def test_apriori():
-    run('apriori', True, nsample=100)
+    run('apriori', True, can_postprocess=False, nsample=100)
 
 def test_dynesty():
     # dynesty does not support extra params
@@ -82,26 +91,26 @@ def test_grid():
     run('grid', True, nsample_dimension=10)
 
 def test_gridmax():
-    run('gridmax', True, max_iterations=1000)
+    run('gridmax', True, can_postprocess=False, max_iterations=1000)
 
 # def test_kombine():
 #     run('kombine')
 
 def test_maxlike():
-    run('maxlike', True)
+    run('maxlike', True, can_postprocess=False)
 
 def test_metropolis():
     run('metropolis', True, samples=20)
 
 @pytest.mark.skipif(not minuit_compiled,reason="requires Minuit2")
 def test_minuit():
-    run('minuit', True)
+    run('minuit', True, can_postprocess=False)
 
 def test_multinest():
     run('multinest', True, max_iterations=10000, live_points=50, feedback=False)
 
 def test_pmaxlike():
-    run('pmaxlike', True)
+    run('pmaxlike', True, can_postprocess=False)
 
 def test_pmc():
     old_settings = np.seterr(invalid='ignore', divide='ignore')
@@ -128,7 +137,7 @@ def test_star():
         run('star', False)
 
 def test_test():
-    run('test', False)
+    run('test', False, can_postprocess=False)
 
 @pytest.mark.skipif(sys.version_info < (3,7), reason="pocomc requires python3.6+")
 def test_poco():

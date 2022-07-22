@@ -63,6 +63,7 @@ class MetropolisHastingsProcessor(PostProcessor):
 	elements=[
 		plots.MetropolisHastingsPlots1D,
 		plots.MetropolisHastingsPlots2D,
+		plots.TracePlots,
 		statistics.MetropolisHastingsStatistics,
 		statistics.MetropolisHastingsCovariance,
 		statistics.Citations,
@@ -158,6 +159,7 @@ class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 	elements=[
 		plots.WeightedMetropolisPlots1D,
 		plots.WeightedMetropolisPlots2D,
+		plots.TracePlots,
 		statistics.WeightedMetropolisStatistics,
 		statistics.WeightedMetropolisHastingsCovariance,
 		#statistics.DunkleyTest,
@@ -243,6 +245,7 @@ class MultinestProcessor(WeightedMetropolisProcessor):
 	elements = [
 		plots.MultinestPlots1D, 
 		plots.MultinestPlots2D,
+		plots.TracePlots,
 		statistics.MultinestStatistics,
 		statistics.MultinestCovariance,
 		statistics.Citations,
@@ -283,11 +286,35 @@ class PolyChordProcessor(MultinestProcessor):
     elements = [
             plots.PolychordPlots1D, 
             plots.PolychordPlots2D,
+            plots.TracePlots,
             statistics.PolychordStatistics,
             statistics.PolychordCovariance,
             statistics.Citations,
             ]
     sampler="polychord"
+
+class DynestyProcessor(MultinestProcessor):
+	elements = [
+			plots.PolychordPlots1D, 
+			plots.PolychordPlots2D,
+			plots.TracePlots,
+			statistics.PolychordStatistics,
+			statistics.PolychordCovariance,
+			statistics.Citations,
+			]
+	sampler="dynesty"
+
+	def weight_col(self):
+		if hasattr(self, "_weight_col"):
+			return self._weight_col
+		w = self.get_col("log_weight")
+		w = np.exp(w - w.max())
+		self._weight_col = w / w.sum()
+		return self._weight_col
+
+	def reduced_col(self, name, stacked=True):
+		col = self.get_col(name)
+		return col
 
 
 

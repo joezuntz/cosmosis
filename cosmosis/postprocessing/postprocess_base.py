@@ -116,6 +116,18 @@ class PostProcessor(metaclass=PostProcessMetaclass):
             for key,val in list(chain.items()):
                 self.sampler_options[key] = val
 
+    def load_in_memory_storage(self, inputs):
+        self.name = "chain"
+        self.colnames = [c[0] for c in inputs.columns]
+        self.data = [np.array(inputs.rows)]
+        self.metadata = [{k:v[0] for k, v in inputs.meta.items()}]
+        self.final_metadata = [{k:v[0] for k, v in inputs.final_meta.items()}]
+        self.comments = [inputs.comments[:]]
+        for chain in self.metadata:
+            for key,val in list(chain.items()):
+                self.sampler_options[key] = val
+
+
 
     def sampler_option(self, key, default=None):
         return self.sampler_options.get(key, default)
@@ -125,6 +137,8 @@ class PostProcessor(metaclass=PostProcessMetaclass):
             self.load_tuple(ini)
         elif isinstance(ini, dict):
             self.load_dict(ini)
+        elif isinstance(ini, output_module.InMemoryOutput):
+            self.load_in_memory_storage(ini)
         else:
             self.load_ini(ini)
 

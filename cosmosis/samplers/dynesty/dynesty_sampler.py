@@ -21,7 +21,7 @@ class DynestySampler(ParallelSampler):
             self.mode = self.read_ini_choices("mode", str, ["static", "dynamic"], "static")
             self.nlive = self.read_ini("nlive", int, 500)
             self.bound = self.read_ini_choices("bound", str, ["none", "single", "multi", "balls", "cube"], "multi")
-            self.sample = self.read_ini_choices("sample", str, ["unif", "rwalk", "slice", "rslice", "hslice"], "auto")
+            self.sample = self.read_ini_choices("sample", str, ["unif", "rwalk", "slice", "rslice", "hslice", "auto"], "auto")
             self.update_interval = self.read_ini("update_interval", float, 0.6)
             self.min_ncall = self.read_ini("min_ncall",int, 2*self.nlive)
             self.min_eff = self.read_ini("min_eff",float, 10.0)
@@ -49,7 +49,6 @@ class DynestySampler(ParallelSampler):
 
         ndim = self.pipeline.nvaried
 
-        sampling_method = None if self.sample == "auto" else self.sample
 
         if self.mode == "static":
             sampler = NestedSampler(
@@ -58,7 +57,7 @@ class DynestySampler(ParallelSampler):
                 ndim, 
                 nlive = self.nlive,
                 bound = self.bound,
-                sample = sampling_method,
+                sample = self.sample,
                 update_interval = self.update_interval,
                 first_update = {'min_ncall':self.min_ncall, 'min_eff':self.min_eff},
                 queue_size = self.queue_size,
@@ -73,7 +72,7 @@ class DynestySampler(ParallelSampler):
                 prior_transform, 
                 ndim, 
                 bound = self.bound,
-                sample = sampling_method,
+                sample = self.sample,
                 # update_interval = self.update_interval,
                 queue_size = self.queue_size,
                 pool = self.pool
@@ -86,10 +85,10 @@ class DynestySampler(ParallelSampler):
         for sample, logwt, logl in zip(results['samples'],results['logwt'], results['logl']):
             self.output.parameters(sample, logwt, logl)
 
-        self.output.final("ncall", results['ncall'])
         self.output.final("efficiency", results['eff'])
-        self.output.final("log_z", results['logz'])
-        self.output.final("log_z_err", results['logzerr'])
+        self.output.final("nsample", len(results['samples']))
+        self.output.final("log_z", results['logz'][-1])
+        self.output.final("log_z_error", results['logzerr'][-1])
 
         self.converged = True
 
