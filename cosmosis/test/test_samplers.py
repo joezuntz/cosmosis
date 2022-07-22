@@ -141,6 +141,10 @@ def test_test():
 
 @pytest.mark.skipif(sys.version_info < (3,7), reason="pocomc requires python3.6+")
 def test_poco():
+    try:
+        import pocomc
+    except ImportError:
+        pytest.skip("pocomc not installed")
     run('poco', True, check_extra=False, n_particles=100)
 
 if __name__ == '__main__':
