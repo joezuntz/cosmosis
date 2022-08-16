@@ -247,6 +247,17 @@ class Parameter(object):
             parameters.append(Parameter(section, name,
                                         start, limits, pri))
 
+        # Allow parameters not originally specified in the parameter
+        # file to be added on the command line
+        if override is not None:
+            for (section, name) in override:
+                if (section, name) not in parameters:
+                    value = override[(section,name)]
+                    start, limits = Parameter.parse_parameter(value)
+                    pri = priors_data.get((section, name), None)
+                    parameters.append(Parameter(section, name,
+                                            start, limits, pri))
+
         return parameters
 
 
