@@ -48,6 +48,7 @@ plots.add_argument("--extra", dest='extra', default="", help="Load extra post-pr
 plots.add_argument("--tweaks", dest='tweaks', default="", help="Load plot tweaks from this file.")
 plots.add_argument("--no-image", dest='image', default=True, action='store_false', help="Do not plot the image in  2D grids; just show the contours")
 plots.add_argument("--run-max-post", default="", help="Run the test sampler on maximum-posterior sample and save to the named directory.")
+plots.add_argument("--truth", default="", help="An ini file containing truth values to mark on plots")
 
 def main(args):
 	#Read the command line arguments and load the
