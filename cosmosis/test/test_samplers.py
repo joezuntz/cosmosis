@@ -67,7 +67,7 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, **options):
         pp_class = postprocessor_for_sampler(name)
         print(pp_class)
         with tempfile.TemporaryDirectory() as dirname:
-            pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name)
+            pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=values.name)
             pp.run()
 
 
