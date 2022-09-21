@@ -44,7 +44,7 @@ class Plots(PostProcessorElement):
         self.quiet =  False
         self.truth = None
         truth = self.options.get("truth")
-        if truth is not None:
+        if truth:
             self.truth = {str(p): p.start for p in Parameter.load_parameters(truth)}
 
     def finalize(self):
