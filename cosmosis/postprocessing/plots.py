@@ -14,6 +14,7 @@ from . import lazy_pylab as pylab
 import itertools
 import os
 import sys
+import collections
 
 default_latex_file = os.path.join(os.path.split(__file__)[0], "latex.ini")
 legend_locations = {
@@ -41,15 +42,23 @@ class Plots(PostProcessorElement):
         if self.source.cosmosis_standard_output and not self.no_latex:
             self.load_latex(latex_file)
         self.quiet =  False
+        self.truth = None
+        truth = self.options.get("truth")
+        if truth:
+            self.truth = {str(p): p.start for p in Parameter.load_parameters(truth)}
 
     def finalize(self):
         super(Plots, self).finalize()
         legend = self.options.get("legend", "")
         if legend:
             legend_loc = legend_locations[self.options.get("legend_loc", "best").upper()]
-            for fig in list(self.figures.values()):
+            for name, fig in self.figures.items():
                 pylab.figure(fig.number)
-                pylab.legend(loc=legend_loc)
+                handles, labels = pylab.gca().get_legend_handles_labels()
+                for h, l in getattr(fig, "cosmosis_extra_labels", []):
+                    handles.append(h)
+                    labels.append(l)
+                pylab.legend(handles, labels, loc=legend_loc)
 
     def load_latex(self, latex_file):
         latex_names = {}
@@ -88,6 +97,22 @@ class Plots(PostProcessorElement):
         if dollar:
             l = "$"+l+"$"
         return l
+
+    def get_truth_value(self, name):
+        if self.truth is None:
+            return
+        return self.truth.get(name)
+
+    def plot_truth_1d(self, name):
+        val = self.get_truth_value(name)
+        if val is not None:
+            pylab.axvline(val, color='k', linestyle=':', label="Truth")
+
+    def plot_truth_2d(self, name1, name2):
+        val1 = self.get_truth_value(name1)
+        val2 = self.get_truth_value(name2)
+        if (val1 is not None) and (val2 is not None):
+            pylab.plot(val1, val2, 'kx', label="Truth")
 
     def filename(self, base, *bases):
         ftype = self.options.get("file_type", "png")
@@ -246,7 +271,7 @@ class GridPlots1D(GridPlots):
         dx = vals1[1]-vals1[0]
 
         #Set up the figure
-        fig,filename = self.figure(name1)
+        fig, filename = self.figure(name1)
         pylab.figure(fig.number)
 
         #Plot the likelihood
@@ -265,6 +290,10 @@ class GridPlots1D(GridPlots):
         pylab.ylim(0,1.05)
         #Add label
         pylab.xlabel(self.latex(name1))
+        if not hasattr(fig, 'cosmosis_done_truth'):
+            self.plot_truth_1d(name1)
+            fig.cosmosis_done_truth = True
+
         return filename
 
     @classmethod
@@ -387,6 +416,10 @@ class GridPlots2D(GridPlots):
             
         pylab.xlabel(self.latex(name1))
         pylab.ylabel(self.latex(name2))
+        
+        if not hasattr(fig, 'cosmosis_done_truth'):
+            self.plot_truth_2d(name1, name2)
+            fig.cosmosis_done_truth = True
 
         return filename
 
@@ -508,7 +541,9 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
         keywords = self.keywords_1d()
         pylab.plot(x_axis, like, '-', color=color, lw=2, label=self.source.label,  **keywords)
         pylab.xlabel(self.latex(name, dollar=True))
-
+        if not hasattr(figure, 'cosmosis_done_truth'):
+            self.plot_truth_1d(name)
+            figure.cosmosis_done_truth = True
         return filename
 
     def run(self):
@@ -624,7 +659,10 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         else:
             color = self.line_color()
             cs = pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors=color)
-            cs.collections[0].set_label(self.source.label)
+            if not hasattr(figure, "cosmosis_extra_labels"):
+                figure.cosmosis_extra_labels = []
+            figure.cosmosis_extra_labels.append((cs.legend_elements()[0][0], self.source.label))
+
         if plot_points:
             pylab.plot(x, y, ',')
 
@@ -632,7 +670,10 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         #Do the labels
         pylab.xlabel(self.latex(name1))
         pylab.ylabel(self.latex(name2))
-
+        if not hasattr(figure, 'cosmosis_done_truth'):
+            self.plot_truth_2d(name1, name2)
+            figure.cosmosis_done_truth = True
+        
         return filename        
 
 
@@ -794,15 +835,24 @@ class TracePlots(Plots, MCMCPostProcessorElement):
     def run(self):
         return [self.plot_1d(name) for name in self.source.colnames if not name in self.excluded_columns]
 
+    def plot_truth_1d(self, name):
+        val = self.get_truth_value(name)
+        if val is not None:
+            pylab.axhline(val, color='k', linestyle=':')
+
     def plot_1d(self, name):
         if not self.quiet:
             print(" - Trace plot ", name)
         x = self.reduced_col(name)
         fig, filename = self.figure(f"trace_{name}")
         pylab.figure(fig.number)
-        pylab.plot(x, ',')
+        color = self.line_color()
+        pylab.plot(x, ',', color=color, label=self.source.label)
         pylab.xlabel("Reduced Chain Position")
         pylab.ylabel(self.latex(name))
+        if not hasattr(fig, 'cosmosis_done_truth'):
+            self.plot_truth_1d(name)
+            fig.cosmosis_done_truth = True
         return filename
 
 
@@ -882,6 +932,8 @@ class ColorScatterPlotBase(Plots):
         pylab.colorbar(label=self.latex(self.color_column))
         pylab.xlabel(self.latex(self.x_column))
         pylab.ylabel(self.latex(self.y_column))
+
+        self.plot_truth_2d(self.x_column, self.y_column)
 
         #Return a list of files you create.
         return [filename]

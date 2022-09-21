@@ -7,6 +7,7 @@ import configparser
 import argparse
 import os
 import pdb
+import cProfile
 from .runtime.config import Inifile, CosmosisConfigurationError
 from .runtime.pipeline import LikelihoodPipeline
 from .runtime import mpi_pool
@@ -185,6 +186,10 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
         # the memory usage every args.mem seconds
         mem = MemoryMonitor.start_in_thread(interval=args.mem)
 
+    if args.profile:
+        profile = cProfile.Profile()
+        profile.enable()
+
     # Create pipeline.
     if pipeline is None:
         cleanup_pipeline = True
@@ -298,6 +303,14 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
     if cleanup_pipeline:
         pipeline.cleanup()
 
+    if args.profile:
+        profile.disable()
+        if (pool is not None) and (not args.smp):
+            profile_name = args.profile + f'.{pool.rank}'
+        else:
+            profile_name = args.profile
+        profile.dump_stats(profile_name)
+        profile.print_stats("cumtime")
 
     if is_root and args.mem:
         mem.stop()
@@ -361,6 +374,7 @@ parser.add_argument("-v", "--variables", nargs="*", action=ParseExtraParameters,
 parser.add_argument("--only", nargs="*", help="Fix all parameters except the ones listed")
 parser.add_argument("--graph", type=str, default='', help="Do not run a sampler; instead make a graphviz dot file of the pipeline")
 parser.add_argument('--version', action='version', version=__version__, help="Print out a version number")
+parser.add_argument('--profile' , help="Save profiling (timing) information to this named file")
 
 
 def main():
