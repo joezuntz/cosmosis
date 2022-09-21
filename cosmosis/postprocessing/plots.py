@@ -42,7 +42,7 @@ class Plots(PostProcessorElement):
         if self.source.cosmosis_standard_output and not self.no_latex:
             self.load_latex(latex_file)
         self.quiet =  False
-        self.truth_data = None
+        self.truth = None
         truth = self.options.get("truth")
         if truth is not None:
             self.truth = {str(p): p.start for p in Parameter.load_parameters(truth)}

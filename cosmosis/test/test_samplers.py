@@ -12,7 +12,7 @@ import numpy as np
 
 minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
 
-def run(name, check_prior, check_extra=True, can_postprocess=True, **options):
+def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, **options):
 
     sampler_class = Sampler.registry[name]
 
@@ -67,7 +67,8 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, **options):
         pp_class = postprocessor_for_sampler(name)
         print(pp_class)
         with tempfile.TemporaryDirectory() as dirname:
-            pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=values.name)
+            truth_file = values.name if do_truth else None
+            pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=truth_file)
             pp.run()
 
 
@@ -83,6 +84,9 @@ def test_dynesty():
 
 def test_emcee():
     run('emcee', True, walkers=8, samples=100)
+
+def test_truth():
+    run('emcee', True, walkers=8, samples=100, do_truth=True)
 
 def test_fisher():
     run('fisher', False, check_extra=False)
