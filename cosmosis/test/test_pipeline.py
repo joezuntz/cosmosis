@@ -7,6 +7,7 @@ from cosmosis.main import run_cosmosis, parser
 import numpy as np
 import os
 import tempfile
+import pstats
 
 root = os.path.split(os.path.abspath(__file__))[0]
 
@@ -127,6 +128,44 @@ def test_vector_extra_outputs():
         data = np.loadtxt(output_file)
         # two parameters, two extra saves, prior, and posterior
         assert data.shape[1] == 6
+
+
+def test_profile(capsys):
+    with tempfile.TemporaryDirectory() as dirname:
+        values_file = f"{dirname}/values.ini"
+        params_file = f"{dirname}/params.ini"
+        output_file = f"{dirname}/output.txt"
+        stats_file  = f'{dirname}/profile.dat'
+        with open(values_file, "w") as values:
+            values.write(
+                "[parameters]\n"
+                "p1=-3.0  0.0  3.0\n"
+                "p2=-3.0  0.0  3.0\n")
+
+        params = {
+            ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
+            ('runtime', 'sampler'):  "emcee",
+            ("pipeline", "debug"): "T",
+            ("pipeline", "quiet"): "F",
+            ("pipeline", "modules"): "test1",
+            ("pipeline", "values"): values_file,
+            ("test1", "file"): "test_module.py",
+            ("output", "filename"): output_file,
+            ("emcee", "walkers"): "8",
+            ("emcee", "samples"): "10",
+        }
+
+        args = parser.parse_args(["not_a_real_file", "--profile", stats_file])
+        ini = Inifile(None, override=params)
+        status = run_cosmosis(args, ini=ini)
+
+        output = capsys.readouterr()
+        assert "cumtime" in output.out
+
+        stats = pstats.Stats(stats_file)
+        stats.sort_stats("cumtime")
+        stats.print_stats(10)
+
 
 
 if __name__ == '__main__':
