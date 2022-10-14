@@ -437,7 +437,7 @@ class ClassModule(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def execute(self, block, config):
+    def execute(self, block):
         return 0
 
     def cleanup(config):
