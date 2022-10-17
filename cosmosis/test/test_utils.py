@@ -18,28 +18,26 @@ def setup_git_repo():
         os.mkdir(repo_subdir)
 
         cmd = ["git", "init", "."]
-        p = subprocess.run(cmd, cwd=repo_dir, capture_output=True)
-        print('init stdout:', p.stdout)
-        print('init stderr:', p.stderr)
+        p = subprocess.run(cmd, cwd=repo_dir)
+        cmd = ["git", "config", "--local", "user.email", "test@user.com"]
+        p = subprocess.run(cmd, cwd=repo_dir)
+        cmd = ["git", "config", "--local", "user.name", "Test User"]
+        p = subprocess.run(cmd, cwd=repo_dir)
+
 
         with open(f"{repo_subdir}/f.txt", "w") as f:
             f.write("hello\n")
 
         cmd = ["git", "add", "subdir/f.txt"]
-        p = subprocess.run(cmd, cwd=repo_dir, capture_output=True)
-        print('add stdout:', p.stdout)
-        print('add stderr:', p.stderr)
+        p = subprocess.run(cmd, cwd=repo_dir)
 
         cmd = ["git", "commit", "-m", "added_file"]
-        p = subprocess.run(cmd, cwd=repo_dir, capture_output=True)
-        print('commit stdout:', p.stdout)
-        print('commit stderr:', p.stderr)
+        p = subprocess.run(cmd, cwd=repo_dir)
 
         cmd = ["git", "log"]
         p = subprocess.run(cmd, cwd=repo_dir, capture_output=True, universal_newlines=True)
         print('log stdout:', p.stdout)
         print('log stderr:', p.stderr)
-
         sha = p.stdout.split("\n")[0].split()[1]
         
         yield sha, repo_dir, repo_subdir
