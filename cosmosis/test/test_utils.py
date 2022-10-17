@@ -24,16 +24,21 @@ def setup_git_repo():
 
         cmd = ["git", "add", "subdir/f.txt"]
         p = subprocess.run(cmd, cwd=repo_dir, capture_output=True)
+        print(p.stdout)
+
         cmd = ["git", "commit", "-m", "added_file"]
         p = subprocess.run(cmd, cwd=repo_dir, capture_output=True)
+        print(p.stdout)
 
         cmd = ["git", "log"]
-        p = subprocess.run(cmd, cwd=repo_dir, capture_output=True, text=True)
+        p = subprocess.run(cmd, cwd=repo_dir, capture_output=True, universal_newlines=True)
+        print(p.stdout)
 
         sha = p.stdout.split("\n")[0].split()[1]
         
         yield sha, repo_dir, repo_subdir
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="test requires python3.7 or higher")
 @pytest.mark.skipif(dulwich_orig is None, reason="dulwich not installed")
 def test_dulwich_git_path1():
     with setup_git_repo() as info:
@@ -43,6 +48,7 @@ def test_dulwich_git_path1():
         assert sha == sha2
         assert sha == sha3
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="test requires python3.7 or higher")
 @pytest.mark.skipif(dulwich_orig is None, reason="dulwich not installed")
 def test_dulwich_git_path2():
     with setup_git_repo() as info:
@@ -52,6 +58,7 @@ def test_dulwich_git_path2():
         assert sha == sha2
         assert sha == sha3
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="test requires python3.7 or higher")
 def test_git_fallback():
     cosmosis.utils.dulwich = None
     try:
@@ -64,6 +71,7 @@ def test_git_fallback():
     finally:
         cosmosis.utils.dulwich = dulwich_orig
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="test requires python3.7 or higher")
 def test_git_nosub():
     os.environ["COSMOSIS_NO_SUBPROCESS"] = "1"
     cosmosis.utils.dulwich = None
