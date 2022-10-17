@@ -19,21 +19,26 @@ def setup_git_repo():
 
         cmd = ["git", "init", "."]
         p = subprocess.run(cmd, cwd=repo_dir, capture_output=True)
+        print('init stdout:', p.stdout)
+        print('init stderr:', p.stderr)
 
         with open(f"{repo_subdir}/f.txt", "w") as f:
             f.write("hello\n")
 
         cmd = ["git", "add", "subdir/f.txt"]
         p = subprocess.run(cmd, cwd=repo_dir, capture_output=True)
-        print(p.stdout)
+        print('add stdout:', p.stdout)
+        print('add stderr:', p.stderr)
 
         cmd = ["git", "commit", "-m", "added_file"]
         p = subprocess.run(cmd, cwd=repo_dir, capture_output=True)
-        print(p.stdout)
+        print('commit stdout:', p.stdout)
+        print('commit stderr:', p.stderr)
 
         cmd = ["git", "log"]
         p = subprocess.run(cmd, cwd=repo_dir, capture_output=True, universal_newlines=True)
-        print(p.stdout)
+        print('log stdout:', p.stdout)
+        print('log stderr:', p.stderr)
 
         sha = p.stdout.split("\n")[0].split()[1]
         
