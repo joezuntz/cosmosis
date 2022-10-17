@@ -163,6 +163,7 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
 
 
 def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
+    no_subprocesses = os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]
     # In case we need to hand-hold a naive demo-10 user.
 
     # Load configuration.
@@ -173,12 +174,16 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
     pre_script = ini.get(RUNTIME_INI_SECTION, "pre_script", fallback="")
     post_script = ini.get(RUNTIME_INI_SECTION, "post_script", fallback="")
 
-    if is_root:
-        # This decodes the exist status
-        status = os.WEXITSTATUS(os.system(pre_script))
-        if status:
-            raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
-                pre_script, status))
+    if is_root and pre_script:
+        if no_subprocesses:
+            print("Warning: subprocesses not allowed on this system as")
+            print("COSMOSIS_NO_SUBPROCESS variable was set.")
+            print("Ignoring pre-script.")
+        else:
+            status = os.WEXITSTATUS(os.system(pre_script))
+            if status:
+                raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
+                    pre_script, status))
 
     if is_root and args.mem:
         from cosmosis.runtime.memmon import MemoryMonitor
@@ -325,10 +330,15 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
     # But we still offer it
     if post_script and is_root:
         # This decodes the exist status
-        status = os.WEXITSTATUS(os.system(post_script))
-        if status:
-            sys.stdout.write("WARNING: The post-run script {} failed with error {}".format(
-                post_script, error))
+        if no_subprocesses:
+            print("Warning: subprocesses not allowed on this system as")
+            print("COSMOSIS_NO_SUBPROCESS variable was set.")
+            print("Ignoring post-script.")
+        else:
+            status = os.WEXITSTATUS(os.system(post_script))
+            if status:
+                sys.stdout.write("WARNING: The post-run script {} failed with error {}".format(
+                    post_script, error))
 
     return 0
 

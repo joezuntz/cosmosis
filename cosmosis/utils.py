@@ -14,7 +14,11 @@ from contextlib import contextmanager
 import tempfile
 import subprocess
 from functools import wraps
-
+import pathlib
+try:
+    import dulwich
+except:
+    dulwich = None
 
 
 class EverythingIsNan:
@@ -292,12 +296,30 @@ class PriorFunction(object):
         """
         return self._evaluate(p_in, self.all_priors)
 
+def get_git_revision_dulwich(directory):
+    import dulwich.repo
+    path = pathlib.Path(directory)
+    while not (path / ".git").exists():
+        if str(path) == path.root:
+            # not a git repo
+            return ""
+        path = path.parent.absolute()
+    repo = dulwich.repo.Repo(path)
+    return repo.head().decode('utf-8')
+
 
 def get_git_revision(directory):
     # Turn e.g. $COSMOSIS_SRC_DIR into a proper path
     directory = os.path.expandvars(directory)
     if not os.path.isdir(directory):
         return ""
+
+    if dulwich is not None:
+        return get_git_revision_dulwich(directory)
+
+    if os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]:
+        return ""
+
     # this git command gives the current commit ID of the
     # directory it is run from
     cmd = "git rev-parse HEAD".split()
