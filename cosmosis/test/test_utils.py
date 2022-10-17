@@ -4,6 +4,7 @@ import os
 import contextlib
 import subprocess
 import pytest
+import sys
 
 dulwich_orig = cosmosis.utils.dulwich
 
