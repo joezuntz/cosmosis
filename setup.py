@@ -183,6 +183,7 @@ requirements = [
     "emcee",
     "dynesty",
     "zeus-mcmc",
+    "dulwich"
 ]
 
 all_package_files = (datablock_libs + sampler_libs

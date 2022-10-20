@@ -8,6 +8,7 @@ import numpy as np
 import os
 import tempfile
 import pstats
+import pytest
 
 root = os.path.split(os.path.abspath(__file__))[0]
 
@@ -168,6 +169,45 @@ def test_profile(capsys):
 
 
 
+def test_script_skip():
+    with tempfile.TemporaryDirectory() as dirname:
+        values_file = f"{dirname}/values.ini"
+        params_file = f"{dirname}/params.ini"
+        output_file = f"{dirname}/output.txt"
+        with open(values_file, "w") as values:
+            values.write(
+                "[parameters]\n"
+                "p1=-3.0  0.0  3.0\n"
+                "p2=-3.0  0.0  3.0\n")
+
+        params = {
+            ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
+            ('runtime', 'pre_script'): "this_executable_does_not_exist",
+            ('runtime', 'post_script'): "this_executable_does_not_exist",
+            ('runtime', 'sampler'):  "test",
+            ("pipeline", "debug"): "F",
+            ("pipeline", "quiet"): "F",
+            ("pipeline", "modules"): "test1",
+            ("pipeline", "values"): values_file,
+            ("test1", "file"): "test_module.py",
+            ("output", "filename"): output_file,
+        }
+
+        args = parser.parse_args(["not_a_real_file"])
+        ini = Inifile(None, override=params)
+
+        with pytest.raises(RuntimeError):
+            status = run_cosmosis(args, ini=ini)
+
+        # shopuld work this time
+        try:
+            os.environ["COSMOSIS_NO_SUBPROCESS"] = "1"
+            status = run_cosmosis(args, ini=ini)
+        finally:
+            del os.environ["COSMOSIS_NO_SUBPROCESS"]
+
+
+
+
 if __name__ == '__main__':
-    test_add_param()
-    test_missing_setup()
+    test_script_skip()
