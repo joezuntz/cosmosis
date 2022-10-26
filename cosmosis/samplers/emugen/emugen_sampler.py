@@ -95,7 +95,7 @@ class EmulatorModule(ClassModule):
 
 class EmugenSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("prior", float), ("post", float), ("tempered_post", float)]
+    sampler_outputs = [("prior", float), ("tempered_post", float), ("post", float)]
 
     def config(self):
         global sampler
@@ -298,15 +298,22 @@ class EmugenSampler(ParallelSampler):
         # the chain is in the unit cube
         self.unit_chain = sampler.get_chain(discard=burn, thin=self.emcee_thin, flat=True)
         logp = sampler.get_log_prob(discard=burn, thin=self.emcee_thin, flat=True)
+        # derived parameters
+        self.blobs = sampler.get_blobs(discard=burn, thin=self.emcee_thin, flat=True)
 
         self.chain = np.array(
             [self.pipeline.denormalize_vector_from_prior(p) for p in self.unit_chain]
         )
 
-        # Save the current version of the chain
-        # Need to save a weight as well!
-        np.savetxt("tmp.txt", self.chain)
-        np.savetxt("logp.txt", logp)
+
+        # We discard the previous chain contents
+        self.output.reset_to_chain_start()
+
+        # and then output the latest version of the chain
+        for params, tempered_post, extra in zip(self.chain, logp, self.blobs):
+            prior, extra = extra
+            post = tempered_post / tempering
+            self.output.parameters(params, extra, prior, tempered_post, post)
 
 
 
