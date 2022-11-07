@@ -55,7 +55,7 @@ jobs:
         if  [ "${{ matrix.python-version }}" != "3.6" ]; then pip install pocomc; fi
 
     - name: Sklearn Zeus Thing
-    - run: |
+      run: |
         python -c "from sklearn.mixture import BayesianGaussianMixture"
 
     - name: Test with pytest
