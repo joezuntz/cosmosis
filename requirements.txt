@@ -12,3 +12,4 @@ zeus-mcmc
 mpi4py
 dulwich
 urllib3
+scikit-learn
