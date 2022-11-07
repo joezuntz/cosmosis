@@ -149,8 +149,37 @@ def test_keys():
         assert k in b
 
 
+def test_wrong_array_type():
+    puts = {
+        int:   "put_int_array_1d",
+        float: "put_double_array_1d",
+        str:   "put_string_array_1d",
+    }
+    gets = {
+        int:   "get_int_array_1d",
+        float: "get_double_array_1d",
+        str:   "get_string_array_1d",
+    }
+    dtypes = list(puts.keys())
+
+    for d1 in dtypes[:]:
+        for d2 in dtypes[:]:
+            if d1 is d2:
+                continue
+
+            b = DataBlock()
+            section = 'section'
+            key = 'key'
+            put = getattr(b, puts[d1])
+            get = getattr(b, gets[d2])
+
+            value = np.array([1, 2, 3], dtype=d1)
+            put(section, key, value)
+            with pytest.raises(errors.BlockWrongValueType):
+                get(section, key)
 
 
 if __name__ == '__main__':
     # test_string_array()
-    test_string_array_save()    
+    # test_string_array_save()
+    test_wrong_array_type()
