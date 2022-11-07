@@ -183,7 +183,10 @@ requirements = [
     "emcee",
     "dynesty",
     "zeus-mcmc",
-    "dulwich"
+    "dulwich",
+    "scikit-learn",
+    "future",
+
 ]
 
 all_package_files = (datablock_libs + sampler_libs
