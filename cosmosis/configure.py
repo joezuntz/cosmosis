@@ -42,8 +42,9 @@ def homebrew_gcc_commands():
         f"export FC=gfortran-{version}",
         "export MPIFC=mpif90",
         "export COSMOSIS_ALT_COMPILERS=1",
+        "export COSMOSIS_OMP_FLAGS=-fopenmp",
+        "export COSMOSIS_OMP_LDFLAGS=-lgomp",
     ]
-
 
 
 def generate_commands(cosmosis_src_dir, debug=False, omp=True, brew=False, brew_gcc=False, conda=True, ports=False):
