@@ -62,15 +62,16 @@ def generate_commands(cosmosis_src_dir, debug=False, omp=True, brew=False, brew_
     ]
 
     if brew:
+        brew_prefix = os.environ.get("HOMEBREW_PREFIX", "/usr/local")
         commands += [
-            "export GSL_LIB=/usr/local/lib",
-            "export GSL_INC=/usr/local/include",
-            "export FFTW_LIBRARY=/usr/local/lib",
-            "export FFTW_INCLUDE_DIR=/usr/local/include",
-            "export LAPACK_LINK='-L /usr/local/opt/openblas/lib/ -l lapack'",
-            "export LAPACK_LIB=/usr/local/opt/openblas/lib/",
-            "export CFITSIO_LIB=/usr/local/lib",
-            "export CFITSIO_INC=/usr/local/include",
+            f"export GSL_LIB={brew_prefix}/lib",
+            f"export GSL_INC={brew_prefix}/include",
+            f"export FFTW_LIBRARY={brew_prefix}/lib",
+            f"export FFTW_INCLUDE_DIR={brew_prefix}/include",
+            f"export LAPACK_LINK='-L {brew_prefix}/opt/openblas/lib/ -l lapack'",
+            f"export LAPACK_LIB={brew_prefix}/opt/openblas/lib/",
+            f"export CFITSIO_LIB={brew_prefix}/lib",
+            f"export CFITSIO_INC={brew_prefix}/include",
         ]
 
         if brew_gcc:
