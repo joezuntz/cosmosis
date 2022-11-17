@@ -15,7 +15,7 @@ then
     exit
 fi
 
-cmds=$(python -m cosmosis.configure "$@")
+cmds=$(python3 -m cosmosis.configure "$@")
 retval=$?
 if [ $retval -ne 0 ]
 then
