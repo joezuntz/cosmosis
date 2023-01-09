@@ -105,6 +105,7 @@ def test_maxlike():
 
 def test_metropolis():
     run('metropolis', True, samples=20)
+    run('metropolis', True, samples=20, covmat_sample_start=True)
 
 @pytest.mark.skipif(not minuit_compiled,reason="requires Minuit2")
 def test_minuit():
