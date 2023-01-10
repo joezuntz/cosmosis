@@ -20,7 +20,7 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10", 3.11]
         os: [ubuntu-20.04, macos-latest]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
           - os: macos-latest
             INSTALL_DEPS: brew update && brew install gcc swig libomp open-mpi openblas && if [ ! -f /usr/local/bin/gfortran ]; then ln -s /usr/local/bin/gfortran-$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1) /usr/local/bin/gfortran; fi
