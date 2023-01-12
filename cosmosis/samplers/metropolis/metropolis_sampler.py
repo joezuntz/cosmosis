@@ -26,6 +26,7 @@ class MetropolisSampler(ParallelSampler):
         pipeline = self.pipeline
         self.samples = self.read_ini("samples", int, default=20000)
         random_start = self.read_ini("random_start", bool, default=False)
+        covmat_sample_start = self.read_ini("covmat_sample_start", bool, default=False)
         use_cobaya = self.read_ini("cobaya", bool, default=False)
         self.Rconverge = self.read_ini("Rconverge", float, -1.0)
         self.drag = self.read_ini("drag", int, 0)
@@ -59,14 +60,17 @@ class MetropolisSampler(ParallelSampler):
             raise ValueError("To use fast/slow splitting with metropolis please "
                              "manually define first_fast_module in the pipeline "
                              "section.")
+
+
+        #Covariance matrix
+        covmat = self.load_covariance_matrix()
+
         #start values from prior
-        start = self.define_parameters(random_start)
+        start = self.define_parameters(random_start, covmat_sample_start, covmat)
         print("MCMC starting point:")
         for param, x in zip(self.pipeline.varied_params, start):
             print("    ", param, x)
 
-        #Covariance matrix
-        covmat = self.load_covariance_matrix()
 
         #Sampler object itself.
         quiet = self.pipeline.quiet
@@ -222,8 +226,25 @@ class MetropolisSampler(ParallelSampler):
 
 
 
-    def define_parameters(self, random_start):
-        if random_start:
+    def define_parameters(self, random_start, covmat_sample_start, covmat):
+        if covmat_sample_start:
+            p = self.pipeline.start_vector()
+            chol = np.linalg.cholesky(covmat)
+
+            # Try 100 times to get points within the prior
+            for i in range(200):
+                r = np.random.normal(size=covmat.shape[0])
+                start = p + chol @ r
+                prior = self.pipeline.prior(start, total_only=True)
+                if np.isfinite(prior):
+                    break
+            else:
+                raise ValueError("You set covmat_sample_start=T so I tried "
+                                 "100 times to get a sample inside the prior, "
+                                 "but it was always outside."
+                    )
+            return start
+        elif random_start:
             return self.pipeline.randomized_start()
         else:
             return self.pipeline.start_vector()
