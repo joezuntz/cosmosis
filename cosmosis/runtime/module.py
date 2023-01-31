@@ -281,25 +281,23 @@ class Module(object):
 
         """
 
-        if filepath.endswith('so') or filepath.endswith('dylib'):
+        if not os.path.exists(filepath):
+            raise SetupError(f"You specified a path {filepath} for a module. "
+                             "This file does not exist.")
+
+        elif filepath.endswith('so') or filepath.endswith('dylib'):
             language = MODULE_LANG_DYLIB
             try:
                 library = ctypes.cdll.LoadLibrary(filepath)
             except OSError as error:
-                exists = os.path.exists(filepath)
-                if exists:
-                    raise SetupError("You specified a path %s for a module. "
-                                     "File exists, but could not be opened. "
-                                     "Error was %s" % (filepath, error))
-                else:
-                    raise SetupError("You specified a path %s for a module. "
-                                     "File does not exist.  Error was %s" %
-                                     (filepath, error))
+                raise SetupError(f"You specified a path {filepath} for a module. "
+                                 f"File exists, but could not be opened. "
+                                 f"Error was {error}")
         elif filepath.endswith(".jl"):
             from . import julia_modules
             library = julia_modules.JuliaModule(filepath)
             language = MODULE_LANG_JULIA
-        else:
+        elif filepath.endswith(".py"):
             language = MODULE_LANG_PYTHON
             dirname, filename = os.path.split(filepath)
             # allows .pyc and .py modules to be used
@@ -313,6 +311,12 @@ class Module(object):
                                  "was unable to load it.  Error was %s" %
                                  (filepath, error))
             sys.path.pop(0)
+        else:
+            raise SetupError(f"You specified a path {filepath} for a module. "
+                             "I do not know what kind of module this is "
+                             "because the suffix is not .so, .dylib, .jl, or .py"
+                             )
+
 
         return library, language
 
