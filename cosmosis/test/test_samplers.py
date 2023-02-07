@@ -84,6 +84,7 @@ def test_dynesty():
 
 def test_emcee():
     run('emcee', True, walkers=8, samples=100)
+    run('emcee', True, walkers=8, samples=100, a=3.0)
 
 def test_truth():
     run('emcee', True, walkers=8, samples=100, do_truth=True)

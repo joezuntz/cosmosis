@@ -28,6 +28,7 @@ class EmceeSampler(ParallelSampler):
             self.nwalkers = self.read_ini("walkers", int, 2)
             self.samples = self.read_ini("samples", int, 1000)
             self.nsteps = self.read_ini("nsteps", int, 100)
+            self.a = self.read_ini("a", float, 2.0)
 
             assert self.nsteps>0, "You specified nsteps<=0 in the ini file - please set a positive integer"
             assert self.samples>0, "You specified samples<=0 in the ini file - please set a positive integer"
@@ -79,10 +80,15 @@ class EmceeSampler(ParallelSampler):
                 self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
                 self.output.log_info("Generating starting positions in small ball around starting point")
 
+            if self.emcee_version < 3:
+                kw = {"a": self.a}
+            else:
+                kw = {"moves": [(emcee.moves.StretchMove(a=self.a), 1.0)]}
+
             #Finally we can create the sampler
             self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, self.ndim,
                                                        log_probability_function,
-                                                       pool=self.pool)
+                                                       pool=self.pool, **kw)
 
     def resume(self):
         if self.output.resumed:
