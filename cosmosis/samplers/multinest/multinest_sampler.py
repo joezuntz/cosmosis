@@ -91,7 +91,7 @@ class MultinestSampler(ParallelSampler):
 
         # We add one to the output to save the posterior as well as the
         # likelihood.
-        self.npar = self.ndim + len(self.pipeline.extra_saves) + 2
+        self.npar = self.ndim + self.pipeline.number_extra + 2
 
         #Required options
         self.max_iterations = self.read_ini("max_iterations", int)

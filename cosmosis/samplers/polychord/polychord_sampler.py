@@ -106,7 +106,7 @@ class PolychordSampler(ParallelSampler):
 
         self.ndim = len(self.pipeline.varied_params)
         # We save the prior as well as the other derived params
-        self.nderived = len(self.pipeline.extra_saves) + 1
+        self.nderived = self.pipeline.number_extra + 1
 
         #Required options
         self.live_points    = self.read_ini("live_points", int, 100)
