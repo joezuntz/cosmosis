@@ -1,10 +1,20 @@
 from .. import ParallelSampler
 import numpy as np
 import sys
-
+import os
 
 def log_probability_function(p):
-    return pipeline.posterior(p)[0]
+    r = pipeline.run_results(p)
+    out = [r.post, r.prior]
+
+    # Flatten any vector outputs here
+    for e in r.extra:
+        if np.isscalar(e):
+            out.append(e)
+        else:
+            out.extend(e)
+    out = tuple(out)
+    return out
 
 
 def prior_transform(p):
@@ -13,7 +23,8 @@ def prior_transform(p):
 
 class NautilusSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [('log_weight', float), ("like", float)]
+    internal_resume = True
+    sampler_outputs = [ ('log_weight', float), ('prior', float), ("post", float)]
 
     def config(self):
         global pipeline
@@ -28,10 +39,7 @@ class NautilusSampler(ParallelSampler):
             self.random_state = self.read_ini("random_state", int, -1)
             if self.random_state < 0:
                 self.random_state = None
-            self.filepath = self.read_ini("filepath", str, 'None')
-            if self.filepath.lower() == 'none':
-                self.filepath = None
-            self.resume = self.read_ini("resume", bool, True)
+            self.resume_ = self.read_ini("resume", bool, False)
             self.f_live = self.read_ini("f_live", float, 0.01)
             self.n_shell = self.read_ini("n_shell", int, self.n_batch)
             self.n_eff = self.read_ini("n_eff", float, 10000.0)
@@ -46,6 +54,16 @@ class NautilusSampler(ParallelSampler):
 
         n_dim = self.pipeline.nvaried
 
+        try:
+            resume_filepath = self.output.name_for_sampler_resume_info()
+        except NotImplementedError:
+            resume_filepath = None
+
+        if resume_filepath is not None:
+            resume_filepath = resume_filepath + ".hdf5"
+            if self.resume_ and os.path.exists(resume_filepath):
+                print(f"Resuming Nautilus from file {resume_filepath}")
+
         sampler = Sampler(
             prior_transform,
             log_probability_function,
@@ -55,9 +73,10 @@ class NautilusSampler(ParallelSampler):
             enlarge=self.enlarge,
             n_batch=self.n_batch,
             random_state=self.random_state,
-            filepath=self.filepath,
-            resume=self.resume,
-            pool=self.pool
+            filepath=resume_filepath,
+            resume=self.resume_,
+            pool=self.pool,
+            blobs_dtype=float
         )
 
         sampler.run(f_live=self.f_live,
@@ -66,11 +85,15 @@ class NautilusSampler(ParallelSampler):
                     discard_exploration=self.discard_exploration,
                     verbose=self.verbose)
 
-        for sample, logwt, logl in zip(*sampler.posterior()):
-            self.output.parameters(sample, logwt, logl)
+        for sample, logwt, logl, blob in zip(*sampler.posterior(return_blobs=True)):
+            prior = blob[0]
+            extra = blob[1:]
+            logp = logl + prior
+            self.output.parameters(sample, extra, logwt, prior, logp)
 
         self.output.final(
             "efficiency", sampler.effective_sample_size() / sampler.n_like)
+        self.output.final("neff", sampler.effective_sample_size())
         self.output.final("nsample", len(sampler.posterior()[0]))
         self.output.final("log_z", sampler.evidence())
         self.converged = True

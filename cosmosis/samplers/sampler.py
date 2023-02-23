@@ -36,6 +36,7 @@ class Sampler(metaclass=RegisteredSampler):
     parallel_output = False
     is_parallel_sampler = False
     supports_resume = False
+    internal_resume = False
 
     
     def __init__(self, ini, pipeline, output=None):

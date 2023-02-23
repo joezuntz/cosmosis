@@ -709,10 +709,13 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         # which is just read from the file
         files = super(MultinestStatistics,self).run()
         logz = self.source.final_metadata[0]["log_z"]
-        logz_sigma = self.source.final_metadata[0]["log_z_error"]
+        try:
+            logz_sigma = self.source.final_metadata[0]["log_z_error"]
+        except KeyError:
+            logz_sigma = "(error not computed)"
         #First print to screen
         print("Bayesian evidence:")
-        print("    log(Z) = %g ± %g" % (logz,logz_sigma))
+        print(f"    log(Z) = {logz:.2f} ± {logz_sigma}")
         print()
 
 
@@ -725,7 +728,7 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         #Now save to file
         header = '#logz    logz_sigma'
         f, filename, new_file  = self.get_text_output("evidence", header, self.source.name)
-        f.write('%e    %e\n'%(logz,logz_sigma))
+        f.write(f'{logz}    {logz_sigma}\n')
 
         #Include evidence in list of created files
         files.append(filename)

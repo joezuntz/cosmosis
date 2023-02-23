@@ -316,6 +316,8 @@ class DynestyProcessor(MultinestProcessor):
 		col = self.get_col(name)
 		return col
 
+class NautilusProcess(DynestyProcessor):
+	sampler = "nautilus"
 
 
 class PMCPostProcessor(WeightedMetropolisProcessor):

@@ -79,6 +79,7 @@ class PolychordSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("prior", float), ("like", float), ("post", float), ("weight", float)]
     supports_smp=False
+    internal_resume = True
     understands_fast_subspaces = True
 
     def config(self):

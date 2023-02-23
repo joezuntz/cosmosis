@@ -263,17 +263,38 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
         # It's not fully rolled out to all the suitable samplers yet though.
         resume = ini.getboolean(RUNTIME_INI_SECTION, "resume", fallback=False)
 
+        # Polychord, multinest, and nautilus have their own internal
+        # mechanism for resuming chains.
+        if sampler_class.internal_resume:
+            resume2 = ini.getboolean(sampler_name, "resume", fallback=False)
+            resume = resume or resume2
+
+            if resume and is_root:
+                print(f"Resuming sampling using {sampler_name} internal mechanism, "
+                      "so starting a new output chain file.")
+
+            # Tell the sampler to resume directly
+            if not ini.has_section(sampler_name):
+                ini.add_section(sampler_name)
+            ini.set(sampler_name, "resume", str(resume))
+
+            # Switch off the main cosmosis resume mechanism
+            resume = False
+
         # Not all samplers can be resumed.
         if resume and not sampler_class.supports_resume:
             print("NOTE: You set resume=T in the [runtime] section but the sampler {} does not support resuming yet.  I will ignore this option.".format(sampler_name))
             resume=False
+
 
         if is_root:
             print("****************************")
             print("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name))
 
         output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume)
-        print("****************************")
+
+        if is_root:
+            print("****************************")
 
         #Initialize our sampler, with the class we got above.
         #It needs an extra pool argument if it is a ParallelSampler.
