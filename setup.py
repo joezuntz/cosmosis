@@ -183,6 +183,7 @@ requirements = [
     "emcee",
     "dynesty",
     "zeus-mcmc",
+    "nautilus-sampler",
     "dulwich",
     "scikit-learn",
     "future",

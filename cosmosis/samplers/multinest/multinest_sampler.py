@@ -64,6 +64,7 @@ class MultinestSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("prior", float), ("like", float), ("post", float), ("weight", float)]
     supports_smp=False
+    internal_resume = True
 
     def config(self):
         if self.pool:

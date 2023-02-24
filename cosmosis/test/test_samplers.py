@@ -138,6 +138,9 @@ def test_polychord():
 def test_snake():
         run('snake', True)
 
+def test_nautilus():
+    run('nautilus', True)
+
 def test_star():
         run('star', False)
 
