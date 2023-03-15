@@ -12,7 +12,7 @@ import numpy as np
 
 minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
 
-def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, **options):
+def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, **options):
 
     sampler_class = Sampler.registry[name]
 
@@ -36,6 +36,9 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
     for k,v in options.items():
         override[(name,k)] = str(v)
 
+    if no_extra:
+        del override[("pipeline", "extra_output")]
+
 
     ini = Inifile(None, override=override)
 
@@ -57,7 +60,7 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
         # but not all of them
         assert not np.all(pr==-np.inf)
 
-    if check_extra:
+    if check_extra and not no_extra:
         p1 = output['parameters--p1']
         p2 = output['parameters--p2']
         p3 = output['PARAMETERS--P3']
@@ -140,6 +143,7 @@ def test_snake():
 
 def test_nautilus():
     run('nautilus', True)
+    run('nautilus', True, no_extra=True)
 
 def test_star():
         run('star', False)
