@@ -86,6 +86,7 @@ class NautilusSampler(ParallelSampler):
                     verbose=self.verbose)
 
         for sample, logwt, logl, blob in zip(*sampler.posterior(return_blobs=True)):
+            blob = np.atleast_1d(blob)
             prior = blob[0]
             extra = blob[1:]
             logp = logl + prior
