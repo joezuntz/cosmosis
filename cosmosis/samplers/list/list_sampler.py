@@ -39,8 +39,13 @@ class ListSampler(ParallelSampler):
                 if self.output is not None:
                     self.output.add_column(str(p), float)
             if self.output is not None:
-                for p in self.pipeline.extra_saves:
-                    self.output.add_column('{}--{}'.format(*p), float)
+                for section,name in self.pipeline.extra_saves:
+                    if ('#' in name):
+                        n,l = name.split('#')
+                        for i in range(int(l)):
+                            self.output.add_column('{}--{}_{}'.format(section,n,i), float)
+                    else:
+                        self.output.add_column('%s--%s'%(section,name), float)
                 for p,ptype in self.sampler_outputs:
                     self.output.add_column(p, ptype)
 
