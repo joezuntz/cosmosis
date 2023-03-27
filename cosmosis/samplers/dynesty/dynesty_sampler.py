@@ -4,7 +4,7 @@ import sys
 
 
 def log_probability_function(p):
-    return pipeline.posterior(p)[0]
+    return pipeline.likelihood(p)[0]
 
 def prior_transform(p):
     return pipeline.denormalize_vector_from_prior(p)

@@ -5,7 +5,7 @@ import os
 
 def log_probability_function(p):
     r = pipeline.run_results(p)
-    out = [r.post, r.prior]
+    out = [r.like, r.prior]
 
     # Flatten any vector outputs here
     for e in r.extra:
