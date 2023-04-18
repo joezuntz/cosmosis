@@ -1,7 +1,7 @@
 from .. import ParallelSampler
 import numpy as np
-import sys
 import os
+
 
 def log_probability_function(p):
     r = pipeline.run_results(p)
@@ -24,7 +24,8 @@ def prior_transform(p):
 class NautilusSampler(ParallelSampler):
     parallel_output = False
     internal_resume = True
-    sampler_outputs = [ ('log_weight', float), ('prior', float), ("post", float)]
+    sampler_outputs = [('log_weight', float), ('prior', float),
+                       ("post", float)]
 
     def config(self):
         global pipeline
@@ -33,12 +34,16 @@ class NautilusSampler(ParallelSampler):
         if self.is_master():
             self.n_live = self.read_ini("n_live", int, 1500)
             self.n_update = self.read_ini("n_update", int, self.n_live)
-            self.enlarge = self.read_ini(
-                "enlarge", float, 1.1**self.pipeline.nvaried)
+            self.enlarge_per_dim = self.read_ini("enlarge_per_dim", float, 1.1)
+            self.n_points_min = self.read_ini("n_points_min", int,
+                                              self.pipeline.nvaried + 50)
+            self.split_threshold = self.read_ini("split_threshold", float, 100)
+            self.n_networks = self.read_ini("n_networks", int, 4)
+            self.n_jobs = self.read_ini("n_jobs", int, 1)
             self.n_batch = self.read_ini("n_batch", int, 100)
-            self.random_state = self.read_ini("random_state", int, -1)
-            if self.random_state < 0:
-                self.random_state = None
+            self.seed = self.read_ini("seed", int, -1)
+            if self.seed < 0:
+                self.seed = None
             self.resume_ = self.read_ini("resume", bool, False)
             self.f_live = self.read_ini("f_live", float, 0.01)
             self.n_shell = self.read_ini("n_shell", int, self.n_batch)
@@ -70,9 +75,13 @@ class NautilusSampler(ParallelSampler):
             n_dim,
             n_live=self.n_live,
             n_update=self.n_update,
-            enlarge=self.enlarge,
+            enlarge_per_dim=self.enlarge_per_dim,
+            n_points_min=self.n_points_min,
+            split_threshold=self.split_threshold,
+            n_networks=self.n_networks,
+            n_jobs=self.n_jobs,
             n_batch=self.n_batch,
-            random_state=self.random_state,
+            seed=self.seed,
             filepath=resume_filepath,
             resume=self.resume_,
             pool=self.pool,
