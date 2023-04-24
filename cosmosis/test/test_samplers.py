@@ -144,6 +144,9 @@ def test_snake():
 def test_nautilus():
     run('nautilus', True)
     run('nautilus', True, no_extra=True)
+    run('nautilus', True, no_extra=True, n_live=500, enlarge_per_dim=1.05,
+        split_threshold=95., n_networks=3, n_batch=50, verbose=True, f_live=0.02, n_shell=100)
+
 
 def test_star():
         run('star', False)
