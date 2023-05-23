@@ -206,6 +206,46 @@ def test_script_skip():
         finally:
             del os.environ["COSMOSIS_NO_SUBPROCESS"]
 
+def test_prior_override():
+    with tempfile.TemporaryDirectory() as dirname:
+        values_file = f"{dirname}/values.ini"
+        output_file = f"{dirname}/output.txt"
+        with open(values_file, "w") as values:
+            values.write(
+                "[parameters]\n"
+                "p1=-3.0  0.0  3.0\n"
+                "p2=-3.0  0.0  3.0\n")
+
+        params = {
+            ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
+            ('runtime', 'sampler'):  "apriori",
+            ('apriori', 'nsample'):  "1000",
+            ("pipeline", "debug"): "F",
+            ("pipeline", "quiet"): "F",
+            ("pipeline", "modules"): "test1",
+            ("pipeline", "values"): values_file,
+            ("test1", "file"): "test_module.py",
+            ("output", "filename"): output_file,
+        }
+
+        args = parser.parse_args(["not_a_real_file"])
+        ini = Inifile(None, override=params)
+
+        priors_vals = {
+            ('parameters', 'p1'): 'uniform -1.0    1.0'
+        }
+
+        priors = Inifile(None, override=priors_vals)
+
+        status = run_cosmosis(args, ini=ini, priors=priors)
+        chain = np.loadtxt(output_file).T
+        p1 = chain[0]
+        p2 = chain[1]
+        print(p1.min(), p1.max())
+        assert p1.max() < 1.0
+        assert p1.min() > -1.0
+
+
 
 
 
