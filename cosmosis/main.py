@@ -162,7 +162,7 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
     return output
 
 
-def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
+def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None, priors=None):
     no_subprocesses = os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]
     # In case we need to hand-hold a naive demo-10 user.
 
@@ -200,14 +200,14 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None):
         cleanup_pipeline = True
         pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
         if is_root or pool_stdout:
-            pipeline = LikelihoodPipeline(ini, override=args.variables, values=values, only=args.only)
+            pipeline = LikelihoodPipeline(ini, override=args.variables, values=values, only=args.only, priors=priors)
         else:
             # Suppress output on everything except the master process
             if pool_stdout:
-                pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only) 
+                pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only, priors=priors)
             else:
                 with stdout_redirected():
-                    pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only) 
+                    pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only, priors=priors)
 
         if pipeline.do_fast_slow:
             pipeline.setup_fast_subspaces()
