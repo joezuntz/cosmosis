@@ -13,8 +13,8 @@ import scipy.optimize
 from . import lazy_pylab as pylab
 import itertools
 import os
-import sys
-import collections
+import warnings
+
 
 default_latex_file = os.path.join(os.path.split(__file__)[0], "latex.ini")
 legend_locations = {
@@ -43,6 +43,7 @@ class Plots(PostProcessorElement):
             self.load_latex(latex_file)
         self.quiet =  False
         self.truth = None
+        self.cache = {}
         truth = self.options.get("truth")
         if truth:
             self.truth = {str(p): p.start for p in Parameter.load_parameters(truth)}
@@ -463,7 +464,7 @@ class SnakePlots2D(GridPlots2D):
         return extent, like
 
 
-class MetropolisHastingsPlots(Plots, MCMCPostProcessorElement):
+class MetropolisHastingsPlotsBase(Plots, MCMCPostProcessorElement):
     excluded_columns = ["like","post", "prior"]
 
 def get_param_limits(source, name):
@@ -495,22 +496,28 @@ def select_limits(x, source, name):
     return xmin, xmax, near_boundary
 
 
+def next_entry(l, m):
+    return m[(l.index(m) + 1)%len(m)]
 
-class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
+
+class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
+    def run(self):
+        return self.run_1d() + self.run_2d()
+
     def keywords_1d(self):
         return {}
 
-    def smooth_likelihood(self, x, name):
+    def smooth_likelihood_1d(self, x, name):
         #Interpolate using KDE
         if self.options.get("fix_edges"):
-            return self.smooth_likelihood_with_boundaries(x, name)
+            return self.smooth_likelihood_with_boundaries_1d(x, name)
         n = self.options.get("n_kde", 100)
         factor = self.options.get("factor_kde", 2.0)
         kde = KDE(x, factor=factor)
         x_axis, like = kde.grid_evaluate(n, (x.min(), x.max()) )
         return x_axis, like
 
-    def smooth_likelihood_with_boundaries(self, x, name):
+    def smooth_likelihood_with_boundaries_1d(self, x, name):
         # find the limits on this parameter
         factor = self.options.get("factor_kde", 2.0)
         xmin, xmax, fix = select_limits(x, self.source, name)
@@ -530,8 +537,9 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
             filename = None
         if x.max()-x.min()==0: return
 
-        x_axis, like = self.smooth_likelihood(x, name)
+        x_axis, like = self.smooth_likelihood_1d(x, name)
         like/=like.max()
+        self.cache[name] = x_axis, like
 
         #Choose colors
         color = self.line_color()
@@ -546,18 +554,13 @@ class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
             figure.cosmosis_done_truth = True
         return filename
 
-    def run(self):
+    def run_1d(self):
         filenames = []
         for name in self.source.colnames:
             if name.lower() in self.excluded_columns: continue
             filename = self.make_1d_plot(name)
             if filename: filenames.append(filename)
         return filenames
-
-def next_entry(l, m):
-    return m[(l.index(m) + 1)%len(m)]
-
-class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
     def keywords_2d(self):
         return {}
@@ -581,9 +584,9 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
 
-    def smooth_likelihood(self, x, y, xname, yname):
+    def smooth_likelihood_2d(self, x, y, xname, yname):
         if self.options.get("fix_edges"):
-            return self.smooth_likelihood_with_boundaries(x, y, xname, yname)
+            return self.smooth_likelihood_with_boundaries_2d(x, y, xname, yname)
 
         n = self.options.get("n_kde", 100)
         factor = self.options.get("factor_kde", 2.0)
@@ -593,7 +596,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
         return x_axis, y_axis, like
 
-    def smooth_likelihood_with_boundaries(self, x, y, xname, yname):
+    def smooth_likelihood_with_boundaries_2d(self, x, y, xname, yname):
         factor = self.options.get("factor_kde", 2.0)
         xmin, xmax, fix_x = select_limits(x, self.source, xname)
         ymin, ymax, fix_y = select_limits(y, self.source, yname)
@@ -606,6 +609,113 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         ycut0 = ycut.min()
         ycut1 = ycut.max() + 1
         return xout[xcut0:xcut1], yout[ycut0:ycut1], like[xcut0:xcut1, ycut0:ycut1]
+
+    def make_corner_plot(self, figure=None):
+        from matplotlib.ticker import AutoMinorLocator, AutoLocator, ScalarFormatter
+        from matplotlib.axis import Ticker
+
+        pairs = list(self.parameter_pairs())
+
+        # parameters, in the order we will use
+        params = list(dict.fromkeys([p[0] for p in pairs]))
+        print(params)
+        nparam = len(params)
+        fig, filename = self.figure("corner")
+
+        # enlarge for this extra big figure
+        fig.set_size_inches(4 * nparam, 4 * nparam)
+
+        axes = fig.subplots(nparam, nparam, squeeze=False)
+        for i in range(nparam):
+            for j in range(nparam):
+                ax = axes[i, j]
+
+                # Switch on minor ticks and have them point inwards like sensible people
+                ax.tick_params(direction='in', which='both', bottom=True, left=True)
+                ax.tick_params(which='minor', length=5, bottom=True, left=True)
+                ax.minorticks_on()
+
+                # Remove upper right above diagonal
+                if j > i:
+                    fig.delaxes(ax)
+                    continue
+
+                p1 = params[j]
+                p2 = params[i]
+                if i == j:
+                    # Left column only has a y-label, and others also have no y tick labels
+                    # and only the bottom row as an x-label, and others have no x ticks.
+                    # Top left is labelled "Posterior"
+                    # Only the bottom row has
+                    if i == 0:
+                        ax.set_ylabel("Posterior")
+                    else:
+                        ax.yaxis.set_ticklabels([])
+                    if j == nparam - 1:
+                        ax.set_xlabel(self.latex(p2))
+                    else:
+                        ax.xaxis.set_ticklabels([])
+
+                    # Use the same 1D information as in the 1D plots
+                    x, like = self.cache[p1]
+
+                    # Plot and set the limits explicitly.
+                    # Trying to use the sharex / sharey feature here is painful
+                    # because we want to remove the diagonal, and that seems to make
+                    # the tick stuff really fiddly.
+                    ax.plot(x, like / like.max(), color=self.line_color())
+                    ax.set_xlim(x.min(), x.max())
+                    ax.set_ylim(0, 1.1)
+
+                    # ax.tick_params(axis='both', which='minor', bottom=True, left=True)
+
+                else:
+                    # We might have done the swap thing, in which case
+                    # check both directions.
+                    # If the user has done some funny things with the --only or --either
+                    # parameters then things might get funny here, so allow missing panels.
+                    try:
+                        x, y, like, levels = self.cache[p1, p2]
+                    except KeyError:
+                        # we have to switch the parameter ordering in this case,
+                        # and flip the contours
+                        try:
+                            x, y, like, levels = self.cache[p2, p1]
+                            x, y = y, x
+                            like = like.T
+                        except KeyError:
+                            continue
+                    color = self.line_color()
+
+                    # This is the same contour code as in the main 2D plot code
+                    ax.contour(x, y, like, levels=levels[:2], colors=color)
+
+                    # As with the 1D plots on the diagonal we have to remove
+                    # the labelling from most of the panels.
+                    if i == nparam - 1:
+                        ax.set_xlabel(self.latex(p1))
+                    else:
+                        ax.xaxis.set_ticklabels([])
+                    if j == 0:
+                        ax.set_ylabel(self.latex(p2))
+                    else:
+                        ax.yaxis.set_ticklabels([])
+
+                    # Explicitly set the ranges so that they are the
+                    # same for all the panels. To ensure that axes are identical to
+                    # the 1D version we set them to the same range as that.
+
+                    x1, _ = self.cache[p1]
+                    y1, _ = self.cache[p2]
+
+                    ax.set_xlim(x1.min(), x1.max())
+                    ax.set_ylim(y1.min(), y1.max())
+
+        fig.tight_layout()
+        fig.subplots_adjust(hspace=0.04, wspace=0.08)
+        return filename
+
+
 
     def make_2d_plot(self, name1, name2, figure=None):
         #Get the data
@@ -622,7 +732,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
 
         #Interpolate using KDE
         try:
-            x_axis, y_axis, like = self.smooth_likelihood(x, y, name1, name2)
+            x_axis, y_axis, like = self.smooth_likelihood_2d(x, y, name1, name2)
         except np.linalg.LinAlgError:
             print("  -- these two parameters have singular covariance - probably a linear relation")
             print("Not making a 2D plot of them")
@@ -648,6 +758,8 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         fill = self.options.get("fill", True)
         imshow = self.options.get("imshow", False)
         plot_points = self.options.get("plot_points", False)
+
+        self.cache[name1, name2] = (x_axis, y_axis, like.T, levels)
 
         if imshow:
             pylab.imshow(like.T, extent=(x_axis[0], x_axis[-1], y_axis[0], y_axis[-1]), aspect='auto', origin='lower')
@@ -677,7 +789,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
         return filename        
 
 
-    def run(self):
+    def run_2d(self):
         if self.options.get("no_2d", False):
             print("Not making any 2D plots because you said --no-2d")
             return []
@@ -695,6 +807,7 @@ class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
                     print(traceback.format_exc())
                 if filename:
                     filenames.append(filename)
+        filenames.append(self.make_corner_plot())
         return filenames
 
 
@@ -732,14 +845,16 @@ class TestPlots(Plots):
         return filenames
 
 
-class WeightedPlots1D(object):
-    def smooth_likelihood(self, x, name):
+class WeightedPlots(object):
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
+
+    def smooth_likelihood_1d(self, x, name):
         #Interpolate using KDE
         n = self.options.get("n_kde", 100)
         weights = self.weight_col()
         #speed things up by removing zero-weighted samples
         if self.options.get("fix_edges"):
-            return self.smooth_likelihood_with_boundaries(x, name, weights)
+            return self.smooth_likelihood_with_boundaries_1d(x, name, weights)
 
         x_range = get_plot_range(x, weights)
 
@@ -748,7 +863,7 @@ class WeightedPlots1D(object):
         x_axis, like = kde.grid_evaluate(n, x_range )
         return x_axis, like
 
-    def smooth_likelihood_with_boundaries(self, x, name, weights):
+    def smooth_likelihood_with_boundaries_1d(self, x, name, weights):
         # find the limits on this parameter
         factor = self.options.get("factor_kde", 2.0)
         xmin, xmax, fix = select_limits(x, self.source, name)
@@ -758,30 +873,11 @@ class WeightedPlots1D(object):
         cut = (xout >= xmin0) & (xout <= xmax0)
         return xout[cut], like[cut]
 
-
-class MultinestPlots1D(WeightedPlots1D, MultinestPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
-
-class PolychordPlots1D(MultinestPlots1D):
-    pass
-
-
-class WeightedMetropolisPlots1D(WeightedPlots1D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots1D):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
-
-def get_plot_range(x, weights):
-    dx = std_weight(x, weights)*4
-    mu_x = mean_weight(x, weights)
-    return (max(x.min(), mu_x-dx), min(x.max(), mu_x+dx))
-
-
-class WeightedPlots2D(object):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
-    def smooth_likelihood(self, x, y, xname, yname):
+    def smooth_likelihood_2d(self, x, y, xname, yname):
         weights = self.weight_col()
 
         if self.options.get("fix_edges"):
-            return self.smooth_likelihood_with_boundaries(x, y, weights, xname, yname)
+            return self.smooth_likelihood_with_boundaries_2d(x, y, weights, xname, yname)
 
         n = self.options.get("n_kde", 100)
         fill = self.options.get("fill", True)
@@ -792,7 +888,7 @@ class WeightedPlots2D(object):
         (x_axis, y_axis), like = kde.grid_evaluate(n, [x_range, y_range])
         return x_axis, y_axis, like
 
-    def smooth_likelihood_with_boundaries(self, x, y, weights, xname, yname):
+    def smooth_likelihood_with_boundaries_2d(self, x, y, weights, xname, yname):
         factor = self.options.get("factor_kde", 2.0)
         xmin, xmax, fix_x = select_limits(x, self.source, xname)
         ymin, ymax, fix_y = select_limits(y, self.source, yname)
@@ -830,6 +926,25 @@ class WeightedPlots2D(object):
         level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,))
         return level1, level2, like.sum()
 
+
+class MultinestPlots(WeightedPlots, MultinestPostProcessorElement, MetropolisHastingsPlots):
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
+
+class PolychordPlots(MultinestPlots):
+    pass
+
+def get_plot_range(x, weights):
+    dx = std_weight(x, weights)*4
+    mu_x = mean_weight(x, weights)
+    return (max(x.min(), mu_x-dx), min(x.max(), mu_x+dx))
+
+
+class WeightedMetropolisPlots(WeightedPlots, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots):
+    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
+
+
+
+
 class TracePlots(Plots, MCMCPostProcessorElement):
     excluded_columns = []
     def run(self):
@@ -856,18 +971,9 @@ class TracePlots(Plots, MCMCPostProcessorElement):
         return filename
 
 
-class WeightedMetropolisPlots2D(WeightedPlots2D, WeightedMCMCPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
-    pass
 
-class MultinestPlots2D(WeightedPlots2D, MultinestPostProcessorElement, MetropolisHastingsPlots2D):
-    excluded_columns = ["like","old_like","post", "weight", "log_weight", "old_log_weight", "old_weight", "old_post", "prior"]
-    pass
 
-class PolychordPlots2D(MultinestPlots2D):
-    pass
-
-class TrianglePlot(MetropolisHastingsPlots):
+class TrianglePlot(MetropolisHastingsPlotsBase):
     def run(self):
         try:
             import triangle
@@ -1156,3 +1262,65 @@ def color_variant(hex_color, brightness_offset=1):
     new_rgb_int = [min([255, max([0, i])]) for i in new_rgb_int] # make sure new values are between 0 and 255
     # hex() produces "0x88", we want just "88"
     return "#" + "".join([hex(i)[2:] for i in new_rgb_int])
+
+
+
+# For backwards-compatibility with any poor souls using these, we provide replacements for the old
+# separate 1D and 2D classes, which were unified to make it easier to do a corner plot.
+class WeightedMetropolisPlots1D(WeightedMetropolisPlots):
+    def run(self):
+        warnings.warn('WeightedMetropolisPlots1D and the other 1D and 2D plotters are deprecated', DeprecationWarning, stacklevel=2)
+        return self.run_1d()
+    def smooth_likelihood(self, x, name):
+        return self.smooth_likelihood_1d(x, name)
+
+class MetropolisHastingsPlots1D(MetropolisHastingsPlots):
+    def run(self):
+        warnings.warn('MetropolisPlots1D and the other 1D and 2D plotters are deprecated', DeprecationWarning, stacklevel=2)
+        return self.run_1d()
+    def smooth_likelihood(self, x, name):
+        return self.smooth_likelihood_1d(x, name)
+
+class PolychordPlots1D(PolychordPlots):
+    def run(self):
+        warnings.warn('PolychordPlots1D and the other 1D and 2D plotters are deprecated', DeprecationWarning, stacklevel=2)
+        return self.run_1d()
+    def smooth_likelihood(self, x, name):
+        return self.smooth_likelihood_1d(x, name)
+
+class MultinestPlots1D(MultinestPlots):
+    def run(self):
+        warnings.warn('MetropolisHastingsPlots1D and the other 1D and 2D plotters are deprecated', DeprecationWarning, stacklevel=2)
+        return self.run_1d()
+    def smooth_likelihood(self, x, name):
+        return self.smooth_likelihood_2d(x, name)
+
+# 2D versions of the above
+
+class MetropolisHastingsPlots2D(MetropolisHastingsPlots):
+    def run(self):
+        warnings.warn('MetropolisHastingsPlots2D and the other 1D and 2D plotters are deprecated', DeprecationWarning, stacklevel=2)
+        return self.run_2d()
+    def smooth_likelihood(self, x, y, xname, yname):
+        return self.smooth_likelihood_2d(x, y, xname, yname)
+
+class WeightedMetropolisPlots2D(WeightedMetropolisPlots):
+    def run(self):
+        warnings.warn('WeightedMetropolisPlots2D and the other 1D and 2D plotters are deprecated', DeprecationWarning, stacklevel=2)
+        return self.run_2d()
+    def smooth_likelihood(self, x, y, xname, yname):
+        return self.smooth_likelihood_2d(x, y, xname, yname)
+
+class MultinestPlots2D(MultinestPlots):
+    def run(self):
+        warnings.warn('MultinestPlots2D and the other 1D and 2D plotters are deprecated', DeprecationWarning, stacklevel=2)
+        return self.run_2d()
+    def smooth_likelihood(self, x, y, xname, yname):
+        return self.smooth_likelihood_2d(x, y, xname, yname)
+
+class PolychordPlots2D(PolychordPlots):
+    def run(self):
+        warnings.warn('Polychord2D and the other 1D and 2D plotters are deprecated', DeprecationWarning, stacklevel=2)
+        return self.run_2d()
+    def smooth_likelihood(self, x, y, xname, yname):
+        return self.smooth_likelihood_2d(x, y, xname, yname)
