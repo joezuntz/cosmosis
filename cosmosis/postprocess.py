@@ -35,6 +35,8 @@ plots.add_argument("--legend-loc", default='best', help="The location of the leg
 plots.add_argument("--swap", action='store_true', help="Swap the ordering of the parameters in (x,y)")
 plots.add_argument("--only", type=str, dest='prefix_only', help="Only make 2D plots where both parameter names start with this")
 plots.add_argument("--either", type=str, dest='prefix_either', help="Only make 2D plots where one of the parameter names starts with this.")
+parser.add_argument("--exclude", nargs="+", dest='prefix_exclude', help='Specify one or more prefixes to exclude matching parameters from 2D plots')
+
 plots.add_argument("--no-plots", action='store_true', help="Do not make any default plots")
 plots.add_argument("--no-2d", action='store_true', help="Do not make any 2D plots")
 plots.add_argument("--no-alpha", dest='alpha', action='store_false', help="No alpha effect - shaded contours will not be visible through other ones")

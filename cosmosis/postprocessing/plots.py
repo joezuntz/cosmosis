@@ -174,6 +174,7 @@ class Plots(PostProcessorElement):
         swap=self.options.get("swap")
         prefix_only = self.options.get("prefix_only")
         prefix_either = self.options.get("prefix_either")
+        prefix_exclude = self.options.get("prefix_exclude")
         #only overrides either
 
         for name1 in self.source.colnames[:]:
@@ -187,7 +188,10 @@ class Plots(PostProcessorElement):
                     name1.startswith(prefix_either)
                 or name2.startswith(prefix_either)
                     ): continue
-
+                if prefix_exclude and any([name1.startswith(p) for p in prefix_exclude]):
+                    continue
+                if prefix_exclude and any([name2.startswith(p) for p in prefix_exclude]):
+                    continue
                 if name1.lower() in self.excluded_columns: continue
                 if name2.lower() in self.excluded_columns: continue
                 if swap:
@@ -348,8 +352,8 @@ class GridPlots2D(GridPlots):
         vals1 = np.unique(cols1)
         vals2 = np.unique(cols2)
 
-        n1 = self.nsample_dimension
-        n2 = self.nsample_dimension
+        n1 = int(self.nsample_dimension)
+        n2 = n1
 
         like = like - like.max()
 
@@ -618,12 +622,12 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
 
         # parameters, in the order we will use
         params = list(dict.fromkeys([p[0] for p in pairs]))
-        print(params)
         nparam = len(params)
         fig, filename = self.figure("corner")
 
         # enlarge for this extra big figure
-        fig.set_size_inches(4 * nparam, 4 * nparam)
+        size = min(4 * nparam, 24)
+        fig.set_size_inches(size, size)
 
         axes = fig.subplots(nparam, nparam, squeeze=False)
         for i in range(nparam):
@@ -654,6 +658,9 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
                     if j == nparam - 1:
                         ax.set_xlabel(self.latex(p2))
                     else:
+                        ax.xaxis.set_ticklabels([])
+
+                    if nparam > 10:
                         ax.xaxis.set_ticklabels([])
 
                     # Use the same 1D information as in the 1D plots
@@ -700,6 +707,9 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
                         ax.set_ylabel(self.latex(p2))
                     else:
                         ax.yaxis.set_ticklabels([])
+
+                    if nparam > 10:
+                        ax.xaxis.set_ticklabels([])
 
                     # Explicitly set the ranges so that they are the
                     # same for all the panels. To ensure that axes are identical to
@@ -1199,7 +1209,9 @@ class StarPlots(Plots):
     excluded_columns=["post","like", "prior"]
 
     def star_plot(self, i, name, log):
-        n = self.source.metadata[0]['nsample_dimension']
+        n = int(self.source.metadata[0]['nsample_dimension'])
+        shp = self.source.get_col(name).shape
+
         x = self.source.get_col(name)[i*n:(i+1)*n]
         y = self.source.get_col("post")[i*n:(i+1)*n]
         if log:
@@ -1220,14 +1232,16 @@ class StarPlots(Plots):
         filenames = []
 
         i=0
-        for name in self.source.colnames:
-            if name.lower() in self.excluded_columns: continue
+        # We can only make plots of varied parameters in the star sampler,
+        # doing derived parameters doesn't really make sense
+        nv = self.source.metadata[0]['n_varied']
+        for i in range(nv):
+            name = self.source.colnames[i]
             # Do both log and non-log variants
             filename = self.star_plot(i,name, True)
             filenames.append(filename)
             filename = self.star_plot(i,name, False)
             filenames.append(filename)
-            i+=1
         return filenames
 
 

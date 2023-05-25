@@ -39,11 +39,11 @@ from .plots import (
     Tweaks,
     # These are deprecated:
     MetropolisHastingsPlots1D,
-    WeightedPlots1D,
+    WeightedMetropolisPlots1D,
     MultinestPlots1D,
     PolychordPlots1D,
     MetropolisHastingsPlots2D,
-    WeightedPlots2D,
+    WeightedMetropolisPlots2D,
     MultinestPlots2D,
     PolychordPlots2D,
 
