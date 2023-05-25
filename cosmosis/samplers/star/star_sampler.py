@@ -26,7 +26,7 @@ class StarSampler(ParallelSampler):
         star_sampler = self
 
         self.converged = False
-        self.nsample = self.read_ini("nsample_dimension", int, 1)
+        self.nsample = self.read_ini("nsample_dimension", int, 3)
         self.save_name = self.read_ini("save", str, "")
         self.nstep = self.read_ini("nstep", int, -1)
         self.allow_large = self.read_ini("allow_large", bool, False)
