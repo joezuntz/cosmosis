@@ -61,8 +61,7 @@ def multiplicative_blinding(postprocessors, seed):
 
 class MetropolisHastingsProcessor(PostProcessor):
 	elements=[
-		plots.MetropolisHastingsPlots1D,
-		plots.MetropolisHastingsPlots2D,
+		plots.MetropolisHastingsPlots,
 		plots.TracePlots,
 		statistics.MetropolisHastingsStatistics,
 		statistics.MetropolisHastingsCovariance,
@@ -144,8 +143,7 @@ class PymcProcessor(MetropolisHastingsProcessor):
 class MetropolisProcessor(MetropolisHastingsProcessor):
 	sampler="metropolis"
 	elements=[
-		plots.MetropolisHastingsPlots1D,
-		plots.MetropolisHastingsPlots2D,
+		plots.MetropolisHastingsPlots,
 		statistics.MetropolisHastingsStatistics,
 		statistics.MetropolisHastingsCovariance,
 		statistics.DunkleyTest,
@@ -157,8 +155,7 @@ class MetropolisProcessor(MetropolisHastingsProcessor):
 class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 	sampler="weighted_metropolis"
 	elements=[
-		plots.WeightedMetropolisPlots1D,
-		plots.WeightedMetropolisPlots2D,
+		plots.WeightedMetropolisPlots,
 		plots.TracePlots,
 		statistics.WeightedMetropolisStatistics,
 		statistics.WeightedMetropolisHastingsCovariance,
@@ -209,8 +206,7 @@ class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 class ImportanceProcessor(WeightedMetropolisProcessor):
 	sampler="importance"
 	elements=[
-		plots.WeightedMetropolisPlots1D,
-		plots.WeightedMetropolisPlots2D,
+		plots.WeightedMetropolisPlots,
 		statistics.WeightedMetropolisStatistics,
 		# statistics.DunkleyTest,
 		statistics.Citations,		
@@ -243,8 +239,7 @@ class TestProcessor(PostProcessor):
 
 class MultinestProcessor(WeightedMetropolisProcessor):
 	elements = [
-		plots.MultinestPlots1D, 
-		plots.MultinestPlots2D,
+		plots.MultinestPlots,
 		plots.TracePlots,
 		statistics.MultinestStatistics,
 		statistics.MultinestCovariance,
@@ -284,8 +279,7 @@ class MultinestProcessor(WeightedMetropolisProcessor):
 
 class PolyChordProcessor(MultinestProcessor):
     elements = [
-            plots.PolychordPlots1D, 
-            plots.PolychordPlots2D,
+            plots.PolychordPlots,
             plots.TracePlots,
             statistics.PolychordStatistics,
             statistics.PolychordCovariance,
@@ -295,8 +289,7 @@ class PolyChordProcessor(MultinestProcessor):
 
 class DynestyProcessor(MultinestProcessor):
 	elements = [
-			plots.PolychordPlots1D, 
-			plots.PolychordPlots2D,
+			plots.PolychordPlots,
 			plots.TracePlots,
 			statistics.PolychordStatistics,
 			statistics.PolychordCovariance,
@@ -323,8 +316,7 @@ class NautilusProcess(DynestyProcessor):
 class PMCPostProcessor(WeightedMetropolisProcessor):
 	sampler="pmc"
 	elements = [
-		plots.WeightedMetropolisPlots1D,
-		plots.WeightedMetropolisPlots2D,
+		plots.WeightedMetropolisPlots,
 		statistics.WeightedMetropolisStatistics,
 		#statistics.WeightedMetropolisHastingsCovariance,
 		#statistics.DunkleyTest,
