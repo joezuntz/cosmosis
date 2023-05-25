@@ -12,7 +12,7 @@ import numpy as np
 
 minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
 
-def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, **options):
+def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, **options):
 
     sampler_class = Sampler.registry[name]
 
@@ -72,7 +72,22 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
         with tempfile.TemporaryDirectory() as dirname:
             truth_file = values.name if do_truth else None
             pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=truth_file)
-            pp.run()
+            pp_files = pp.run()
+            pp.finalize()
+            for p in pp_files:
+                print(p)
+            postprocess_files = ['parameters--p1', 'parameters--p2']
+            if pp_2d:
+                postprocess_files.append('2D_parameters--p2_parameters--p1')
+            if check_extra and pp_extra and not no_extra:
+                postprocess_files.append('parameters--p3')
+                if pp_2d:
+                    postprocess_files += ['2D_parameters--p3_parameters--p2', '2D_parameters--p3_parameters--p1']
+            for p in postprocess_files:
+                filename = f"{dirname}{os.path.sep}{name}_{p}.png"
+                print("WANT ", filename)
+                assert filename in pp_files
+                assert os.path.exists(filename)
 
 
     return output
@@ -95,7 +110,7 @@ def test_fisher():
     run('fisher', False, check_extra=False)
 
 def test_grid():
-    run('grid', True, nsample_dimension=10)
+    run('grid', True, pp_extra=False, nsample_dimension=10)
 
 def test_gridmax():
     run('gridmax', True, can_postprocess=False, max_iterations=1000)
@@ -139,17 +154,16 @@ def test_polychord():
         run('polychord', True, live_points=20, feedback=0, base_dir=base_dir, polychord_outfile_root='pc')
 
 def test_snake():
-        run('snake', True)
+        run('snake', True, pp_extra=False)
 
 def test_nautilus():
     run('nautilus', True)
-    run('nautilus', True, no_extra=True)
-    run('nautilus', True, no_extra=True, n_live=500, enlarge_per_dim=1.05,
+    run('nautilus', True, n_live=500, enlarge_per_dim=1.05,
         split_threshold=95., n_networks=3, n_batch=50, verbose=True, f_live=0.02, n_shell=100)
 
 
 def test_star():
-        run('star', False)
+        run('star', False, pp_extra=False, pp_2d=False)
 
 def test_test():
     run('test', False, can_postprocess=False)
