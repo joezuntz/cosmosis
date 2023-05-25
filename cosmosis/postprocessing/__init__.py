@@ -28,7 +28,6 @@ from .plots import (
     MultinestPlots,
     PolychordPlots,
     WeightedMetropolisPlots,
-    TrianglePlot,
     MCMCColorScatterPlot,
     WeightedMCMCColorScatterPlot,
     MultinestColorScatterPlot,

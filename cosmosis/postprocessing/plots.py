@@ -982,24 +982,6 @@ class TracePlots(Plots, MCMCPostProcessorElement):
 
 
 
-
-class TrianglePlot(MetropolisHastingsPlotsBase):
-    def run(self):
-        try:
-            import triangle
-        except ImportError:
-            print("Triangle library not available - no corner plot for you")
-            print("Maybe try pip install triangle")
-            return []
-        names = [name for name in self.source.colnames if not name in self.excluded_columns]
-        labels = [self.latex(name) for name in names]
-        chains = np.transpose([self.reduced_col(name) for name in names])
-        filename = self.filename("triangle")
-        figure = triangle.corner(chains, labels=labels, plot_datapoints=False)
-        self.set_output("triangle", PostprocessPlot("triangle",filename,figure))
-
-        return [filename]
-
 class ColorScatterPlotBase(Plots):
     scatter_filename='scatter'
     x_column = None
