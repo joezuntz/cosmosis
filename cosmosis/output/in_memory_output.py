@@ -38,3 +38,5 @@ class InMemoryOutput(OutputBase):
     @classmethod
     def load_from_options(cls, options):
         raise ValueError("No output was saved from this run")
+
+

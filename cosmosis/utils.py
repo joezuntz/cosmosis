@@ -358,3 +358,46 @@ def import_by_path(name, path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def underline(s, char='-'):
+    """
+    Return a string with a line of the given character
+    underneath it.
+
+    Parameters
+    ----------
+    s : str
+        The string to underline
+    char : str, optional
+        The character to use for the line
+    """
+    return s + "\n" + char * len(s)
+
+def overline(s, char='-'):
+    """
+    Return a string with a line of the given character
+    over it.
+
+    Parameters
+    ----------
+    s : str
+        The string to overline
+    char : str, optional
+        The character to use for the line
+    """
+    return char * len(s) + "\n" + s
+
+def under_over_line(s, char='-'):
+    """
+    Return a string with a line of the given character
+    over and under it.
+
+    Parameters
+    ----------
+    s : str
+        The string to overline
+    char : str, optional
+        The character to use for the line
+    """
+    return underline(overline(s, char), char)

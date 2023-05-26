@@ -4,6 +4,7 @@
 u"""Definition of the :class:`Inifile` class."""
 
 
+from configparser import SectionProxy
 import os
 import sys
 import collections
@@ -190,6 +191,12 @@ class Inifile(IncludingConfigParser):
                 self.add_section(section)
                 for key, value in values.items():
                     self.set(section, key, str(value))
+        elif isinstance(filename, Inifile):
+            # copy from another ini file
+            for section in filename.sections():
+                self.add_section(section)
+                for key, value in filename.items(section):
+                    self.set(section, key, value)
         # default read behaviour is to ignore unreadable files which
         # is probably not what we want here
         elif filename is not None:
@@ -271,6 +278,14 @@ class Inifile(IncludingConfigParser):
                 raise CosmosisConfigurationError("CosmoSIS looked for an option called '%s' in the '[%s]' section, but it was not in the ini file"%(option,section))
             else:
                 return fallback
+            
+    def __getitem__(self, key: tuple):
+        section, option = key
+        return self.get(section, option)
+
+    def __setitem__(self, key: tuple, value: str):
+        section, option = key
+        self.set(section, option, str(value))
 
     # these functions override the default parsers to allow for extra formats
     def getint(self, section, option, raw=False, vars=None, fallback=configparser._UNSET):
