@@ -38,10 +38,9 @@ def test_sampler_chain():
         }
 
 
-        args = parser.parse_args(["not_a_real_file"])
         ini = Inifile(None, override=params)
 
-        status = run_cosmosis(args, ini=ini)
+        status = run_cosmosis(ini)
 
         data = np.loadtxt(fisher_file)
         print(data.shape)

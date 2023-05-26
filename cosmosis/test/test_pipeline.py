@@ -116,9 +116,8 @@ def test_vector_extra_outputs():
             ("emcee", "samples"): "10",
         }
 
-        args = parser.parse_args(["not_a_real_file"])
         ini = Inifile(None, override=params)
-        status = run_cosmosis(args, ini=ini)
+        status = run_cosmosis(ini)
 
         with open(output_file) as f:
             header = f.readline()
@@ -156,9 +155,8 @@ def test_profile(capsys):
             ("emcee", "samples"): "10",
         }
 
-        args = parser.parse_args(["not_a_real_file", "--profile", stats_file])
         ini = Inifile(None, override=params)
-        status = run_cosmosis(args, ini=ini)
+        status = run_cosmosis(ini, cpu_profile=stats_file)
 
         output = capsys.readouterr()
         assert "cumtime" in output.out
@@ -193,16 +191,15 @@ def test_script_skip():
             ("output", "filename"): output_file,
         }
 
-        args = parser.parse_args(["not_a_real_file"])
         ini = Inifile(None, override=params)
 
         with pytest.raises(RuntimeError):
-            status = run_cosmosis(args, ini=ini)
+            status = run_cosmosis(ini)
 
         # shopuld work this time
         try:
             os.environ["COSMOSIS_NO_SUBPROCESS"] = "1"
-            status = run_cosmosis(args, ini=ini)
+            status = run_cosmosis(ini)
         finally:
             del os.environ["COSMOSIS_NO_SUBPROCESS"]
 
@@ -237,7 +234,7 @@ def test_prior_override():
 
         priors = Inifile(None, override=priors_vals)
 
-        status = run_cosmosis(args, ini=ini, priors=priors)
+        status = run_cosmosis(ini, priors=priors)
         chain = np.loadtxt(output_file).T
         p1 = chain[0]
         p2 = chain[1]
