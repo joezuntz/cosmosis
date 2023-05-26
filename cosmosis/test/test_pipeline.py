@@ -156,7 +156,7 @@ def test_profile(capsys):
         }
 
         ini = Inifile(None, override=params)
-        status = run_cosmosis(ini, cpu_profile=stats_file)
+        status = run_cosmosis(ini, profile_cpu=stats_file)
 
         output = capsys.readouterr()
         assert "cumtime" in output.out
