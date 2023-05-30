@@ -6,7 +6,6 @@ class AstropyOutput(OutputBase):
         super(AstropyOutput,self).__init__()
         from astropy.table import Table
         self.table = Table()
-        self.table.meta["final"] = {}
 
     def _begun_sampling(self, params):
         from astropy.table import Column
@@ -25,9 +24,9 @@ class AstropyOutput(OutputBase):
                 self.table.meta[key + "_comment"] = comment
 
     def _write_final(self, key, value, comment):
-            self.table.meta["final"][key] = value
+            self.table.meta["final:" + key] = value
             if comment:
-                self.table.meta["final"][key + "_comment"] = comment
+                self.table.meta["final:" + key + "_comment"] = comment
 
     def _write_comment(self, comment):
         self.table.meta["comments"] = self.table.meta.get("comments", []) + [comment]

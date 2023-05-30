@@ -4,11 +4,9 @@
 u"""Definition of the :class:`Inifile` class."""
 
 
-from configparser import SectionProxy
 import os
 import sys
 import collections
-import warnings
 import configparser
 
 class CosmosisConfigurationError(configparser.Error):

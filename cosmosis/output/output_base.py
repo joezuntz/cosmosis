@@ -82,7 +82,7 @@ class OutputBase(metaclass=OutputMetaclass):
         Save a comment.  Ordering will be preserved
         if you save multiple ones.
         """
-        self._write_comment(comment)
+        self._write_comment(comment.strip('\n'))
 
     def parameters(self, *param_groups):
         """ 
