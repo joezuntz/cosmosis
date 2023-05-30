@@ -1,9 +1,7 @@
 #coding: utf-8
-from cosmosis import output as output_module
-
+from ..runtime import logs
 import numpy as np
-import sys
-import os
+
 
 
 class Analytics(object):
@@ -48,7 +46,7 @@ class Analytics(object):
                 return local_variance
         return None
 
-    def gelman_rubin(self, quiet=True):
+    def gelman_rubin(self):
         # takes current traces and returns
         if self.pool is None or not self.pool.size > 1:
             raise RuntimeError("Gelman-Rubin statistic is only "
@@ -75,12 +73,10 @@ class Analytics(object):
 
         Rhat = self.pool.bcast(Rhat)
 
-        if not quiet and self.pool.is_master():
-            print()
-            print("Gelman-Rubin:")
+        if self.pool.is_master():
+            logs.important("Gelman-Rubin statistic:")
             for (p,R) in zip(self.params, Rhat):
-                print("    ", p, "   ", R)
-            print("Worst = ", Rhat.max())
-            print()
+                logs.important(f"    {p}   {R}")
+            logs.important(f"Worst = {Rhat.max()}")
 
         return Rhat

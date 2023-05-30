@@ -1,17 +1,14 @@
-import itertools
 import numpy as np
-from cosmosis.output.text_output import TextColumnOutput
 from .. import ParallelSampler
-
+from ...runtime import logs
 
 def task(p):
     i,p = p
-    print("Running sample from prior: ", p)
     r = sampler.pipeline.run_results(p)
     #If requested, save the data to file
     if sampler.save_name:
         if r.block is None:
-            print("Failed to run parameters: {} so not saving".format(p))
+            logs.error("Failed to run parameters: {} so not saving".format(p))
         else:
             filename = "{}_{}".format(sampler.save_name, i)
             r.block.save_to_file(filename, clobber=True)

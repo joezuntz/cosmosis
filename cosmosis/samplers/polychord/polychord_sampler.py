@@ -1,11 +1,11 @@
 #coding: utf-8
 from .. import ParallelSampler
+from ...runtime import logs
 import ctypes as ct
 import os
-import cosmosis
 import numpy as np
 import sys
-from cosmosis.runtime.utils import mkdir
+from ...runtime.utils import mkdir
 import warnings
 
 prior_type = ct.CFUNCTYPE(None, 
@@ -147,7 +147,7 @@ class PolychordSampler(ParallelSampler):
 
         if self.output:
             def dumper(ndead, nlive, npars, live, dead, logweights, log_z, log_z_err):
-                print("Saving %d samples" % ndead)
+                logs.overview("Saving %d samples" % ndead)
                 self.output_params(ndead, nlive, npars, live, dead, logweights, log_z, log_z_err)
             self.wrapped_output_logger = dumper_type(dumper)
         else:
@@ -172,8 +172,6 @@ class PolychordSampler(ParallelSampler):
 
         def likelihood(theta, ndim, phi, nderived):
             theta_vector = np.array([theta[i] for i in range(ndim)])
-            if not self.pipeline.quiet:
-                print(theta_vector)
 
             if np.any(~np.isfinite(theta_vector)):
                 return -np.inf

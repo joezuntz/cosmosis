@@ -1,12 +1,8 @@
 import abc
-import logging
 import numpy as np
 import fcntl
-import datetime
-import os
 
 output_registry = {}
-LOG_LEVEL_NOISY = 15
 
 class OutputMetaclass(abc.ABCMeta):
     def __init__(cls, name, b, d):
@@ -46,19 +42,6 @@ class OutputBase(metaclass=OutputMetaclass):
         self.closed=False
         self.begun_sampling = False
         self.resumed = False
-
-    def log_debug(self, message, *args, **kwargs):
-        logging.debug(message, *args, **kwargs)
-    def log_noisy(self, message, *args, **kwargs):
-        logging.log(LOG_LEVEL_NOISY, message, *args, **kwargs)
-    def log_info(self, message, *args, **kwargs):
-        logging.info(message, *args, **kwargs)
-    def log_warning(self, message, *args, **kwargs):
-        logging.warning(message, *args, **kwargs)
-    def log_error(self, message, *args, **kwargs):
-        logging.error(message, *args, **kwargs)
-    def log_critical(self, message, *args, **kwargs):
-        logging.critical(message, *args, **kwargs)
 
     @property
     def columns(self):

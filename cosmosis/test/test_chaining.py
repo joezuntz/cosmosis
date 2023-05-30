@@ -25,7 +25,6 @@ def test_sampler_chain():
             ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
             ('runtime', 'sampler'):  "maxlike fisher emcee",
             ("pipeline", "debug"): "T",
-            ("pipeline", "quiet"): "F",
             ("pipeline", "modules"): "test1",
             ("pipeline", "extra_output"): "parameters/p3",
             ("pipeline", "values"): values_file,

@@ -1,4 +1,5 @@
 from .. import Sampler
+from ...runtime import logs
 import numpy as np
 
 
@@ -37,12 +38,7 @@ class MaxlikeSampler(Sampler):
             if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
                 return np.inf
             p = self.pipeline.denormalize_vector(p_in)
-            if self.max_posterior:
-                like, extra = self.pipeline.posterior(p)
-                self.output.log_debug("%s  post=%f"%('   '.join(str(x) for x in p),like))
-            else:
-                like, extra = self.pipeline.likelihood(p)
-                self.output.log_debug("%s  like=%f"%('   '.join(str(x) for x in p),like))
+            like, extra = self.pipeline.posterior(p)
             return -like
 
         # starting position in the normalized space.  This will be taken from
@@ -67,12 +63,11 @@ class MaxlikeSampler(Sampler):
         #It's not really a warning - that's just a level name
         results = self.pipeline.run_results(opt)
         if self.max_posterior:
-
-            self.output.log_warning("Best fit (by posterior):\n%s"%'   '.join(str(x) for x in opt))
+            logs.overview("Best fit (by posterior):\n%s"%'   '.join(str(x) for x in opt))
         else:
-            self.output.log_warning("Best fit (by likelihood):\n%s"%'   '.join(str(x) for x in opt))
-        self.output.log_warning("Posterior: {}\n".format(results.post))
-        self.output.log_warning("Likelihood: {}\n".format(results.like))
+            logs.overview("Best fit (by likelihood):\n%s"%'   '.join(str(x) for x in opt))
+        logs.overview("Posterior: {}\n".format(results.post))
+        logs.overview("Likelihood: {}\n".format(results.like))
 
         #Next save them to the proper table file
         self.output.parameters(opt, results.extra, results.prior, results.like, results.post)
@@ -98,7 +93,7 @@ class MaxlikeSampler(Sampler):
 
         if covmat is None:
             if self.output_cov:
-               self.output.log_error("Sorry - the optimization method you chose does not return a covariance (or Hessian) matrix")
+               logs.error("Sorry - the optimization method you chose does not return a covariance (or Hessian) matrix")
         else:
             if self.output_cov:
                 np.savetxt(self.output_cov, covmat)

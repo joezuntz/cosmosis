@@ -4,21 +4,16 @@ u"""Definition of :class:`Pipeline` and the specialization :class:`LikelihoodPip
 
 
 import os
-import ctypes
 import sys
-import string
 import numpy as np
 import time
 import collections
 import warnings
-import configparser
-import traceback
-import signal
-from . import utils
 from . import config
 from . import parameter
 from . import prior
 from . import module
+from . import logs
 from ..datablock.cosmosis_py import block, section_names
 try:
     import faulthandler
@@ -39,6 +34,12 @@ class PipelineResults(object):
     def set_like(self, L):
         self.like = L
         self.post = self.prior + self.like
+    
+    def log(self, i):
+        v = ", ".join(str(x) for x in self.vector)
+        logs.info(f"Posterior = {self.post} for parameter set #{i}: [{v}]")
+
+
 
 
 PIPELINE_INI_SECTION = "pipeline"
@@ -356,8 +357,9 @@ class Pipeline(object):
 
         #This will be set later
         self.root_directory = self.options.get("runtime", "root", fallback=os.getcwd())
+        self.run_count = 0
+        self.run_count_ok = 0
 
-        self.quiet = self.options.getboolean(PIPELINE_INI_SECTION, "quiet", fallback=True)
         self.debug = self.options.getboolean(PIPELINE_INI_SECTION, "debug", fallback=False)
         self.timing = self.options.getboolean(PIPELINE_INI_SECTION, "timing", fallback=False)
         shortcut = self.options.get(PIPELINE_INI_SECTION, "shortcut", fallback="")
@@ -441,7 +443,7 @@ class Pipeline(object):
             LikelihoodPipeline.pipeline_being_set_up.append(self)
             LikelihoodPipeline.module_being_set_up.append(module.name)
             try:
-                module.setup(config_block, quiet=self.quiet)
+                module.setup(config_block)
             finally:
                 # This should only go wrong if someone is doing something
                 # ridiculous, so I won't catch any error in it.
@@ -451,8 +453,7 @@ class Pipeline(object):
             if self.timing:
                 timings.append(time.time())
 
-        if not self.quiet:
-            sys.stdout.write("Setup all pipeline modules\n")
+        logs.overview("Setup all pipeline modules\n")
 
         if self.timing:
             timings.append(time.time())
@@ -593,6 +594,7 @@ class Pipeline(object):
         as the initial parameter vector.
 
         """
+        self.run_count += 1
         modules = self.modules
         if self.timing:
             self.timings = None
@@ -610,8 +612,7 @@ class Pipeline(object):
         elif self.slow_subspace_cache:
             first_module = self.slow_subspace_cache.start_pipeline(data_package)
             if first_module != 0 and (self.debug or self.timing):
-                sys.stdout.write("COOL: Quickstarting pipeline from module {} (fast/slow)\n".format(first_module))
-                sys.stdout.flush()
+                logs.debug(f"Quickstarting pipeline from module {first_module} (fast/slow)")
         else:
             first_module = 0
 
@@ -621,9 +622,7 @@ class Pipeline(object):
         for module_number, module in enumerate(modules):
             if module_number<first_module:
                 continue
-            if self.debug:
-                sys.stdout.write("Running %.20s ...\n" % module)
-                sys.stdout.flush()
+            logs.noisy(f"Running module {module}")
             data_package.log_access("MODULE-START", module.name, "")
             if self.timing:
                 t1 = time.time()
@@ -635,9 +634,7 @@ class Pipeline(object):
                     "It should return an integer, 0 if everything worked.\n"+
                     "Sorry to be picky but this kind of thing is important.").format(module))
 
-            if self.debug:
-                sys.stdout.write("Done %.20s status = %d \n" % (module,status))
-                sys.stdout.flush()
+            logs.noisy("Done %.20s status = %d \n" % (module,status))
 
             if self.timing:
                 t2 = time.time()
@@ -645,20 +642,17 @@ class Pipeline(object):
                 sys.stdout.write("%s took: %.3f seconds\n"% (module,t2-t1))
 
             if status:
-                if self.debug:
+                if logs.is_enabled_for(logs.debug):
                     data_package.print_log()
-                    sys.stdout.flush()
-                    sys.stderr.write("Because you set debug=True I printed a log of "
-                                     "all access to data printed above.\n"
-                                     "Look for the word 'FAIL' \n")
-                    sys.stderr.write("Though the error message could also be somewhere above that.\n\n")
-                if not self.quiet:
-                    sys.stderr.write("Error running pipeline (%d)- "
-                                     "hopefully printed above here.\n"%status)
-                    sys.stderr.write("Aborting this run and returning "
-                                     "error status.\n")
-                    if not self.debug:
-                        sys.stderr.write("Setting debug=T in [pipeline] might help.\n")
+                    logs.noisy("Because you set debug verbosity I printed a log of "
+                                   "all access to data printed above. "
+                                   "Look for the word 'FAIL' \n"
+                                   "Though the error message could also be "
+                                   "somewhere above that.\n")
+
+                logs.warning("Error running pipeline ({status}). Returning zero likelihood. Error may be above.")
+                if not logs.is_enabled_for(logs.debug):
+                    logs.warning("Set log level to 'debug' for more info.")
                 return None
 
             # If we are using a fast/slow split (and we are not already running on a cached subset)
@@ -676,8 +670,8 @@ class Pipeline(object):
             sys.stdout.write("Total pipeline time: {:.3} seconds\n".format(end_time-start_time))
             self.timings = timings
 
-        if not self.quiet:
-            sys.stdout.write("Pipeline ran okay.\n")
+        logs.noisy("Pipeline ran okay.")
+        self.run_count_ok += 1
 
         data_package.log_access("MODULE-START", "Results", "")
         # return something
@@ -1197,8 +1191,7 @@ class LikelihoodPipeline(Pipeline):
             r.prior = -np.inf
 
         if not np.isfinite(r.prior):
-            if not self.quiet:
-                print("Proposed outside bounds: prior -infinity")
+            logs.info("Proposed outside bounds: prior -infinity")
             return r
         try:
             like, r.extra, r.block = self.likelihood(p, return_data=True, all_params=all_params)
@@ -1209,22 +1202,20 @@ class LikelihoodPipeline(Pipeline):
                     r.block["priors", name] = pr
 
         except Exception:
+            logs.error(f"Exception running likelihood at parameters: {p}."
+                            "You should fix this; for now, using zero likelihood.", exc_info=1)
             if self.debug:
-                sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
                 sys.stderr.write("\nBecause you have debug=T I will let this kill the chain.\n")
                 sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
                 raise
-
-            sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
-            sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
-            traceback.print_exc(file=sys.stderr)
-            sys.stderr.write("You should fix this but for now I will return NaN for the likelihood (because you have debug=F)\n\n")
 
         if np.isnan(r.post):
             r.post = -np.inf
 
         if np.isnan(r.like):
             r.like = -np.inf
+        
+        r.log(self.run_count)
 
         return r
 
@@ -1273,13 +1264,12 @@ class LikelihoodPipeline(Pipeline):
                 likelihood_names.append(name)
         self.likelihood_names = likelihood_names
 
-        if not self.quiet:
-            # Tell the user what we found.
-            print("Likelihoods not set in parameter file, so checking what is generated:")
-            for name in self.likelihood_names:
-                print("Found likelihood named {}".format(name))
-            if not self.likelihood_names:
-                print("No likelihoods found")
+        # Tell the user what we found.
+        print("Using likelihooods from first run:")
+        for name in self.likelihood_names:
+            print(f" - {name}")
+        if not self.likelihood_names:
+            print(" - (None found)")
 
     def _extract_likelihoods(self, data):
         "Extract the likelihoods from the block"
@@ -1292,8 +1282,7 @@ class LikelihoodPipeline(Pipeline):
             try:
                 L = data.get_double(section_name,likelihood_name+"_like")
                 likelihoods.append(L)
-                if not self.quiet:
-                    print("    Likelihood {} = {}".format(likelihood_name, L))
+                logs.noisy(f"Likelihood {likelihood_name} = {L}")
             # Complain if not found
             except block.BlockError:
                 raise MissingLikelihoodError(likelihood_name, data)
@@ -1301,13 +1290,8 @@ class LikelihoodPipeline(Pipeline):
         # Total likelihood
         like = sum(likelihoods)
 
-        # DM: Issue #181: Zuntz: replace NaN's with -inf's in posteriors and
-        #                 likelihoods.
         if np.isnan(like):
             like = -np.inf
-
-        if not self.quiet and self.likelihood_names:
-            sys.stdout.write("Likelihood total = {}\n".format(like))
 
         return like
 

@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 from cosmosis.output.text_output import TextColumnOutput
 from .. import ParallelSampler
-
+from ...runtime import logs
 
 def task(p):
     i,p = p
@@ -64,7 +64,7 @@ class ListSampler(ParallelSampler):
             try:
                 section,name = column_name.split('--')
             except ValueError:
-                print("Not including column %s as not a cosmosis name" % column_name)
+                logs.important("Not including column %s as not a cosmosis name" % column_name)
                 continue
             section = section.lower()
             name = name.lower()
@@ -74,7 +74,7 @@ class ListSampler(ParallelSampler):
                 j = self.pipeline.parameters.index((section,name))
                 replaced_params.append((i,j))
             except ValueError:
-                print("Not including column %s as not in values file" % column_name)
+                logs.important("Not including column %s as not in values file" % column_name)
 
         #Create a collection of sample vectors at the start position.
         #This has to be a list, not an array, as it can contain integer parameters,

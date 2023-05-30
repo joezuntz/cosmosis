@@ -30,7 +30,6 @@ def run(sampler, check_prior, check_extra=True, fast_slow=False, **options):
     override = {
         ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
         ("pipeline", "debug"): "F",
-        ("pipeline", "quiet"): "T",
         ("pipeline", "modules"): "test1  test3 test4",
         ("pipeline", "extra_output"): "parameters/p3",
         ("pipeline", "values"): values.name,

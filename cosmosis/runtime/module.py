@@ -4,11 +4,12 @@ u"""Definition of :class:`Module`."""
 
 
 import os
-import ctypes
-import sys
-import numpy as np
 import abc
-from cosmosis.datablock import option_section, DataBlock, SectionOptions
+import sys
+from ..datablock import option_section, DataBlock, SectionOptions
+from ..runtime import logs
+from ..utils import underline
+
 
 MODULE_TYPE_EXECUTE_SIMPLE = "execute"
 MODULE_TYPE_EXECUTE_CONFIG = "execute_config"
@@ -185,7 +186,7 @@ class Module(object):
                 print(msg)
 
 
-    def setup_functions(self, config, quiet=True):
+    def setup_functions(self, config):
         u"""Call the /Module/ constructor.
 
         This method also pulls in the `execute_function` from the linked
@@ -202,8 +203,7 @@ class Module(object):
             config = config._ptr
 
         if self.setup_function:
-            if not quiet:
-                print('-- Setting up module %s --' % (self.name))
+            logs.info(underline(f'\nSetting up module {self.name}'))
             self.data = self.setup_function(config)
             self.access_check_report(config_orig)
         else:
@@ -222,7 +222,7 @@ class Module(object):
             raise ValueError("Could not find a function 'execute' in module '"
                                  +  self.name + "'")
 
-    def setup(self, config, quiet=True):
+    def setup(self, config):
         u"""Call the /Module/ after copying config information constructor.
         
         This module is split from the main workhorse method  setup_functions

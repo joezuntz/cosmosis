@@ -1,4 +1,5 @@
 import numpy as np
+from ...runtime import logs
 from .proposal.standard import Proposal, FastSlowProposal
 from copy import copy
 
@@ -9,7 +10,7 @@ class Bad(object):
 
 
 class MCMC(object):
-    def __init__(self, start, posterior, covariance, quiet=False,
+    def __init__(self, start, posterior, covariance,
         tuning_frequency=-1, tuning_grace=np.inf, tuning_end=np.inf, 
         scaling=2.4,
         exponential_probability=0.33333,
@@ -22,7 +23,6 @@ class MCMC(object):
         self.posterior = posterior
         self.p = np.array(start)
         self.ndim = len(self.p)
-        self.quiet=quiet
         #Run the pipeline for the first time, on the 
         #starting point
         self.Lp = self.posterior(self.p)
@@ -110,8 +110,6 @@ class MCMC(object):
         q = self.proposal.propose(self.p)
         #assume two proposal subsets for now
         Lq = self.posterior(q)
-        if not self.quiet:
-            print("  ".join(str(x) for x in q))
         #acceptance test
         delta = Lq.post - self.Lp.post
         if  accept(Lq.post, self.Lp.post):
@@ -120,19 +118,17 @@ class MCMC(object):
             self.p = q
             self.accepted += 1
             self.accepted_since_tuning += 1
-            if not self.quiet:
-                print("[Accept delta={:.3g}]\n".format(delta))
-        elif not self.quiet:
-            print("[Reject delta={:.3g}]\n".format(delta))
+            logs.info(f"[Accept delta={delta:.3g}")
+        else:
+            logs.info(f"[Reject delta={delta:.3g}]")
 
         return self.Lp
 
 
     def _sample_dragging(self):
         # get params with same fast params but different slow ones
-        if not self.quiet:
-            print("starting drag")
-            print("Current post = ", self.Lp.post)
+        logs.noisy("Starting drag")
+        logs.noisy(f"Current post = {self.Lp.post}")
         start = self.p
         end = self.proposal.propose_slow(start)
 
@@ -140,12 +136,10 @@ class MCMC(object):
         # posteriors and derived parameters etc.
         r_start = copy(self.Lp)
         r_end = self.posterior(end)
-        if not self.quiet:
-            print("slow proposal post = ", r_end.post)
+        logs.noisy(f"slow proposal post = {r_end.post}")
 
         if not np.isfinite(r_end.post):
-            if not self.quiet:
-                print("[Reject: nan/-inf posterior]\n")
+            logs.noisy("[Reject: nan/-inf posterior]\n")
             return self.Lp
 
 
@@ -164,8 +158,7 @@ class MCMC(object):
 
         for i in range(self.n_drag):
             delta_fast = self.proposal.propose_fast(p1) - p1
-            if not self.quiet:
-                print("delta fast", delta_fast)
+            logs.debug("delta fast", delta_fast)
             q1 = p1 + delta_fast
             q2 = p2 + delta_fast
 
@@ -190,34 +183,29 @@ class MCMC(object):
                 r1 = s1
                 r2 = s2
                 drag_accepts += 1
-                if not self.quiet:
-                    print("[Accept drag step delta={:.3g}]\n".format(Q1 - P1))
-            elif not self.quiet:
-                print("[Reject drag step delta={:.3g}]\n".format(Q1 - P1))
+                logs.debug("[Accept drag step delta={:.3g}]\n".format(Q1 - P1))
+            else:
+                logs.debug("[Reject drag step delta={:.3g}]\n".format(Q1 - P1))
 
             start_post += r1.post
             end_post += r2.post
 
-        if not self.quiet:
-            print("[Accepted {}/{} drag steps]".format(drag_accepts,self.n_drag))
+        logs.noisy("[Accepted {}/{} drag steps]".format(drag_accepts,self.n_drag))
 
         start_post /= self.n_drag
         end_post /= self.n_drag
         accept_overall = accept(end_post, start_post)
 
-        if not self.quiet:
-            print("Done drag")
+        logs.noisy("Done drag")
         if accept_overall:
             self.p = p2
             self.Lp = r_end
             self.accepted += 1
             self.accepted_since_tuning += 1
-            if not self.quiet:
-                print("[Accept delta={:.3g}]\n".format(end_post - start_post))
+            logs.noisy("[Accept delta={:.3g}]\n".format(end_post - start_post))
             return r2
         else:
-            if not self.quiet:
-                print("[Reject delta={:.3g}]\n".format(end_post - start_post))
+            logs.noisy("[Reject delta={:.3g}]\n".format(end_post - start_post))
             return self.Lp
 
 
@@ -238,13 +226,7 @@ class MCMC(object):
         if is_positive_definite(C):
             self.covariance_estimate = C
         else:
-            print("Cov estimate not SPD.  If this keeps happening, be concerned.")
-            # chain_outfile = 'joe_dump_chain_{}.txt'.format(self.n_cov_fail)
-            # cov_outfile = 'joe_dump_cov_{}.txt'.format(self.n_cov_fail)
-            # self.n_cov_fail += 1
-            # np.savetxt(chain_outfile, self.chain)
-            # np.savetxt(cov_outfile, np.transpose(C))
-            # print("TEMPORARY (JOE - REMOVE LATER) - dumping to file")
+            logs.warning("Cov estimate not SPD.  If this keeps happening, be concerned.")
 
 
     def set_fast_slow(self, fast_indices, slow_indices, oversampling):
@@ -275,23 +257,23 @@ class MCMC(object):
 
         f = (self.covariance_estimate.diagonal()**0.5-self.last_covariance_estimate.diagonal()**0.5)/self.last_covariance_estimate.diagonal()**0.5
         i = abs(f).argmax()
-        print("Largest parameter sigma fractional change = {:.1f}% for param {}".format(100*f[i], i))
+        logs.overview("Largest parameter sigma fractional change = {:.1f}% for param {}".format(100*f[i], i))
         self.last_covariance_estimate = self.covariance_estimate.copy()
 
-        print("Accepted since last tuning: {}%".format((100.*self.accepted_since_tuning)/self.iterations_since_tuning))
+        logs.overview("Accepted since last tuning: {}%".format((100.*self.accepted_since_tuning)/self.iterations_since_tuning))
         self.accepted_since_tuning = 0
         self.iterations_since_tuning = 0
 
 
         if self.use_cobaya:
-            print("Tuning cobaya proposal.")
+            logs.info("Tuning cobaya proposal.")
             self.proposal.set_covariance(self.covariance_estimate)
         elif isinstance(self.proposal, FastSlowProposal):
-            print("Tuning fast/slow sampler proposal.")
+            logs.info("Tuning fast/slow sampler proposal.")
             self.proposal = FastSlowProposal(self.covariance_estimate, 
                 self.fast_indices, self.slow_indices, self.oversampling,scaling=self.scaling, exponential_probability=self.exponential_probability)
         elif isinstance(self.proposal, Proposal):
-            print("Tuning standard sampler proposal.")
+            logs.info("Tuning standard sampler proposal.")
             cholesky = np.linalg.cholesky(self.covariance_estimate)
             self.proposal = Proposal(cholesky, scaling=self.scaling, exponential_probability=self.exponential_probability)
         else:

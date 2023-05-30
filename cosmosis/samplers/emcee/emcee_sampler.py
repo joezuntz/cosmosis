@@ -1,3 +1,4 @@
+from ...runtime import logs
 from .. import ParallelSampler, sample_ellipsoid, sample_ball
 import numpy as np
 import sys
@@ -44,16 +45,16 @@ class EmceeSampler(ParallelSampler):
 
             if start_file:
                 self.p0 = self.load_start(start_file)
-                self.output.log_info("Loaded starting position from %s", start_file)
+                print("Loaded starting position from %s", start_file)
             elif self.distribution_hints.has_cov():
                 center = self.start_estimate()
                 cov = self.distribution_hints.get_cov()
                 self.p0 = sample_ellipsoid(center, cov, size=self.nwalkers)
-                self.output.log_info("Generating starting positions from covmat from earlier in pipeline")
+                print("Generating starting positions from covmat from earlier in pipeline")
             elif covmat_file:
                 center = self.start_estimate()
                 cov = self.load_covmat(covmat_file)
-                self.output.log_info("Generating starting position from covmat in  %s", covmat_file)
+                print("Generating starting position from covmat in  %s", covmat_file)
                 iterations_limit = 100000
                 n=0
                 p0 = []
@@ -69,7 +70,7 @@ class EmceeSampler(ParallelSampler):
             elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in range(self.nwalkers)]
-                self.output.log_info("Generating random starting positions from within prior")
+                print("Generating random starting positions from within prior")
             else:
                 center_norm = self.pipeline.normalize_vector(self.start_estimate())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
@@ -77,7 +78,7 @@ class EmceeSampler(ParallelSampler):
                 p0_norm[p0_norm<=0] = 0.001
                 p0_norm[p0_norm>=1] = 0.999
                 self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
-                self.output.log_info("Generating starting positions in small ball around starting point")
+                print("Generating starting positions in small ball around starting point")
 
             #Finally we can create the sampler
             self.ensemble = self.emcee.EnsembleSampler(self.nwalkers, self.ndim,
@@ -156,7 +157,7 @@ class EmceeSampler(ParallelSampler):
         self.blob0 = extra_info
         self.num_samples += self.nsteps
         acceptance_fraction = self.ensemble.acceptance_fraction.mean()
-        print("Done {} iterations of emcee. Acceptance fraction {:.3f}".format(
+        logs.overview("Done {} iterations of emcee. Acceptance fraction {:.3f}".format(
             self.num_samples, acceptance_fraction))
         sys.stdout.flush()
         self.output.final("mean_acceptance_fraction", acceptance_fraction)

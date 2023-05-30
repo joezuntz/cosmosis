@@ -26,7 +26,6 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
     override = {
         ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
         ("pipeline", "debug"): "F",
-        ("pipeline", "quiet"): "T",
         ("pipeline", "modules"): "test1",
         ("pipeline", "extra_output"): "parameters/p3",
         ("pipeline", "values"): values.name,

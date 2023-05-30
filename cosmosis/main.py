@@ -11,6 +11,7 @@ import cProfile
 from .runtime.config import Inifile, CosmosisConfigurationError
 from .runtime.pipeline import LikelihoodPipeline
 from .runtime import mpi_pool
+from .runtime import logs
 from .runtime import process_pool
 from .runtime.utils import ParseExtraParameters, stdout_redirected, import_by_path, under_over_line, underline, overline
 from .samplers.sampler import Sampler, ParallelSampler, Hints
@@ -173,7 +174,8 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
     return output
 
 
-def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, override=None, profile_mem=0, profile_cpu="", variables=None, only=None, output=None):
+def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, override=None,
+                 profile_mem=0, profile_cpu="", variables=None, only=None, output=None):
     """
     Execute cosmosis.
 
@@ -227,7 +229,6 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
 
     smp = isinstance(pool, process_pool.Pool)
 
-
     # Load configuration.
     is_root = (pool is None) or pool.is_master()
     ini_is_str = isinstance(ini, str)
@@ -237,6 +238,19 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
 
     pre_script = ini.get(RUNTIME_INI_SECTION, "pre_script", fallback="")
     post_script = ini.get(RUNTIME_INI_SECTION, "post_script", fallback="")
+
+    verbosity = ini.get(RUNTIME_INI_SECTION, "verbosity", fallback="")
+    
+    if not verbosity:
+        if ini.has_option("pipeline", "quiet"):
+            quiet = ini.getboolean("pipeline", "quiet", fallback=False)
+            verbosity = "quiet" if quiet else "standard"
+        else:
+            verbosity = ini.get(RUNTIME_INI_SECTION, "output", fallback="standard")
+    logs.set_verbosity(verbosity)
+
+    if ini.has_option("pipeline", "quiet"):
+        logs.warning("Deprecated: The [pipeline] quiet option is deprecated.  Set [runtime] verbosity instead.")
 
     if is_root and pre_script:
         if no_subprocesses:
