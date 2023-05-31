@@ -135,6 +135,7 @@ def fileno(file_or_fd):
 
 @contextmanager
 def stdout_redirected(to=os.devnull, stdout=None):
+    from .runtime import logs
     if stdout is None:
        stdout = sys.stdout
 
@@ -143,6 +144,8 @@ def stdout_redirected(to=os.devnull, stdout=None):
     #NOTE: `copied` is inheritable on Windows when duplicating a standard stream
     with os.fdopen(os.dup(stdout_fd), 'wb') as copied: 
         stdout.flush()  # flush library buffers that dup2 knows nothing about
+        log_level = logs.get_level()
+        logs.set_level(51)
         try:
             os.dup2(fileno(to), stdout_fd)  # $ exec >&to
         except ValueError:  # filename
@@ -155,6 +158,7 @@ def stdout_redirected(to=os.devnull, stdout=None):
             #NOTE: dup2 makes stdout_fd inheritable unconditionally
             stdout.flush()
             os.dup2(copied.fileno(), stdout_fd)  # $ exec >&copied
+            
 
 
 

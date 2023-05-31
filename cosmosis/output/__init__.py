@@ -5,9 +5,6 @@ from .fits_output import FitsOutput
 from .in_memory_output import InMemoryOutput
 from .astropy_output import AstropyOutput
 from .output_base import output_registry, OutputBase
-import logging
-
-
 
 
 def output_from_options(options, resume=False):

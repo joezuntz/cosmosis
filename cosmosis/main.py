@@ -249,7 +249,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             verbosity = ini.get(RUNTIME_INI_SECTION, "output", fallback="standard")
     logs.set_verbosity(verbosity)
 
-    if ini.has_option("pipeline", "quiet"):
+    if ini.has_option("pipeline", "quiet") and is_root:
         logs.warning("Deprecated: The [pipeline] quiet option is deprecated.  Set [runtime] verbosity instead.")
 
     if is_root and pre_script:
@@ -373,7 +373,8 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
         
 
         if is_root:
-            print(overline("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name), '*'))
+            print("****************************************************")
+            print("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name))
             if pool and smp:
                 print(f"* Using multiprocessing (SMP) with {pool.size} processes.")
             elif pool:
@@ -409,6 +410,9 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
         if output:
             write_header_output(output, ini, values, pipeline)
 
+        sys.stdout.flush()
+        sys.stderr.flush()
+
 
         sampler_main_loop(sampler, output, pool, is_root)
         distribution_hints.update(sampler.distribution_hints)
@@ -421,7 +425,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             run_count_total = pool.comm.allreduce(pipeline.run_count)
             run_count_ok_total = pool.comm.allreduce(pipeline.run_count_ok)
         
-        if is_root:
+        if is_root and sampler_name != 'test':
             logs.overview(f"Total posterior evaluations = {run_count_total} across all processes")
             logs.overview(f"Successful posterior evaluations = {run_count_ok_total} across all processes")
 

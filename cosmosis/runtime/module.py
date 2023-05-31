@@ -7,7 +7,7 @@ import os
 import abc
 import sys
 from ..datablock import option_section, DataBlock, SectionOptions
-from ..runtime import logs
+from . import logs
 from ..utils import underline
 
 
