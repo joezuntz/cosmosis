@@ -7,7 +7,6 @@ import os
 import abc
 import sys
 from ..datablock import option_section, DataBlock, SectionOptions
-from . import logs
 from ..utils import underline
 
 
@@ -198,6 +197,7 @@ class Module(object):
         """
         # We need to keep a reference to the full
         # config object for the access check report
+        from . import logs
         config_orig = config
         if not self.is_python:
             config = config._ptr

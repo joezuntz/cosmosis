@@ -453,6 +453,7 @@ class Pipeline(object):
             if self.timing:
                 timings.append(time.time())
 
+
         logs.overview("Setup all pipeline modules\n")
 
         if self.timing:
