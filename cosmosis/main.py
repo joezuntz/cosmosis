@@ -413,6 +413,19 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
         sampler_main_loop(sampler, output, pool, is_root)
         distribution_hints.update(sampler.distribution_hints)
 
+        # get total number of evaluations on all MPI processes
+        if pool is None:
+            run_count_total = pipeline.run_count
+            run_count_ok_total = pipeline.run_count_ok
+        else:
+            run_count_total = pool.comm.allreduce(pipeline.run_count)
+            run_count_ok_total = pool.comm.allreduce(pipeline.run_count_ok)
+        
+        if is_root:
+            logs.overview(f"Total posterior evaluations = {run_count_total} across all processes")
+            logs.overview(f"Successful posterior evaluations = {run_count_ok_total} across all processes")
+
+
         if output:
             output.close()
 

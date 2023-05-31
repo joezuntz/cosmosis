@@ -45,7 +45,7 @@ class GridmaxSampler(ParallelSampler):
         bounds = self.bounds[d]
         samples = np.linspace(bounds[0], bounds[1], self.nsteps)
 
-        logs.log_info("Minimizing in %s"%self.pipeline.varied_params[d].name)
+        logs.overview("Minimizing in %s"%self.pipeline.varied_params[d].name)
 
         #Fill in the sample points for the current
         #dimension in the samples
@@ -102,7 +102,7 @@ class GridmaxSampler(ParallelSampler):
             self.previous_maxlike = self.maxlike
             self.maxlike = results[best][0]
 
-        logs.log_noisy(f"New best fit L = {posteriors.max()} at {self.pipeline.varied_params[d].name} = {points[best][d]}")
+        logs.overview(f"New best fit L = {posteriors.max()} at {self.pipeline.varied_params[d].name} = {points[best][d]}")
 
         #and go on to the next dimension
         self.dimension = (d+1)%self.ndim

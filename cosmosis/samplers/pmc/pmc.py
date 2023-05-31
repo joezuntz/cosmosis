@@ -66,7 +66,7 @@ class PopulationMonteCarlo(object):
 			count = np.sum(C==i)
 			if count<self.kill_count:
 				self.kill[i] = True
-				logs.debug("Component %d less than kill count (%d < %d)" % (i, count, self.kill_count))
+				logs.debug(f"Component {i} less than kill count ({count} < {self.kill_count})")
 		x = np.array([self.components[c].sample() for c in C])
 		return C, x
 
@@ -89,7 +89,7 @@ class PopulationMonteCarlo(object):
 		logw_norm = np.log(w_norm)
 		entropy =  -(w_norm*logw_norm).sum()
 		perplexity = np.exp(entropy) / len(x)
-		logs.debug("Perplexity = ", perplexity)
+		logs.debug(f"Perplexity = {perplexity}")
 
 
 		Aphi[np.isnan(Aphi)] = 0.0
@@ -105,7 +105,7 @@ class PopulationMonteCarlo(object):
 			try:
 				m.update(w_norm, x, rho_d)
 			except np.linalg.LinAlgError as error:
-				logs.debug("Component not fitting the data very well", d, str(error))
+				logs.debug(f"Component not fitting the data very well {d} {error}")
 				self.kill[d] = True
 
 		if do_kill:
@@ -140,7 +140,7 @@ class GaussianComponent(object):
 			raise np.linalg.LinAlgError("alpha = %f"%alpha)
 		mu = einsum('i,ij,i->j',w_norm, x, rho_d) / alpha  #scalar
 		delta = x-mu  #n_sample * n_dim
-		logs.debug("Updating to mu = ", mu)
+		logs.debug(f"Updating to mu = {mu}")
 		sigma = einsum('i,ij,ik,i->jk',w_norm, delta, delta, rho_d) / alpha  #n_dim * n_dim
 		self.set(alpha, mu, sigma)
 

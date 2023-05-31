@@ -1,7 +1,7 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 import os
-import itertools
 from cosmosis.runtime.analytics import Analytics
 import logging
 
@@ -98,7 +98,7 @@ class PymcSampler(ParallelSampler):
 
         self.analytics.add_traces(traces)
 
-        logs.log_overview(f"Done {self.num_samples} iterations")
+        logs.overview(f"Done {self.num_samples} iterations")
 
     def worker(self):
         while not self.is_converged():

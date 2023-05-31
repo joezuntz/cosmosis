@@ -1,9 +1,9 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 import ctypes as ct
 import os
 import sys
-import collections
 
 MINUIT_INI_SECTION = "minuit"
 

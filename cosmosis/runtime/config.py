@@ -19,7 +19,7 @@ class CosmosisConfigurationError(configparser.Error):
     pass
 
 class IncludingConfigParser(configparser.ConfigParser):
-    u"""Extension of built-in python :class:`ConfigParser` to \%include other files.
+    u"""Extension of built-in python :class:`ConfigParser` to %include other files.
 
     Use the line: %include filename.ini This is assumed to end a section,
     and the last section in the included file is assumed to end as well
@@ -170,7 +170,7 @@ class Inifile(IncludingConfigParser):
         u"""Read in a configuration from `filename`.
 
         The `defaults` will be applied if a parameter is not specified in
-        the file (or \%included descendants), and the `override`s will be
+        the file (or %included descendants), and the `override`s will be
         imposed on the regardless of whether those parameters have
         assigned values or not.
 
