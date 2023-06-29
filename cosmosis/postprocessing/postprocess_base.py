@@ -129,7 +129,7 @@ class PostProcessor(metaclass=PostProcessMetaclass):
                 self.sampler_options[key] = val
     
     def load_astropy(self, inputs):
-        self.name = "chain"
+        self.name = inputs.meta.get("chain_name", "chain")
         self.colnames = inputs.colnames
         # convert astropy table to numpy array
         self.data = [np.array([inputs[c] for c in self.colnames]).T]
@@ -236,9 +236,11 @@ class PostProcessor(metaclass=PostProcessMetaclass):
         print("Finalizing:")
         for e in self.steps:
             e.finalize()
+    
+    def save(self):
         for f in list(self.outputs.values()):
             print("Output: ", f.filename)
-            f.finalize()
+            f.save()
 
     def apply_tweaks(self, tweaks):
         if tweaks.filename==plots.Tweaks.filename:

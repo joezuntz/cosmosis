@@ -47,11 +47,11 @@ class PostprocessProduct(object):
         self.value = value
         self.info = info
 
-    def finalize(self):
+    def save(self):
         pass
 
 class PostprocessPlot(PostprocessProduct):
-    def finalize(self):
+    def save(self):
         pylab.figure(self.value.number)
         pylab.savefig(self.filename)
         pylab.close()
@@ -63,11 +63,11 @@ class PostprocessPlot(PostprocessProduct):
         tweak.run()
 
 class PostprocessTable(PostprocessProduct):
-    def finalize(self):
+    def save(self):
         self.value.write(self.filename)
 
 class PostprocessText(PostprocessProduct):
-    def finalize(self):
+    def save(self):
         self.value.seek(0)
         text = self.value.read()
         with open(self.filename, "w") as f:

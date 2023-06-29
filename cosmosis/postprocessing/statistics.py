@@ -73,16 +73,16 @@ class ConstrainingStatistics(Statistics):
 
     def report_centroid(self, kind, col):
         cols = ["parameter", kind, "sigma", "data_set"]
-        table = self.get_table_output("kind", cols)
+        table = self.get_table_output(kind, cols)
         for (col, x, sigma) in zip(self.source.colnames, col, self.sigma):
-            table.append([col, x, sigma, self.source.name])
+            table.append([col, x, sigma, self.source.label])
         return table
 
     def report_limit(self, kind, col):
         cols = ["parameter", kind, "data_set"]
         table = self.get_table_output(kind, cols)
         for (col, x) in zip(self.source.colnames, col):
-            table.append([col, x, self.source.name])
+            table.append([col, x, self.source.label])
         return table
 
     @staticmethod
@@ -530,7 +530,7 @@ class GelmanRubinStatistic(MetropolisHastingsStatistics):
         print()
         for name in names:
             R1 = self.gelman_rubin(name)
-            t.append([name, R1, self.source.name])
+            t.append([name, R1, self.source.label])
 
             if R1>0.1:
                 print("{}    {}  -- POORLY CONVERGED PARAMETER AT 10% LEVEL".format(name,R1))
@@ -578,7 +578,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
                 else:
                     print("    %-50s NOT CONVERGED!" % m)
                 
-                t.append([param, js, self.source.name])
+                t.append([param, js, self.source.label])
         print()
         if not np.min(jstar)>self.jstar_convergence_limit:
             print("The Dunkley et al (2005) power spectrum test shows that this chain has NOT CONVERGED.")
@@ -648,7 +648,7 @@ class WeightedStatistics(object):
             loglikes = self.source.reduced_col("like")
 
         if MCSamples:
-            gdc = MCSamples(samples = datapts,weights=weight,loglikes=loglikes, names=self.source.colnames,name_tag = self.source.name,ranges=rangedict)# ranges from value file
+            gdc = MCSamples(samples = datapts,weights=weight,loglikes=loglikes, names=self.source.colnames,name_tag = self.source.label,ranges=rangedict)# ranges from value file
         else:
             raise ImportError('GetDist is not installed')
         self.source.gdc = gdc
@@ -693,9 +693,9 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         print("Effective number samples = ", n_eff)
         print()
         #Now save to file
-        header = '#logz    logz_sigma'
-        t = self.get_table_output("logz", "logz_sigma", "data_set")
-        t.append([logz, logz_sigma, self.source.name])
+        cols=["logz", "logz_sigma", "data_set"]
+        t = self.get_table_output("evidence", cols)
+        t.append([logz, logz_sigma, self.source.label])
 
         #Include evidence in list of created files
         files.append(t)
@@ -833,7 +833,7 @@ class CovarianceMatrix1D(Statistics):
         t = self.get_table_output("means", cols)
 
         for p, mu, sigma in zip(self.source.colnames, Mu, Sigma):
-            t.append([p, mu, sigma, self.source.name])
+            t.append([p, mu, sigma, self.source.label])
 
         print()
         print("Marginalized mean, std-dev:")
@@ -857,7 +857,7 @@ class CovarianceMatrixEllipseAreas(Statistics):
                 C = covmat_estimate[:,[i,j]][[i,j],:]
                 area = 6.17 * np.pi * np.sqrt(np.linalg.det(C))
                 fom = 1.0/area
-                t.append([p1, p2, area, fom, self.source.name])
+                t.append([p1, p2, area, fom, self.source.label])
 
         return [t]
 
@@ -869,7 +869,7 @@ class FisherFigureOfMerit(Statistics):
         F = self.source.data[0]
         n = self.source.metadata[0]['n_varied']
         fom = (np.linalg.det(F))**(-0.5 / n)
-        t.append([fom, self.source.name])
+        t.append([fom, self.source.label])
         return [t]
 
 
@@ -881,7 +881,7 @@ class Citations(Statistics):
         message = "#You should cite these papers in any publication based on this pipeline."
         print(message)
         citations = set()
-        f, filename, new_file = self.get_text_output("citations", message, self.source.name)
+        f, filename, new_file = self.get_text_output("citations", message, self.source.label)
         for comment_set in self.source.comments:
             for comment in comment_set:
                 comment = comment.strip()

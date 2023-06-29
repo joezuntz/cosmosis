@@ -615,8 +615,7 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
         return xout[xcut0:xcut1], yout[ycut0:ycut1], like[xcut0:xcut1, ycut0:ycut1]
 
     def make_corner_plot(self, figure=None):
-        from matplotlib.ticker import AutoMinorLocator, AutoLocator, ScalarFormatter
-        from matplotlib.axis import Ticker
+        print("Making corner plot")
 
         pairs = list(self.parameter_pairs())
 
@@ -625,11 +624,19 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
         nparam = len(params)
         fig, filename = self.figure("corner")
 
-        # enlarge for this extra big figure
-        size = min(4 * nparam, 24)
-        fig.set_size_inches(size, size)
+        # If we are making a corner plot with two different chains
+        # then there may be different parameters in the two of them.
+        # In that case just inherit the parameters from the first one.
+        if fig.get_axes():
+            params = fig._cosmosis_params
+            nparam = len(params)
+        else:
+            # enlarge for this extra big figure
+            size = min(4 * nparam, 24)
+            fig.set_size_inches(size, size)
+            axes = fig.subplots(nparam, nparam, squeeze=False)
+            fig._cosmosis_params = params[:]
 
-        axes = fig.subplots(nparam, nparam, squeeze=False)
         for i in range(nparam):
             for j in range(nparam):
                 ax = axes[i, j]
@@ -663,6 +670,9 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
                     if nparam > 10:
                         ax.xaxis.set_ticklabels([])
 
+                    if p1 not in self.cache:
+                        continue
+
                     # Use the same 1D information as in the 1D plots
                     x, like = self.cache[p1]
 
@@ -673,8 +683,6 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
                     ax.plot(x, like / like.max(), color=self.line_color())
                     ax.set_xlim(x.min(), x.max())
                     ax.set_ylim(0, 1.1)
-
-                    # ax.tick_params(axis='both', which='minor', bottom=True, left=True)
 
                 else:
                     # We might have done the swap thing, in which case

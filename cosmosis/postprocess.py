@@ -61,7 +61,7 @@ def main(args):
 
 	processor = run_cosmosis_postprocess(args.inifile, **vars(args))
 	#Save all the image files and close the text files
-	processor.finalize()
+	processor.save()
 
 if __name__=="__main__":
 	main(sys.argv[1:])

@@ -36,12 +36,17 @@ def run_cosmosis_postprocess(inputs, **kwargs):
     elif isinstance(inputs[0], str):
         labels = inputs
     else:
-        labels = [str(i) for i in range(len(inputs))]
+        labels = [f"chain_{i}" for i in range(len(inputs))]
 
     if len(inputs)>1 and run_max_post:
         raise ValueError("Can only use the --run-max-post argument with a single parameter file for now")
 
+    processors = []
+
     for i, ini_filename in enumerate(inputs):
+        if "astropy" in str(type(ini_filename)):
+            ini_filename.meta.setdefault("chain_name", labels[i])
+
         sampler, ini = read_input(ini_filename, text, weights)
         processor_class = postprocessor_for_sampler(sampler.split()[-1])
 
@@ -73,7 +78,12 @@ def run_cosmosis_postprocess(inputs, **kwargs):
 
         #Save the outputs ready for the next post-processor in case
         #they want to add to it (e.g. two constriants on the same axes)
-        outputs = processor.outputs
+        outputs.update(processor.outputs)
+
+    # Finalize all the elements - this adds legends to any plots
+    # that need them. This final processor knows about all the
+    # outputs that we made.
+    processor.finalize()
 
     if sampler is None:
         return
