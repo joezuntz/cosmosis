@@ -1,12 +1,8 @@
 #!/usr/bin/env python
-from .postprocessing.postprocess import postprocessor_for_sampler
-from .postprocessing.inputs import read_input
-from .postprocessing.plots import Tweaks
-from .runtime.utils import mkdir
 import sys
 import argparse
 import os
-
+from .postprocessing import run_cosmosis_postprocess
 
 parser = argparse.ArgumentParser(description="Post-process cosmosis output")
 parser.add_argument("inifile", nargs="+")
@@ -53,6 +49,7 @@ plots.add_argument("--no-image", dest='image', default=True, action='store_false
 plots.add_argument("--run-max-post", default="", help="Run the test sampler on maximum-posterior sample and save to the named directory.")
 plots.add_argument("--truth", default="", help="An ini file containing truth values to mark on plots")
 
+
 def main(args):
 	#Read the command line arguments and load the
 	#ini file that created the run
@@ -62,65 +59,7 @@ def main(args):
 		if not os.path.exists(ini_filename):
 			raise ValueError("The file (or directory) {} does not exist.".format(ini_filename))
 
-	#Make the directory for the outputs to go in.
-	mkdir(args.outdir)
-	outputs = {}
-
-	#Deal with legends, if any
-	if args.legend:
-		labels = args.legend.split("|")
-		if len(labels)!=len(args.inifile):
-			raise ValueError("You specified {} legend names but {} files to plot".format(len(labels), len(args.inifile)))
-	else:
-		labels = args.inifile
-
-	if len(args.inifile)>1 and args.run_max_post:
-		raise ValueError("Can only use the --run-max-post argument with a single parameter file for now")
-
-	for i,ini_filename in enumerate(args.inifile):
-		sampler, ini = read_input(ini_filename, args.text, args.weights)
-		processor_class = postprocessor_for_sampler(sampler.split()[-1])
-
-		#We do not know how to postprocess everything.
-		if processor_class is None:
-			print("I do not know how to postprocess output from the %s sampler"%sampler)
-			sampler = None
-			continue
-
-		#Create and run the postprocessor
-
-		processor = processor_class(ini, labels[i], i, **vars(args))
-
-		#Inherit any plots from the previous postprocessor
-		#so we can make plots with multiple datasets on
-		processor.outputs.update(outputs)
-
-		#We can load extra plots to make from a python
-		#script here
-		if args.extra:
-			processor.load_extra_steps(args.extra)
-
-		#Optionally add a step in which we 
-		if args.run_max_post:
-			processor.add_rerun_bestfit_step(args.run_max_post)
-
-
-		#Run the postprocessor and make the outputs for this chain
-		processor.run()
-
-		#Save the outputs ready for the next post-processor in case
-		#they want to add to it (e.g. two constriants on the same axes)
-		outputs = processor.outputs
-
-	if sampler is None:
-		return
-
-	#Run any tweaks that the user specified
-	if args.tweaks:
-		tweaks = Tweaks.instances_from_file(args.tweaks)
-		for tweak in tweaks:
-			processor.apply_tweaks(tweak)
-
+	processor = run_cosmosis_postprocess(args.inifile, **vars(args))
 	#Save all the image files and close the text files
 	processor.finalize()
 

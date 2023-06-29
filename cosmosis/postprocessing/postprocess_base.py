@@ -88,6 +88,7 @@ class PostProcessor(metaclass=PostProcessMetaclass):
         print("Deriving new columns from these functions in {}:".format(self.derive_file))
         for f in functions:
             self.derive_extra_column(f)
+
     def load_tuple(self, inputs):
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs
         self.name = "Data"
@@ -126,14 +127,30 @@ class PostProcessor(metaclass=PostProcessMetaclass):
         for chain in self.metadata:
             for key,val in list(chain.items()):
                 self.sampler_options[key] = val
-
-
+    
+    def load_astropy(self, inputs):
+        self.name = "chain"
+        self.colnames = inputs.colnames
+        # convert astropy table to numpy array
+        self.data = [np.array([inputs[c] for c in self.colnames]).T]
+        self.metadata = [inputs.meta]
+        self.final_metadata = [{
+            k.removeprefix("final:"): v
+            for k, v in meta.items()
+            if k.startswith("final:")
+        } for meta in self.metadata]
+        self.comments = [meta["comments"] for meta in self.metadata]
+        for meta in self.metadata:
+            for key, val in meta.items():
+                self.sampler_options[key] = val
 
     def sampler_option(self, key, default=None):
         return self.sampler_options.get(key, default)
 
     def load_chain(self, ini):
-        if isinstance(ini, tuple):
+        if "astropy" in str(type(ini)):
+            self.load_astropy(ini)
+        elif isinstance(ini, tuple):
             self.load_tuple(ini)
         elif isinstance(ini, dict):
             self.load_dict(ini)

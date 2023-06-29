@@ -11,7 +11,7 @@ def read_input(filename, force_text=False, weighted=False):
      - specifying a cosmosis .ini input file that includes the output file specification
      - specifying a directory containing cosmosis test sampler output
      - specifying a non-cosmosis output file containing samples or weighted samples
-
+     - passing in an astropy table of the chain
 
     Params:
         filename: string, paths to any of the options described above
@@ -21,7 +21,16 @@ def read_input(filename, force_text=False, weighted=False):
         sampler - string with the name of the sampler in
         ini - a dictionary of information containing the output and metadata, suitable for instantiating a postprocessor.
     """
-    if filename.endswith("txt") or force_text:
+    if "astropy" in str(type(filename)):
+        from astropy.table import Table
+        if not isinstance(filename, Table):
+            raise ValueError("If you pass in an astropy table it must be an astropy table")
+        metadata = filename.meta
+        sampler = metadata.get("sampler")
+        # in this case the table already contains all the information we need
+        ini = filename
+
+    elif filename.endswith("txt") or force_text:
         output_info = TextColumnOutput.load_from_options({"filename":filename})
         metadata=output_info[2][0]
         sampler = metadata.get("sampler")
@@ -35,6 +44,7 @@ def read_input(filename, force_text=False, weighted=False):
             ini = output_info
         else:
             ini = {"sampler":sampler, sampler:metadata, "data":output_info, "output":dict(format="text", filename=filename)}
+
     elif filename.endswith("fits"):
         output_info = FitsOutput.load_from_options({"filename":filename})
         metadata=output_info[2][0]
@@ -62,4 +72,5 @@ def read_input(filename, force_text=False, weighted=False):
         #designed to postprocess the output of that sampler
         ini = Inifile(filename)
         sampler = ini.get("runtime", "sampler")
+
     return sampler, ini

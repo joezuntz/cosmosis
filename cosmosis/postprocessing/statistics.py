@@ -8,8 +8,11 @@ except:
 # getdist not implemented for polychord and grid sampler yet
 import numpy as np
 import scipy as sp
+from io import StringIO
 from .utils import std_weight, mean_weight, median_weight, percentile_weight, find_asymmetric_errorbars
-from .outputs import PostprocessText
+from .outputs import PostprocessText, PostprocessTable, MiniTable
+
+
 
 class Statistics(PostProcessorElement):
     def __init__(self, *args, **kwargs):
@@ -23,13 +26,22 @@ class Statistics(PostProcessorElement):
         filename = super(Statistics, self).filename("txt", base)
         return filename
 
+    def get_table_output(self, base, cols):
+        filename = self.filename(base)
+        f = self.get_output(base)
+        if f is None:
+            t = MiniTable(cols)
+            self.set_output(base, PostprocessTable(base, filename, t))
+        else:
+            t = f.value
+        return t
 
     def get_text_output(self, base, header="", section_name=""):
         filename = self.filename(base)
-        f = self.get_output(filename)
+        f = self.get_output(base)
         if f is None:
-            f = open(filename, 'w')
-            self.set_output(filename, PostprocessText(base,filename,f))
+            f = StringIO()
+            self.set_output(base, PostprocessText(base,filename,f))
             new_file = True
             if header:
                 f.write(header+'\n')
@@ -45,83 +57,33 @@ class ConstrainingStatistics(Statistics):
     def report_file(self):
         #Get the filenames to make
         return [
-            self.report_file_mean(),
-            self.report_file_median(),
-            self.report_file_mode(),
-            self.report_file_l95(),
-            self.report_file_u95(),
-            self.report_file_l68(),
-            self.report_file_u68(),
-            self.report_file_err("lerr68", self.lerr68),
-            self.report_file_err("uerr68", self.uerr68),
-            self.report_file_err("lerr95", self.lerr95),
-            self.report_file_err("uerr95", self.uerr95),
-            self.report_file_err("peak1d", self.peak1d),
+            self.report_centroid("means", self.mu),
+            self.report_centroid("medians", self.median),
+            self.report_centroid("modes", self.peak1d),
+            self.report_limit("l95", self.l95),
+            self.report_limit("u95", self.u95),
+            self.report_limit("l68", self.l68),
+            self.report_limit("u68", self.u68),
+            self.report_limit("lerr68", self.lerr68),
+            self.report_limit("uerr68", self.uerr68),
+            self.report_limit("lerr95", self.lerr95),
+            self.report_limit("uerr95", self.uerr95),
+            self.report_limit("peak1d", self.peak1d),
         ]
-    def report_file_mean(self):        
-        #Generate the means file
-        header = "#parameter mean std_dev"
-        marge_file, marge_filename, new_file = self.get_text_output("means", header, self.source.name)
-        for P in zip(self.source.colnames, self.mu, self.sigma):
-            marge_file.write("%s   %e   %e\n" % P)
-        return marge_filename
 
-    def report_file_median(self):
-        #Generate the medians file
-        header = "#parameter mean std_dev"
-        median_file, median_filename, new_file = self.get_text_output("medians", header, self.source.name)
-        for P in zip(self.source.colnames, self.median, self.sigma):
-            median_file.write("%s   %e   %e\n" % P)
-        return median_filename
+    def report_centroid(self, kind, col):
+        cols = ["parameter", kind, "sigma", "data_set"]
+        table = self.get_table_output("kind", cols)
+        for (col, x, sigma) in zip(self.source.colnames, col, self.sigma):
+            table.append([col, x, sigma, self.source.name])
+        return table
 
-    def report_file_mode(self):
-        #Generate the mode file
-        header = "#parameter value"
-        best_file, best_filename, new_file = self.get_text_output("best_fit", header, self.source.name)
-        for P in zip(self.source.colnames, self.source.get_row(self.best_fit_index)):
-            best_file.write("%s        %g\n"%P)
-        return best_filename
-
-    def report_file_l95(self):
-        #Generate the medians file
-        header = "#parameter low95"
-        limit_file, limit_filename, new_file = self.get_text_output("low95", header, self.source.name)
-        for P in zip(self.source.colnames, self.l95):
-            limit_file.write("%s     %g\n" % P)
-        return limit_filename
-
-    def report_file_u95(self):
-        #Generate the medians file
-        header = "#parameter upper95"
-        limit_file, limit_filename, new_file = self.get_text_output("upper95", header, self.source.name)
-        for P in zip(self.source.colnames, self.u95):
-            limit_file.write("%s     %g\n" % P)
-        return limit_filename
-
-    def report_file_l68(self):
-        #Generate the medians file
-        header = "#parameter low68"
-        limit_file, limit_filename, new_file = self.get_text_output("low68", header, self.source.name)
-        for P in zip(self.source.colnames, self.l68):
-            limit_file.write("%s     %g\n" % P)
-        return limit_filename
-
-    def report_file_u68(self):
-        #Generate the medians file
-        header = "#parameter upper68"
-        limit_file, limit_filename, new_file = self.get_text_output("upper68", header, self.source.name)
-        for P in zip(self.source.colnames, self.u68):
-            limit_file.write("%s     %g\n" % P)
-        return limit_filename
-
-    def report_file_err(self, name, data):
-        #Generate the medians file
-        header = "#parameter {}".format(name)
-        limit_file, limit_filename, new_file = self.get_text_output(name, header, self.source.name)
-        for P in zip(self.source.colnames, data):
-            limit_file.write("%s     %g\n" % P)
-        return limit_filename
-
+    def report_limit(self, kind, col):
+        cols = ["parameter", kind, "data_set"]
+        table = self.get_table_output(kind, cols)
+        for (col, x) in zip(self.source.colnames, col):
+            table.append([col, x, self.source.name])
+        return table
 
     @staticmethod
     def find_median(x, P):
@@ -142,6 +104,7 @@ class ConstrainingStatistics(Statistics):
         self.report_screen_limits()
         #Print the same summary stats that go into the
         #files but to the screen instead, in a pretty format        
+
     def report_screen_mean(self):
         #Means
         print()
@@ -174,6 +137,7 @@ class ConstrainingStatistics(Statistics):
         for P in zip(self.source.colnames, self.median, self.sigma):
             print('    %s = %g ± %g' % P)
         print()
+
     def report_screen_mode(self):
         #Mode
         print("Best likelihood:")
@@ -191,6 +155,7 @@ class ConstrainingStatistics(Statistics):
         for name, val in zip(self.source.colnames, self.u95):
             print('    %s < %g' % (name, val))
         print()
+
         #Mode
         print("68% lower limits:")
         for name, val in zip(self.source.colnames, self.l68):
@@ -390,21 +355,21 @@ class ChainCovariance(object):
         proposal = covmat[:n,:n]
 
         #Save the covariance matrix
-        f, filename, new_file = self.get_text_output("covmat")
-        if new_file:
-            f.write('#'+'    '.join(col_names)+'\n')
-            np.savetxt(f, covmat)
+        t1 = self.get_table_output("covmat", col_names)
+        if len(t1) == 0:
+            for row in covmat:
+                t1.append(row)
         else:
             print("NOT saving more than one covariance matrix - just using first ini file")
 
         #Save the proposal matrix
-        f, proposal_filename, new_file = self.get_text_output("proposal")
-        if new_file:
-            f.write('#'+'    '.join(col_names[:n])+'\n')
-            np.savetxt(f, proposal)
+        t2 = self.get_table_output("proposal", col_names[:n])
+        if len(t2) == 0:
+            for row in proposal:
+                t2.append(row)
         else:
             print("NOT saving more than one proposal matrix - just using first ini file")
-        return [filename, proposal_filename]
+        return [t1, t2]
 
 class MetropolisHastingsCovariance(ChainCovariance, Statistics, MCMCPostProcessorElement):
     pass
@@ -459,8 +424,6 @@ class GridStatistics(ConstrainingStatistics):
             self.report_file_mode(),
             self.report_file_l95(),
             self.report_file_u95(),
-#            self.report_file_l68(),
-#            self.report_file_u68(),
             ]
 
     def compute_stats(self):
@@ -557,8 +520,9 @@ class GelmanRubinStatistic(MetropolisHastingsStatistics):
             print()
             return []
         names = [c for c in self.source.colnames if  c not in ['weight', 'like', 'post']]
-        header = "#parameter   R-1\n"
-        f, filename, is_new = self.get_text_output("gelman", header)
+        cols = ["parameter", "R-1", "data_set"]
+        t = self.get_table_output("gelman", cols)
+
         print()
         print("Gelman-Rubin tests")
         print("------------------")
@@ -566,13 +530,14 @@ class GelmanRubinStatistic(MetropolisHastingsStatistics):
         print()
         for name in names:
             R1 = self.gelman_rubin(name)
-            f.write("{}   {}\n".format(name,R1))
+            t.append([name, R1, self.source.name])
+
             if R1>0.1:
                 print("{}    {}  -- POORLY CONVERGED PARAMETER AT 10% LEVEL".format(name,R1))
             else:
                 print("{}    {}".format(name,R1))
         print()
-        return [filename]
+        return [t]
 
 
 
@@ -597,6 +562,11 @@ class DunkleyTest(MetropolisHastingsStatistics):
         params = self.source.colnames[:n]
         print("Dunkely et al (2005) power spectrum test.")
         print("For converged chains j* > %.1f:" %self.jstar_convergence_limit)
+
+        cols = ["parameter", "jstar", "data_set"]
+        t = self.get_table_output("dunkley", cols)
+
+
         for param in params:
             cols = self.reduced_col(param, stacked=False)
             for c,col in enumerate(cols):
@@ -607,6 +577,8 @@ class DunkleyTest(MetropolisHastingsStatistics):
                     print("    %-50s" % m)
                 else:
                     print("    %-50s NOT CONVERGED!" % m)
+                
+                t.append([param, js, self.source.name])
         print()
         if not np.min(jstar)>self.jstar_convergence_limit:
             print("The Dunkley et al (2005) power spectrum test shows that this chain has NOT CONVERGED.")
@@ -614,12 +586,7 @@ class DunkleyTest(MetropolisHastingsStatistics):
         else:
             print("The power spectra for this chain suggests good convergence.")
         print()
-        header = '#'+'    '.join(params)
-        f, filename, new_file = self.get_text_output("dunkley", header, self.source.name)
-        f.write("\n")
-        f.write('    '.join(str(js) for js in jstar))
-        f.write("\n")
-        return [filename]
+        return [t]
 
 
     @staticmethod
@@ -727,11 +694,11 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         print()
         #Now save to file
         header = '#logz    logz_sigma'
-        f, filename, new_file  = self.get_text_output("evidence", header, self.source.name)
-        f.write(f'{logz}    {logz_sigma}\n')
+        t = self.get_table_output("logz", "logz_sigma", "data_set")
+        t.append([logz, logz_sigma, self.source.name])
 
         #Include evidence in list of created files
-        files.append(filename)
+        files.append(t)
         return files
 
 
@@ -860,14 +827,13 @@ class PolychordCovariance(MultinestCovariance):
 
 class CovarianceMatrix1D(Statistics):
     def run(self):
-        params = self.source.colnames
         Sigma = np.linalg.inv(self.source.data[0]).diagonal()**0.5
         Mu = [float(self.source.metadata[0]['mu_{0}'.format(i)]) for i in range(Sigma.size)]        
-        header = '#'+'    '.join(params)
-        f, filename, new_file = self.get_text_output("means", header, self.source.name)
+        cols = ['param', 'mean', 'std-dev', 'data_set']
+        t = self.get_table_output("means", cols)
 
-        for P in zip(self.source.colnames, Mu, Sigma):
-            f.write("%s   %e   %e\n" % P)
+        for p, mu, sigma in zip(self.source.colnames, Mu, Sigma):
+            t.append([p, mu, sigma, self.source.name])
 
         print()
         print("Marginalized mean, std-dev:")
@@ -875,13 +841,13 @@ class CovarianceMatrix1D(Statistics):
             print('    %s = %g ± %g' % P)
         print()
 
-        return [filename]
+        return [t]
 
 class CovarianceMatrixEllipseAreas(Statistics):
     def run(self):
         params = self.source.colnames
-        header = '#param1  param2  area figure_of_merit'
-        f, filename, new_file = self.get_text_output("ellipse_areas", header, self.source.name)
+        cols = ["param1", "param2", "area", "figure_of_merit", "data_set"]
+        t = self.get_table_output("ellipse_areas", cols)
 
         covmat_estimate = np.linalg.inv(self.source.data[0])
         for i,p1 in enumerate(params[:]):
@@ -891,21 +857,20 @@ class CovarianceMatrixEllipseAreas(Statistics):
                 C = covmat_estimate[:,[i,j]][[i,j],:]
                 area = 6.17 * np.pi * np.sqrt(np.linalg.det(C))
                 fom = 1.0/area
-                f.write("{0}  {1}  {2}  {3}\n".format(p1, p2, area, fom))
+                t.append([p1, p2, area, fom, self.source.name])
 
-        return [filename]
+        return [t]
 
 
 class FisherFigureOfMerit(Statistics):
     def run(self):
-        params = self.source.colnames
-        header = '#figure_of_merit\n#Definition: det(F)**(-0.5/n)'
-        f, filename, new_file = self.get_text_output("fisher_fom", header, self.source.name)
+        cols = ["figure_of_merit_reduced", "data_set"]
+        t = self.get_table_output("fisher_fom", cols)
         F = self.source.data[0]
         n = self.source.metadata[0]['n_varied']
         fom = (np.linalg.det(F))**(-0.5 / n)
-        f.write("{}\n".format(fom))
-        return [filename]
+        t.append([fom, self.source.name])
+        return [t]
 
 
 class Citations(Statistics):
