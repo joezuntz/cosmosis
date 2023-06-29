@@ -73,6 +73,7 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
             pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=truth_file)
             pp_files = pp.run()
             pp.finalize()
+            pp.save()
             for p in pp_files:
                 print(p)
             postprocess_files = ['parameters--p1', 'parameters--p2']
