@@ -44,3 +44,4 @@ install-record.txt
 *.egg-info
 .DS_Store
 output/*
+cosmosis.code-workspace
