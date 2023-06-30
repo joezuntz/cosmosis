@@ -4,6 +4,8 @@ parallel: parallel
 purpose: "Neural Network-Boosted Importance Nested Sampling"
 url: "https://github.com/johannesulf/nautilus"
 attribution: ["Johannes U. Lange"]
+cite: "https://arxiv.org/abs/2306.16923"
+
 
 explanation: >
     Nautilus is an MIT-licensed pure-Python package for Bayesian posterior and
