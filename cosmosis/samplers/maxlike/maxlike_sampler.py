@@ -11,16 +11,28 @@ class MaxlikeSampler(Sampler):
         self.output_cov = self.read_ini("output_covmat", str, "")
         self.annealing = self.read_ini("annealing", bool, False)
         if self.annealing:
-            self.annealing_niter = self.read_ini("annealing_niter", int, 100)
-            self.annealing_temperature = self.read_ini("annealing_temperature", float, 1.0)
-            self.annealing_stepsize = self.read_ini("annealing_stepsize", float, 0.5)
-            self.annealing_take_step = None
-            self.annealing_accept_test = None
-            self.annealing_interval = self.read_ini("annealing_stepsize_update_interval", int, 50)
-            self.annealing_niter_success = self.read_ini("annealing_niter_success", int, self.annealing_niter+2)
+            self.annealing_method = self.read_ini("annealing_method", str, "dual_annealing")
             self.annealing_seed = self.read_ini("annealing_seed", int, 1)
-            self.annealing_target_accept_rate = self.read_ini("annealing_target_accept_rate", float, 0.5)
-            self.annealing_stepwise_factor = self.read_ini("annealing_stepwise_factor", float, 0.9)
+            if (self.annealing_method=="dual_annealing"):
+                self.annealing_maxiter = self.read_ini("annealing_maxiter", int, 100)
+                self.annealing_initial_temp = self.read_ini("annealing_initial_temp", float, 5230.)
+                self.annealing_restart_temp_ratio = self.read_ini("annealing_restart_temp_ratio", float, 2e-05)
+                self.annealing_visit = self.read_ini("annealing_visit", float, 2.62)
+                self.annealing_accept = self.read_ini("annealing_accept", float, -5.)
+                self.annealing_maxfun = self.read_ini("annealing_maxfun", float, 1e9)
+                self.annealing_no_local_search = self.read_ini("annealing_no_local_search", bool, False)
+            elif (self.annealing_method=="basinhopping"):
+                self.annealing_niter = self.read_ini("annealing_niter", int, 1000)
+                self.annealing_temperature = self.read_ini("annealing_temperature", float, 1.)
+                self.annealing_stepsize = self.read_ini("annealing_stepsize", float, 0.5)
+                self.annealing_take_step = None
+                self.annealing_accept_test = None
+                self.annealing_interval = self.read_ini("annealing_stepsize_update_interval", int, 50)
+                self.annealing_niter_success = self.read_ini("annealing_niter_success", int, self.annealing_niter+2)
+                self.annealing_target_accept_rate = self.read_ini("annealing_target_accept_rate", float, 0.5)
+                self.annealing_stepwise_factor = self.read_ini("annealing_stepwise_factor", float, 0.9)
+            else:
+                raise RuntimeError('invalid simulated annealing method')
         self.method = self.read_ini("method",str,"Nelder-Mead")
         self.max_posterior = self.read_ini("max_posterior", bool, False)
 
@@ -43,7 +55,7 @@ class MaxlikeSampler(Sampler):
     def execute(self):
         import scipy.optimize
 
-        def print_basinhopping_log(x, f, accepted):
+        def print_annealing_log(x, f, accepted):
             print("found minimum %.4f accepted %d" % (f, int(accepted)))
             return True
 
@@ -72,20 +84,36 @@ class MaxlikeSampler(Sampler):
 
         if self.annealing:
             minimizer_kwargs = {'method': self.method, 'jac': False, 'tol': self.tolerance, 'options': {'maxiter': self.maxiter}}
-            result = scipy.optimize.basinhopping(likefn, start_vector,
-            niter = self.annealing_niter,
-            T = self.annealing_temperature,
-            stepsize = self.annealing_stepsize,
-            minimizer_kwargs=minimizer_kwargs,
-            take_step = self.annealing_take_step,
-            accept_test = self.annealing_accept_test,
-            callback = print_basinhopping_log,
-            interval = self.annealing_interval,
-            disp=True,
-            niter_success = self.annealing_niter_success,
-            seed = self.annealing_seed,
-            target_accept_rate = self.annealing_target_accept_rate,
-            stepwise_factor = self.annealing_stepwise_factor)
+            if (self.annealing_method=="dual_annealing"):
+                result = scipy.optimize.dual_averaging(likefn, bounds,
+                maxiter = self.annealing_maxiter,
+                minimizer_kwargs = minimizer_kwargs,
+                initial_temp = self.annealing_initial_temp,
+                restart_temp_ratio = self.annealing_restart_temp_ratio,
+                visit = self.annealing_visit,
+                accept = self.annealing_accept,
+                maxfun = self.annealing_maxfun,
+                seed = self.annealing_seed,
+                no_local_search = self.annealing_no_local_search,
+                callback = print_annealing_log,
+                x0 = start_vector)
+            elif (self.annealing_method=="basinhopping"):
+                result = scipy.optimize.basinhopping(likefn, start_vector,
+                niter = self.annealing_niter,
+                T = self.annealing_temperature,
+                stepsize = self.annealing_stepsize,
+                minimizer_kwargs=minimizer_kwargs,
+                take_step = self.annealing_take_step,
+                accept_test = self.annealing_accept_test,
+                callback = print_annealing_log,
+                interval = self.annealing_interval,
+                disp=True,
+                niter_success = self.annealing_niter_success,
+                seed = self.annealing_seed,
+                target_accept_rate = self.annealing_target_accept_rate,
+                stepwise_factor = self.annealing_stepwise_factor)
+            else:
+                raise RuntimeError('invalid simulated annealing method')
         else:
             result = scipy.optimize.minimize(likefn, start_vector, method=self.method,
             jac=False, tol=self.tolerance,  #bounds=bounds,
