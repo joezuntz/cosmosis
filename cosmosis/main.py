@@ -117,7 +117,9 @@ def write_header_output(output, params, values, pipeline):
         prior_ini.write(comment_wrapper)
     output.comment("END_OF_PRIORS_INI")
 
-def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output_original):
+def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output):
+
+    output_original = output
 
     needs_output = sampler_class.needs_output and \
        (pool is None or pool.is_master() or sampler_class.parallel_output)
@@ -169,7 +171,6 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
         
 
     output.metadata("sampler", sample_method)
-
 
     return output
 
