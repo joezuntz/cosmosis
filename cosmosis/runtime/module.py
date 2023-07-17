@@ -6,6 +6,7 @@ u"""Definition of :class:`Module`."""
 import os
 import abc
 import sys
+import ctypes
 from ..datablock import option_section, DataBlock, SectionOptions
 from ..utils import underline
 

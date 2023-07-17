@@ -302,15 +302,21 @@ class DynestyProcessor(MultinestProcessor):
 			return self._weight_col
 		w = self.get_col("log_weight")
 		w = np.exp(w - w.max())
-		self._weight_col = w / w.sum()
+		# w = w[w>0]
+		self._good_index = w > 0
+		self._weight_col = (w / w.sum())[self._good_index]
 		return self._weight_col
 
 	def reduced_col(self, name, stacked=True):
 		col = self.get_col(name)
-		return col
+		self.weight_col()
+		x = col[self._good_index]
+		return x
 
 class NautilusProcess(DynestyProcessor):
 	sampler = "nautilus"
+
+		
 
 
 class PMCPostProcessor(WeightedMetropolisProcessor):
