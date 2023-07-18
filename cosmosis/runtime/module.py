@@ -1,8 +1,4 @@
 #coding: utf-8
-
-u"""Definition of :class:`Module`."""
-
-
 import os
 import abc
 import sys
@@ -204,7 +200,7 @@ class Module(object):
             config = config._ptr
 
         if self.setup_function:
-            logs.info(underline(f'\nSetting up module {self.name}'))
+            logs.overview(underline(f'\nSetting up module {self.name}'))
             self.data = self.setup_function(config)
             self.access_check_report(config_orig)
         else:

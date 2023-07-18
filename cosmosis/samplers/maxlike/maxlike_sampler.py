@@ -38,7 +38,12 @@ class MaxlikeSampler(Sampler):
             if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
                 return np.inf
             p = self.pipeline.denormalize_vector(p_in)
-            like, extra = self.pipeline.posterior(p)
+            r = self.pipeline.run_results(p)
+            r.log()
+            if self.max_posterior:
+                return -r.post
+            else:
+                return -r.like
             return -like
 
         # starting position in the normalized space.  This will be taken from
