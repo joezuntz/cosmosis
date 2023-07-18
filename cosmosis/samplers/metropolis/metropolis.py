@@ -266,14 +266,14 @@ class MCMC(object):
 
 
         if self.use_cobaya:
-            logs.info("Tuning cobaya proposal.")
+            logs.overview("Tuning cobaya proposal.")
             self.proposal.set_covariance(self.covariance_estimate)
         elif isinstance(self.proposal, FastSlowProposal):
-            logs.info("Tuning fast/slow sampler proposal.")
+            logs.overview("Tuning fast/slow sampler proposal.")
             self.proposal = FastSlowProposal(self.covariance_estimate, 
                 self.fast_indices, self.slow_indices, self.oversampling,scaling=self.scaling, exponential_probability=self.exponential_probability)
         elif isinstance(self.proposal, Proposal):
-            logs.info("Tuning standard sampler proposal.")
+            logs.overview("Tuning standard sampler proposal.")
             cholesky = np.linalg.cholesky(self.covariance_estimate)
             self.proposal = Proposal(cholesky, scaling=self.scaling, exponential_probability=self.exponential_probability)
         else:

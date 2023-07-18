@@ -39,7 +39,6 @@ class MaxlikeSampler(Sampler):
                 return np.inf
             p = self.pipeline.denormalize_vector(p_in)
             r = self.pipeline.run_results(p)
-            r.log()
             if self.max_posterior:
                 return -r.post
             else:

@@ -116,8 +116,8 @@ class MinuitSampler(ParallelSampler):
                 cov_matrix = cov_vector.reshape((self.ndim, self.ndim))
                 self.distribution_hints.set_cov(cov_matrix)
         elif self.neval > self.maxiter:
-            logs.overview("MINUIT has failed to converge properly in the max number of iterations.  Sorry.")
-            logs.overview("Saving the best fitting parameters of the ones we tried, though beware: these are probably not the best-fit")
+            logs.error("MINUIT has failed to converge properly in the max number of iterations.  Sorry.")
+            logs.error("Saving the best fitting parameters of the ones we tried, though beware: these are probably not the best-fit")
             self.save_results(param_vector, param_names, results)
             #we actually just use self.converged to indicate that the 
             #sampler should stop now

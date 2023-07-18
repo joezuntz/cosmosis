@@ -158,7 +158,8 @@ def stdout_redirected(to=os.devnull, stdout=None):
             #NOTE: dup2 makes stdout_fd inheritable unconditionally
             stdout.flush()
             os.dup2(copied.fileno(), stdout_fd)  # $ exec >&copied
-            
+            logs.set_level(log_level)
+
 
 
 
