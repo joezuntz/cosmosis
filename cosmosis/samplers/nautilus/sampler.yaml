@@ -1,9 +1,11 @@
 name: "nautilus"
-version: "0.4.1"
+version: "0.7.0"
 parallel: parallel
 purpose: "Neural Network-Boosted Importance Nested Sampling"
 url: "https://github.com/johannesulf/nautilus"
 attribution: ["Johannes U. Lange"]
+cite:
+    - "https://arxiv.org/abs/2306.16923"
 
 explanation: >
     Nautilus is an MIT-licensed pure-Python package for Bayesian posterior and
@@ -21,10 +23,14 @@ installation: >
 
 # List of configuration options for this sampler
 params:
-    n_live: (integer; default=1500) number of live points
+    n_live: (integer; default=2000) number of live points
     n_update: (integer; default=n_live) number of additions to the live set before a new bound is created
-    enlarge: (float; default=1.1*n_dim) factor by which the volume of ellipsoidal bounds is increased
+    enlarge_per_dim: (float; default=1.1) factor by which ellipsoidal bounds are increased in each dimension
+    n_points_min: (integer; default=50+n_dim) minimum number of points for constructing a bounding ellipsoid
+    split_threshold: (float; default=100) volume threshold for splitting bounding ellipsoids
+    n_networks: (integer; default=4) number of neural networks in each network ensemble
     n_batch: (integer; default=100) number of likelihood evaluations that are performed at each step
+    seed: (integer, default=-1) random seed, no fixed seed is used if negative
     random_state: (int; default=-1) random seed, negative values give a random random seed
     filepath: (string; default='None') file used for checkpointing, must have .hdf5 ending
     resume: (bool; default=True) if True, resume from previous run stored in `filepath`
