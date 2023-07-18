@@ -337,7 +337,8 @@ class ChainCovariance(object):
             return []
 
         if self.source.options.get("getdist",False):
-            covmat = self.source.gdc.cov()
+            # Have to manually skip the first bit here
+            covmat = self.source.gdc.cov()[:len(col_names),:len(col_names)]
         else:
 
             if hasattr(self, 'weight_col'):
