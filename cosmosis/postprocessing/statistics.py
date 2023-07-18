@@ -680,7 +680,7 @@ class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, Met
         try:
             logz_sigma = self.source.final_metadata[0]["log_z_error"]
         except KeyError:
-            logz_sigma = "(error not computed)"
+            logz_sigma = np.nan
         #First print to screen
         print("Bayesian evidence:")
         print(f"    log(Z) = {logz:.2f} ± {logz_sigma}")
