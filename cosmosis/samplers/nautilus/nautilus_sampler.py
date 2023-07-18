@@ -44,7 +44,7 @@ class NautilusSampler(ParallelSampler):
             self.seed = self.read_ini("seed", int, -1)
             if self.seed < 0:
                 self.seed = None
-            self.resume_ = self.read_ini("resume", bool, True)
+            self.resume_ = self.read_ini("resume", bool, False)
             self.f_live = self.read_ini("f_live", float, 0.01)
             self.n_shell = self.read_ini("n_shell", int, self.n_batch)
             self.n_eff = self.read_ini("n_eff", float, 10000.0)
