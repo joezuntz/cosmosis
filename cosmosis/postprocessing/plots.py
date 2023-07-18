@@ -630,12 +630,16 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
         if fig.get_axes():
             params = fig._cosmosis_params
             nparam = len(params)
+            axes = fig._cosmosis_axes
+            new = False
         else:
             # enlarge for this extra big figure
             size = min(4 * nparam, 24)
             fig.set_size_inches(size, size)
             axes = fig.subplots(nparam, nparam, squeeze=False)
             fig._cosmosis_params = params[:]
+            fig._cosmosis_axes = axes
+            new = True
 
         for i in range(nparam):
             for j in range(nparam):
@@ -647,7 +651,7 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
                 ax.minorticks_on()
 
                 # Remove upper right above diagonal
-                if j > i:
+                if j > i and new:
                     fig.delaxes(ax)
                     continue
 
