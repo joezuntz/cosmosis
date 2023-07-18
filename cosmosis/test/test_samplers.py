@@ -9,6 +9,7 @@ import os
 import sys
 import pytest
 import numpy as np
+from astropy.table import Table
 
 minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
 
@@ -88,6 +89,11 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
                 print("WANT ", filename)
                 assert filename in pp_files
                 assert os.path.exists(filename)
+            for p in os.listdir(dirname):
+                p = os.path.join(dirname, p)
+                if p.endswith(".txt"):
+                    Table.read(p, format='ascii.commented_header')
+                    print(f"Read file {p} as a table")
 
 
     return output
