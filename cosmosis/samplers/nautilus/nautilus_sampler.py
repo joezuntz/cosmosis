@@ -32,7 +32,7 @@ class NautilusSampler(ParallelSampler):
         pipeline = self.pipeline
 
         if self.is_master():
-            self.n_live = self.read_ini("n_live", int, 1500)
+            self.n_live = self.read_ini("n_live", int, 2000)
             self.n_update = self.read_ini("n_update", int, self.n_live)
             self.enlarge_per_dim = self.read_ini("enlarge_per_dim", float, 1.1)
             self.n_points_min = self.read_ini("n_points_min", int,
@@ -40,7 +40,6 @@ class NautilusSampler(ParallelSampler):
             self.split_threshold = self.read_ini("split_threshold", float,
                                                  100.0)
             self.n_networks = self.read_ini("n_networks", int, 4)
-            self.n_jobs = self.read_ini("n_jobs", int, 1)
             self.n_batch = self.read_ini("n_batch", int, 100)
             self.seed = self.read_ini("seed", int, -1)
             if self.seed < 0:
@@ -80,7 +79,6 @@ class NautilusSampler(ParallelSampler):
             n_points_min=self.n_points_min,
             split_threshold=self.split_threshold,
             n_networks=self.n_networks,
-            n_jobs=self.n_jobs,
             n_batch=self.n_batch,
             seed=self.seed,
             filepath=resume_filepath,
