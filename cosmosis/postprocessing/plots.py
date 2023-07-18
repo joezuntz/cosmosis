@@ -615,8 +615,6 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
         return xout[xcut0:xcut1], yout[ycut0:ycut1], like[xcut0:xcut1, ycut0:ycut1]
 
     def make_corner_plot(self, figure=None):
-        print("Making corner plot")
-
         pairs = list(self.parameter_pairs())
 
         # parameters, in the order we will use
