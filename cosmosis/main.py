@@ -46,7 +46,7 @@ def demo_10_special(inifile):
         print()
         print("There are two flavours of this demo, selected through an ")
         print("environment variable called `HALOFIT'; this variable is not ")
-        print("currently set, so we are gave it the value `takahashi'.")
+        print("currently set, so we are giving it the value `takahashi'.")
 
         os.environ ["HALOFIT"] = "takahashi"
 
