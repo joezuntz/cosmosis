@@ -53,13 +53,13 @@ jobs:
         pip install -v .
         pip install astropy
         pip install --no-binary=mpi4py mpi4py
-        pip install pytest
+        pip install pytest pytest-cov
         if  [ "${{ matrix.python-version }}" != "3.6" ]; then pip install pocomc; fi
 
     - name: Test with pytest
       run: |
         cosmosis --version
-        mkdir tmp && cd tmp && pytest --pyargs cosmosis
+        mkdir tmp && cd tmp && pytest --pyargs cosmosis --cov cosmosis --cov-report=xml
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
