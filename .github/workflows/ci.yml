@@ -48,6 +48,7 @@ jobs:
 
     - name: Install python dependencies
       run: |
+        if  [ "${{ matrix.python-version }}" == "3.6" ]; then export SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=1; fi
         python -m pip install --upgrade pip
         pip install -v .
         pip install --no-binary=mpi4py mpi4py
