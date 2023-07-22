@@ -18,7 +18,6 @@ verbosity_levels = {
     "standard": 30,  #30 log level info
     "normal": 30,  #30 log level info
     "quiet": 20, #20 log level warning / overview
-    "quiet": 20, #20 log level warning / overview
     "muted": 10,    #10 log level error / important
     "silent": -1,   #-1
 }
