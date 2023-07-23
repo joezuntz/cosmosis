@@ -159,6 +159,7 @@ class install_cosmosis(setuptools.command.install.install):
     def run(self):
         make_cosmosis()
         super().run()
+        print("XXXXXX", dir(self))
 
 class develop_cosmosis(setuptools.command.develop.develop):
     description = "Install CosmoSIS in editable mode"
@@ -191,7 +192,7 @@ all_package_files = (datablock_libs + sampler_libs
                             + c_headers + cc_headers + f90_mods 
                             + compilers_config + testing_files + other_files)
 
-
+print("pacakges found = ", setuptools.find_packages())
 setuptools.setup(name = 'cosmosis',
     description       = "The CosmoSIS parameter estimation library.",
     author            = "Joe Zuntz",
