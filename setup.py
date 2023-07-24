@@ -1,5 +1,6 @@
 import setuptools
 import setuptools.command.install
+import setuptools.command.build_py
 import setuptools.command.develop
 import subprocess
 import os
@@ -122,17 +123,10 @@ def make_cosmosis():
 
 
 
-class build_cosmosis(setuptools.Command):
-    description = "Run the CosmoSIS build process"
-    user_options = []
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
+class build_py_cosmosis(setuptools.command.build_py.build_py):
     def run(self):
         make_cosmosis()
+        super().run()
 
 class clean_cosmosis(setuptools.Command):
     description = "Run the CosmoSIS clean process"
@@ -150,16 +144,12 @@ class clean_cosmosis(setuptools.Command):
         env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir,}
         subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
 
-        # Run the original clean command
-        # self.run_command("clean_original")
-
 class install_cosmosis(setuptools.command.install.install):
     description = "Run the CosmoSIS install process"
 
     def run(self):
         make_cosmosis()
         super().run()
-        print("XXXXXX", dir(self))
 
 class develop_cosmosis(setuptools.command.develop.develop):
     description = "Install CosmoSIS in editable mode"
@@ -203,7 +193,7 @@ setuptools.setup(name = 'cosmosis',
     scripts = scripts,
     install_requires = requirements,
     cmdclass={
-        "build_cosmosis": build_cosmosis,
+        "build_py": build_py_cosmosis,
         "install": install_cosmosis,
         "develop": develop_cosmosis,
         "clean": clean_cosmosis,
