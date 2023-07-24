@@ -1,5 +1,6 @@
 import setuptools
 import setuptools.command.install
+import setuptools.command.build_py
 import setuptools.command.develop
 import subprocess
 import os
@@ -122,17 +123,10 @@ def make_cosmosis():
 
 
 
-class build_cosmosis(setuptools.Command):
-    description = "Run the CosmoSIS build process"
-    user_options = []
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
+class build_py_cosmosis(setuptools.command.build_py.build_py):
     def run(self):
         make_cosmosis()
+        super().run()
 
 class clean_cosmosis(setuptools.Command):
     description = "Run the CosmoSIS clean process"
@@ -149,9 +143,6 @@ class clean_cosmosis(setuptools.Command):
         cosmosis_src_dir = get_COSMOSIS_SRC_DIR()
         env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir,}
         subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
-
-        # Run the original clean command
-        # self.run_command("clean_original")
 
 class install_cosmosis(setuptools.command.install.install):
     description = "Run the CosmoSIS install process"
@@ -191,7 +182,6 @@ all_package_files = (datablock_libs + sampler_libs
                             + c_headers + cc_headers + f90_mods 
                             + compilers_config + testing_files + other_files)
 
-
 setuptools.setup(name = 'cosmosis',
     description       = "The CosmoSIS parameter estimation library.",
     author            = "Joe Zuntz",
@@ -202,12 +192,11 @@ setuptools.setup(name = 'cosmosis',
     scripts = scripts,
     install_requires = requirements,
     cmdclass={
-        "build_cosmosis": build_cosmosis,
+        "build_py": build_py_cosmosis,
         "install": install_cosmosis,
         "develop": develop_cosmosis,
         "clean": clean_cosmosis,
     },
-    include_package_data=True,
     version=version,
 )
 
