@@ -9,6 +9,7 @@ import numpy as np
 import time
 import collections
 import warnings
+import traceback
 from . import config
 from . import parameter
 from . import prior
@@ -1204,7 +1205,8 @@ class LikelihoodPipeline(Pipeline):
 
         except Exception:
             logs.error(f"Exception running likelihood at parameters: {p}."
-                            "You should fix this; for now, using zero likelihood.", exc_info=1)
+                            "You should fix this; for now, using zero likelihood.")
+            logs.error(traceback.format_exc())
             if self.debug:
                 sys.stderr.write("\nBecause you have debug=T I will let this kill the chain.\n")
                 sys.stderr.write("The input parameters were:{}\n".format(repr(p)))
