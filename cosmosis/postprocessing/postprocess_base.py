@@ -135,7 +135,7 @@ class PostProcessor(metaclass=PostProcessMetaclass):
         self.data = [np.array([inputs[c] for c in self.colnames]).T]
         self.metadata = [inputs.meta]
         self.final_metadata = [{
-            k.removeprefix("final:"): v
+            k[6:]: v
             for k, v in meta.items()
             if k.startswith("final:")
         } for meta in self.metadata]
