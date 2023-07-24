@@ -182,7 +182,6 @@ all_package_files = (datablock_libs + sampler_libs
                             + c_headers + cc_headers + f90_mods 
                             + compilers_config + testing_files + other_files)
 
-print("pacakges found = ", setuptools.find_packages())
 setuptools.setup(name = 'cosmosis',
     description       = "The CosmoSIS parameter estimation library.",
     author            = "Joe Zuntz",
@@ -198,7 +197,6 @@ setuptools.setup(name = 'cosmosis',
         "develop": develop_cosmosis,
         "clean": clean_cosmosis,
     },
-    include_package_data=True,
     version=version,
 )
 
