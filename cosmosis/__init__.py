@@ -1,7 +1,7 @@
 from .main import run_cosmosis
 from .runtime import MPIPool, LikelihoodPipeline, FunctionModule, \
                      stdout_redirected, Inifile, CosmosisConfigurationError, \
-                     MPIPool, Module, FunctionModule, ClassModule
+                     MPIPool, Module, FunctionModule, ClassModule, logs
 from .samplers import Sampler
 from . import samplers
 from .version import __version__
