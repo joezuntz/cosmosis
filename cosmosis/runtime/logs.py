@@ -1,11 +1,12 @@
 import logging
+import sys
 
 NOISY = 15
 
 
 # Change the logger so it doesn't print out all the boilerplate, unless requested
 logger = logging.getLogger("cosmosis")
-handler = logging.StreamHandler()
+handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 formatter = logging.Formatter('%(message)s')
 handler.setFormatter(formatter)
