@@ -283,7 +283,6 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
                 print(underline(f"Setting up pipeline from parameter file {ini_original}"))
             else:
                 print(underline(f"Setting up pipeline from pre-constructed configuration"))
-                print(f"Setting up pipeline from pre-constructed configuration")
 
         if is_root or pool_stdout:
             pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors)
