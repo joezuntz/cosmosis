@@ -28,7 +28,7 @@ def test_add_param():
         ("pipeline", "debug"): "F",
         ("pipeline", "modules"): "test2",
         ("pipeline", "values"): values.name,
-        ("test2", "file"): "test_module2.py",
+        ("test2", "file"): "example_module2.py",
         ("emcee", "walkers"): "8",
         ("emcee", "samples"): "10"
     }
@@ -76,14 +76,14 @@ def test_add_param():
 def test_missing_setup():
     # check the register_new_parameter feature when no
     # setup is currently happening
-    module = Module("test2", root + "/test_module2.py")
+    module = Module("test2", root + "/example_module2.py")
     config = DataBlock()
     module.setup(config)
 
 def test_unused_param_warning(capsys):
     # check that an appropriate warning is generated
     # when a parameter is unused
-    module = Module("test", root + "/test_module.py")
+    module = Module("test", root + "/example_module.py")
     config = DataBlock()
     config['test', 'unused'] = "unused_parameter"
     module.setup(config)
@@ -108,7 +108,7 @@ def test_vector_extra_outputs():
             ("pipeline", "modules"): "test1",
             ("pipeline", "extra_output"): "data_vector/test_theory#2",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): output_file,
             ("emcee", "walkers"): "8",
             ("emcee", "samples"): "10",
@@ -146,7 +146,7 @@ def test_profile(capsys):
             ("pipeline", "debug"): "T",
             ("pipeline", "modules"): "test1",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): output_file,
             ("emcee", "walkers"): "8",
             ("emcee", "samples"): "10",
@@ -183,7 +183,7 @@ def test_script_skip():
             ("pipeline", "debug"): "F",
             ("pipeline", "modules"): "test1",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): output_file,
         }
 
@@ -216,7 +216,7 @@ def test_prior_override():
             ("pipeline", "debug"): "F",
             ("pipeline", "modules"): "test1",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): output_file,
         }
 

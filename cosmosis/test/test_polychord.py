@@ -35,9 +35,9 @@ def run(sampler, check_prior, check_extra=True, fast_slow=False, **options):
         ("pipeline", "values"): values.name,
         ("pipeline", "fast_slow"): str(fast_slow)[0],
         ("pipeline", "first_fast_module"): "test4",
-        ("test1", "file"): "test_module.py",
-        ("test3", "file"): "test_module3.py",
-        ("test4", "file"): "test_module4.py",
+        ("test1", "file"): "example_module.py",
+        ("test3", "file"): "example_module3.py",
+        ("test4", "file"): "example_module4.py",
     }
 
     for k,v in options.items():

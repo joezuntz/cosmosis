@@ -169,7 +169,7 @@ def apply_update(ini, update):
         which will be joined with spaces.
     """
     action = update[0]
-    if action == "}":
+    if action == "set":
         section = update[1]
         if not ini.has_section(section):
             ini.add_section(section)
@@ -308,11 +308,19 @@ def set_output_dir(params, name, output_dir):
     None
     """
     # Always override the output file and various other auxiliary files
+    if not params.has_section("output"):
+        params.add_section("output")
+    if not params.has_section("test"):
+        params.add_section("test")
+
     params.set("output", "filename", os.path.join(output_dir, f"{name}.txt"))
     params.set("test", "save_dir", os.path.join(output_dir, name))
-    params.set("multinest", "multinest_outfile_root", os.path.join(output_dir, f"{name}.multinest"))
-    params.set("polychord", "polychord_outfile_root", f"{name}.polychord")
-    params.set("polychord", "base_dir", output_dir)
+
+    if params.has_section("multinest"):
+        params.set("multinest", "multinest_outfile_root", os.path.join(output_dir, f"{name}.multinest"))
+    if params.has_section("polychord"):
+        params.set("polychord", "polychord_outfile_root", f"{name}.polychord")
+        params.set("polychord", "base_dir", output_dir)
 
 def build_run(name, run_info, runs, components, output_dir):
     """

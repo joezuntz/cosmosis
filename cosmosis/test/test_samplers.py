@@ -30,7 +30,7 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
         ("pipeline", "modules"): "test1",
         ("pipeline", "extra_output"): "parameters/p3",
         ("pipeline", "values"): values.name,
-        ("test1", "file"): "test_module.py",
+        ("test1", "file"): "example_module.py",
     }
 
     for k,v in options.items():

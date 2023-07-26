@@ -28,7 +28,7 @@ def test_sampler_chain():
             ("pipeline", "modules"): "test1",
             ("pipeline", "extra_output"): "parameters/p3",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): emcee_file,
             ("emcee", "walkers"): "8",
             ("emcee", "samples"): "100",
