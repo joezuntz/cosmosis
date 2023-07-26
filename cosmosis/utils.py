@@ -344,18 +344,7 @@ def get_git_revision(directory):
     return rev.decode('utf-8').strip().replace("\n", " ")
 
 
-def requires_python3(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if sys.version_info[0] < 3:
-            raise RuntimeError(
-                "You are using a CosmoSIS function ({}) "
-                " only available in python 3 and above".format(f))
-        return f(*args, **kwargs)
-    return wrapper
 
-
-@requires_python3
 def import_by_path(name, path):
     # https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path
     import importlib.util
