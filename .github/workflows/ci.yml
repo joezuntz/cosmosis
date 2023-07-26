@@ -17,13 +17,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, "3.10", 3.11]
+        python-version: [3.7, 3.8, 3.9, "3.10", 3.11]
         os: [ubuntu-20.04, macos-latest]
         include:
           - os: ubuntu-20.04
             INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
           - os: macos-latest
-            INSTALL_DEPS: brew update-reset && HOMEBREW_NO_AUTO_UPDATE=1 SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=1 HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install gcc swig libomp open-mpi openblas && if [ ! -f /usr/local/bin/gfortran ]; then ln -s /usr/local/bin/gfortran-$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1) /usr/local/bin/gfortran; fi
+            INSTALL_DEPS: brew update-reset && HOMEBREW_NO_AUTO_UPDATE=1  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install gcc swig libomp open-mpi openblas && if [ ! -f /usr/local/bin/gfortran ]; then ln -s /usr/local/bin/gfortran-$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1) /usr/local/bin/gfortran; fi
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -48,13 +48,9 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        if  [ "${{ matrix.python-version }}" == "3.6" ]; then export SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=1; fi
         python -m pip install --upgrade pip
         pip install -v .
-        pip install astropy
-        pip install --no-binary=mpi4py mpi4py
-        pip install pytest pytest-cov
-        if  [ "${{ matrix.python-version }}" != "3.6" ]; then pip install pocomc; fi
+        pip install --no-binary=mpi4py mpi4py astropy pocomc pytest pytest-cov
 
     - name: Test with pytest
       run: |
