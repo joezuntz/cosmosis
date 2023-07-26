@@ -17,6 +17,7 @@ f90_mods = [
 
 scripts = [
     'bin/cosmosis',
+    'bin/cosmosis-campaign',
     'bin/cosmosis-configure',
     'bin/cosmosis-extract',
     'bin/cosmosis-sample-fisher',
