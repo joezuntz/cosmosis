@@ -2,6 +2,19 @@ from ..campaign import *
 from ..runtime import Inifile
 import tempfile
 import yaml
+import contextlib
+
+@contextlib.contextmanager
+def run_from_source_dir():
+    this_dir = os.path.split(os.path.abspath(__file__))[0]
+    source_dir = os.path.join(this_dir, "..", "..")
+    cur_dir = os.getcwd()
+    try:
+        os.chdir(source_dir)
+        yield
+    finally:
+        os.chdir(cur_dir)
+
 
 def test_pipeline_after():
     params = Inifile(None)
@@ -53,31 +66,10 @@ def test_pipeline_prepend():
     pipeline_prepend(params, ["d", "e"])
     assert params["pipeline", "modules"] == "d e a b c"
 
+
 def test_campaign_functions():
-    runs = parse_yaml_run_file("cosmosis/test/campaign.yml")
-
-    for name in runs:
-        print(name)
-
-    show_run(runs["v1"])
-    perform_test_run(runs["v1"])
-    show_run_status(runs)
-    show_run_status(runs, ["v1"])
-    show_run_status(runs, ["v2"])
-    perform_test_run(runs["v2"])
-    show_run_status(runs, ["v1"])
-    show_run_status(runs, ["v2"])
-    launch_run(runs["v2"])
-    show_run_status(runs, ["v1"])
-    show_run_status(runs, ["v2"])
-
-def test_campaign_functions2():
-    with open("cosmosis/test/campaign.yml") as f:
-        runs_config = yaml.safe_load(f)
-
-    with tempfile.TemporaryDirectory() as dirname:
-        runs_config['output_dir']  = dirname
-        runs = parse_yaml_run_file(runs_config)
+    with run_from_source_dir():
+        runs = parse_yaml_run_file("cosmosis/test/campaign.yml")
 
         for name in runs:
             print(name)
@@ -93,3 +85,27 @@ def test_campaign_functions2():
         launch_run(runs["v2"])
         show_run_status(runs, ["v1"])
         show_run_status(runs, ["v2"])
+
+def test_campaign_functions2():
+    with run_from_source_dir():
+        with open("cosmosis/test/campaign.yml") as f:
+            runs_config = yaml.safe_load(f)
+
+        with tempfile.TemporaryDirectory() as dirname:
+            runs_config['output_dir']  = dirname
+            runs = parse_yaml_run_file(runs_config)
+
+            for name in runs:
+                print(name)
+
+            show_run(runs["v1"])
+            perform_test_run(runs["v1"])
+            show_run_status(runs)
+            show_run_status(runs, ["v1"])
+            show_run_status(runs, ["v2"])
+            perform_test_run(runs["v2"])
+            show_run_status(runs, ["v1"])
+            show_run_status(runs, ["v2"])
+            launch_run(runs["v2"])
+            show_run_status(runs, ["v1"])
+            show_run_status(runs, ["v2"])
