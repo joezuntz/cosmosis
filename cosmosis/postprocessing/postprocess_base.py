@@ -4,8 +4,8 @@ from . import plots
 from . import statistics
 import numpy as np
 from cosmosis import output as output_module
-from ..runtime.config import Inifile
-import imp
+from ..runtime import Inifile
+from ..runtime.utils import import_by_path
 import os
 postprocessor_registry = {}
 
@@ -83,7 +83,7 @@ class PostProcessor(metaclass=PostProcessMetaclass):
     def derive_extra_columns(self):
         if not self.derive_file: return
         name = os.path.splitext(os.path.split(self.derive_file)[1])[0]
-        module = imp.load_source(name, self.derive_file)
+        module = import_by_path(name, self.derive_file)
         functions = [getattr(module,f) for f in dir(module) if f.startswith('derive_')]
         print("Deriving new columns from these functions in {}:".format(self.derive_file))
         for f in functions:
