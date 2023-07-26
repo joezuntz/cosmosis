@@ -428,6 +428,10 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
         if is_root and sampler_name != 'test':
             logs.overview(f"Total posterior evaluations = {run_count_total} across all processes")
             logs.overview(f"Successful posterior evaluations = {run_count_ok_total} across all processes")
+            if output:
+                output.final("evaluations", run_count_total)
+                output.final("successes", run_count_total)
+                output.final("complete", "1")
 
 
         if output:
