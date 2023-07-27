@@ -420,11 +420,11 @@ class GridStatistics(ConstrainingStatistics):
     def report_file(self):
         #Get the filenames to make
         return [
-            self.report_file_mean(),
-            self.report_file_median(),
-            self.report_file_mode(),
-            self.report_file_l95(),
-            self.report_file_u95(),
+            self.report_centroid("means", self.mu),
+            self.report_centroid("medians", self.median),
+            # self.report_centroid("modes", self.peak1d),
+            self.report_limit("l95", self.l95),
+            self.report_limit("u95", self.u95),
             ]
 
     def compute_stats(self):
