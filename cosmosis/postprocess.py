@@ -60,8 +60,10 @@ def main(args):
 			raise ValueError("The file (or directory) {} does not exist.".format(ini_filename))
 
 	processor = run_cosmosis_postprocess(args.inifile, **vars(args))
-	#Save all the image files and close the text files
-	processor.save()
+
+	if processor is not None:
+		#Save all the image files and close the text files
+		processor.save()
 
 if __name__=="__main__":
 	main(sys.argv[1:])
