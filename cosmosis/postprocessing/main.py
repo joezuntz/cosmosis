@@ -80,6 +80,10 @@ def run_cosmosis_postprocess(inputs, **kwargs):
         #they want to add to it (e.g. two constriants on the same axes)
         outputs.update(processor.outputs)
 
+    # If there was no successul postprocessor then we are done
+    if processor is None:
+        return
+
     # Finalize all the elements - this adds legends to any plots
     # that need them. This final processor knows about all the
     # outputs that we made.
