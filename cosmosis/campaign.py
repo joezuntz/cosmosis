@@ -162,29 +162,41 @@ def apply_update(ini, update):
     ----------
     ini : Inifile
         The values or priors file to update
-    update : list
-        The update to apply.  This should be a list of strings
-        of the form [category, action, section, option, *values]
-        values can be a single string or a list of strings,
-        which will be joined with spaces.
+    update : str
+        The update to apply. This should be of the form:
+        section.option=value
+        sampler=sampler_name
+        del section.option
+        del section
     """
-    action = update[0]
-    if action == "set":
-        section = update[1]
-        if not ini.has_section(section):
-            ini.add_section(section)
-        option = update[2]
-        value = ' '.join(update[3:])
-        ini.set(section, option, value)
-    elif action == "delete" or action == "del":
-        section = update[1]
-        options = update[2:]
-        for option in options:
+    if "=" in update:
+        keys, value = update.split("=", 1)
+        keys = keys.strip()
+        value = value.strip()
+        print(keys)
+        if keys == "sampler":
+            ini.set("runtime", "sampler", value.strip())
+        else:
+            section, option = keys.split(".", 1)
+            section = section.strip()
+            option = option.strip()
+            if not ini.has_section(section) and section != "DEFAULT":
+                ini.add_section(section)
+            ini.set(section, option, value)
+    elif update.startswith("del"):
+        keys = update.split()[1:]
+        if len(keys) == 1:
+            # delete entire section
+            ini.remove_section(keys[1])
+        elif len(keys) == 2:
+            section, option = keys[1].split()
+            section = section.strip()
+            option = option.strip()
             ini.remove_option(section, option)
-    elif action == "sampler":
-        ini.set("runtime", "sampler", update[1])
+        else:
+            raise ValueError(f"Unknown delete command format {update}")
     else:
-        raise ValueError(f"Unknown action {action} for values")
+        raise ValueError(f"Unknown update {update}")
 
 def apply_updates(ini, updates):
     """
@@ -205,7 +217,11 @@ def apply_updates(ini, updates):
     None
     """
     for update in updates:
-        apply_update(ini, update.split())
+        try:
+            apply_update(ini, update)
+        except:
+            raise ValueError(f"Malformed update: {update}")
+        
 
 def apply_pipeline_update(ini, update):
     """

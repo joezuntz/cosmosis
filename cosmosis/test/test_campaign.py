@@ -71,6 +71,13 @@ def test_campaign_functions():
     with run_from_source_dir():
         runs = parse_yaml_run_file("cosmosis/test/campaign.yml")
 
+        assert len(runs) == 3
+        assert "v1" in runs
+        assert runs["v2"]["values"].get("parameters", "p1") == "-2.0 0.0 2.0"
+        assert runs["v2"]["priors"].get("parameters", "p2") == "gaussian 0.0 1.0"
+        assert runs["v3"]["params"].get("runtime", "sampler") == "emcee"
+        assert runs["v3"]["params"].get("emcee", "walkers") == "8"
+
         for name in runs:
             print(name)
 
@@ -97,6 +104,14 @@ def test_campaign_functions2():
 
             for name in runs:
                 print(name)
+
+
+            assert len(runs) == 3
+            assert "v1" in runs
+            assert runs["v2"]["values"].get("parameters", "p1") == "-2.0 0.0 2.0"
+            assert runs["v2"]["priors"].get("parameters", "p2") == "gaussian 0.0 1.0"
+            assert runs["v3"]["params"].get("runtime", "sampler") == "emcee"
+            assert runs["v3"]["params"].get("emcee", "walkers") == "8"
 
             show_run(runs["v1"])
             perform_test_run(runs["v1"])
