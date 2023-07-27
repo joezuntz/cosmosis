@@ -18,3 +18,8 @@ runs:
     params:
     - sampler = emcee
     - emcee. walkers =8
+  
+  - name: v4
+    parent: v2
+    priors:
+    - del parameters .p2

@@ -173,7 +173,6 @@ def apply_update(ini, update):
         keys, value = update.split("=", 1)
         keys = keys.strip()
         value = value.strip()
-        print(keys)
         if keys == "sampler":
             ini.set("runtime", "sampler", value.strip())
         else:
@@ -184,17 +183,21 @@ def apply_update(ini, update):
                 ini.add_section(section)
             ini.set(section, option, value)
     elif update.startswith("del"):
-        keys = update.split()[1:]
-        if len(keys) == 1:
-            # delete entire section
-            ini.remove_section(keys[1])
-        elif len(keys) == 2:
-            section, option = keys[1].split()
+        cmd, keys = update.split(maxsplit=1)
+        if cmd not in ["del", "delete"]:
+            raise ValueError(f"Unknown command {cmd}")
+        if "." in keys:
+            section, option = keys.split('.', 1)
             section = section.strip()
             option = option.strip()
             ini.remove_option(section, option)
         else:
-            raise ValueError(f"Unknown delete command format {update}")
+            keys = keys.strip().split()
+            if len(keys) > 1:
+                raise ValueError("Can only delete one section at a time")
+            else:
+                # delete entire section
+                ini.remove_section(keys[0])
     else:
         raise ValueError(f"Unknown update {update}")
 
