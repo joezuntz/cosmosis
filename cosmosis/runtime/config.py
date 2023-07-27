@@ -52,6 +52,9 @@ class IncludingConfigParser(configparser.ConfigParser):
         s = io.StringIO()
         for line in fp:
             # check for include directives
+            if not getattr(self, 'no_expand_vars', False):
+                line = os.path.expandvars(line)
+
             if line.lower().startswith('%include'):
                 _, filename = line.split()
                 filename = filename.strip('"').strip("'")
