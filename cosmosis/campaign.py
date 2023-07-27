@@ -151,12 +151,9 @@ def pipeline_prepend(params, modules):
     params.set('pipeline', 'modules', ' '.join(pipeline))
 
 
-def apply_update(ini, update):
+def apply_update(ini, update, is_params=False):
     """
     Apply an update to a parameters, value, or priors configuration.
-
-    Update actions can be "set" or "delete" for and of the files,
-    and can also be "sampler" for the parameters file.
 
     Parameters
     ----------
@@ -174,6 +171,8 @@ def apply_update(ini, update):
         keys = keys.strip()
         value = value.strip()
         if keys == "sampler":
+            if not is_params:
+                raise ValueError("You can only set the sampler in the parameters file")
             ini.set("runtime", "sampler", value.strip())
         else:
             section, option = keys.split(".", 1)
@@ -201,7 +200,7 @@ def apply_update(ini, update):
     else:
         raise ValueError(f"Unknown update {update}")
 
-def apply_updates(ini, updates):
+def apply_updates(ini, updates, is_params=False):
     """
     Apply a list of updates to a parameters, values, or priors configuration.
 
@@ -210,10 +209,7 @@ def apply_updates(ini, updates):
     ini : Inifile
         The values or priors file to update
     updates : list
-        The list of updates to apply.  Each update should be a list of strings
-        of the form [category, action, section, option, *values]
-        values can be a single string or a list of strings,
-        which will be joined with spaces.
+        See apply_update for details.
     
     Returns
     -------
@@ -221,7 +217,7 @@ def apply_updates(ini, updates):
     """
     for update in updates:
         try:
-            apply_update(ini, update)
+            apply_update(ini, update, is_params=is_params)
         except:
             raise ValueError(f"Malformed update: {update}")
         
@@ -236,6 +232,7 @@ def apply_pipeline_update(ini, update):
     - replace <module> <new_module> [<new_module> ...]
     - del <module> [<module> ...]
     - append <new_module> [<new_module> ...]
+    - prepend <new_module> [<new_module> ...]
 
     Parameters
     ----------
@@ -431,7 +428,7 @@ def build_run(name, run_info, runs, components, output_dir):
         pipeline_updates.extend(run_info.get("pipeline", []))
 
         # Now apply all the steps
-        apply_updates(params, param_updates)
+        apply_updates(params, param_updates, is_params=True)
         apply_updates(values, value_updates)
         apply_updates(priors, prior_updates)
         apply_pipeline_updates(params, pipeline_updates)
