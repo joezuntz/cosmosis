@@ -1,4 +1,5 @@
-from .. import ParallelSampler
+from .. import ParallelSampler, sample_ball
+from ...runtime import logs
 import numpy as np
 
 pipeline = None
@@ -8,22 +9,6 @@ def log_probability_function(p):
     return r.post, (r.extra, r.prior)
 
 
-
-def sample_ball(p0, std, size=1):
-    """
-    Produce a ball of walkers around an initial parameter value.
-
-    :param p0: The initial parameter value.
-    :param std: The axis-aligned standard deviation.
-    :param size: The number of samples to produce.
-
-    Function liberated from emcee utils module.
-    http://dan.iel.fm/emcee/current/
-
-    """
-    assert(len(p0) == len(std))
-    return np.vstack([p0 + std * np.random.normal(size=len(p0))
-                      for i in range(size)])
 
 
 class KombineSampler(ParallelSampler):
@@ -60,7 +45,7 @@ class KombineSampler(ParallelSampler):
 
             if start_file:
                 self.p0 = self.load_start(start_file)
-                self.output.log_info("Loaded starting position from %s", start_file)
+                print("Loaded starting position from %s", start_file)
             elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in range(self.nwalkers)]
@@ -101,7 +86,7 @@ class KombineSampler(ParallelSampler):
                 pos, post, prop = results
                 extra_info = None
             if self.is_master():
-                print("Burn-in phase complete.")
+                logs.overview("Burn-in phase complete.")
             self.p0 = pos
             self.lnpost0 = post
             self.lnprop0 = prop
@@ -131,7 +116,7 @@ class KombineSampler(ParallelSampler):
         self.prob0 = prop
         self.blob0 = extra_info
         self.num_samples += self.nsteps
-        self.output.log_info("Done %d iterations", self.num_samples)
+        print("Done %d iterations", self.num_samples)
 
     def is_converged(self):
         return self.num_samples >= self.samples

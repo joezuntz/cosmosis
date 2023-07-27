@@ -116,7 +116,8 @@ class Plot(metaclass=RegisteredPlot):
     #Need not be over-ridden
     def save(self):
         pylab.figure(self.figure.number)
-        if not self.quiet: print("Saving ", self.outfile)
+        if not self.quiet:
+            print("Saving ", self.outfile)
         pylab.savefig(self.outfile)
 
     #Need not be overridden. Called by the main function

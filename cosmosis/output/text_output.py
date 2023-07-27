@@ -32,18 +32,18 @@ class TextColumnOutput(OutputBase):
         mkdir(dirname)
 
         if resume and utils.file_exists_and_is_empty(self._filename):
-            print("You set resume=T but the file {} is empty so I will start afresh".format(self._filename))
+            print("* You set resume=T but the file {} is empty so I will start afresh".format(self._filename))
             self._file = open(self._filename, "w")
             self.resumed = False
         elif resume and os.path.exists(self._filename):
-            print("Note: You set resume=T so I will resume from file {}".format(self._filename))
+            print("* Note: You set resume=T so I will resume from file {}".format(self._filename))
             self._file = open(self._filename, "r+")
             # Jump to the end of the file
             self._file.seek(0,2)
             self.resumed = True
         else:
             if resume:
-                print("Note: You set resume=T but the file {} does not exist so I will start a new one".format(self._filename))
+                print("* Note: You set resume=T but the file {} does not exist so I will start a new one".format(self._filename))
             self._file = open(self._filename, "w")
             self.resumed = False
         if lock:

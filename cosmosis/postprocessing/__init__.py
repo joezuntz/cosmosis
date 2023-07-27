@@ -1,4 +1,5 @@
 from .inputs import read_input
+from .main import run_cosmosis_postprocess
 from .postprocess import (
     postprocessor_for_sampler,
     MetropolisHastingsProcessor,

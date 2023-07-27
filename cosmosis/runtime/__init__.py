@@ -5,3 +5,4 @@ from .prior import Prior
 from .pipeline import LikelihoodPipeline, MissingLikelihoodError
 from .mpi_pool import MPIPool
 from .utils import stdout_redirected
+from . import logs

@@ -25,11 +25,10 @@ def test_sampler_chain():
             ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
             ('runtime', 'sampler'):  "maxlike fisher emcee",
             ("pipeline", "debug"): "T",
-            ("pipeline", "quiet"): "F",
             ("pipeline", "modules"): "test1",
             ("pipeline", "extra_output"): "parameters/p3",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): emcee_file,
             ("emcee", "walkers"): "8",
             ("emcee", "samples"): "100",
@@ -38,10 +37,9 @@ def test_sampler_chain():
         }
 
 
-        args = parser.parse_args(["not_a_real_file"])
         ini = Inifile(None, override=params)
 
-        status = run_cosmosis(args, ini=ini)
+        status = run_cosmosis(ini)
 
         data = np.loadtxt(fisher_file)
         print(data.shape)

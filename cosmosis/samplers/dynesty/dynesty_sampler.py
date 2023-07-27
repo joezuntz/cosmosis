@@ -1,3 +1,4 @@
+from ...runtime import logs
 from .. import ParallelSampler
 import numpy as np
 import sys
@@ -30,7 +31,8 @@ class DynestySampler(ParallelSampler):
             self.parallel_prior = self.read_ini("parallel_prior", bool, True)
             self.max_call = self.read_ini("max_call", int, sys.maxsize)
             self.dlogz = self.read_ini("dlogz", float, 0.01)
-            self.print_progress = self.read_ini("print_progress", bool, True)
+            print_progress_default = logs.is_enabled_for(logs.logging.INFO)
+            self.print_progress = self.read_ini("print_progress", bool, print_progress_default)
 
             # if self.mode=='dynamic':
             #     raise ValueError("Dynesty mode 'dynamic' not yet implemented (sorry)")

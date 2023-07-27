@@ -1,4 +1,5 @@
 from .. import ParallelSampler
+from ...runtime import logs
 from . import pmc
 import numpy as np
 
@@ -30,14 +31,10 @@ class PmcSampler(ParallelSampler):
         #Student's t mode
         student = self.read_ini("student", bool, default=False)
         if student:
-            print()
             print("WARNING")
-            print()
             print("Student's t mode probably not working yet")
             print("Unless you are testing you should probably set")
             print("student=F")
-            print()
-            print()
             nu = self.read_ini("nu", float, default=2.0)
         else:
             nu = None
@@ -48,9 +45,8 @@ class PmcSampler(ParallelSampler):
         covmat = self.load_covariance_matrix()
 
         #Sampler object itself.
-        quiet = self.pipeline.quiet
         self.sampler = pmc.PopulationMonteCarlo(posterior, self.n_components, 
-            start, covmat, quiet=quiet, student=student, nu=nu, pool=self.pool)
+            start, covmat, student=student, nu=nu, pool=self.pool)
 
         self.interrupted = False
         self.iterations = 0
@@ -79,16 +75,15 @@ class PmcSampler(ParallelSampler):
             prior, extra = extra
             self.output.parameters(vector, extra, (component, prior, post, weight))
 
-        print("Done %d iterations, %d samples" % (self.iterations, self.samples))
+        logs.overview("Done %d iterations, %d samples" % (self.iterations, self.samples))
 
 
     def is_converged(self):
          # user has pressed Ctrl-C
         if self.interrupted:
-            print("Interrupted...")
             return True
         if self.iterations >= self.n_iterations+1:
-            print("Full number of samples generated; sampling complete")
+            logs.overview("Full number of samples generated; sampling complete")
             self.output.final("nsample", self.final_samples)
 
             return True

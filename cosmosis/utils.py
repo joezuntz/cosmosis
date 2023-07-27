@@ -135,6 +135,7 @@ def fileno(file_or_fd):
 
 @contextmanager
 def stdout_redirected(to=os.devnull, stdout=None):
+    from .runtime import logs
     if stdout is None:
        stdout = sys.stdout
 
@@ -143,6 +144,8 @@ def stdout_redirected(to=os.devnull, stdout=None):
     #NOTE: `copied` is inheritable on Windows when duplicating a standard stream
     with os.fdopen(os.dup(stdout_fd), 'wb') as copied: 
         stdout.flush()  # flush library buffers that dup2 knows nothing about
+        log_level = logs.get_level()
+        logs.set_level(51)
         try:
             os.dup2(fileno(to), stdout_fd)  # $ exec >&to
         except ValueError:  # filename
@@ -155,6 +158,8 @@ def stdout_redirected(to=os.devnull, stdout=None):
             #NOTE: dup2 makes stdout_fd inheritable unconditionally
             stdout.flush()
             os.dup2(copied.fileno(), stdout_fd)  # $ exec >&copied
+            logs.set_level(log_level)
+
 
 
 
@@ -339,18 +344,7 @@ def get_git_revision(directory):
     return rev.decode('utf-8').strip().replace("\n", " ")
 
 
-def requires_python3(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if sys.version_info[0] < 3:
-            raise RuntimeError(
-                "You are using a CosmoSIS function ({}) "
-                " only available in python 3 and above".format(f))
-        return f(*args, **kwargs)
-    return wrapper
 
-
-@requires_python3
 def import_by_path(name, path):
     # https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path
     import importlib.util
@@ -358,3 +352,46 @@ def import_by_path(name, path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def underline(s, char='-'):
+    """
+    Return a string with a line of the given character
+    underneath it.
+
+    Parameters
+    ----------
+    s : str
+        The string to underline
+    char : str, optional
+        The character to use for the line
+    """
+    return s + "\n" + char * len(s)
+
+def overline(s, char='-'):
+    """
+    Return a string with a line of the given character
+    over it.
+
+    Parameters
+    ----------
+    s : str
+        The string to overline
+    char : str, optional
+        The character to use for the line
+    """
+    return char * len(s) + "\n" + s
+
+def under_over_line(s, char='-'):
+    """
+    Return a string with a line of the given character
+    over and under it.
+
+    Parameters
+    ----------
+    s : str
+        The string to overline
+    char : str, optional
+        The character to use for the line
+    """
+    return underline(overline(s, char), char)

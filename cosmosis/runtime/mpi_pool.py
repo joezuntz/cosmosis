@@ -15,14 +15,15 @@ def _error_function(task):
 
 
 class MPIPool(object):
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, comm=None):
         try:
             from mpi4py import MPI
             self.MPI = MPI
         except ImportError:
             raise RuntimeError("MPI environment not found!")
-
-        self.comm = MPI.COMM_WORLD
+        if comm is None:
+            comm = self.MPI.COMM_WORLD
+        self.comm = comm
         self.rank = self.comm.Get_rank()
         self.size = self.comm.Get_size()
         self.debug = debug

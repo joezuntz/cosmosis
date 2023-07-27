@@ -51,7 +51,7 @@ class PocoSampler(ParallelSampler):
             self.p0 = np.array(
                 [self.pipeline.randomized_start() for i in range(self.nparticles)]
             )
-            self.output.log_info(
+            print(
                 "Generating random starting positions from within prior"
             )
 

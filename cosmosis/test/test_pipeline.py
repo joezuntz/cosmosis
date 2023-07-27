@@ -26,10 +26,9 @@ def test_add_param():
     override = {
         ('runtime', 'root'): root,
         ("pipeline", "debug"): "F",
-        ("pipeline", "quiet"): "T",
         ("pipeline", "modules"): "test2",
         ("pipeline", "values"): values.name,
-        ("test2", "file"): "test_module2.py",
+        ("test2", "file"): "example_module2.py",
         ("emcee", "walkers"): "8",
         ("emcee", "samples"): "10"
     }
@@ -77,14 +76,14 @@ def test_add_param():
 def test_missing_setup():
     # check the register_new_parameter feature when no
     # setup is currently happening
-    module = Module("test2", root + "/test_module2.py")
+    module = Module("test2", root + "/example_module2.py")
     config = DataBlock()
     module.setup(config)
 
 def test_unused_param_warning(capsys):
     # check that an appropriate warning is generated
     # when a parameter is unused
-    module = Module("test", root + "/test_module.py")
+    module = Module("test", root + "/example_module.py")
     config = DataBlock()
     config['test', 'unused'] = "unused_parameter"
     module.setup(config)
@@ -106,19 +105,17 @@ def test_vector_extra_outputs():
             ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
             ('runtime', 'sampler'):  "emcee",
             ("pipeline", "debug"): "T",
-            ("pipeline", "quiet"): "F",
             ("pipeline", "modules"): "test1",
             ("pipeline", "extra_output"): "data_vector/test_theory#2",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): output_file,
             ("emcee", "walkers"): "8",
             ("emcee", "samples"): "10",
         }
 
-        args = parser.parse_args(["not_a_real_file"])
         ini = Inifile(None, override=params)
-        status = run_cosmosis(args, ini=ini)
+        status = run_cosmosis(ini)
 
         with open(output_file) as f:
             header = f.readline()
@@ -147,18 +144,16 @@ def test_profile(capsys):
             ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
             ('runtime', 'sampler'):  "emcee",
             ("pipeline", "debug"): "T",
-            ("pipeline", "quiet"): "F",
             ("pipeline", "modules"): "test1",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): output_file,
             ("emcee", "walkers"): "8",
             ("emcee", "samples"): "10",
         }
 
-        args = parser.parse_args(["not_a_real_file", "--profile", stats_file])
         ini = Inifile(None, override=params)
-        status = run_cosmosis(args, ini=ini)
+        status = run_cosmosis(ini, profile_cpu=stats_file)
 
         output = capsys.readouterr()
         assert "cumtime" in output.out
@@ -186,23 +181,21 @@ def test_script_skip():
             ('runtime', 'post_script'): "this_executable_does_not_exist",
             ('runtime', 'sampler'):  "test",
             ("pipeline", "debug"): "F",
-            ("pipeline", "quiet"): "F",
             ("pipeline", "modules"): "test1",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): output_file,
         }
 
-        args = parser.parse_args(["not_a_real_file"])
         ini = Inifile(None, override=params)
 
         with pytest.raises(RuntimeError):
-            status = run_cosmosis(args, ini=ini)
+            status = run_cosmosis(ini)
 
         # shopuld work this time
         try:
             os.environ["COSMOSIS_NO_SUBPROCESS"] = "1"
-            status = run_cosmosis(args, ini=ini)
+            status = run_cosmosis(ini)
         finally:
             del os.environ["COSMOSIS_NO_SUBPROCESS"]
 
@@ -221,10 +214,9 @@ def test_prior_override():
             ('runtime', 'sampler'):  "apriori",
             ('apriori', 'nsample'):  "1000",
             ("pipeline", "debug"): "F",
-            ("pipeline", "quiet"): "F",
             ("pipeline", "modules"): "test1",
             ("pipeline", "values"): values_file,
-            ("test1", "file"): "test_module.py",
+            ("test1", "file"): "example_module.py",
             ("output", "filename"): output_file,
         }
 
@@ -237,7 +229,7 @@ def test_prior_override():
 
         priors = Inifile(None, override=priors_vals)
 
-        status = run_cosmosis(args, ini=ini, priors=priors)
+        status = run_cosmosis(ini, priors=priors)
         chain = np.loadtxt(output_file).T
         p1 = chain[0]
         p2 = chain[1]

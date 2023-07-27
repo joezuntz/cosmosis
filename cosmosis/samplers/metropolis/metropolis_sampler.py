@@ -1,4 +1,5 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 from . import metropolis
 from cosmosis.runtime.analytics import Analytics
@@ -72,9 +73,6 @@ class MetropolisSampler(ParallelSampler):
             print("    ", param, x)
 
 
-        #Sampler object itself.
-        quiet = self.pipeline.quiet
-
         if use_cobaya:
             print("Using the Cobaya proposal")
 
@@ -82,7 +80,6 @@ class MetropolisSampler(ParallelSampler):
               f"{tuning_grace} to {self.tuning_end}.")
 
         self.sampler = metropolis.MCMC(start, posterior, covmat,
-            quiet=quiet, 
             tuning_frequency=tuning_frequency, # Will be multiplied by the oversampling
             tuning_grace=tuning_grace,         # within the sampler if needed
             tuning_end=self.tuning_end,
@@ -156,9 +153,9 @@ class MetropolisSampler(ParallelSampler):
         overall_rate = (self.sampler.accepted * 1.0) / self.sampler.iterations
         recent_accepted = self.sampler.accepted - self.last_accept_count
         recent_rate = recent_accepted / self.n
-        print("Overall accepted {} / {} samples ({:.1%})" .format(
+        logs.overview("Overall accepted {} / {} samples ({:.1%})" .format(
             self.sampler.accepted, self.sampler.iterations, overall_rate))
-        print("Last {0} accepted {1} / {0} samples ({2:.1%})\n" .format(
+        logs.overview("Last {0} accepted {1} / {0} samples ({2:.1%})\n" .format(
             self.n, recent_accepted, recent_rate))
         self.last_accept_count = self.sampler.accepted
 
@@ -174,7 +171,7 @@ class MetropolisSampler(ParallelSampler):
                 self.output.parameters(result.vector, result.extra, result.prior, result.post)
 
         if self.num_samples_post_tuning <= 0:
-            print("Tuning ends at {} samples\n".format(self.tuning_end))
+            logs.overview("Tuning ends at {} samples\n".format(self.tuning_end))
 
         self.write_resume_info([self.sampler, self.num_samples, self.num_samples_post_tuning])
 
@@ -189,7 +186,7 @@ class MetropolisSampler(ParallelSampler):
               self.pool is not None and
               self.Rconverge is not None and
               self.num_samples_post_tuning > 0):
-            R = self.analytics.gelman_rubin(quiet=False)
+            R = self.analytics.gelman_rubin()
             R1 = abs(R - 1)
             return np.all(R1 <= self.Rconverge)
         else:

@@ -51,7 +51,6 @@ class GridSampler(ParallelSampler):
         #This doesn't actually keep them all in memory, it is just the conceptual
         #outer product
         total_samples = self.nsample**len(self.pipeline.varied_params)
-        print()
         print("Total number of grid samples: ", total_samples)
 
         if total_samples>LARGE_JOB_SIZE:
@@ -63,7 +62,6 @@ class GridSampler(ParallelSampler):
                 print("If you really want to do this set allow_large=T in the")
                 print("[grid] section of the ini file.")
                 raise ValueError("Suspicously large number of grid points %d ( = n_samp ^ n_dim = %d ^ %d); set allow_large=T in [grid] section to permit this."%(total_samples,self.nsample,len(self.pipeline.varied_params)))
-        print()
         
         # If our pipeline allows it we arrange it so that the
         # fast parameters change fastest in the sequence.

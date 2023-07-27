@@ -3,7 +3,7 @@ from . import fisher
 from ...datablock import BlockError
 import numpy as np
 import scipy.linalg
-from ...runtime import prior,utils
+from ...runtime import prior, utils, logs
 import sys
 
 def compute_fisher_vector(p, cov=False):
@@ -12,11 +12,8 @@ def compute_fisher_vector(p, cov=False):
     try:
         x = fisherPipeline.denormalize_vector(p)
     except ValueError:
-        print("Parameter vector outside limits: %r" % p)
+        logs.error("Parameter vector outside limits: %r" % p)
         return None
-
-    if not fisherPipeline.quiet:
-        print("Running: ",x)
 
     #Run the pipeline, generating a data block
     data = fisherPipeline.run_parameters(x)
@@ -88,14 +85,13 @@ class FisherSampler(ParallelSampler):
         P = np.zeros((n,n))
         for i, param in enumerate(self.pipeline.varied_params):
             if isinstance(param.prior, prior.GaussianPrior) or isinstance(param.prior, prior.TruncatedGaussianPrior):
-                print("Applying additional prior sigma = {0} to {1}".format(param.prior.sigma, param))
-                print("This will be assumed to be centered at the parameter center regardless of what the ini file says")
-                print("The limits of the parameter will also not be respected.") 
-                print()
+                logs.important("Applying additional prior sigma = {0} to {1}".format(param.prior.sigma, param))
+                logs.important("This will be assumed to be centered at the parameter center regardless of what the ini file says")
+                logs.important("The limits of the parameter will also not be respected.") 
                 P[i,i] = 1./param.prior.sigma**2
             elif isinstance(param.prior, prior.ExponentialPrior) or isinstance(param.prior, prior.TruncatedExponentialPrior):
-                print("There is an exponential prior applied to parameter {0}".format(param))
-                print("This is *not* accounted for in the Fisher matrix")
+                logs.important("There is an exponential prior applied to parameter {0}".format(param))
+                logs.important("This is *not* accounted for in the Fisher matrix")
                 print()
             #uniform prior should have no effect on the fisher matrix.
             #at least up until the assumptions of the FM are violated anyway
@@ -131,26 +127,25 @@ class FisherSampler(ParallelSampler):
         except fisher.FisherParameterError as error:
             param = str(self.pipeline.varied_params[error.parameter_index])
             if error.parameter_index==0:
-                message = """
+                raise ValueError(f"""
 There was an error running the pipeline for the Fisher Matrix for parameter:
-{}
+{param}
 Since this is the first parameter this might indicate a general error in the pipeline.
 You might want to check with the "test" sampler.
 
 It might also indicate that the parameter lower or upper limit is too close to its
 starting value so the points used to calculate the derivative are outside the range.
 If that is the case you should try calculating the Fisher Matrix at a different starting point.
-""".format(param)
+""")
             else:
-                message = """
+                raise ValueError(f"""
 There was an error running the pipeline for the Fisher Matrix for parameter:
-{}
+{param}
 
 This probably indicates that the parameter lower or upper limit is too close to its
 starting value, so the points used to calculate the derivative are outside the range.
 If that is the case you should try calculating the Fisher Matrix at a different starting point.
-""".format(param)
-            raise ValueError(message)
+""")
 
         fisher_matrix = self.pipeline.denormalize_matrix(fisher_matrix,inverse=True)
 
@@ -166,7 +161,7 @@ If that is the case you should try calculating the Fisher Matrix at a different 
             covariance_matrix = utils.symmetric_positive_definite_inverse(fisher_matrix)
             self.distribution_hints.set_cov(covariance_matrix)
         except ValueError:
-            sys.stderr.write("Generated covariance matrix was not positive definite - beware! ")
+            logs.error("Generated covariance matrix was not positive definite - beware! ")
 
     def is_converged(self):
         return self.converged

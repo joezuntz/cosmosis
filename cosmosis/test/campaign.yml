@@ -1,0 +1,25 @@
+output_dir: output/campaign-test
+include: []
+
+runs:
+  - name: v1
+    base: cosmosis/test/example.ini
+
+
+  - name: v2
+    parent: v1
+    values:
+    - parameters . p1 = -2.0 0.0 2.0
+    priors:
+    - parameters.p2 = gaussian 0.0 1.0  
+
+  - name: v3
+    parent: v1
+    params:
+    - sampler = emcee
+    - emcee. walkers =8
+  
+  - name: v4
+    parent: v2
+    priors:
+    - del parameters .p2

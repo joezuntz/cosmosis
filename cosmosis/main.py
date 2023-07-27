@@ -11,8 +11,9 @@ import cProfile
 from .runtime.config import Inifile, CosmosisConfigurationError
 from .runtime.pipeline import LikelihoodPipeline
 from .runtime import mpi_pool
+from .runtime import logs
 from .runtime import process_pool
-from .runtime.utils import ParseExtraParameters, stdout_redirected, import_by_path
+from .runtime.utils import ParseExtraParameters, stdout_redirected, import_by_path, under_over_line, underline, overline
 from .samplers.sampler import Sampler, ParallelSampler, Hints
 from . import output as output_module
 from .runtime.handler import activate_segfault_handling
@@ -22,8 +23,8 @@ from .version import __version__
 RUNTIME_INI_SECTION = "runtime"
 
 
-def demo_1_special (args):
-    if "demo1.ini" in args.inifile:
+def demo_1_special (inifile):
+    if "demo1.ini" in inifile:
         print("""
 Congratulations: you have just run cosmosis demo one!
 
@@ -36,8 +37,8 @@ Please get in touch with any problems, ideally by filing an Issue. Thanks!
 """)
 
 
-def demo_10_special (args):
-    if   "demo10.ini" in args.inifile   and   not os.getenv ("HALOFIT", ""):
+def demo_10_special(inifile):
+    if   "demo10.ini" in inifile   and   not os.getenv ("HALOFIT", ""):
         print()
         print("Welcome to demo10!")
         print()
@@ -51,19 +52,15 @@ def demo_10_special (args):
 
 
 
-def demo_20a_special (args):
-    if  "demo20a.ini" in args.inifile:
+def demo_20a_special(inifile):
+    if  "demo20a.ini" in inifile:
         print ()
         print ("You have completed demo20a, now run demo20b and compare")
         print ("results with demo5!")
 
 
-def demo_20b_special (args):
-    if   "demo20b.ini" in args.inifile   and   not os.path.isfile ("./demo20a.txt"):
-        print ()
-        print ("********************************************************")
-        print ("*** YOU MUST RUN demo20a BEFORE YOU CAN RUN demo20b. ***")
-        print ("********************************************************")
+    if   "demo20b.ini" in inifile   and   not os.path.isfile ("./demo20a.txt"):
+        print(under_over_line("YOU MUST RUN demo20a BEFORE YOU CAN RUN demo20b.", chr='*'))
 
 def sampler_main_loop(sampler, output, pool, is_root):
     # Run the sampler until convergence
@@ -120,7 +117,9 @@ def write_header_output(output, params, values, pipeline):
         prior_ini.write(comment_wrapper)
     output.comment("END_OF_PRIORS_INI")
 
-def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume):
+def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output):
+
+    output_original = output
 
     needs_output = sampler_class.needs_output and \
        (pool is None or pool.is_master() or sampler_class.parallel_output)
@@ -128,51 +127,131 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
     if not needs_output:
         return None
 
+    if output_original is None:
+        #create the output files and methods.
+        try:
+            output_options = dict(ini.items('output'))
+        except configparser.NoSectionError:
+            raise ValueError("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
+        #Additionally we tell the output here if
+        #we are parallel or not.
+        if (pool is not None) and (sampler_class.parallel_output):
+            output_options['rank'] = pool.rank
+            output_options['parallel'] = pool.size
 
-    #create the output files and methods.
-    try:
-        output_options = dict(ini.items('output'))
-    except configparser.NoSectionError:
-        raise ValueError("ERROR:\nFor the sampler (%s) you chose in the [runtime] section of the ini file I also need an [output] section describing how to save results\n\n"%sample_method)
-    #Additionally we tell the output here if
-    #we are parallel or not.
-    if (pool is not None) and (sampler_class.parallel_output):
-        output_options['rank'] = pool.rank
-        output_options['parallel'] = pool.size
+        #Give different output filenames to the different sampling steps
+        #Only change if this is not the last sampling step - the final
+        #one retains the name in the output file.
+        # Change, e.g. demo17.txt to demo17.fisher.txt
+        if ("filename" in output_options) and (sampler_number<number_samplers-1):
+            filename = output_options['filename']
+            filename, ext = os.path.splitext(filename)
+            filename += '.' + sampler_class.name
+            filename += ext
+            output_options['filename'] = filename
 
-    #Give different output filenames to the different sampling steps
-    #Only change if this is not the last sampling step - the final
-    #one retains the name in the output file.
-    # Change, e.g. demo17.txt to demo17.fisher.txt
-    if ("filename" in output_options) and (sampler_number<number_samplers-1):
-        filename = output_options['filename']
-        filename, ext = os.path.splitext(filename)
-        filename += '.' + sampler_class.name
-        filename += ext
-        output_options['filename'] = filename
+        if ("filename" in output_options):
+            print("* Saving output -> {}".format(output_options['filename']))
 
+        #Generate the output from a factory
+        output = output_module.output_from_options(output_options, resume)
+    elif isinstance(output_original, output_module.OutputBase):
+        output = output_original
+    elif isinstance(output_original, str):
+        if output_original == "astropy":
+            output = output_module.AstropyOutput()
+        elif output_original == "none":
+            output = output_module.NullOutput()
+        elif output_original == "in_memory":
+            output = output_module.InMemoryOutput()
+        else:
+            raise ValueError(f"Unknown output option {output_original}")
+    else:
+        raise ValueError(f"Unknown output type {type(output_original)}")
+        
 
-    #Generate the output from a factory
-    output = output_module.output_from_options(output_options, resume)
     output.metadata("sampler", sample_method)
-
-    if ("filename" in output_options):
-        print("* Saving output -> {}".format(output_options['filename']))
 
     return output
 
 
-def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None, priors=None):
+def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, override=None,
+                 profile_mem=0, profile_cpu="", variables=None, only=None, output=None):
+    """
+    Execute cosmosis.
+
+    Parameters
+    ----------
+    ini: str, cosmosis.Inifile, or None
+        The parameter file from which to build the cosmosis run. If set to a string the
+        file is read from disc. If set to None, the other parameters must contain
+        all the required CosmoSIS parameters.
+    
+    pool: None, cosmosis.MPIPool, or cosmosis.process_pool.Pool
+        A pool object to enable multi-process parallel execution. If left as the default
+        None then the code is run with a single process (though modules may still run
+        using OpenMP parallelism).
+    
+    pipeline: None or cosmosis.LikelihoodPipeline
+        If set, ignore the pipeline definition in the ini file and use this pipeline
+        instead.
+    
+    values: None or dict[str, str]->str
+        If set, ignore the numerical parameter values in the ini file and use these 
+        instead.
+    
+    priors: None or dict[str, str]->str
+        If set, ignore the prior values in the ini file and use these 
+        instead. 
+
+    override: None or dict[str, str]->str
+        If set, override parameter values in the ini file from the dictionary.
+    
+    profile_mem: int
+        If changed from the default zero value, print a memory profile every 
+        profile_mem seconds.
+
+    profile_cpu: str
+        If changed from the default empty string, print CPU profile information
+        and also save to the named file. If running in parallel, save to 
+        {profile_cpu}.{rank}.
+    
+    variables: None or dict[str, str]->str
+        If set, override variable values in the ini file from the dictionary.
+
+    only: None or str
+        If set, fix all the variable values except the one supplied.
+
+    output: None or cosmosis.Output
+        If set, use this output object to save the results. If not set, create
+        an output object from the ini file.
+    """
     no_subprocesses = os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]
-    # In case we need to hand-hold a naive demo-10 user.
+
+    smp = isinstance(pool, process_pool.Pool)
 
     # Load configuration.
     is_root = (pool is None) or pool.is_master()
-    if ini is None:
-        ini = Inifile(args.inifile, override=args.params, print_include_messages=is_root)
+    ini_is_str = isinstance(ini, str)
+    ini_original = ini
+    output_original = output
+    ini = Inifile(ini, override=override, print_include_messages=is_root)
 
     pre_script = ini.get(RUNTIME_INI_SECTION, "pre_script", fallback="")
     post_script = ini.get(RUNTIME_INI_SECTION, "post_script", fallback="")
+
+    verbosity = ini.get(RUNTIME_INI_SECTION, "verbosity", fallback="")
+    
+    if not verbosity:
+        if ini.has_option("pipeline", "quiet"):
+            quiet = ini.getboolean("pipeline", "quiet", fallback=False)
+            verbosity = "quiet" if quiet else "standard"
+        else:
+            verbosity = ini.get(RUNTIME_INI_SECTION, "output", fallback="standard")
+    logs.set_verbosity(verbosity)
+
+    if ini.has_option("pipeline", "quiet") and is_root:
+        logs.warning("Deprecated: The [pipeline] quiet option is deprecated.  Set [runtime] verbosity instead.")
 
     if is_root and pre_script:
         if no_subprocesses:
@@ -185,13 +264,13 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None, priors=N
                 raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
                     pre_script, status))
 
-    if is_root and args.mem:
+    if is_root and profile_mem:
         from cosmosis.runtime.memmon import MemoryMonitor
         # This launches a memory monitor that prints out (from a new thread)
-        # the memory usage every args.mem seconds
-        mem = MemoryMonitor.start_in_thread(interval=args.mem)
+        # the memory usage every profile_mem seconds
+        mem = MemoryMonitor.start_in_thread(interval=profile_mem)
 
-    if args.profile:
+    if profile_cpu:
         profile = cProfile.Profile()
         profile.enable()
 
@@ -199,15 +278,21 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None, priors=N
     if pipeline is None:
         cleanup_pipeline = True
         pool_stdout = ini.getboolean(RUNTIME_INI_SECTION, "pool_stdout", fallback=False)
-        if is_root or pool_stdout:
-            pipeline = LikelihoodPipeline(ini, override=args.variables, values=values, only=args.only, priors=priors)
-        else:
-            # Suppress output on everything except the master process
-            if pool_stdout:
-                pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only, priors=priors)
+        if is_root:
+            if ini_is_str:
+                print(underline(f"Setting up pipeline from parameter file {ini_original}"))
             else:
+                print(underline(f"Setting up pipeline from pre-constructed configuration"))
+
+        if is_root or pool_stdout:
+            pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors)
+        else:
+            if pool_stdout:
+                pipeline = LikelihoodPipeline(ini, override=variables, only=only, priors=priors)
+            else:
+                # Suppress output on everything except the root process
                 with stdout_redirected():
-                    pipeline = LikelihoodPipeline(ini, override=args.variables, only=args.only, priors=priors)
+                    pipeline = LikelihoodPipeline(ini, override=variables, only=only, priors=priors)
 
         if pipeline.do_fast_slow:
             pipeline.setup_fast_subspaces()
@@ -285,16 +370,22 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None, priors=N
         if resume and not sampler_class.supports_resume:
             print("NOTE: You set resume=T in the [runtime] section but the sampler {} does not support resuming yet.  I will ignore this option.".format(sampler_name))
             resume=False
-
+        
 
         if is_root:
-            print("****************************")
+            print("****************************************************")
             print("* Running sampler {}/{}: {}".format(sampler_number+1,number_samplers, sampler_name))
+            if pool and smp:
+                print(f"* Using multiprocessing (SMP) with {pool.size} processes.")
+            elif pool:
+                print(f"* Using MPI with {pool.size} processes.")
+            else:
+                print("* Running in serial mode.")
 
-        output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume)
+        output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output_original)
 
         if is_root:
-            print("****************************")
+            print("****************************************************")
 
         #Initialize our sampler, with the class we got above.
         #It needs an extra pool argument if it is a ParallelSampler.
@@ -319,9 +410,29 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None, priors=N
         if output:
             write_header_output(output, ini, values, pipeline)
 
+        sys.stdout.flush()
+        sys.stderr.flush()
+
 
         sampler_main_loop(sampler, output, pool, is_root)
         distribution_hints.update(sampler.distribution_hints)
+
+        # get total number of evaluations on all MPI processes
+        if pool is None:
+            run_count_total = pipeline.run_count
+            run_count_ok_total = pipeline.run_count_ok
+        else:
+            run_count_total = pool.comm.allreduce(pipeline.run_count)
+            run_count_ok_total = pool.comm.allreduce(pipeline.run_count_ok)
+        
+        if is_root and sampler_name != 'test':
+            logs.overview(f"Total posterior evaluations = {run_count_total} across all processes")
+            logs.overview(f"Successful posterior evaluations = {run_count_ok_total} across all processes")
+            if output:
+                output.final("evaluations", run_count_total)
+                output.final("successes", run_count_total)
+                output.final("complete", "1")
+
 
         if output:
             output.close()
@@ -329,21 +440,22 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None, priors=N
     if cleanup_pipeline:
         pipeline.cleanup()
 
-    if args.profile:
+    if profile_cpu:
         profile.disable()
-        if (pool is not None) and (not args.smp):
-            profile_name = args.profile + f'.{pool.rank}'
+        if (pool is not None) and (not smp):
+            profile_name = profile_cpu + f'.{pool.rank}'
         else:
-            profile_name = args.profile
+            profile_name = profile_cpu
         profile.dump_stats(profile_name)
         profile.print_stats("cumtime")
 
-    if is_root and args.mem:
+    if is_root and profile_mem:
         mem.stop()
 
-    # Extra-special actions we take to mollycoddle a brand-new user!
-    demo_1_special (args)
-    demo_20a_special (args)
+    # Extra-special actions we take to help new users playing with the demos
+    demo_1_special(str(ini))
+    demo_10_special(str(ini))
+    demo_20a_special (str(ini))
 
     # User can specify in the runtime section a post-run script to launch.
     # In general this may be less useful than the pre-run script, because
@@ -359,9 +471,15 @@ def run_cosmosis(args, pool=None, ini=None, pipeline=None, values=None, priors=N
             status = os.WEXITSTATUS(os.system(post_script))
             if status:
                 sys.stdout.write("WARNING: The post-run script {} failed with error {}".format(
-                    post_script, error))
+                    post_script, status))
 
-    return 0
+    if isinstance(output_original, str):
+        if output_original == "astropy":
+            return 0, output.table
+        else:
+            return 0, output
+    else:
+        return 0
 
 
 def make_graph(inifile, dotfile, params=None, variables=None):
@@ -416,22 +534,19 @@ def main():
             make_graph(args.inifile, args.graph, args.params, args.variables)
             return 0
 
-        demo_10_special (args)
-        demo_20b_special (args)
-
         if args.segfaults:
             activate_segfault_handling()
 
         # initialize parallel workers
         if args.mpi:
             with mpi_pool.MPIPool() as pool:
-                return run_cosmosis(args,pool)
+                return run_cosmosis(ini=args.inifile, pool=pool, override=args.params, profile_mem=args.mem, profile_cpu=args.profile, variables=args.variables, only=args.only)
         elif args.smp:
             with process_pool.Pool(args.smp) as pool:
-                return run_cosmosis(args,pool)
+                return run_cosmosis(ini=args.inifile, pool=pool, override=args.params, profile_mem=args.mem, profile_cpu=args.profile, variables=args.variables, only=args.only)
         else:
             try:
-                return run_cosmosis(args)
+                return run_cosmosis(ini=args.inifile, pool=None, override=args.params, profile_mem=args.mem, profile_cpu=args.profile, variables=args.variables, only=args.only)
             except Exception as error:
                 if args.pdb:
                     print("There was an exception - starting python debugger because you ran with --pdb")
@@ -442,10 +557,6 @@ def main():
     except CosmosisConfigurationError as e:
         print(e)
         return 1
-
-    # Extra-special actions we take to mollycoddle a brand-new user!
-    demo_1_special (args)
-    demo_20a_special (args)
 
 
 if __name__=="__main__":

@@ -9,6 +9,7 @@ import os
 import sys
 import pytest
 import numpy as np
+from astropy.table import Table
 
 minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
 
@@ -26,11 +27,10 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
     override = {
         ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
         ("pipeline", "debug"): "F",
-        ("pipeline", "quiet"): "T",
         ("pipeline", "modules"): "test1",
         ("pipeline", "extra_output"): "parameters/p3",
         ("pipeline", "values"): values.name,
-        ("test1", "file"): "test_module.py",
+        ("test1", "file"): "example_module.py",
     }
 
     for k,v in options.items():
@@ -74,6 +74,7 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
             pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=truth_file)
             pp_files = pp.run()
             pp.finalize()
+            pp.save()
             for p in pp_files:
                 print(p)
             postprocess_files = ['parameters--p1', 'parameters--p2']
@@ -88,6 +89,11 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
                 print("WANT ", filename)
                 assert filename in pp_files
                 assert os.path.exists(filename)
+            for p in os.listdir(dirname):
+                p = os.path.join(dirname, p)
+                if p.endswith(".txt"):
+                    Table.read(p, format='ascii.commented_header')
+                    print(f"Read file {p} as a table")
 
 
     return output

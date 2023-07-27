@@ -1,5 +1,6 @@
 #coding: utf-8
 from .. import ParallelSampler
+from ...runtime import logs
 import ctypes as ct
 import os
 import cosmosis
@@ -126,8 +127,6 @@ class MultinestSampler(ParallelSampler):
         wrapped_params = self.read_ini("wrapped_params", str, default="")
         wrapped_params = wrapped_params.split()
         self.wrapping = [0 for i in range(self.ndim)]
-        if wrapped_params:
-            print("")
         for p in wrapped_params:
             try:
                 P = p.split('--')
@@ -138,17 +137,15 @@ class MultinestSampler(ParallelSampler):
                 self.wrapping[index] = 1
                 print("MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p))
             elif P in self.pipeline.parameters:
-                print("MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not fixed in this pipeline, so this will have no effect.".format(p))
+                print("MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not varied in this pipeline, so this will have no effect.".format(p))
             else:
                 raise ValueError("You asked for an unknown parameter, {} to be wrapped around in the multinest wrapped_params option.".format(p))
-        if wrapped_params:
-            print("")
 
 
 
         if self.output:
             def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
-                print("Saving %d samples" % nsample)
+                logs.overview("Saving %d samples" % nsample)
                 self.output_params(nsample, live, post, logz, ins_logz, log_z_err)
             self.wrapped_output_logger = dumper_type(dumper)
         else:

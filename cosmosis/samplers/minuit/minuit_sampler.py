@@ -1,9 +1,9 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 import ctypes as ct
 import os
 import sys
-import collections
 
 MINUIT_INI_SECTION = "minuit"
 
@@ -92,9 +92,6 @@ class MinuitSampler(ParallelSampler):
             except KeyboardInterrupt:
                 sys.exit(1)
             self.iterations += 1
-            if self.verbose:
-                print(self.iterations, like, "   ",  "    ".join(str(v) for v in vector))
-                sys.stdout.flush()
             return -like
 
         self.wrapped_likelihood = wrapped_likelihood
@@ -110,9 +107,7 @@ class MinuitSampler(ParallelSampler):
         self.neval += status
 
         if status == 0:
-            print() 
-            print("SUCCESS: Minuit has converged!")
-            print()
+            logs.overview("SUCCESS: Minuit has converged!")
             self.save_results(param_vector, param_names, results)
             self.converged = True
             self.distribution_hints.set_peak(param_vector)
@@ -121,20 +116,16 @@ class MinuitSampler(ParallelSampler):
                 cov_matrix = cov_vector.reshape((self.ndim, self.ndim))
                 self.distribution_hints.set_cov(cov_matrix)
         elif self.neval > self.maxiter:
-            print()
-            print("MINUIT has failed to converge properly in the max number of iterations.  Sorry.")
-            print("Saving the best fitting parameters of the ones we tried, though beware: these are probably not the best-fit")
-            print()
+            logs.error("MINUIT has failed to converge properly in the max number of iterations.  Sorry.")
+            logs.error("Saving the best fitting parameters of the ones we tried, though beware: these are probably not the best-fit")
             self.save_results(param_vector, param_names, results)
             #we actually just use self.converged to indicate that the 
             #sampler should stop now
             self.converged = True
 
         else:
-            print()
-            print("Minuit did not converge this run; trying again")
-            print("until we run out of iterations.")
-            print()
+            logs.overview("Minuit did not converge this run; trying again")
+            logs.overview("until we run out of iterations.")
             
 
 
@@ -142,9 +133,7 @@ class MinuitSampler(ParallelSampler):
         section = None
 
         if self.pool is not None:
-            print()
-            print("Note that the # of function calls printed above is not the total count for all cores, just for one core.")
-            print()
+            logs.error("Note that the # of function calls printed above is not the total count for all cores, just for one core.")
 
         self.output.parameters(param_vector, results.extra, results.prior, results.post)
 

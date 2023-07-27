@@ -4,8 +4,8 @@ from . import plots
 from . import statistics
 import numpy as np
 from cosmosis import output as output_module
-from ..runtime.config import Inifile
-import imp
+from ..runtime import Inifile
+from ..runtime.utils import import_by_path
 import os
 postprocessor_registry = {}
 
@@ -83,11 +83,12 @@ class PostProcessor(metaclass=PostProcessMetaclass):
     def derive_extra_columns(self):
         if not self.derive_file: return
         name = os.path.splitext(os.path.split(self.derive_file)[1])[0]
-        module = imp.load_source(name, self.derive_file)
+        module = import_by_path(name, self.derive_file)
         functions = [getattr(module,f) for f in dir(module) if f.startswith('derive_')]
         print("Deriving new columns from these functions in {}:".format(self.derive_file))
         for f in functions:
             self.derive_extra_column(f)
+
     def load_tuple(self, inputs):
         self.colnames, self.data, self.metadata, self.comments, self.final_metadata = inputs
         self.name = "Data"
@@ -126,14 +127,30 @@ class PostProcessor(metaclass=PostProcessMetaclass):
         for chain in self.metadata:
             for key,val in list(chain.items()):
                 self.sampler_options[key] = val
-
-
+    
+    def load_astropy(self, inputs):
+        self.name = inputs.meta.get("chain_name", "chain")
+        self.colnames = inputs.colnames
+        # convert astropy table to numpy array
+        self.data = [np.array([inputs[c] for c in self.colnames]).T]
+        self.metadata = [inputs.meta]
+        self.final_metadata = [{
+            k[6:]: v
+            for k, v in meta.items()
+            if k.startswith("final:")
+        } for meta in self.metadata]
+        self.comments = [meta["comments"] for meta in self.metadata]
+        for meta in self.metadata:
+            for key, val in meta.items():
+                self.sampler_options[key] = val
 
     def sampler_option(self, key, default=None):
         return self.sampler_options.get(key, default)
 
     def load_chain(self, ini):
-        if isinstance(ini, tuple):
+        if "astropy" in str(type(ini)):
+            self.load_astropy(ini)
+        elif isinstance(ini, tuple):
             self.load_tuple(ini)
         elif isinstance(ini, dict):
             self.load_dict(ini)
@@ -219,9 +236,11 @@ class PostProcessor(metaclass=PostProcessMetaclass):
         print("Finalizing:")
         for e in self.steps:
             e.finalize()
+    
+    def save(self):
         for f in list(self.outputs.values()):
             print("Output: ", f.filename)
-            f.finalize()
+            f.save()
 
     def apply_tweaks(self, tweaks):
         if tweaks.filename==plots.Tweaks.filename:

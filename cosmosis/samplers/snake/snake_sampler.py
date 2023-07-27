@@ -1,11 +1,11 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 from .snake import Snake
 
 def posterior(p_in):
     #Check the normalization
     if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
-        print(p_in)
         return -np.inf, ([np.nan for i in range(len(snake_pipeline.extra_saves))], -np.inf)
     p = snake_pipeline.denormalize_vector(p_in)
     results = snake_pipeline.run_results(p)
@@ -36,7 +36,7 @@ class SnakeSampler(ParallelSampler):
                 x = self.pipeline.denormalize_vector(x)
                 self.output.parameters(x, extra, prior, post)
             except ValueError:
-                print("The snake is trying to escape its bounds!")
+                logs.noisy("The snake is trying to escape its bounds!")
 
 
 
