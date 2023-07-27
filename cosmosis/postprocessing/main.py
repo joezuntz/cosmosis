@@ -42,6 +42,7 @@ def run_cosmosis_postprocess(inputs, **kwargs):
         raise ValueError("Can only use the --run-max-post argument with a single parameter file for now")
 
     processors = []
+    processor = None
 
     for i, ini_filename in enumerate(inputs):
         if "astropy" in str(type(ini_filename)):
