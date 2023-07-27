@@ -375,31 +375,31 @@ def build_run(name, run_info, runs, components, output_dir):
     # so that any variable expansion is done, and also later when running
     with temporary_environment(env_vars):
         if "base" in run_info:
-            params = Inifile(run_info["base"])
+            params = Inifile(run_info["base"], print_include_messages=False)
         elif "parent" in run_info:
             try:
                 parent = runs[run_info["parent"]]
             except KeyError:
                 warnings.warn(f"Run {name} specifies parent {run_info['parent']} but there is no run with that name yet")
                 return None
-            params = Inifile(parent["params"])
+            params = Inifile(parent["params"], print_include_messages=False)
         else:
             warnings.warn(f"Run {name} specifies neither 'parent' nor 'base' so is invalid")
             return None
 
         # Build values file, which is mandatory
         if "parent" in run_info:
-            values = Inifile(parent["values"])
+            values = Inifile(parent["values"], print_include_messages=False)
         else:
             values_file = params.get('pipeline', 'values')
-            values = Inifile(values_file)
+            values = Inifile(values_file, print_include_messages=False)
 
         # Build optional priors file
         if "parent" in run_info:
-            priors = Inifile(parent["priors"])
+            priors = Inifile(parent["priors"], print_include_messages=False)
         elif "priors" in params.options("pipeline"):
             priors_file = params.get('pipeline', 'priors')
-            priors = Inifile(priors_file)
+            priors = Inifile(priors_file, print_include_messages=False)
         else:
             priors = Inifile(None)
         
