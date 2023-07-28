@@ -232,7 +232,7 @@ class MCMC(object):
     def set_fast_slow(self, fast_indices, slow_indices, oversampling):
         if self.n_drag:
             oversampling = 1
-            print("Overriding oversampling parameter -> 1 since using dragging")
+            logs.noisy("Overriding oversampling parameter -> 1 since using dragging")
         self.fast_indices = fast_indices
         self.slow_indices = slow_indices
         self.oversampling = oversampling

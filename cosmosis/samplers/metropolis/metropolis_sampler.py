@@ -53,7 +53,7 @@ class MetropolisSampler(ParallelSampler):
             self.tuning_end = 0
 
         if (self.drag > 0) and not self.pipeline.do_fast_slow:
-            print("You asked for dragging, but the pipeline does not have fast/slow enabled"
+            logs.warning("You asked for dragging, but the pipeline does not have fast/slow enabled"
                   ", so no draggng will be done."
                 )
 
@@ -68,15 +68,15 @@ class MetropolisSampler(ParallelSampler):
 
         #start values from prior
         start = self.define_parameters(random_start, covmat_sample_start, covmat)
-        print("MCMC starting point:")
+        logs.overview("MCMC starting point:")
         for param, x in zip(self.pipeline.varied_params, start):
-            print("    ", param, x)
+            logs.overview("    ", param, x)
 
 
         if use_cobaya:
-            print("Using the Cobaya proposal")
+            logs.overview("Using the Cobaya proposal")
 
-        print(f"Will tune every {tuning_frequency} samples, from samples "
+        logs.overview(f"Will tune every {tuning_frequency} samples, from samples "
               f"{tuning_grace} to {self.tuning_end}.")
 
         self.sampler = metropolis.MCMC(start, posterior, covmat,
@@ -117,14 +117,14 @@ class MetropolisSampler(ParallelSampler):
 
         
         if self.num_samples >= self.samples:
-            print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
-            print("Increase the 'samples' parameter to keep going.")
+            logs.important("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
+            logs.important("Increase the 'samples' parameter to keep going.")
         elif self.is_converged():
-            print("The resumed chain was already converged.  You can change the converged testing parameters to extend it.")
+            logs.overview("The resumed chain was already converged.  You can change the converged testing parameters to extend it.")
         elif data is None:
-            print("Continuing metropolis from existing chain - you were in the tuning phase, which will continue")
+            logs.overview("Continuing metropolis from existing chain - you were in the tuning phase, which will continue")
         else:
-            print("Continuing metropolis from existing chain - have {} samples already".format(len(data)))
+            logs.overview("Continuing metropolis from existing chain - have {} samples already".format(len(data)))
 
 
 
@@ -180,7 +180,8 @@ class MetropolisSampler(ParallelSampler):
         if self.interrupted:
             return True
         if self.num_samples >= self.samples:
-            print("Full number of samples generated; sampling complete")
+            rank = self.pool.rank if self.pool is not None else 0
+            logs.overview(f"Rank {rank}: Full number of samples generated; sampling complete")
             return True
         elif (self.num_samples > 0 and
               self.pool is not None and
@@ -197,16 +198,16 @@ class MetropolisSampler(ParallelSampler):
     def load_covariance_matrix(self):
         covmat_filename = self.read_ini("covmat", str, "").strip()
         if covmat_filename == "" and self.distribution_hints.has_cov():
-                covmat =  self.distribution_hints.get_cov() 
-                print("Using covariance from previous sampler")
+                covmat =  self.distribution_hints.get_cov()
+                logs.overview("Using covariance from previous sampler")
         elif covmat_filename == "":
-            print("Using default covariance 1% of param widths")
+            logs.overview("Using default covariance 1% of param widths")
             covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
         elif not os.path.exists(covmat_filename):
             raise ValueError(
             "Covariance matrix %s not found" % covmat_filename)
         else:
-            print("Loading covariance from {}".format(covmat_filename))
+            logs.overview("Loading covariance from {}".format(covmat_filename))
             covmat = np.loadtxt(covmat_filename)
 
         if covmat.ndim == 0:

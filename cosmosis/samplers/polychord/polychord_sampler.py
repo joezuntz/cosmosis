@@ -216,14 +216,14 @@ class PolychordSampler(ParallelSampler):
     def sample(self):
 
         if self.pipeline.do_fast_slow and (self.pipeline.n_fast_params > 0):
-            print("Using two grades of parameter speed in polychord.")
+            logs.overview("Using two grades of parameter speed in polychord.")
             n_grade = 2
         elif self.pipeline.do_fast_slow:
-            print("You asked for fast/slow, but there were no fast parameters, so "
+            logs.warning("You asked for fast/slow, but there were no fast parameters, so "
                   "I have switched off Polychord's fast/slow mechanism to avoid a hang")
             n_grade = 1
         else:
-            print("Using a single grade of parameter speeds in polychord.")
+            logs.overview("Using a single grade of parameter speeds in polychord.")
             n_grade = 1
 
         grade_dims = (ct.c_int*n_grade)()
@@ -238,7 +238,7 @@ class PolychordSampler(ParallelSampler):
             grade_dims[1] = self.pipeline.n_fast_params
             grade_frac[0] = 1 - self.fast_fraction
             grade_frac[1] = self.fast_fraction
-            print("Telling Polychord to spend fraction {} if its time in the fast subspace (adjust with fast_fraction option)".format(self.fast_fraction))
+            logs.overview("Telling Polychord to spend fraction {} if its time in the fast subspace (adjust with fast_fraction option)".format(self.fast_fraction))
         else:
             grade_dims[0] = self.pipeline.nvaried
             grade_frac[0] = 1.0
@@ -258,10 +258,10 @@ class PolychordSampler(ParallelSampler):
             
         if self.num_repeats == 0:
             num_repeats = 3 * grade_dims[0]
-            print("Polychord num_repeats = {}  (3 * n_slow_params [{}])".format(num_repeats, grade_dims[0]))
+            logs.overview("Polychord num_repeats = {}  (3 * n_slow_params [{}])".format(num_repeats, grade_dims[0]))
         else:
             num_repeats = self.num_repeats
-            print("Polychord num_repeats = {}  (from parameter file)".format(num_repeats))
+            logs.overview("Polychord num_repeats = {}  (from parameter file)".format(num_repeats))
 
         self._run(
                 self.wrapped_likelihood,      #loglike,
