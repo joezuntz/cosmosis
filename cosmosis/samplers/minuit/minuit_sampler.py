@@ -143,15 +143,14 @@ class MinuitSampler(ParallelSampler):
         for name, value in zip(param_names, param_vector):
             sec,name=name.split('--')
             if section!=sec:
-                print()
-                print("[%s]" % sec)
+                logs.important("[%s]" % sec)
                 section=sec
-            print("%s = %g" % (name,value))
-        print()
-        print("Likelihood = ", results.like)
+            logs.important("%s = %g" % (name,value))
+
+        logs.important(f"Likelihood = {results.like}")
 
         if self.save_dir:
-            print("Saving best-fit model cosmology to ", self.save_dir)
+            logs.overview(f"Saving best-fit model cosmology to {self.save_dir}")
             results.block.save_to_directory(self.save_dir, clobber=True)
 
         self.converged = True

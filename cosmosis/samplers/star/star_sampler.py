@@ -1,6 +1,6 @@
 import itertools
 import numpy as np
-
+from ...runtime import logs
 from .. import ParallelSampler
 
 
@@ -55,19 +55,19 @@ class StarSampler(ParallelSampler):
         #This doesn't actually keep them all in memory, it is just the conceptual
         #outer product
         total_samples = self.nsample*len(self.pipeline.varied_params)
-        print()
-        print("Total number of star samples: ", total_samples)
+
+        logs.overview(f"Total number of star samples: {total_samples}")
 
         if total_samples>LARGE_JOB_SIZE:
-            print("That is a very large number of samples.")
+            logs.overview("That is a very large number of samples.")
             if self.allow_large:
-                print("But you set allow_large=T so I will continue")
+                logs.overview("But you set allow_large=T so I will continue")
             else:
-                print("This is suspicously large so I am going to stop")
-                print("If you really want to do this set allow_large=T in the")
-                print("[star] section of the ini file.")
+                logs.overview("This is suspicously large so I am going to stop")
+                logs.overview("If you really want to do this set allow_large=T in the")
+                logs.overview("[star] section of the ini file.")
                 raise ValueError("Suspicously large number of star points %d ( = n_samp * n_dim = %d * %d); set allow_large=T in [star] section to permit this."%(total_samples,self.nsample,len(self.pipeline.varied_params)))
-        print()
+
         
 
         sample_points = []

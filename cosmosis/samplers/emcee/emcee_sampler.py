@@ -46,16 +46,16 @@ class EmceeSampler(ParallelSampler):
 
             if start_file:
                 self.p0 = self.load_start(start_file)
-                print("Loaded starting position from %s", start_file)
+                logs.overview(f"Loaded starting position from {start_file}")
             elif self.distribution_hints.has_cov():
                 center = self.start_estimate()
                 cov = self.distribution_hints.get_cov()
                 self.p0 = sample_ellipsoid(center, cov, size=self.nwalkers)
-                print("Generating starting positions from covmat from earlier in pipeline")
+                logs.overview("Generating starting positions from covmat from earlier in pipeline")
             elif covmat_file:
                 center = self.start_estimate()
                 cov = self.load_covmat(covmat_file)
-                print("Generating starting position from covmat in  %s", covmat_file)
+                logs.overview(f"Generating starting position from covmat in  {covmat_file}")
                 iterations_limit = 100000
                 n=0
                 p0 = []
@@ -71,7 +71,7 @@ class EmceeSampler(ParallelSampler):
             elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in range(self.nwalkers)]
-                print("Generating random starting positions from within prior")
+                logs.overview("Generating random starting positions from within prior")
             else:
                 center_norm = self.pipeline.normalize_vector(self.start_estimate())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
@@ -79,7 +79,7 @@ class EmceeSampler(ParallelSampler):
                 p0_norm[p0_norm<=0] = 0.001
                 p0_norm[p0_norm>=1] = 0.999
                 self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
-                print("Generating starting positions in small ball around starting point")
+                logs.overview("Generating starting positions in small ball around starting point")
 
             if self.emcee_version < 3:
                 kw = {"a": self.a}
@@ -98,10 +98,10 @@ class EmceeSampler(ParallelSampler):
             self.p0 = data[-self.nwalkers:]
             self.num_samples += num_samples
             if self.num_samples >= self.samples:
-                print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
-                print("Increase the 'samples' parameter to keep going.")
+                logs.error("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
+                logs.error("Increase the 'samples' parameter to keep going.")
             else:
-                print("Continuing emcee from existing chain - have {} samples already".format(len(data)))
+                logs.overview("Continuing emcee from existing chain - have {} samples already".format(len(data)))
 
     def load_start(self, filename):
         #Load the data and cut to the bits we need.
@@ -138,7 +138,7 @@ class EmceeSampler(ParallelSampler):
     def execute(self):
         #Run the emcee sampler.
         if self.num_samples == 0:
-            print("Begun sampling")
+            logs.overview("Begun sampling")
         outputs = []
         if self.emcee_version < 3:
             kwargs = dict(lnprob0=self.prob0, blobs0=self.blob0, 

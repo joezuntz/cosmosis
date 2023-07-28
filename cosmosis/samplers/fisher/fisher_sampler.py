@@ -72,8 +72,8 @@ class FisherSampler(ParallelSampler):
         if self.output:
             for p in self.pipeline.extra_saves:
                 name = '%s--%s'%p
-                print("NOTE: You set extra_output to include parameter %s in the parameter file" % name)
-                print("      But the Fisher Sampler cannot do that, so this will be ignored.")
+                logs.warning("NOTE: You set extra_output to include parameter %s in the parameter file" % name)
+                logs.warning("      But the Fisher Sampler cannot do that, so this will be ignored.")
                 self.output.del_column(name)
 
         self.converged = False
@@ -92,7 +92,6 @@ class FisherSampler(ParallelSampler):
             elif isinstance(param.prior, prior.ExponentialPrior) or isinstance(param.prior, prior.TruncatedExponentialPrior):
                 logs.important("There is an exponential prior applied to parameter {0}".format(param))
                 logs.important("This is *not* accounted for in the Fisher matrix")
-                print()
             #uniform prior should have no effect on the fisher matrix.
             #at least up until the assumptions of the FM are violated anyway
         return P

@@ -1,6 +1,7 @@
 import itertools
 import collections
 import numpy as np
+from ...runtime import logs
 
 from .. import ParallelSampler
 
@@ -51,7 +52,7 @@ class ImportanceSampler(ParallelSampler):
         self.samples = []
         self.varied_params = []
         self.number_samples = len(cols[0])
-        print("Have %d samples from old chain." % self.number_samples)
+        logs.overview("Have %d samples from old chain." % self.number_samples)
         for code,col in zip(col_names, cols[0].T):
             #we have already handled the likelihood
             if code=='post':continue
@@ -62,26 +63,26 @@ class ImportanceSampler(ParallelSampler):
                 #No parameter should be varied in the old chain
                 #but listed as fixed here
                 if (section,name) in self.pipeline.fixed_params:
-                    print("WARNING: %s varied in old chain now fixed.  I will fix it <--------- Read this warning." % name)
+                    logs.error("WARNING: %s varied in old chain now fixed.  I will fix it <--------- Read this warning." % name)
                 elif (section,name) in self.pipeline.varied_params:
                     #Record the values of this parameter for later importance
                     #sampling
-                    print("Found column in both pipelines:", code)
+                    logs.overview(f"Found column in both pipelines {code}:")
                     self.samples.append(col)
                     self.varied_params.append(bits)
                 else:
-                    print("Found column just in old pipeline:", code)
+                    logs.overview(f"Found column just in old pipeline: {code}")
                     #This parameter was varied in the old code but is not
                     #here.  So we just save it for output
                     self.original_extras[code] = col
                     self.output.add_column(code, float)
             # anything here must be a sampler-specific 
             else:
-                print("Found non-parameter column:", code)
+                logs.overview(f"Found non-parameter column: {code}")
                 self.original_extras[code] = col
                 if code=="weight":
                     code="old_weight"
-                    print("Renaming weight -> old_weight")
+                    logs.overview("Renaming weight -> old_weight")
                 self.output.add_column(code, float)
 
         #Now finally add our actual two sampler outputs, old_like and like

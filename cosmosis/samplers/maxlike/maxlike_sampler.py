@@ -15,18 +15,18 @@ class MaxlikeSampler(Sampler):
         self.max_posterior = self.read_ini("max_posterior", bool, False)
 
         if self.max_posterior:
-            print("------------------------------------------------")
-            print("NOTE: Running optimizer in **max-posterior** mode:")
-            print("NOTE: Will maximize the combined likelihood and prior")
-            print("------------------------------------------------")
+            logs.overview("------------------------------------------------")
+            logs.overview("NOTE: Running optimizer in **max-posterior** mode:")
+            logs.overview("NOTE: Will maximize the combined likelihood and prior")
+            logs.overview("------------------------------------------------")
         else:
-            print("--------------------------------------------------")
-            print("NOTE: Running optimizer in **max-like** mode:")
-            print("NOTE: not including the prior, just the likelihood.")
-            print("NOTE: Set the parameter max_posterior=T to change this.")
-            print("NOTE: This won't matter unless you set some non-flat")
-            print("NOTE: priors in a separate priors file.")
-            print("--------------------------------------------------")
+            logs.overview("--------------------------------------------------")
+            logs.overview("NOTE: Running optimizer in **max-like** mode:")
+            logs.overview("NOTE: not including the prior, just the likelihood.")
+            logs.overview("NOTE: Set the parameter max_posterior=T to change this.")
+            logs.overview("NOTE: This won't matter unless you set some non-flat")
+            logs.overview("NOTE: priors in a separate priors file.")
+            logs.overview("--------------------------------------------------")
 
         self.converged = False
 

@@ -1,4 +1,5 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 import os
 
@@ -67,7 +68,8 @@ class NautilusSampler(ParallelSampler):
         if resume_filepath is not None:
             resume_filepath = resume_filepath + ".hdf5"
             if self.resume_ and os.path.exists(resume_filepath):
-                print(f"Resuming Nautilus from file {resume_filepath}")
+                if self.is_master():
+                    logs.overview(f"Resuming Nautilus from file {resume_filepath}")
 
         sampler = Sampler(
             prior_transform,

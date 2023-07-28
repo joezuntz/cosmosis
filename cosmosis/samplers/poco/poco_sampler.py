@@ -1,4 +1,5 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 
 
@@ -51,7 +52,7 @@ class PocoSampler(ParallelSampler):
             self.p0 = np.array(
                 [self.pipeline.randomized_start() for i in range(self.nparticles)]
             )
-            print(
+            logs.overview(
                 "Generating random starting positions from within prior"
             )
 
@@ -79,7 +80,7 @@ class PocoSampler(ParallelSampler):
 
             for sec, name in pipeline.extra_saves:
                 col = "{}--{}".format(sec, name)
-                print(
+                logs.warning(
                     "WARNING: POCO DOES NOT SUPPORT DERIVED PARAMS - NOT SAVING {}".format(
                         col
                     )

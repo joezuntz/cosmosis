@@ -140,9 +140,9 @@ class MultinestSampler(ParallelSampler):
             if P in self.pipeline.varied_params:
                 index = self.pipeline.varied_params.index(P)
                 self.wrapping[index] = 1
-                print("MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p))
+                logs.overview("MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p))
             elif P in self.pipeline.parameters:
-                print("MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not varied in this pipeline, so this will have no effect.".format(p))
+                logs.warnings("MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not varied in this pipeline, so this will have no effect.".format(p))
             else:
                 raise ValueError("You asked for an unknown parameter, {} to be wrapped around in the multinest wrapped_params option.".format(p))
 
