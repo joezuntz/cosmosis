@@ -644,7 +644,7 @@ class Pipeline(object):
                 sys.stdout.write("%s took: %.3f seconds\n"% (module,t2-t1))
 
             if status:
-                if logs.is_enabled_for(logs.debug):
+                if logs.is_enabled_for(logs.logging.DEBUG):
                     data_package.print_log()
                     logs.noisy("Because you set debug verbosity I printed a log of "
                                    "all access to data printed above. "
@@ -653,7 +653,7 @@ class Pipeline(object):
                                    "somewhere above that.\n")
 
                 logs.warning("Error running pipeline ({status}). Returning zero likelihood. Error may be above.")
-                if not logs.is_enabled_for(logs.debug):
+                if not logs.is_enabled_for(logs.logging.DEBUG):
                     logs.warning("Set log level to 'debug' for more info.")
                 return None
 
