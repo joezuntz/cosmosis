@@ -67,18 +67,18 @@ class ImportanceSampler(ParallelSampler):
                 elif (section,name) in self.pipeline.varied_params:
                     #Record the values of this parameter for later importance
                     #sampling
-                    logs.overview("Found column in both pipelines:", code)
+                    logs.overview(f"Found column in both pipelines {code}:")
                     self.samples.append(col)
                     self.varied_params.append(bits)
                 else:
-                    logs.overview("Found column just in old pipeline:", code)
+                    logs.overview(f"Found column just in old pipeline: {code}")
                     #This parameter was varied in the old code but is not
                     #here.  So we just save it for output
                     self.original_extras[code] = col
                     self.output.add_column(code, float)
             # anything here must be a sampler-specific 
             else:
-                logs.overview("Found non-parameter column:", code)
+                logs.overview(f"Found non-parameter column: {code}")
                 self.original_extras[code] = col
                 if code=="weight":
                     code="old_weight"

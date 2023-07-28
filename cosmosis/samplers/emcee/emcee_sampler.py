@@ -46,7 +46,7 @@ class EmceeSampler(ParallelSampler):
 
             if start_file:
                 self.p0 = self.load_start(start_file)
-                logs.overview("Loaded starting position from %s", start_file)
+                logs.overview(f"Loaded starting position from {start_file}")
             elif self.distribution_hints.has_cov():
                 center = self.start_estimate()
                 cov = self.distribution_hints.get_cov()
@@ -55,7 +55,7 @@ class EmceeSampler(ParallelSampler):
             elif covmat_file:
                 center = self.start_estimate()
                 cov = self.load_covmat(covmat_file)
-                logs.overview("Generating starting position from covmat in  %s", covmat_file)
+                logs.overview(f"Generating starting position from covmat in  {covmat_file}")
                 iterations_limit = 100000
                 n=0
                 p0 = []

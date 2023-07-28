@@ -56,7 +56,7 @@ class StarSampler(ParallelSampler):
         #outer product
         total_samples = self.nsample*len(self.pipeline.varied_params)
 
-        logs.overview("Total number of star samples: ", total_samples)
+        logs.overview(f"Total number of star samples: {total_samples}")
 
         if total_samples>LARGE_JOB_SIZE:
             logs.overview("That is a very large number of samples.")

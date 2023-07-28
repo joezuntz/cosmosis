@@ -70,7 +70,7 @@ class MetropolisSampler(ParallelSampler):
         start = self.define_parameters(random_start, covmat_sample_start, covmat)
         logs.overview("MCMC starting point:")
         for param, x in zip(self.pipeline.varied_params, start):
-            logs.overview("    ", param, x)
+            logs.overview(f"    {param}  {x}")
 
 
         if use_cobaya:

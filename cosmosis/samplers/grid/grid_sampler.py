@@ -51,7 +51,7 @@ class GridSampler(ParallelSampler):
         #This doesn't actually keep them all in memory, it is just the conceptual
         #outer product
         total_samples = self.nsample**len(self.pipeline.varied_params)
-        logs.overview("Total number of grid samples: ", total_samples)
+        logs.overview(f"Total number of grid samples: {total_samples}")
 
         if total_samples>LARGE_JOB_SIZE:
             logs.error("That is a very large number of samples.")
