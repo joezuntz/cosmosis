@@ -50,6 +50,41 @@ module Nested
 
 contains
   
+
+#ifdef MPI
+! This is a workaround for an MPICH bug
+! https://github.com/pmodels/mpich/issues/5995
+  subroutine mpi_bcast_logical(logical_var, ierror)
+	implicit none
+	logical logical_var
+	integer ierror
+	integer integer_var
+	integer_var = 0
+	if (logical_var) integer_var = 1
+	call MPI_BCAST(integer_var, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+	logical_var = (integer_var == 1)
+  end subroutine mpi_bcast_logical
+
+  subroutine mpi_bcast_logical_array(n, logical_arr, ierror)
+	implicit none
+	integer n
+	logical logical_arr(n)
+	integer ierror
+	integer integer_arr(n)
+	integer i
+	integer_arr(:) = 0
+	do i=1,n
+		if (logical_arr(i)) integer_arr(i) = 1
+	end do
+
+	call MPI_BCAST(integer_arr, n, MPI_INTEGER, 0, MPI_COMM_WORLD, ierror)
+	do i=1,n
+		logical_arr(i) = (integer_arr(i) == 1)
+	end do
+	
+  end subroutine mpi_bcast_logical_array
+#endif
+
   subroutine nestRun(nest_IS,nest_mmodal,nest_ceff,nest_nlive,nest_tol,nest_ef,nest_ndims,nest_totPar,nest_nCdims,maxClst, &
   nest_updInt,nest_Ztol,nest_root,seed,nest_pWrap,nest_fb,nest_resume,nest_outfile,initMPI,nest_logZero,nest_maxIter, &
   loglike,dumper,context)
@@ -344,9 +379,13 @@ contains
 		ginfo=0.d0
 	endif
 
+
+
 #ifdef MPI
 	call MPI_BARRIER(MPI_COMM_WORLD,errcode)
-	call MPI_BCAST(genLive,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+	!call MPI_BCAST(genLive,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+	!JAZ
+	call mpi_bcast_logical(genLive, errcode)
 #endif
 	
 	if(genLive) then
@@ -597,7 +636,8 @@ contains
 		endif
 
 #ifdef MPI
-		call MPI_BCAST(bogus,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+		! call MPI_BCAST(bogus,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+		call mpi_bcast_logical(bogus, errcode)
 #endif
 
 		if(k==nptPerProc .or. bogus) exit
@@ -1082,7 +1122,8 @@ contains
 
 #ifdef MPI
     		call MPI_BARRIER(MPI_COMM_WORLD,errcode)
-    		call MPI_BCAST(ic_done(0:ic_n),ic_n+1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+    		! call MPI_BCAST(ic_done(0:ic_n),ic_n+1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+			call mpi_bcast_logical_array(ic_n+1, ic_done(0:ic_n), errcode)
 #endif	
 		!stopping condition reached
 		if(ic_done(0)) then
@@ -1589,15 +1630,28 @@ contains
             	if(my_rank==0 .and. eswitch .and. sc_n==0) eswitch=.false.
 #ifdef MPI
 		call MPI_BARRIER(MPI_COMM_WORLD,errcode)
-		call MPI_BCAST(eswitch,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
-		call MPI_BCAST(flag2,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
-		call MPI_BCAST(modeFound,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+
+		! call MPI_BCAST(eswitch,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+		! JAZ
+		call mpi_bcast_logical(eswitch, errcode)
+
+		! call MPI_BCAST(flag2,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+		! JAZ 
+		call mpi_bcast_logical(flag2, errcode)
+
+		! call MPI_BCAST(modeFound,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+		! JAZ
+		call mpi_bcast_logical(modeFound, errcode)
+
 		call MPI_BCAST(lowlike,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,errcode)
 		
 		if(modeFound) then
 			call MPI_BCAST(ic_n,1,MPI_INTEGER,0,MPI_COMM_WORLD,errcode)
 			call MPI_BCAST(ic_npt(1:ic_n),ic_n,MPI_INTEGER,0,MPI_COMM_WORLD,errcode)
-    			call MPI_BCAST(ic_done(0:ic_n),ic_n+1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+
+			! JAZ
+			! call MPI_BCAST(ic_done(0:ic_n),ic_n+1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+			call mpi_bcast_logical_array(ic_n+1, ic_done(0:ic_n), errcode)
 		endif
 		
 		if(flag2 .and. eswitch) then
@@ -1810,7 +1864,9 @@ contains
 						if(my_rank==0) remFlag=remain(nd)
 #ifdef MPI
 						call MPI_BARRIER(MPI_COMM_WORLD,errcode)
-						call MPI_BCAST(remFlag,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! call MPI_BCAST(remFlag,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! JAZ
+						call mpi_bcast_logical(remFlag, errcode)
 #endif
 	                  			if(.not.remFlag) then
 	            					!generate mpi_nthreads potential points
@@ -1901,8 +1957,13 @@ contains
 					
 #ifdef MPI
 						call MPI_BARRIER(MPI_COMM_WORLD,errcode)
-						call MPI_BCAST(acpt,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
-						call MPI_BCAST(bogus,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! call MPI_BCAST(acpt,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! JAZ
+						call mpi_bcast_logical(acpt, errcode)
+
+						! call MPI_BCAST(bogus,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! JAZ
+						call mpi_bcast_logical(bogus, errcode)
 #endif
 	                        	
 						if(acpt .or. bogus) exit
@@ -1954,7 +2015,9 @@ contains
 						if(my_rank==0) remFlag=remain(nd)
 #ifdef MPI
 						call MPI_BARRIER(MPI_COMM_WORLD,errcode)
-						call MPI_BCAST(remFlag,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! call MPI_BCAST(remFlag,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! JAZ
+						call mpi_bcast_logical(remFlag, errcode)
 #endif
 						if(.not.remFlag) then
 							!first pick an ellipsoid according to the vol
@@ -2113,8 +2176,14 @@ contains
 					
 #ifdef MPI
 						call MPI_BARRIER(MPI_COMM_WORLD,errcode)
-						call MPI_BCAST(acpt,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
-						call MPI_BCAST(bogus,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! call MPI_BCAST(acpt,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! JAZ
+						call mpi_bcast_logical(acpt, errcode)
+
+						! call MPI_BCAST(bogus,1,MPI_LOGICAL,0,MPI_COMM_WORLD,errcode)
+						! JAZ
+						call mpi_bcast_logical(bogus, errcode)
+
 #endif
 					
 						if( bogus ) exit

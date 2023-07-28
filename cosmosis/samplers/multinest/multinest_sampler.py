@@ -60,6 +60,25 @@ multinest_args = [
 
 MULTINEST_SECTION='multinest'
 
+def load_multinest_library(mpi_version):
+    if mpi_version:
+        libname = "libnest3_mpi.so"
+    else:
+        libname = "libnest3.so"
+    dirname = os.path.split(__file__)[0]
+    libname = os.path.join(dirname, "multinest_src", libname)
+        
+    try:
+        libnest3 = ct.cdll.LoadLibrary(libname)
+    except Exception as error:
+        raise RuntimeError("Multinest could not be loaded.\n"
+                            "This may mean an MPI compiler was not found to compile it,\n"
+                            "or that some other error occurred.  More info below:\n"
+                            + str(error)+'\n')
+
+    return libnest3
+
+
 
 class MultinestSampler(ParallelSampler):
     parallel_output = False
@@ -68,21 +87,7 @@ class MultinestSampler(ParallelSampler):
     internal_resume = True
 
     def config(self):
-        if self.pool:
-            libname = "libnest3_mpi.so"
-        else:
-            libname = "libnest3.so"
-
-        dirname = os.path.split(__file__)[0]
-        libname = os.path.join(dirname, "multinest_src", libname)
-            
-        try:
-            libnest3 = ct.cdll.LoadLibrary(libname)
-        except Exception as error:
-            raise RuntimeError("Multinest could not be loaded.\n"
-                             "This may mean an MPI compiler was not found to compile it,\n"
-                             "or that some other error occurred.  More info below:\n"
-                             + str(error)+'\n')
+        libnest3 = load_multinest_library(self.pool is not None)
 
         self._run = libnest3.run
         self._run.restype=None
