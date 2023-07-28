@@ -42,6 +42,7 @@ def run_cosmosis_postprocess(inputs, **kwargs):
         raise ValueError("Can only use the --run-max-post argument with a single parameter file for now")
 
     processors = []
+    processor = None
 
     for i, ini_filename in enumerate(inputs):
         if "astropy" in str(type(ini_filename)):
@@ -79,6 +80,10 @@ def run_cosmosis_postprocess(inputs, **kwargs):
         #Save the outputs ready for the next post-processor in case
         #they want to add to it (e.g. two constriants on the same axes)
         outputs.update(processor.outputs)
+
+    # If there was no successul postprocessor then we are done
+    if processor is None:
+        return
 
     # Finalize all the elements - this adds legends to any plots
     # that need them. This final processor knows about all the

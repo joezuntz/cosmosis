@@ -127,6 +127,19 @@ def make_cosmosis():
 
     subprocess.check_call(["make"], env=env, cwd="cosmosis")
 
+class build_cosmosis(setuptools.Command):
+    description = "Build CosmoSIS and do nothing else"
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        make_cosmosis()
+
 
 
 class build_py_cosmosis(setuptools.command.build_py.build_py):
@@ -198,6 +211,7 @@ setuptools.setup(name = 'cosmosis',
     scripts = scripts,
     install_requires = requirements,
     cmdclass={
+        "build_cosmosis": build_cosmosis,
         "build_py": build_py_cosmosis,
         "install": install_cosmosis,
         "develop": develop_cosmosis,
