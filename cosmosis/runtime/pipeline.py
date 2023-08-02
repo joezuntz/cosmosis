@@ -652,7 +652,7 @@ class Pipeline(object):
                                    "Though the error message could also be "
                                    "somewhere above that.\n")
 
-                logs.warning("Error running pipeline ({status}). Returning zero likelihood. Error may be above.")
+                logs.warning(f"Error running pipeline ({status}). Returning zero likelihood. Error may be above.")
                 if not logs.is_enabled_for(logs.logging.DEBUG):
                     logs.warning("Set log level to 'debug' for more info.")
                 return None

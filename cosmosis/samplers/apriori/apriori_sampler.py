@@ -20,6 +20,7 @@ def task(p):
 
 class AprioriSampler(ParallelSampler):
     parallel_output = False
+    supports_resume = True
     sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
@@ -29,10 +30,21 @@ class AprioriSampler(ParallelSampler):
         self.converged = False
         self.save_name = self.read_ini("save", str, "")
         self.nsample = self.read_ini("nsample", int, 1)
+        self.n = 0
+
+    def resume(self):
+        if self.output.resumed:
+            data = np.genfromtxt(self.output._filename, invalid_raise=False)
+            self.n = len(data)
+            if self.n >= self.nsample:
+                logs.error(f"You told me to resume the apriori sampler - it has already completed (with {self.n} samples), so sampling will end.")
+                logs.error("Increase the 'nsample' parameter to keep going.")
+            else:
+                logs.overview(f"Continuing apriori sampling - have {self.n} samples already")
 
 
     def execute(self):
-        n = 0
+        n = self.n
         nparam = len(self.pipeline.varied_params)
 
         if self.pool:
