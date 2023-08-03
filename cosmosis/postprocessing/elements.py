@@ -40,6 +40,9 @@ class PostProcessorElement(Loadable):
         self.options = {}
         self.options.update(options)
 
+    def reduced_col(self, name, stacked=True):
+        return self.source.reduced_col(name, stacked=stacked)
+
     def get_output(self, name):
         return self.source.outputs.get(name)
 
@@ -64,9 +67,6 @@ class PostProcessorElement(Loadable):
         pass
 
 class MCMCPostProcessorElement(PostProcessorElement):
-    def reduced_col(self, name, stacked=True):
-        return self.source.reduced_col(name, stacked=stacked)
-
     def posterior_sample(self):
         return self.source.posterior_sample()
 

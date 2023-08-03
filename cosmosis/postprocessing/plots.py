@@ -1330,3 +1330,35 @@ class PolychordPlots2D(PolychordPlots):
         return self.run_2d()
     def smooth_likelihood(self, x, y, xname, yname):
         return self.smooth_likelihood_2d(x, y, xname, yname)
+
+
+class AprioriPlots1D(Plots):
+    def run(self):
+        cols = self.source.colnames[:]
+        filenames = []
+        for col in cols:
+            fig, filename = self.figure(col)
+            pylab.hist(self.reduced_col(col), bins=30, histtype='step')
+            pylab.xlabel(self.latex(col))
+            pylab.ylabel('Number of samples')
+            filenames.append(filename)
+        return filenames
+
+class AprioriPlots2D(Plots):
+    def run(self):
+        filenames = []
+        post = self.source.get_col("post")
+        for col1, col2 in self.parameter_pairs():
+            fig, filename = self.figure("2D", col1, col2)
+            x1 = self.source.get_col(col1)
+            x2 = self.source.get_col(col2)
+            good = np.isfinite(post)
+            bad = ~good
+            if np.any(good):
+                pylab.plot(x1[good], x2[good], '.')
+            if np.any(bad):
+                pylab.plot(x1[bad], x2[bad], 'x')
+            pylab.xlabel(self.latex(col1))
+            pylab.ylabel(self.latex(col2))
+            filenames.append(filename)
+        return filenames

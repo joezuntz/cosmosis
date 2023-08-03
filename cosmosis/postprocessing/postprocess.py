@@ -386,3 +386,19 @@ class StarProcessor(PostProcessor):
 	]
 
 
+class AprioriProcessor(PostProcessor):
+	sampler='apriori'
+	elements=[
+		plots.AprioriPlots1D,
+		plots.AprioriPlots2D,
+	]
+	def reduced_col(self, name, stacked=True):
+		cols = self.get_col(name, stacked=False)
+		likes = self.get_col("post", stacked=False)
+		cols = [col[np.isfinite(like)] for col, like in zip(cols, likes)]
+
+		if stacked:
+			return np.concatenate(cols)
+		else:
+			return cols
+	
