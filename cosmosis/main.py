@@ -288,11 +288,11 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors)
         else:
             if pool_stdout:
-                pipeline = LikelihoodPipeline(ini, override=variables, only=only, priors=priors)
+                pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors)
             else:
                 # Suppress output on everything except the root process
                 with stdout_redirected():
-                    pipeline = LikelihoodPipeline(ini, override=variables, only=only, priors=priors)
+                    pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors)
 
         if pipeline.do_fast_slow:
             pipeline.setup_fast_subspaces()
