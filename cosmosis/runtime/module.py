@@ -360,7 +360,7 @@ class Module(object):
 
         """
         if root_directory is None:
-            root_directory = os.environ.get("COSMOSIS_SRC_DIR", ".")
+            root_directory = os.getcwd()
 
         filename = cls.find_module_file(root_directory,
                                         options.get(module_name, "file"))
