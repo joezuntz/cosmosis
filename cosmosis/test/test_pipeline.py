@@ -260,6 +260,12 @@ def test_pipeline_from_function():
     assert r.like == 0.0
     assert r.extra[0] == 0.0
 
+    # version without priors or derived params extracted
+    pipeline = LikelihoodPipeline.from_likelihood_function(log_like, param_ranges)
+    r = pipeline.run_results([0,0,0,0])
+    assert r.like == 0.0
+    assert len(r.extra) == 0
+
 
 
 if __name__ == '__main__':

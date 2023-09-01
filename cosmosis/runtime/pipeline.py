@@ -1409,18 +1409,19 @@ class LikelihoodPipeline(Pipeline):
                 else:
                     return 1
 
-            if derived is None:
-                like = p
-            else:
+            if isinstance(p, tuple):
                 like = p[0]
                 extra = p[1]
 
-            if not isinstance(extra, dict):
-                raise ValueError("The extra output from the likelihood function must be a dictionary")
+                if not isinstance(extra, dict):
+                    raise ValueError("The extra output from the likelihood function must be a dictionary")
+
+                for key, value in extra.items():
+                    block['derived', key] = value
+            else:
+                like = p
 
             block['likelihoods', 'a_like'] = like
-            for key, value in extra.items():
-                block['derived', key] = value
 
             return 0
 
@@ -1446,10 +1447,10 @@ class LikelihoodPipeline(Pipeline):
             "params": parameters
         }
 
-        priors = [{
-            "params": priors
-
-        }]
+        if priors is not None:
+            priors = [{
+                "params": priors
+            }]
 
         pipeline = cls(config, values = values, modules=[mod], priors=priors)
         return pipeline
