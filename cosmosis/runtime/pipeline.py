@@ -390,9 +390,11 @@ class Pipeline(object):
         else:
             self.modules = []
 
+
+        self.shortcut_module=0
+        self.shortcut_data=None
+
         if self.modules:
-            self.shortcut_module=0
-            self.shortcut_data=None
             if shortcut is not None:
                 try:
                     index = module_list.index(shortcut)
@@ -408,8 +410,6 @@ class Pipeline(object):
                     print("and use the cached results from the first run for everything before that.")
                     print("except the input parameter values. Think about this to check it's what you want.")
                 self.shortcut_module = index
-            self.shortcut_module=0
-            self.shortcut_data=None
 
 
 
@@ -1365,6 +1365,94 @@ class LikelihoodPipeline(Pipeline):
             return like, extra_saves, data
         else:
             return like, extra_saves
+
+    @classmethod
+    def from_likelihood_function(cls, log_likelihood_function, param_ranges, priors=None, debug=False, derived=None):
+        """
+        Make a pipeline from a simple likelihood function.
+
+        Parameters
+        ----------
+        log_likelihood_function : function
+            A function that takes a list of parameters and returns either a single
+            number (the log-likelihood) or a tuple of two things, the first being
+            the log-likelihood and the second being a dictionary of extra derived
+            parameters.
+        param_ranges : list of tuples
+            A list of tuples of the form (min, starting_point, max) for each parameter.
+        priors : list of tuples, optional
+            A dictionary if priors i the form name:prior (see documentation for prior format).
+            If not specified then uniform priors are used.
+        debug : bool, optional
+            If True then exceptions in the likelihood function will be raised.
+            If False then they will be ignored and the likelihood will be set to -inf.
+        derived : list of strings, optional
+            A list of names of derived parameters to save in the output.
+
+        Returns
+        -------
+        pipeline : LikelihoodPipeline
+            A pipeline object that can be run.
+        """
+        nparam = len(param_ranges)
+
+        def setup(options):
+            return {}
+
+        def execute(block, config):
+            parameters = np.array([block["params", f"p{i}"]  for i in range(nparam)])
+            try:
+                p = log_likelihood_function(parameters)
+            except:
+                if debug:
+                    raise
+                else:
+                    return 1
+
+            if derived is None:
+                like = p
+            else:
+                like = p[0]
+                extra = p[1]
+
+            if not isinstance(extra, dict):
+                raise ValueError("The extra output from the likelihood function must be a dictionary")
+
+            block['likelihoods', 'a_like'] = like
+            for key, value in extra.items():
+                block['derived', key] = value
+
+            return 0
+
+        mod = module.FunctionModule("log_likelihood_function", setup, execute)
+
+        parameters = {
+            f"p{i}": f"{param_ranges[i][0]} {param_ranges[i][1]} {param_ranges[i][2]}"
+            for i in range(nparam)
+        }
+
+        debug_str = "T" if debug else "F"
+        extra_saves = " ".join([f"derived/{d}" for d in derived]) if derived is not None else ""
+
+        config = {
+            "pipeline": {
+                "likelihoods": "a",
+                "debug": debug_str,
+                "extra_output": extra_saves,
+            }
+        }
+
+        values = {
+            "params": parameters
+        }
+
+        priors = [{
+            "params": priors
+
+        }]
+
+        pipeline = cls(config, values = values, modules=[mod], priors=priors)
+        return pipeline
 
 
 
