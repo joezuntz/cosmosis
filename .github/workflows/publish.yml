@@ -21,8 +21,9 @@ jobs:
         python setup.py sdist
         version=$(head -1  cosmosis/version.py | cut  -d "'" -f 2)
         sha=$(shasum -a 256 dist/cosmosis-${version}.tar.gz | awk '{print $1}')
-        echo "::set-output name=tarball-sha::${sha}"
-        echo "::set-output name=pypi-version::${version}"
+        echo "pypi-version=${version}" >> $GITHUB_OUTPUT
+        echo "tarball-sha=${sha}" >> $GITHUB_OUTPUT
+
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1

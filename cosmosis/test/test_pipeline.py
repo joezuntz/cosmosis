@@ -237,7 +237,28 @@ def test_prior_override():
         assert p1.max() < 1.0
         assert p1.min() > -1.0
 
+def test_pipeline_from_function():
+    priors = {
+        "p0": "gaussian 1.0 0.5",
+    }
 
+    def log_like(p):
+        r1 = np.sum(np.abs(p))
+        return -0.5 * np.sum(p**2), {"r1": r1}
+
+    param_ranges = [
+        (-3.0,  0.0,  3.0),
+        (-3.0,  0.0,  3.0),
+        (-3.0,  0.0,  3.0),
+        (-3.0,  0.0,  3.0),
+    ]
+
+    derived = ["r1"]
+
+    pipeline = LikelihoodPipeline.from_likelihood_function(log_like, param_ranges, priors=priors, derived=derived, debug=True)
+    r = pipeline.run_results([0,0,0,0])
+    assert r.like == 0.0
+    assert r.extra[0] == 0.0
 
 
 
