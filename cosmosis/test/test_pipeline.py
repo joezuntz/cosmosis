@@ -71,8 +71,6 @@ def test_add_param():
     assert p3.max() < 1.0
     assert p3.min() > -1.0
 
-    return output
-
 def test_missing_setup():
     # check the register_new_parameter feature when no
     # setup is currently happening
