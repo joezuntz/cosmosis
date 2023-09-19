@@ -71,7 +71,7 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
         print(pp_class)
         with tempfile.TemporaryDirectory() as dirname:
             truth_file = values.name if do_truth else None
-            pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=truth_file)
+            pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=truth_file, fatal_errors=True)
             pp_files = pp.run()
             pp.finalize()
             pp.save()

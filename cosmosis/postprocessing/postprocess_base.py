@@ -226,6 +226,8 @@ class PostProcessor(metaclass=PostProcessMetaclass):
                     print()
                     import pdb
                     pdb.post_mortem()
+                elif self.options.get("fatal_errors", False):
+                    raise
                 else:                    
                     print("Failed in one of the postprocessing steps: ", e)
                     print("Here is the error stack:")

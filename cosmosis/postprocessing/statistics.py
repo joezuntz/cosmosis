@@ -59,7 +59,6 @@ class ConstrainingStatistics(Statistics):
         return [
             self.report_centroid("means", self.mu),
             self.report_centroid("medians", self.median),
-            self.report_centroid("modes", self.peak1d),
             self.report_limit("l95", self.l95),
             self.report_limit("u95", self.u95),
             self.report_limit("l68", self.l68),
@@ -69,7 +68,16 @@ class ConstrainingStatistics(Statistics):
             self.report_limit("lerr95", self.lerr95),
             self.report_limit("uerr95", self.uerr95),
             self.report_limit("peak1d", self.peak1d),
+            self.report_max_post("maxpost", self.maxpost),
+            self.report_max_post("maxlike", self.maxlike),
         ]
+    
+    def report_max_post(self, kind, values):
+        cols = ["parameter", kind, "data_set"]
+        table = self.get_table_output(kind, cols)
+        for (col, x) in zip(self.source.colnames, values):
+            table.append([col, x, self.source.label])
+        return table
 
     def report_centroid(self, kind, col):
         cols = ["parameter", kind, "sigma", "data_set"]
@@ -100,10 +108,25 @@ class ConstrainingStatistics(Statistics):
         self.report_screen_asym()
         self.report_screen_asym95()
         self.report_screen_median()
-        self.report_screen_mode()
         self.report_screen_limits()
+        self.report_screen_maxpost()
+        self.report_screen_maxlike()
         #Print the same summary stats that go into the
         #files but to the screen instead, in a pretty format        
+
+    def report_screen_maxpost(self):
+        print()
+        print("Maximum posterior:")
+        for P in zip(self.source.colnames, self.maxpost):
+            print('    %s = %g' % P)
+        print()
+
+    def report_screen_maxlike(self):
+        print()
+        print("Maximum likelihood:")
+        for P in zip(self.source.colnames, self.maxlike):
+            print('    %s = %g' % P)
+        print()
 
     def report_screen_mean(self):
         #Means
@@ -136,13 +159,6 @@ class ConstrainingStatistics(Statistics):
         print("Marginalized median, std-dev:")
         for P in zip(self.source.colnames, self.median, self.sigma):
             print('    %s = %g ± %g' % P)
-        print()
-
-    def report_screen_mode(self):
-        #Mode
-        print("Best likelihood:")
-        for name, val in zip(self.source.colnames, self.source.get_row(self.best_fit_index)):
-            print('    %s = %g' % (name, val))
         print()
 
     def report_screen_limits(self):
@@ -191,7 +207,14 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         except (RuntimeError, ValueError, sp.linalg.LinAlgError):
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
             peak1d = np.nan
-        return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.), lerr68, uerr68, lerr95, uerr95, peak1d
+        post = self.reduced_col("post")
+        try:
+            like = self.reduced_col("like")
+        except ValueError:
+            like = post - self.reduced_col("prior")
+        maxpost = data[post.argmax()]
+        maxlike = data[like.argmax()]
+        return n, data.mean(), data.std(), np.median(data), np.percentile(data, 32.), np.percentile(data, 68.), np.percentile(data, 5.), np.percentile(data, 95.), lerr68, uerr68, lerr95, uerr95, peak1d, maxlike, maxpost
 
     def compute_basic_stats(self):
         self.mu = []
@@ -206,6 +229,8 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.lerr95 = []
         self.uerr95 = []
         self.peak1d = []
+        self.maxpost = []
+        self.maxlike = []
         try:
             self.best_fit_index = self.source.get_col("post").argmax()
         except:
@@ -213,7 +238,7 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         
         n = 0
         for col in self.source.colnames:
-            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
+            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d, maxlike, maxpost = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
             self.median.append(median)
@@ -226,6 +251,8 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
             self.lerr95.append(lerr95)
             self.uerr95.append(uerr95)
             self.peak1d.append(peak1d)
+            self.maxlike.append(maxlike)
+            self.maxpost.append(maxpost)
         return n
 
     def get_gdobj(self):
@@ -288,6 +315,8 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
         self.lerr95 = []
         self.uerr95 = []
         self.peak1d = []
+        self.maxlike = []
+        self.maxpost = []
         try:
             self.best_fit_index = self.source.get_col("post").argmax()
         except:
@@ -312,6 +341,8 @@ class MetropolisHastingsStatistics(ConstrainingStatistics, MCMCPostProcessorElem
             self.uerr68.append(col_results[6])
             self.lerr95.append(col_results[7])
             self.uerr95.append(col_results[8])
+            self.uerr95.append(col_results[9])
+            self.uerr95.append(col_results[10])
         return n
 
 
@@ -414,7 +445,6 @@ class GridStatistics(ConstrainingStatistics):
         #self.report_screen_asym()
         # self.report_screen_asym95()
         self.report_screen_median()
-        self.report_screen_mode()
         #self.report_screen_limits()
 
     def report_file(self):
@@ -665,10 +695,20 @@ class WeightedStatistics(object):
         except (RuntimeError, ValueError, sp.linalg.LinAlgError):
             (lerr68, uerr68), (lerr95, uerr95) = (np.nan, np.nan), (np.nan, np.nan)
             peak1d = np.nan
+        
+        post = self.reduced_col("post")
+        try:
+            like = self.reduced_col("like")
+        except ValueError:
+            like = post - self.reduced_col("prior")
+        maxpost = data[post.argmax()]
+        maxlike = data[like.argmax()]
+
 
         return (n, mean_weight(data,weight), std_weight(data,weight), 
             median_weight(data, weight), percentile_weight(data, weight, 32.), percentile_weight(data, weight, 68.),
-            percentile_weight(data, weight, 5.), percentile_weight(data, weight, 95.), lerr68, uerr68, lerr95, uerr95, peak1d)
+            percentile_weight(data, weight, 5.), percentile_weight(data, weight, 95.), lerr68, uerr68, lerr95, uerr95, peak1d,
+            maxlike, maxpost)
 
 
 class MultinestStatistics(WeightedStatistics, MultinestPostProcessorElement, MetropolisHastingsStatistics):
@@ -711,7 +751,13 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
     def compute_basic_statsgd_col(self, gdc, col):
         dens1d = gdc.get1DDensity(col,writeDataToFile=False)
         if dens1d is None:
-            return [np.nan for i in range(9)]
+            return [np.nan for i in range(11)]
+        
+        like = self.reduced_col("like")
+        post = self.reduced_col("post")
+        data1 = self.reduced_col(col)
+        maxlike = data1[like.argmax()]
+        maxpost = data1[post.argmax()]
 
         def func(x):
             return -dens1d.Prob(x)
@@ -728,6 +774,8 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
             dens1d.getLimits([0.68])[1],
             dens1d.getLimits([0.95])[0],
             dens1d.getLimits([0.95])[1],
+            maxlike,
+            maxpost
         ]
         return results
 
@@ -745,6 +793,8 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.lerr95 = []
         self.uerr95 = []
         self.peak1d = []
+        self.maxlike = []
+        self.maxpost = []
         try:
             self.best_fit_index = self.source.get_col("post").argmax()
         except:
@@ -769,6 +819,8 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
             self.uerr68.append(col_results[6])
             self.lerr95.append(col_results[7])
             self.uerr95.append(col_results[8])
+            self.maxlike.append(col_results[9])
+            self.maxpost.append(col_results[10])
         return n
 
         
@@ -785,6 +837,10 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         self.lerr95 = []
         self.uerr95 = []
         self.peak1d = []
+        self.uerr95 = []
+        self.peak1d = []
+        self.maxlike = []
+        self.maxpost = []
         try:
             self.best_fit_index = self.source.get_col("post").argmax()
         except:
@@ -792,7 +848,7 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
         
         n = 0
         for col in self.source.colnames:
-            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d = self.compute_basic_stats_col(col)
+            n, mu, sigma, median, l68, u68, l95, u95, lerr68, uerr68, lerr95, uerr95, peak1d, maxlike, maxpost = self.compute_basic_stats_col(col)
             self.mu.append(mu)
             self.sigma.append(sigma)
             self.median.append(median)
@@ -805,6 +861,8 @@ class WeightedMetropolisStatistics(WeightedStatistics, ConstrainingStatistics, W
             self.lerr95.append(lerr95)
             self.uerr95.append(uerr95)
             self.peak1d.append(peak1d)
+            self.maxlike.append(maxlike)
+            self.maxpost.append(maxpost)
         return n
         
     def run(self):
