@@ -338,7 +338,7 @@ class GridPlots2D(GridPlots):
             try:
                 filename=self.plot_2d(name1, name2)
             except ValueError:
-                if self.options.get('fatal_errors'):
+                if self.options.get("fatal_errors", False):
                     raise
                 print("Could not make plot {} vs {} - error in contour".format(name1,name2))
                 continue
