@@ -403,7 +403,7 @@ class GridPlots2D(GridPlots):
             
             sm = pylab.cm.ScalarMappable(cmap=colormap, norm=norm)
             sm._A = [] #hack from StackOverflow to make this work
-            pylab.colorbar(sm, label='Posterior')
+            pylab.colorbar(sm, label='Posterior', ax=pylab.gca())
 
         #Add contours
         level1, level2 = self.find_grid_contours(like, 0.68, 0.95)
