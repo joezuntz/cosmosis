@@ -20,6 +20,7 @@ general.add_argument("--no-latex", action='store_true', help="Do not use latex-s
 general.add_argument("--blind-add", action='store_true', help="Blind results by adding adding a secret value to each parameter")
 general.add_argument("--blind-mul", action='store_true', help="Blind results by scaling by a secret value for each parameter")
 general.add_argument("--pdb", action='store_true', help="Run the debugger if any of the postprocessing stages fail")
+general.add_argument("--fatal-errors", action='store_true', help="Errors are fatal; useful for testing only")
 
 inputs=parser.add_argument_group(title="Inputs", description="Options controlling the inputs to this script")
 inputs.add_argument("--text", action='store_true', help="Tell postprocess that its argument is a text file, regardless of its suffix")

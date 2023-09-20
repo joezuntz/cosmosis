@@ -338,6 +338,8 @@ class GridPlots2D(GridPlots):
             try:
                 filename=self.plot_2d(name1, name2)
             except ValueError:
+                if self.options.get("fatal_errors", False):
+                    raise
                 print("Could not make plot {} vs {} - error in contour".format(name1,name2))
                 continue
             if filename: filenames.append(filename)
@@ -401,7 +403,7 @@ class GridPlots2D(GridPlots):
             
             sm = pylab.cm.ScalarMappable(cmap=colormap, norm=norm)
             sm._A = [] #hack from StackOverflow to make this work
-            pylab.colorbar(sm, label='Posterior')
+            pylab.colorbar(sm, label='Posterior', ax=pylab.gca())
 
         #Add contours
         level1, level2 = self.find_grid_contours(like, 0.68, 0.95)
