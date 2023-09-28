@@ -95,6 +95,9 @@ def test_campaign_functions():
         show_run_status(runs, ["v1"])
         show_run_status(runs, ["v2"])
 
+        submit_run("cosmosis/test/campaign.yml", runs["v3"])
+        submit_run("cosmosis/test/campaign.yml", runs["v4"])
+
 def test_campaign_functions2():
     with run_from_source_dir():
         with open("cosmosis/test/campaign.yml") as f:
@@ -128,3 +131,6 @@ def test_campaign_functions2():
             launch_run(runs["v2"])
             show_run_status(runs, ["v1"])
             show_run_status(runs, ["v2"])
+
+            submit_run("cosmosis/test/campaign.yml", runs["v3"])
+            submit_run("cosmosis/test/campaign.yml", runs["v4"])
