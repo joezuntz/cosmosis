@@ -18,8 +18,6 @@ submission:
     #SBATCH -J {job_name}
     #SBATCH -t {walltime}
 
-    set -x
-
     # OpenMP settings:
     export OMP_NUM_THREADS={cores_per_task}
     export OMP_PLACES=threads

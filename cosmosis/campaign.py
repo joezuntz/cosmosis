@@ -709,8 +709,6 @@ def submit_run(run_file, run):
     with open(sub_file, "w") as f:
         f.write(sub_script)
 
-    print(sub_script)
-
     # Actually submit the job using slurm or similar
     submit = submission_info.get("submit", "sbatch")
     subprocess.check_call(f"{submit} {sub_file}", shell=True)
