@@ -5,7 +5,7 @@ submission:
   # These parameters can be overridden per run.
   # Normally this would be "sbatch" or "qsub". This
   # is just for testing.
-  submit: bash
+  submit: bash -l
   cores_per_task: 1
   tasks: 4
   nodes: 1
@@ -17,6 +17,8 @@ submission:
     #SBATCH -q {queue}
     #SBATCH -J {job_name}
     #SBATCH -t {walltime}
+
+    set -x
 
     # OpenMP settings:
     export OMP_NUM_THREADS={cores_per_task}
