@@ -7,7 +7,7 @@ submission:
   # is just for testing.
   submit: bash -l
   cores_per_task: 1
-  tasks: 4
+  tasks: 2
   nodes: 1
   walltime: 06:00:00
   queue: regular
