@@ -393,6 +393,7 @@ class Pipeline(object):
 
         self.shortcut_module=0
         self.shortcut_data=None
+        self.timings = None
 
         if self.modules:
             if shortcut is not None:
