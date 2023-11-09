@@ -18,6 +18,7 @@ jobs:
     - name: Build wheel and source tarball
       id: build_tarball
       run: |
+        python -m pip install "setuptools>=50.0" "wheel"
         python setup.py sdist
         version=$(head -1  cosmosis/version.py | cut  -d "'" -f 2)
         sha=$(shasum -a 256 dist/cosmosis-${version}.tar.gz | awk '{print $1}')
