@@ -29,6 +29,7 @@ class ListSampler(ParallelSampler):
         self.burn = self.read_ini("burn", int, 0)
         self.thin = self.read_ini("thin", int, 1)
         limits = self.read_ini("limits", bool, False)
+        self.chunk_size = self.read_ini("chunk_size", int, 100)
 
         #overwrite the parameter limits
         if not limits:
@@ -93,28 +94,36 @@ class ListSampler(ParallelSampler):
         sample_index = list(range(len(sample_vectors)))
         jobs = list(zip(sample_index, sample_vectors))
 
-        #Run all the parameters
-        #This only outputs them all at the end
-        #which is a bit problematic, though you 
-        #can't use MPI and retain the output ordering.
-        #Have a few options depending on whether
-        #you care about this we should think about
-        #(also true for grid sampler).
-        if self.pool:
-            results = self.pool.map(task, jobs)
-        else:
-            results = list(map(task, jobs))
+        nsample = len(sample_index)
+        nchunk = nsample//self.chunk_size
+        if nsample%self.chunk_size!=0:
+            nchunk += 1
+        
+        # Run on a chunk of parameters
+        for i in range(nchunk):
+            start = i*self.chunk_size
+            end = (i+1)*self.chunk_size
+            if end>nsample:
+                end = nsample
+            chunk = jobs[start:end]
 
-        #Save the results of the sampling
-        #We now need to abuse the output code a little.
-        for sample, result  in zip(sample_vectors, results):
-            #Optionally save all the results calculated by each
-            #pipeline run to files
-            (prob, (prior,extra)) = result
-            #always save the usual text output
-            self.output.parameters(sample, extra, prior, prob)
-        #We only ever run this once, though that could 
-        #change if we decide to split up the runs
+            if self.pool:
+                results = self.pool.map(task, chunk)
+            else:
+                results = list(map(task, chunk))
+
+
+            # Save the results of the sampling
+            # We now need to abuse the output code a little.
+            for sample, result  in zip(sample_vectors[start:end], results):
+                # Optionally save all the results calculated by each
+                # pipeline run to files
+                (prob, (prior,extra)) = result
+                # always save the usual text output
+                self.output.parameters(sample, extra, prior, prob)
+
+        # We only ever run this once, though that could 
+        # change if we decide to split up the runs
         self.converged = True
 
     def is_converged(self):
