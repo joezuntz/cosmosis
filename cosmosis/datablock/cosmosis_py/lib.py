@@ -282,3 +282,10 @@ load_library_function(
 	[],
 	None
 )
+
+load_library_function(
+	locals(),
+	"enable_cosmosis_segfault_handler",
+	[],
+	None
+)
