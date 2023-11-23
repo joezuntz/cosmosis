@@ -7,3 +7,7 @@ $(info ${COSMOSIS_SRC_DIR})
 include ${COSMOSIS_SRC_DIR}/config/subdirs.mk
 
 SUBDIRS=datablock samplers
+
+ifneq (${COSMOSIS_JULIA_FLAGS},"")
+SUBDIRS+=runtime/julia_modules
+endif

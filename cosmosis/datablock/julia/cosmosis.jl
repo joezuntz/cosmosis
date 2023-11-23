@@ -335,6 +335,24 @@ function get_double_array_1d(block, section, name)
     value
 end
 
+function stack_tracer_wrapper(f)
+    name = String(Symbol(f))
+    return function wrapped_function(a...)
+        try
+            return f(a...)
+        catch e
+            s = stacktrace(catch_backtrace())
+            println("Function ", name, " failed with error: ", e)
+            println("Stack trace:")
+            for i in 1 : length(s)
+                println("    ", s[i])
+            end
+            rethrow(e)
+        end
+    end
+end
+
+
 
 end
 

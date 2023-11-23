@@ -474,7 +474,7 @@ class TruncatedOneoverxPrior(Prior):
         self.upper = upper
         self.ln_lower = np.log(lower)
         self.ln_upper = np.log(upper)
-        # Normalization: \int_upper^lower 1/x dx = ln(upper) - ln(lower)
+        # Normalization: int_upper^lower 1/x dx = ln(upper) - ln(lower)
         self.norm = self.ln_upper-self.ln_lower
         self.ln_norm = np.log(self.norm)
         super(TruncatedOneoverxPrior,self).__init__()

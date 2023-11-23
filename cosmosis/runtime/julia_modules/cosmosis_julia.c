@@ -1,15 +1,19 @@
 #include <julia.h>
 #include <stdio.h>
-#include "cosmosis/datablock/c_datablock.h"
+#include "../../datablock/c_datablock.h"
 
 int cosmosis_julia_is_initialized = 0;
 
+
+
 typedef struct julia_module_info {
-    void * setup;
-    void * execute;
-    void * cleanup;
+    char * execute;
+    char * setup;
+    char * cleanup;
     char * name;
+    int debug_mode;
 } julia_module_info;
+
 
 
 static 
@@ -21,13 +25,8 @@ void backtrace(const char * location, const char * name){
     jl_function_t *println = jl_get_function(jl_base_module, "println");
     jl_call1(println, exception);
 
-    fprintf(stderr, "Backtrace (actual error is usually buried between some sets jl_ functions):\n");
-    fprintf(stderr, "************************\n");
-    jlbacktrace();
-    fprintf(stderr, "************************\n\n");
-    jl_exception_clear();
-
 }
+
 
 
 static 
@@ -42,15 +41,14 @@ int cosmosis_init_julia(){
         return 1;
     }
 
-    printf("Initializing Julia\n");
-
     // Initialize
     jl_init();
 
-    // Import the cosmosis Julia
+    // Add the path to the cosmosis modules
     char cmd[256];
-    
-    snprintf(cmd, 256, "push!(LOAD_PATH, \"%s/cosmosis/datablock/julia\")", cosmosis_src_dir);
+    snprintf(cmd, 256, "push!(LOAD_PATH, \"%s/datablock/julia\")", cosmosis_src_dir);
+
+    fflush(stderr); 
     jl_eval_string(cmd);
 
     if (jl_exception_occurred()) {
@@ -58,7 +56,7 @@ int cosmosis_init_julia(){
         return 1;
     }
 
-
+    // Import the cosmosis julia module
     snprintf(cmd, 256, "import cosmosis");
     jl_eval_string("import cosmosis");
 
@@ -76,22 +74,15 @@ int cosmosis_init_julia(){
 
 
 julia_module_info * 
-load_module(const char * directory, const char * module_name)
+load_module(const char * directory, const char * module_name, int debug_mode)
 {
     int status = cosmosis_init_julia();
 
     if (status) return NULL;
 
-    char cmd[256];
+    char cmd[512];
     
-    snprintf(cmd, 256, "push!(LOAD_PATH, \"%s\")", directory);
-    jl_eval_string(cmd);
-    if (jl_exception_occurred()) {
-        backtrace("path manipulation 2 (please report)", module_name);
-        return NULL;
-    }
-
-    snprintf(cmd, 256, "import %s", module_name);
+    snprintf(cmd, 256, "include(\"%s/%s.jl\")", directory, module_name);
     jl_eval_string(cmd);
 
     if (jl_exception_occurred()) {
@@ -99,15 +90,22 @@ load_module(const char * directory, const char * module_name)
         return NULL;
     }
 
-    snprintf(cmd, 256, "%s.setup", module_name);
-    jl_value_t * setup = jl_eval_string(cmd);
+    snprintf(cmd, 256, "%s_setup = cosmosis.stack_tracer_wrapper(%s.setup)", module_name, module_name);
+    jl_eval_string(cmd);
 
     if (jl_exception_occurred()) {
         backtrace("setup function import", module_name);
         return NULL;
     }
 
-    snprintf(cmd, 256, "%s.execute", module_name);
+    if (debug_mode){
+        printf("Using debug mode in Julia modules - execute functions will print stack trace on error\n");
+        snprintf(cmd, 256, "%s_execute = cosmosis.stack_tracer_wrapper(%s.execute)", module_name, module_name);
+    }
+    else{
+        snprintf(cmd, 256, "%s_execute = %s.execute", module_name, module_name);
+    }
+    
     jl_value_t * execute = jl_eval_string(cmd);
 
     if (jl_exception_occurred()) {
@@ -115,30 +113,41 @@ load_module(const char * directory, const char * module_name)
         return NULL;
     }
 
-    snprintf(cmd, 256, "%s.cleanup", module_name);
-    jl_value_t * cleanup = jl_eval_string(cmd);
+
+    snprintf(cmd, 256, "%s_cleanup = cosmosis.stack_tracer_wrapper(%s.cleanup)",module_name,  module_name);
+    jl_eval_string(cmd);
+    int have_cleanup = (jl_exception_occurred()==NULL);
     jl_exception_clear();
 
 
     julia_module_info * info = malloc(sizeof(julia_module_info));
     info->name = strdup(module_name);
-    info->setup = setup;
-    info->execute = execute;
-    info->cleanup = cleanup;
+    snprintf(cmd, 256, "%s_execute", module_name);
+    info->execute = strdup(cmd);
+    snprintf(cmd, 256, "%s_setup", module_name);
+    info->setup = strdup(cmd);
+    if (have_cleanup){
+        snprintf(cmd, 256, "%s_cleanup", module_name);
+        info->cleanup = strdup(cmd);
+    }
+    info->debug_mode = debug_mode;
+
 
     return info;
-
-
 }
-    
+
+
 void * run_setup(julia_module_info * info, void * options)
 {
-
     jl_value_t * options_jl = jl_box_voidpointer(options);
-    jl_value_t * config = jl_call1(info->setup, options_jl);
+    jl_value_t * setup = jl_eval_string(info->setup);
+    jl_value_t * config = jl_call1(setup, options_jl);
+    jl_value_t * ex = jl_exception_occurred();
 
-    if (jl_exception_occurred()){
-        backtrace("setup function call", info->name);
+    if (ex){
+        fprintf(stderr, "\nError in setup function:\n~~~~~~~~~~\n");
+        jl_static_show(jl_stderr_stream(), ex);
+        fprintf(stderr, "\n~~~~~~~~~~\n");
         return NULL;
     }
 
@@ -146,6 +155,7 @@ void * run_setup(julia_module_info * info, void * options)
         fprintf(stderr, "Note: setup function in %s did not return a value - this may be a mistake.\n", info->name);
         return NULL;
     }
+
 
     return (void*)config;
 }
@@ -156,13 +166,17 @@ int run_execute(julia_module_info * info, void * block, void * config)
 
     jl_value_t * block_jl = jl_box_voidpointer(block);
     jl_value_t * config_jl = (jl_value_t*) config;
-
     jl_value_t * args[2] = {block_jl, config_jl};
-    jl_value_t * status_jl = jl_call(info->execute, args, 2);
-    
+    jl_value_t * execute = jl_eval_string(info->execute);
+    jl_value_t * status_jl = jl_call(execute, args, 2);
+
 
     if (jl_exception_occurred()){
-        backtrace("execute function call", info->name);
+        // If we are in debug mode then a stack trace has already been printed.
+        // Otherwise print an error message suggesting they enable it.
+        if (!info->debug_mode){
+            fprintf(stderr, "Error in Julia execution. Set verbosity to 'noisy' or 'debug' for more stack trace\n");
+        }
         return 1;
     }
 
@@ -193,11 +207,10 @@ int run_cleanup(julia_module_info * info, void * config)
 
     if (info->cleanup==NULL) return 0;
     jl_value_t * config_jl = (jl_value_t*) config;
-
-    jl_call1(info->cleanup, config_jl);
+    jl_value_t * cleanup = jl_eval_string(info->cleanup);
+    jl_call1(cleanup, config_jl);
 
     if (jl_exception_occurred()){
-        backtrace("cleanup function call", info->name);
         return 1;
     }
 

@@ -1,7 +1,6 @@
 import ctypes
-import sys
 import os
-
+from .. import logs
 
 
 
@@ -21,7 +20,8 @@ class JuliaModule(object):
         module_name = filename[:-3]
         self.setup_library()
         print("Loading module")
-        self.info = self.lib.load_module(dirname.encode('ascii'), module_name.encode('ascii'))
+        debug_mode = 1 if logs.is_enabled_for(logs.NOISY) else 0
+        self.info = self.lib.load_module(dirname.encode('ascii'), module_name.encode('ascii'), debug_mode)
         if not self.info:
             raise ValueError("Error loading Julia module at {}".format(filepath))
 
@@ -38,7 +38,7 @@ class JuliaModule(object):
         cls.lib = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
         cls.lib.load_module.restype = JuliaModuleInfoPtr
-        cls.lib.load_module.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+        cls.lib.load_module.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
 
         cls.lib.run_setup.argtypes = [JuliaModuleInfoPtr, ctypes.c_voidp]
         cls.lib.run_setup.restype = ctypes.c_voidp

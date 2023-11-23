@@ -46,6 +46,13 @@ cc_headers = [
 
 datablock_libs = ["datablock/libcosmosis.so"]
 
+
+
+if os.environ.get("COSMOSIS_JULIA_FLAGS", ""):
+    julia_files = ["runtime/julia_modules/libcosmosis_julia.so", "datablock/julia/cosmosis.jl"]
+else:
+    julia_files = []
+
 sampler_libs = ["samplers/multinest/multinest_src/libnest3.so",
                 "samplers/multinest/multinest_src/libnest3_mpi.so",
                 "samplers/polychord/polychord_src/libchord.so",
@@ -199,7 +206,7 @@ requirements = [
 
 all_package_files = (datablock_libs + sampler_libs
                             + c_headers + cc_headers + f90_mods 
-                            + compilers_config + testing_files + other_files)
+                            + compilers_config + testing_files + other_files + julia_files)
 
 setuptools.setup(name = 'cosmosis',
     description       = "The CosmoSIS parameter estimation library.",
