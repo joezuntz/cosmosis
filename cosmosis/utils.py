@@ -314,34 +314,41 @@ def get_git_revision_dulwich(directory):
 
 
 def get_git_revision(directory):
-    # Turn e.g. $COSMOSIS_SRC_DIR into a proper path
-    directory = os.path.expandvars(directory)
-    if not os.path.isdir(directory):
+    try:
+        # Turn e.g. $COSMOSIS_SRC_DIR into a proper path
+        directory = os.path.expandvars(directory)
+        if not os.path.isdir(directory):
+            return ""
+
+        if dulwich is not None:
+            return get_git_revision_dulwich(directory)
+
+        if os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]:
+            return ""
+
+        # this git command gives the current commit ID of the
+        # directory it is run from
+        cmd = "git rev-parse HEAD".split()
+
+        # run, capturing stderr and stdout to read the hash from
+        p = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
+            cwd=directory)
+
+        # Read stdout.  Discard stderr, which will be None
+        rev, _ = p.communicate()
+
+        # If there are any errors then we ignore everything
+        if p.returncode:
+            return ""
+        # There shouldn't be any newlines here, but in case there are in future
+        # we replace them with spaces to avoid messing up output file formats
+        return rev.decode('utf-8').strip().replace("\n", " ")
+    
+    # It's usually bad practice to catch all exceptions, but we really don't
+    # want to crash if we can't get the metadata.
+    except Exception as e:
+        print(f"Unable to get metadata on git revision for {directory}: error {e}")
         return ""
-
-    if dulwich is not None:
-        return get_git_revision_dulwich(directory)
-
-    if os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]:
-        return ""
-
-    # this git command gives the current commit ID of the
-    # directory it is run from
-    cmd = "git rev-parse HEAD".split()
-
-    # run, capturing stderr and stdout to read the hash from
-    p = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
-        cwd=directory)
-
-    # Read stdout.  Discard stderr, which will be None
-    rev, _ = p.communicate()
-
-    # If there are any errors then we ignore everything
-    if p.returncode:
-        return ""
-    # There shouldn't be any newlines here, but in case there are in future
-    # we replace them with spaces to avoid messing up output file formats
-    return rev.decode('utf-8').strip().replace("\n", " ")
 
 
 
