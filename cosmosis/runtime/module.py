@@ -5,7 +5,7 @@ import sys
 import ctypes
 from ..datablock import option_section, DataBlock, SectionOptions
 from ..utils import underline
-
+from functools import partial
 
 MODULE_TYPE_EXECUTE_SIMPLE = "execute"
 MODULE_TYPE_EXECUTE_CONFIG = "execute_config"
@@ -308,6 +308,48 @@ class Module(object):
                                  "was unable to load it.  Error was %s" %
                                  (filepath, error))
             sys.path.pop(0)
+            if filepath.endswith(".jax.py"):
+                import jax
+                # JIT stuff
+                # If library has an "inputs" attribute then we use that
+                # to decide on the inputs
+                # otherwise it must have a "read_inputs" function instead.
+                if hasattr(library, "inputs"):
+                    if hasattr(library, "read_inputs"):
+                        raise SetupError("Your JAX module has both inputs and read_inputs. Use one ")
+                    def read_inputs(block, config):
+                        inputs = {}
+                        for section, key in library.inputs:
+                            inputs[section, key] = block[section, key]
+                        return inputs
+                    library.read_inputs = read_inputs
+
+
+                # JIT the execute method
+                library._original_execute = jax.jit(library.execute, static_argnums=(1,))
+                jac_mode = getattr(library, "jacobian_mode", "none")
+                jacobian
+                if hasattr(library, "derivative"):
+                    if not callable(library, deriative):
+                        raise SetupError("derivative must be a function")
+                if deriv_mode == "none" or hasattr(library, "jacobian"):
+                    def execute(block, config):
+                        inputs = library.read_inputs(block, config)
+                        outputs = library._original_execute(inputs)
+                        for (section, key), value in outputs.items():
+                            block[section, key] = value
+                        return 0
+
+                else:
+                    if deriv_mode == "forward":
+                        library._jacobian = jax.jacfwd(library._original)
+                    elif deriv_mode == "reverse":
+                        library._jacobian = jax.jacrev(library._original)
+                    else:
+                        raise ValueError("derivative_mode must be 'forward' or 'reverse'")
+                
+
+                library.execute = execute
         else:
             raise SetupError(f"You specified a path {filepath} for a module. "
                              "I do not know what kind of module this is "
@@ -438,7 +480,7 @@ class ClassModule(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def execute(self, block, config):
+    def execute(self, block):
         return 0
 
     def cleanup(config):
@@ -460,3 +502,71 @@ class ClassModule(metaclass=abc.ABCMeta):
 
 
         return FunctionModule(name, setup, execute, cleanup)
+
+
+class JAXModule(metaclass=abc.ABCMeta):
+    jit_functions = {}
+    @abc.abstractmethod
+    def __init__(self, options):
+        pass
+
+    @classmethod
+    def __init_subclass__(cls):
+        import jax
+        super().__init_subclass__()
+        
+        execute = jax.jit(lambda x: cls.execute(x))
+        cls.jit_functions["_execute"] = execute
+        if hasattr(cls, "derivatives"):
+            if cls.derivatives == "forward":
+                cls.jit_functions["derivative"] = jax.jacfwd(execute)
+            elif cls.derivatives == "reverse":
+                cls.jit_functions["derivative"] = jax.jacrev(execute)
+            else:
+                raise ValueError("derivative must be 'forward' or 'reverse'")
+        
+
+    @abc.abstractmethod
+    def read_inputs(self, block):
+        return {}
+
+    @staticmethod
+    @abc.abstractmethod
+    def execute(inputs):
+        return {}
+
+    def cleanup(config):
+        pass
+
+    @classmethod
+    def build_module(cls):
+        def setup(options):
+            options = SectionOptions(options)
+            mod = cls(options)
+            return mod
+
+        def execute(block, mod):
+            inputs = mod.read_inputs(block)
+            _execute = mod.jit_functions["_execute"]
+            outputs = _execute(inputs)
+            for (section, key), value in outputs.items():
+                block[section, key] = value
+
+            derivative = mod.jit_functions.get("derivative", None)
+            if derivative is None:
+                return 0
+
+            derivs = derivative(inputs)
+            print(derivs['theory', 'x'].keys())
+
+            for (out_section, out_key), deriv_dict in derivs.items():
+                for (in_section, in_key), deriv in deriv_dict.items():
+                    print("putting derivative", out_section, out_key, in_section, in_key)
+                    block.put_derivative(out_section, out_key, in_section, in_key, deriv)
+            return 0
+
+        def cleanup(mod):
+            mod.cleanup()
+
+
+        return setup, execute, cleanup

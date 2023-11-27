@@ -1370,23 +1370,23 @@ class DataBlock(object):
 
 	@classmethod
 	def from_string(cls, s):
-		if sys.version_info[0]==2:
-			sio = BytesIO(s)
-		else:
-			sio = StringIO(s)
+		sio = StringIO(s)
 		return cls.from_yaml(sio)
 
 	def to_string(self):
-		if sys.version_info[0]==2:
-			sio = BytesIO()
-		else:
-			sio = StringIO()
+		sio = StringIO()
 		self.to_yaml(sio)
 		sio.seek(0)
 		return sio.read()
 
 	def __reduce__(self):
 		return (datablock_from_string, (self.to_string(),))
+	
+	def put_derivative(self, out_section, out_key, in_section, in_key, deriv):
+		sec = f"{out_section}_derivative"
+		key = f"{out_key}_wrt_{in_section}_{in_key}"
+		self.put(sec, key, deriv)
+
 
 
 # This is not needed under python 3, where, the __reduce__ method
