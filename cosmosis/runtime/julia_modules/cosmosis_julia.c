@@ -82,7 +82,7 @@ load_module(const char * directory, const char * module_name, int debug_mode)
 
     char cmd[512];
     
-    snprintf(cmd, 256, "include(\"%s/%s.jl\")", directory, module_name);
+    snprintf(cmd, 512, "include(\"%s/%s.jl\")", directory, module_name);
     jl_eval_string(cmd);
 
     if (jl_exception_occurred()) {
@@ -90,46 +90,45 @@ load_module(const char * directory, const char * module_name, int debug_mode)
         return NULL;
     }
 
-    snprintf(cmd, 256, "%s_setup = cosmosis.stack_tracer_wrapper(%s.setup)", module_name, module_name);
+    snprintf(cmd, 512, "%s_setup, %s_execute, %s_cleanup = cosmosis.make_julia_module(%s)", module_name, module_name, module_name, module_name);
+
     jl_eval_string(cmd);
 
     if (jl_exception_occurred()) {
-        backtrace("setup function import", module_name);
+        backtrace("construction and wrapping of julia module", module_name);
         return NULL;
     }
 
-    if (debug_mode){
-        printf("Using debug mode in Julia modules - execute functions will print stack trace on error\n");
-        snprintf(cmd, 256, "%s_execute = cosmosis.stack_tracer_wrapper(%s.execute)", module_name, module_name);
-    }
-    else{
-        snprintf(cmd, 256, "%s_execute = %s.execute", module_name, module_name);
-    }
+    // if (debug_mode){
+    //     printf("Using debug mode in Julia modules - execute functions will print stack trace on error\n");
+    //     snprintf(cmd, 512, "%s_execute = cosmosis.stack_tracer_wrapper(%s.execute)", module_name, module_name);
+    // }
+    // else{
+    //     snprintf(cmd, 512, "%s_execute = %s.execute", module_name, module_name);
+    // }
     
-    jl_value_t * execute = jl_eval_string(cmd);
+    // jl_value_t * execute = jl_eval_string(cmd);
 
-    if (jl_exception_occurred()) {
-        backtrace("execute function import", module_name);
-        return NULL;
-    }
+    // if (jl_exception_occurred()) {
+    //     backtrace("execute function import", module_name);
+    //     return NULL;
+    // }
 
 
-    snprintf(cmd, 256, "%s_cleanup = cosmosis.stack_tracer_wrapper(%s.cleanup)",module_name,  module_name);
-    jl_eval_string(cmd);
-    int have_cleanup = (jl_exception_occurred()==NULL);
-    jl_exception_clear();
+    // snprintf(cmd, 512, "%s_cleanup = cosmosis.stack_tracer_wrapper(%s.cleanup)",module_name,  module_name);
+    // jl_eval_string(cmd);
+    // int have_cleanup = (jl_exception_occurred()==NULL);
+    // jl_exception_clear();
 
 
     julia_module_info * info = malloc(sizeof(julia_module_info));
     info->name = strdup(module_name);
-    snprintf(cmd, 256, "%s_execute", module_name);
+    snprintf(cmd, 512, "%s_execute", module_name);
     info->execute = strdup(cmd);
-    snprintf(cmd, 256, "%s_setup", module_name);
+    snprintf(cmd, 512, "%s_setup", module_name);
     info->setup = strdup(cmd);
-    if (have_cleanup){
-        snprintf(cmd, 256, "%s_cleanup", module_name);
-        info->cleanup = strdup(cmd);
-    }
+    snprintf(cmd, 512, "%s_cleanup", module_name);
+    info->cleanup = strdup(cmd);
     info->debug_mode = debug_mode;
 
 

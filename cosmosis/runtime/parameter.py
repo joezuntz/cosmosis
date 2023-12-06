@@ -182,7 +182,9 @@ class Parameter(object):
         else:
             raise ValueError("parameter value {} for {} not normalized".format(p,self))
 
-
+    def log_prior_derivative(self, x):
+        u"""Return the derivative of the log prior at the start value."""
+        return self.prior.log_pdf_derivative(x)
 
     def denormalize_from_prior(self, p):
         u"""Take `p` as a probability, and find the value which has that (cumulated) probability in the prior distribution."""
@@ -191,7 +193,12 @@ class Parameter(object):
         else:
             raise ValueError("parameter value {} for {} not normalized".format(p,self))
 
-
+    def transform_to_unbounded(self, p):
+        u"""Transform a parameter value from the range [0,1] to an unbounded value."""
+        if self.is_fixed():
+            raise ValueError("Cannot transform fixed parameter to unbounded range")
+        else:
+            return self.prior.transform_to_unbounded(p)
 
     def evaluate_prior(self, p):
         u"""Get the probability of `p` coming from the prior distribution."""

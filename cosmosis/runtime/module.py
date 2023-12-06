@@ -3,6 +3,7 @@ import os
 import abc
 import sys
 import ctypes
+import numpy as np
 from ..datablock import option_section, DataBlock, SectionOptions
 from ..utils import underline
 from functools import partial
@@ -308,48 +309,12 @@ class Module(object):
                                  "was unable to load it.  Error was %s" %
                                  (filepath, error))
             sys.path.pop(0)
-            if filepath.endswith(".jax.py"):
-                import jax
-                # JIT stuff
-                # If library has an "inputs" attribute then we use that
-                # to decide on the inputs
-                # otherwise it must have a "read_inputs" function instead.
-                if hasattr(library, "inputs"):
-                    if hasattr(library, "read_inputs"):
-                        raise SetupError("Your JAX module has both inputs and read_inputs. Use one ")
-                    def read_inputs(block, config):
-                        inputs = {}
-                        for section, key in library.inputs:
-                            inputs[section, key] = block[section, key]
-                        return inputs
-                    library.read_inputs = read_inputs
-
-
-                # JIT the execute method
-                library._original_execute = jax.jit(library.execute, static_argnums=(1,))
-                jac_mode = getattr(library, "jacobian_mode", "none")
-                jacobian
-                if hasattr(library, "derivative"):
-                    if not callable(library, deriative):
-                        raise SetupError("derivative must be a function")
-                if deriv_mode == "none" or hasattr(library, "jacobian"):
-                    def execute(block, config):
-                        inputs = library.read_inputs(block, config)
-                        outputs = library._original_execute(inputs)
-                        for (section, key), value in outputs.items():
-                            block[section, key] = value
-                        return 0
-
-                else:
-                    if deriv_mode == "forward":
-                        library._jacobian = jax.jacfwd(library._original)
-                    elif deriv_mode == "reverse":
-                        library._jacobian = jax.jacrev(library._original)
-                    else:
-                        raise ValueError("derivative_mode must be 'forward' or 'reverse'")
-                
-
-                library.execute = execute
+            force_jax = getattr(library, "cosmosis_jax", None)
+            ends_jax = filepath.endswith("_jax.py")
+            if force_jax not in [None, False, True]:
+                raise SetupError(f"cosmosis_jax setting in a module must be left blank or set to True or False in {filepath}")
+            if (ends_jax and force_jax is not False) or (force_jax is True):
+                jaxify_module(library, filepath)
         else:
             raise SetupError(f"You specified a path {filepath} for a module. "
                              "I do not know what kind of module this is "
@@ -504,69 +469,133 @@ class ClassModule(metaclass=abc.ABCMeta):
         return FunctionModule(name, setup, execute, cleanup)
 
 
-class JAXModule(metaclass=abc.ABCMeta):
-    jit_functions = {}
-    @abc.abstractmethod
-    def __init__(self, options):
-        pass
+class FrozenArray:
+    def __init__(self, x):
+        self.x = x.tobytes()
+        self.shape = x.shape
+        self.dtype = x.dtype
+    def restore(self):
+        return np.frombuffer(self.x, dtype=self.dtype).reshape(self.shape)
 
-    @classmethod
-    def __init_subclass__(cls):
-        import jax
-        super().__init_subclass__()
-        
-        execute = jax.jit(lambda x: cls.execute(x))
-        cls.jit_functions["_execute"] = execute
-        if hasattr(cls, "derivatives"):
-            if cls.derivatives == "forward":
-                cls.jit_functions["derivative"] = jax.jacfwd(execute)
-            elif cls.derivatives == "reverse":
-                cls.jit_functions["derivative"] = jax.jacrev(execute)
-            else:
-                raise ValueError("derivative must be 'forward' or 'reverse'")
-        
+class FrozenConfig:
+    def __init__(self, d):
+        import frozendict
+        import jax.numpy as jnp
+        f = {}
+        for k, v in d.items():
+            if isinstance(v, np.ndarray) or isinstance(v, jnp.ndarray) or isinstance(v, list):
+                v = FrozenArray(v)
+            if isinstance(v, dict):
+                raise ValueError("Config must be flat dictionary for JAX modules")
+            f[k] = v
+        self.d = frozendict.frozendict(f)
 
-    @abc.abstractmethod
-    def read_inputs(self, block):
-        return {}
+    def __getitem__(self, key):
+        v = self.d[key]
+        if isinstance(v, FrozenArray):
+            v = v.restore()
+        return v
 
-    @staticmethod
-    @abc.abstractmethod
-    def execute(inputs):
-        return {}
+    def __hash__(self):
+        return hash(self.d)
 
-    def cleanup(config):
-        pass
 
-    @classmethod
-    def build_module(cls):
-        def setup(options):
-            options = SectionOptions(options)
-            mod = cls(options)
-            return mod
+def jaxify_module(library, filepath):
+    import jax
+    import frozendict
+    # JIT stuff
+    # If library has an "inputs" attribute then we use that
+    # to decide on the inputs
+    # otherwise it must have a "select_inputs" function instead.
+    if hasattr(library, "inputs"):
+        if hasattr(library, "select_inputs"):
+            raise SetupError(f"Your JAX module {filepath} has both 'inputs' and 'select_inputs'. Use only one.")
+        def select_inputs(config):
+            return library.inputs
+        library.select_inputs = select_inputs
+    else:
+        if not hasattr(library, "select_inputs"):
+            raise SetupError(f"Your JAX module {filepath} must have either 'inputs' or 'select_inputs'.")
 
-        def execute(block, mod):
-            inputs = mod.read_inputs(block)
-            _execute = mod.jit_functions["_execute"]
-            outputs = _execute(inputs)
+    def read_inputs(block, config):
+        inputs = {}
+        for (section, key) in library.select_inputs(config):
+            inputs[section, key] = block[section, key]
+        return inputs
+    
+    library.read_inputs = read_inputs
+
+
+    # Now we wrap the module's setup function.
+    # This function must return a flat dictionary of config options for jax modules
+    library._original_setup = library.setup
+    def setup(options):
+        config = library._original_setup(options)
+        return FrozenConfig(config)
+    library.setup = setup
+
+    # Now we wrap the execute function. We are going to compile the original execute with JIT
+    # and then write a wrapper that reads selected inputs from the block, calls the original jitted
+    # function, and then writes the outputs to the block.
+    do_jit = getattr(library, "cosmosis_jit", True)
+    if do_jit:
+        library._original_execute = jax.jit(library.execute, static_argnames=["config"])
+    else:
+        library._original_execute = library.execute
+
+    # We will also automatically compute the jacobian of this function.
+    # User can disable this with cosmosis_autodiff=False inside the module
+    jac_mode = getattr(library, "cosmosis_autodiff", "forward")
+    if jac_mode not in ["forward", "reverse", False]:
+        raise SetupError(f"cosmosis_autodiff setting in a module must be left blank or set to False, 'forward' or 'reverse' in {filepath}")
+
+    
+    if getattr(library, "execute_jacobian", None):
+        # If the user wrote their jacobian function already themselves then we use that
+        have_jac = True
+    elif do_jit and jac_mode:
+        # Otherwise, unless the user has explicitly disabled it, e.g. for debugging,
+        # we will use JAX to generate the jacobian function automatically
+        have_jac = True
+        if jac_mode == "forward":
+            library.execute_jacobian = jax.jacfwd(library._original_execute)
+        else:
+            library.execute_jacobian = jax.jacrev(library._original_execute)
+    else:
+        have_jac = False
+    
+    
+    # Now we can write the wrapper at last. It uses the JITed execute function
+    # and, if written or generated, the execute_jacobian function to compute the jacobian.
+    if have_jac:
+        def execute(block, config):
+            # This is a JAX wrapper around the execute function in
+            # the module. It reads the inputs, calls the original
+            # execute function, and then writes the outputs to the block.
+            # It is defined dynamically within cosmosis
+            inputs = library.read_inputs(block, config)
+            outputs = library._original_execute(inputs, config)
             for (section, key), value in outputs.items():
                 block[section, key] = value
 
-            derivative = mod.jit_functions.get("derivative", None)
-            if derivative is None:
-                return 0
-
-            derivs = derivative(inputs)
-            print(derivs['theory', 'x'].keys())
-
+            derivs = library.execute_jacobian(inputs, config)
             for (out_section, out_key), deriv_dict in derivs.items():
                 for (in_section, in_key), deriv in deriv_dict.items():
-                    print("putting derivative", out_section, out_key, in_section, in_key)
                     block.put_derivative(out_section, out_key, in_section, in_key, deriv)
-            return 0
+            
+            return 0    
+    else:
+        def execute(block, config):
+            # This is a JAX wrapper around the execute function in
+            # the module. It reads the inputs, calls the original
+            # execute function, and then writes the outputs to the block.
+            # It is defined dynamically within cosmosis
+            inputs = library.read_inputs(block, config)
+            outputs = library._original_execute(inputs, config)
+            for (section, key), value in outputs.items():
+                block[section, key] = value
+            
+            return 0    
 
-        def cleanup(mod):
-            mod.cleanup()
 
-
-        return setup, execute, cleanup
+    library.execute = execute

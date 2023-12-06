@@ -1193,7 +1193,8 @@ class LikelihoodPipeline(Pipeline):
             r.prior = -np.inf
 
         if not np.isfinite(r.prior):
-            logs.info("Proposed outside bounds: prior -infinity")
+            bad_params = [pr[0] for pr in priors if not np.isfinite(pr[1])]
+            logs.info("Proposed outside bounds: prior -infinity for parameters: {}".format(bad_params))
             return r
         try:
             like, r.extra, r.block = self.likelihood(p, return_data=True, all_params=all_params)
@@ -1454,6 +1455,12 @@ class LikelihoodPipeline(Pipeline):
 
         pipeline = cls(config, values = values, modules=[mod], priors=priors)
         return pipeline
+    
+    def log_prior_derivatives(self, p):
+        """Compute the derivatives of the log-prior with respect to each parameter."""
+        grad = np.zeros_like(p)
+        for i, (p_i, par) in enumerate(zip(p, self.varied_params)):
+            grad[i] = par.prior_derivative(p_i)
 
 
 

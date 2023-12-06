@@ -1384,8 +1384,31 @@ class DataBlock(object):
 	
 	def put_derivative(self, out_section, out_key, in_section, in_key, deriv):
 		sec = f"{out_section}_derivative"
-		key = f"{out_key}_wrt_{in_section}_{in_key}"
+		key = f"{out_key}_wrt_{in_section}-{in_key}"
 		self.put(sec, key, deriv)
+
+	def get_derivative(self, out_section, out_key, in_section, in_key):
+		sec = f"{out_section}_derivative"
+		key = f"{out_key}_wrt_{in_section}-{in_key}"
+		return self.get(sec, key)
+	
+	def get_derivatives(self, section, key):
+		sec = f"{section}_derivative"
+		derivs = []
+		for _, k in self.keys(sec):
+			pre = f"{key}_wrt_"
+			if k.startswith(pre):
+				k1 = k.removeprefix(pre)
+				in_section, in_key = k1.split('-')
+				derivs.append((in_section, in_key, self[sec, k]))
+		return derivs
+
+	def has_derivative(self, out_section, out_key, in_section, in_key):
+		sec = f"{out_section}_derivative"
+		key = f"{out_key}_wrt_{in_section}-{in_key}"
+		return self.has_value(sec, key)
+				
+
 
 
 
