@@ -73,10 +73,10 @@ def leapfrog(theta, r, grad, epsilon, f):
     # make new step in theta
     thetaprime = theta + epsilon * rprime
     #compute new gradient
-    logpprime, gradprime = f(thetaprime)
+    logpprime, gradprime, derived = f(thetaprime)
     # make half step in r again
     rprime = rprime + 0.5 * epsilon * gradprime
-    return thetaprime, rprime, gradprime, logpprime
+    return thetaprime, rprime, gradprime, logpprime, derived
 
 
 def find_reasonable_epsilon(theta0, grad0, logp0, f):
@@ -85,14 +85,14 @@ def find_reasonable_epsilon(theta0, grad0, logp0, f):
     r0 = np.random.normal(0., 1., len(theta0))
 
     # Figure out what direction we should be moving epsilon.
-    _, rprime, gradprime, logpprime = leapfrog(theta0, r0, grad0, epsilon, f)
+    _, rprime, gradprime, logpprime, _ = leapfrog(theta0, r0, grad0, epsilon, f)
     # brutal! This trick make sure the step is not huge leading to infinite
     # values of the likelihood. This could also help to make sure theta stays
     # within the prior domain (if any)
     k = 1.
     while np.isinf(logpprime) or np.isinf(gradprime).any():
         k *= 0.5
-        _, rprime, _, logpprime = leapfrog(theta0, r0, grad0, epsilon * k, f)
+        _, rprime, _, logpprime, _ = leapfrog(theta0, r0, grad0, epsilon * k, f)
 
     epsilon = 0.5 * k * epsilon
 
@@ -104,7 +104,7 @@ def find_reasonable_epsilon(theta0, grad0, logp0, f):
     # while ( (acceptprob ** a) > (2. ** (-a))):
     while a * logacceptprob > -a * np.log(2):
         epsilon = epsilon * (2. ** a)
-        _, rprime, _, logpprime = leapfrog(theta0, r0, grad0, epsilon, f)
+        _, rprime, _, logpprime, _ = leapfrog(theta0, r0, grad0, epsilon, f)
         # acceptprob = np.exp(logpprime - logp0 - 0.5 * ( np.dot(rprime, rprime.T) - np.dot(r0, r0.T)))
         logacceptprob = logpprime-logp0-0.5*(np.dot(rprime, rprime)-np.dot(r0,r0))
 
@@ -137,7 +137,7 @@ def build_tree(theta, r, grad, v, j, epsilon, f, joint0):
     """The main recursion."""
     if (j == 0):
         # Base case: Take a single leapfrog step in the direction v.
-        thetaprime, rprime, gradprime, logpprime = leapfrog(theta, r, grad, v * epsilon, f)
+        thetaprime, rprime, gradprime, logpprime, derivedprime = leapfrog(theta, r, grad, v * epsilon, f)
         jointprime = logpprime - 0.5 * np.dot(rprime, rprime.T)
         # Is the simulation wildly inaccurate?
         sprime = jointprime - joint0 > -1000
@@ -157,13 +157,13 @@ def build_tree(theta, r, grad, v, j, epsilon, f, joint0):
         nalphaprime = 1
     else:
         # Recursion: Implicitly build the height j-1 left and right subtrees.
-        thetaminus, rminus, gradminus, thetaplus, rplus, gradplus, thetaprime, gradprime, logpprime, sprime, alphaprime, nalphaprime, logptree = build_tree(theta, r, grad, v, j - 1, epsilon, f, joint0)
+        thetaminus, rminus, gradminus, thetaplus, rplus, gradplus, thetaprime, gradprime, logpprime, sprime, alphaprime, nalphaprime, logptree, derivedprime = build_tree(theta, r, grad, v, j - 1, epsilon, f, joint0)
         # No need to keep going if the stopping criteria were met in the first subtree.
         if sprime:
             if v == -1:
-                thetaminus, rminus, gradminus, _, _, _, thetaprime2, gradprime2, logpprime2, sprime2, alphaprime2, nalphaprime2, logptree2 = build_tree(thetaminus, rminus, gradminus, v, j - 1, epsilon, f, joint0)
+                thetaminus, rminus, gradminus, _, _, _, thetaprime2, gradprime2, logpprime2, sprime2, alphaprime2, nalphaprime2, logptree2, derivedprime2 = build_tree(thetaminus, rminus, gradminus, v, j - 1, epsilon, f, joint0)
             else:
-                _, _, _, thetaplus, rplus, gradplus, thetaprime2, gradprime2, logpprime2, sprime2, alphaprime2, nalphaprime2, logptree2 = build_tree(thetaplus, rplus, gradplus, v, j - 1, epsilon, f, joint0)
+                _, _, _, thetaplus, rplus, gradplus, thetaprime2, gradprime2, logpprime2, sprime2, alphaprime2, nalphaprime2, logptree2, derivedprime2 = build_tree(thetaplus, rplus, gradplus, v, j - 1, epsilon, f, joint0)
             # Conpute total probability of this trajectory
             logptot = np.logaddexp(logptree, logptree2)
             # Choose which subtree to propagate a sample up from.
@@ -171,6 +171,7 @@ def build_tree(theta, r, grad, v, j, epsilon, f, joint0):
                 thetaprime = thetaprime2[:]
                 gradprime = gradprime2[:]
                 logpprime = logpprime2
+                derivedprime = derivedprime2
             logptree = logptot
             # Update the stopping criterion.
             sprime = sprime and sprime2 and stop_criterion(thetaminus, thetaplus, rminus, rplus)
@@ -178,9 +179,9 @@ def build_tree(theta, r, grad, v, j, epsilon, f, joint0):
             alphaprime = alphaprime + alphaprime2
             nalphaprime = nalphaprime + nalphaprime2
 
-    return thetaminus, rminus, gradminus, thetaplus, rplus, gradplus, thetaprime, gradprime, logpprime, sprime, alphaprime, nalphaprime, logptree
+    return thetaminus, rminus, gradminus, thetaplus, rplus, gradplus, thetaprime, gradprime, logpprime, sprime, alphaprime, nalphaprime, logptree, derivedprime
 
-def tree_sample(theta, logp, r0, grad, epsilon, f, joint, maxheight=np.inf):
+def tree_sample(theta, logp, r0, grad, epsilon, f, joint, derived, maxheight=np.inf):
     # initialize the tree
     # Resample u ~ uniform([0, exp(joint)]).
     # Equivalent to (log(u) - joint) ~ exponential(1).
@@ -188,14 +189,17 @@ def tree_sample(theta, logp, r0, grad, epsilon, f, joint, maxheight=np.inf):
 
     thetaminus = theta
     thetaplus = theta
+
     rminus = r0[:]
     rplus = r0[:]
     gradminus = grad[:]
     gradplus = grad[:]
     logptree = 0
+    jumped = 0
 
     j = 0  # initial heigth j = 0
     s = 1  # Main loop: will keep going until s == 0.
+    
 
     while (s == 1 and j < maxheight):
         # Choose a direction. -1 = backwards, 1 = forwards.
@@ -203,22 +207,21 @@ def tree_sample(theta, logp, r0, grad, epsilon, f, joint, maxheight=np.inf):
 
         # Double the size of the tree.
         if (v == -1):
-            thetaminus, rminus, gradminus, _, _, _, thetaprime, gradprime, logpprime, sprime, alpha, nalpha, logptree2 = build_tree(
+            thetaminus, rminus, gradminus, _, _, _, thetaprime, gradprime, logpprime, sprime, alpha, nalpha, logptree2, derivedprime = build_tree(
                 thetaminus, rminus, gradminus, v, j, epsilon, f, joint)
         else:
-            _, _, _, thetaplus, rplus, gradplus, thetaprime, gradprime, logpprime, sprime, alpha, nalpha, logptree2 = build_tree(
+            _, _, _, thetaplus, rplus, gradplus, thetaprime, gradprime, logpprime, sprime, alpha, nalpha, logptree2, derivedprime = build_tree(
                 thetaplus, rplus, gradplus, v, j, epsilon, f, joint)
 
         # Use Metropolis-Hastings to decide whether or not to move to a
         # point from the half-tree we just generated.
         logptot = np.logaddexp(logptree, logptree2)
         if sprime and np.log(np.random.uniform()) < logptree2 - logptot:
-            print("Accepting jump to logp =", logpprime, " Probabilliity was:", np.exp(logptree2 - logptot))
             logp = logpprime
             grad = gradprime[:]
             theta = thetaprime
-        else:
-            print("Rejecting jump to logp =", logpprime, " Probabilliity was:", np.exp(logptree2 - logptot))
+            derived = derivedprime
+            jumped += 1
         
         logptree = logptot
         
@@ -226,13 +229,18 @@ def tree_sample(theta, logp, r0, grad, epsilon, f, joint, maxheight=np.inf):
         s = sprime and stop_criterion(thetaminus, thetaplus, rminus, rplus)
         # Increment depth.
         j += 1
-    #print("jumping to:", theta)
-    return alpha, nalpha, theta, grad, logp
+    if jumped:
+        print(f"Accepted {jumped} steps this iteration")
+    return alpha, nalpha, theta, grad, logp, derived
 
 
 class PinNUTS:
-    def __init__(self, f, D, delta=0.6, epsilon=None):
-        self.f = f
+    def __init__(self, f, D, returns_derived_parameters=False, delta=0.6, epsilon=None):
+        if returns_derived_parameters:
+            self.f = f
+        else:
+            self.f = lambda theta: (*f(theta), None)
+        self.returns_derived_parameters = returns_derived_parameters
         self.epsilon = epsilon
         self.gamma = 0.05
         self.delta = delta
@@ -244,6 +252,8 @@ class PinNUTS:
         self.D = D
         self.tuning_steps_taken = 0
         self.tuned = False
+        
+        
 
     def adapt_epsilon(self, alpha, nalpha):
         if self.tuned:
@@ -252,37 +262,49 @@ class PinNUTS:
         eta1 = 1. / float(self.tuning_steps_taken + self.t0)
         self.Hbar = (1. - eta1) * self.Hbar + eta1 * (self.delta - alpha / float(nalpha))
         self.epsilon = exp(self.mu - sqrt(self.tuning_steps_taken) / self.gamma * self.Hbar)
+        print("Tuning step size to epsilon = ", self.epsilon)
 
         eta2 = self.tuning_steps_taken ** -self.kappa
         self.epsilonbar = exp((1. - eta2) * log(self.epsilonbar) + eta2 * log(self.epsilon))
 
     def end_adaptation(self):
+        if self.tuned:
+            return
         self.tuned = True
         self.epsilon = self.epsilonbar
+        print("Setting tuned step size to epsilon = ", self.epsilon)
 
     def sample(self, start, M, Madapt):
         theta = start
-        logp, gradp = self.f(theta)
+        logp, gradp, derived = self.f(theta)
 
         for i in tqdm.trange(Madapt):
-            theta, logp, gradp = self.one_sample(theta, logp, gradp, tune=True)
+            theta, logp, gradp, derived = self.one_sample(theta, logp, gradp, current_derived=derived, tune=True)
         if M == 0:
-            return np.array([theta]), np.array([logp])
+            if self.returns_derived_parameters:
+                return np.array([theta]), np.array([logp]), derived[-1:]
+        derived_params = []
         samples = np.empty((M, self.D), dtype=float)
         samples_logp = np.empty(M, dtype=float)
 
         for i in tqdm.trange(M):
-            theta, logp, gradp = self.one_sample(theta, logp, gradp)
+            theta, logp, gradp, derived = self.one_sample(theta, logp, gradp, current_derived=derived)
             samples[i] = theta
             samples_logp[i] = logp
+            if self.returns_derived_parameters:
+                derived_params.append(derived)
 
-        return samples, samples_logp
+        if self.returns_derived_parameters:
+            return samples, samples_logp, derived_params
+        else:
+            return samples, samples_logp
+            
     
     def set_initial_epsilon(self, theta0, logp, grad):
         self.epsilon = find_reasonable_epsilon(theta0, grad, logp, self.f)
         self.mu = log(10. * self.epsilon)        
 
-    def one_sample(self, current_sample, current_logp, current_grad, tune=False):
+    def one_sample(self, current_sample, current_logp, current_grad, tune=False, current_derived=None):
         # Resample momenta.
         r0 = np.random.normal(0, 1, self.D)
 
@@ -294,7 +316,7 @@ class PinNUTS:
 
 
         # if all fails, the next sample will be the previous one        
-        alpha, nalpha, thetaprime, grad, logp = tree_sample(current_sample, current_logp, r0, current_grad, self.epsilon, self.f, joint, maxheight=10)
+        alpha, nalpha, thetaprime, grad, logp, derived = tree_sample(current_sample, current_logp, r0, current_grad, self.epsilon, self.f, joint, current_derived, maxheight=10)
 
         if tune:
             # Do adaptation of epsilon if we're still doing burn-in.
@@ -303,106 +325,106 @@ class PinNUTS:
             # Adaptation is complete
             self.end_adaptation()
         
-        return thetaprime, logp, grad
+        return thetaprime, logp, grad, derived
     
 
     
 
 
 
-def pinnuts(f, M, Madapt, theta0, delta=0.6, epsilon=None):
-    """
-    Implements the multinomial Euclidean Hamiltonian Monte Carlo sampler
-    described in Betancourt (2016).
+# def pinnuts(f, M, Madapt, theta0, delta=0.6, epsilon=None):
+#     """
+#     Implements the multinomial Euclidean Hamiltonian Monte Carlo sampler
+#     described in Betancourt (2016).
 
-    Runs Madapt steps of burn-in, during which it adapts the step size
-    parameter epsilon, then starts generating samples to return.
+#     Runs Madapt steps of burn-in, during which it adapts the step size
+#     parameter epsilon, then starts generating samples to return.
 
-    Note the initial step size is tricky and not exactly the one from the
-    initial paper.  In fact the initial step size could be given by the user in
-    order to avoid potential problems
+#     Note the initial step size is tricky and not exactly the one from the
+#     initial paper.  In fact the initial step size could be given by the user in
+#     order to avoid potential problems
 
-    INPUTS
-    ------
-    epsilon: float
-        step size
-        see nuts8 if you want to avoid tuning this parameter
+#     INPUTS
+#     ------
+#     epsilon: float
+#         step size
+#         see nuts8 if you want to avoid tuning this parameter
 
-    f: callable
-        it should return the log probability and gradient evaluated at theta
-        logp, grad = f(theta)
+#     f: callable
+#         it should return the log probability and gradient evaluated at theta
+#         logp, grad = f(theta)
 
-    M: int
-        number of samples to generate.
+#     M: int
+#         number of samples to generate.
 
-    Madapt: int
-        the number of steps of burn-in/how long to run the dual averaging
-        algorithm to fit the step size epsilon.
+#     Madapt: int
+#         the number of steps of burn-in/how long to run the dual averaging
+#         algorithm to fit the step size epsilon.
 
-    theta0: ndarray[float, ndim=1]
-        initial guess of the parameters.
+#     theta0: ndarray[float, ndim=1]
+#         initial guess of the parameters.
 
-    KEYWORDS
-    --------
-    delta: float
-        targeted acceptance fraction
+#     KEYWORDS
+#     --------
+#     delta: float
+#         targeted acceptance fraction
 
-    OUTPUTS
-    -------
-    samples: ndarray[float, ndim=2]
-    M x D matrix of samples generated by NUTS.
-    note: samples[0, :] = theta0
-    """
+#     OUTPUTS
+#     -------
+#     samples: ndarray[float, ndim=2]
+#     M x D matrix of samples generated by NUTS.
+#     note: samples[0, :] = theta0
+#     """
 
-    if len(np.shape(theta0)) > 1:
-        raise ValueError('theta0 is expected to be a 1-D array')
+#     if len(np.shape(theta0)) > 1:
+#         raise ValueError('theta0 is expected to be a 1-D array')
 
-    D = len(theta0)
-    samples = np.empty((M + Madapt, D), dtype=float)
-    lnprob = np.empty(M + Madapt, dtype=float)
+#     D = len(theta0)
+#     samples = np.empty((M + Madapt, D), dtype=float)
+#     lnprob = np.empty(M + Madapt, dtype=float)
 
-    logp, grad = f(theta0)
-    samples[0, :] = theta0
-    lnprob[0] = logp
+#     logp, grad = f(theta0)
+#     samples[0, :] = theta0
+#     lnprob[0] = logp
 
-    # Choose a reasonable first epsilon by a simple heuristic.
-    if epsilon is None:
-        epsilon = find_reasonable_epsilon(theta0, grad, logp, f)
+#     # Choose a reasonable first epsilon by a simple heuristic.
+#     if epsilon is None:
+#         epsilon = find_reasonable_epsilon(theta0, grad, logp, f)
 
-    # Parameters to the dual averaging algorithm.
-    gamma = 0.05
-    t0 = 10
-    kappa = 0.75
-    mu = log(10. * epsilon)
+#     # Parameters to the dual averaging algorithm.
+#     gamma = 0.05
+#     t0 = 10
+#     kappa = 0.75
+#     mu = log(10. * epsilon)
 
-    # Initialize dual averaging algorithm.
-    epsilonbar = 1
-    Hbar = 0
+#     # Initialize dual averaging algorithm.
+#     epsilonbar = 1
+#     Hbar = 0
 
-    for m in tqdm.trange(1, M + Madapt):
-        # Resample momenta.
-        r0 = np.random.normal(0, 1, D)
+#     for m in tqdm.trange(1, M + Madapt):
+#         # Resample momenta.
+#         r0 = np.random.normal(0, 1, D)
 
-        #joint lnp of theta and momentum r
-        joint = logp - 0.5 * np.dot(r0, r0.T)
+#         #joint lnp of theta and momentum r
+#         joint = logp - 0.5 * np.dot(r0, r0.T)
 
-        # if all fails, the next sample will be the previous one
-        samples[m, :] = samples[m - 1, :]
-        lnprob[m] = lnprob[m - 1]
+#         # if all fails, the next sample will be the previous one
+#         samples[m, :] = samples[m - 1, :]
+#         lnprob[m] = lnprob[m - 1]
         
-        alpha, nalpha, thetaprime, grad, logp = tree_sample(samples[m - 1, :], lnprob[m - 1], r0, grad, epsilon, f, joint, maxheight=10)
-        samples[m, :] = thetaprime[:]
-        lnprob[m] = logp
+#         alpha, nalpha, thetaprime, grad, logp = tree_sample(samples[m - 1, :], lnprob[m - 1], r0, grad, epsilon, f, joint, maxheight=10)
+#         samples[m, :] = thetaprime[:]
+#         lnprob[m] = logp
 
-        # Do adaptation of epsilon if we're still doing burn-in.
-        eta = 1. / float(m + t0)
-        Hbar = (1. - eta) * Hbar + eta * (delta - alpha / float(nalpha))
-        if (m <= Madapt):
-            epsilon = exp(mu - sqrt(m) / gamma * Hbar)
-            eta = m ** -kappa
-            epsilonbar = exp((1. - eta) * log(epsilonbar) + eta * log(epsilon))
-        else:
-            epsilon = epsilonbar
-    samples = samples[Madapt:, :]
-    lnprob = lnprob[Madapt:]
-    return samples, lnprob, epsilon
+#         # Do adaptation of epsilon if we're still doing burn-in.
+#         eta = 1. / float(m + t0)
+#         Hbar = (1. - eta) * Hbar + eta * (delta - alpha / float(nalpha))
+#         if (m <= Madapt):
+#             epsilon = exp(mu - sqrt(m) / gamma * Hbar)
+#             eta = m ** -kappa
+#             epsilonbar = exp((1. - eta) * log(epsilonbar) + eta * log(epsilon))
+#         else:
+#             epsilon = epsilonbar
+#     samples = samples[Madapt:, :]
+#     lnprob = lnprob[Madapt:]
+#     return samples, lnprob, epsilon

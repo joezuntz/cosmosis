@@ -100,6 +100,9 @@ class PocoProcessor(MetropolisHastingsProcessor):
 		# so there is nothing to remove here.
 		return self.get_col(name, stacked=stacked)
 
+class NUTSProcessor(MetropolisHastingsProcessor):
+	sampler = "nuts"
+	
 
 
 class EmceeProcessor(MetropolisHastingsProcessor):

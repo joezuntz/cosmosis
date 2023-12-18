@@ -73,6 +73,7 @@ def posterior_and_gradient(q):
     if r.block is None:
         grad = np.repeat(np.nan, nparam)
         return -np.inf, grad
+    derived = (r.prior, r.post, r.extra)
 
     # Get the posterior and gradient in the original space
     logpx = r.post
@@ -83,15 +84,15 @@ def posterior_and_gradient(q):
     eq = np.exp(q)
     logpq_grad = widths * eq / (1 + eq)**2 * dlogpx_dx + 1 - 2 * eq / (1 + eq)
 
-    return logpq, logpq_grad
+    return logpq, logpq_grad, derived
 
     
 
 
 class NUTSSampler(ParallelSampler):
-    parallel_output = False
-    supports_resume = False
-    sampler_outputs = [("post", float)]
+    parallel_output = True
+    supports_resume = True
+    sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
         from . nuts import PinNUTS
@@ -102,17 +103,33 @@ class NUTSSampler(ParallelSampler):
         self.nstep = self.read_ini("nstep", int, 500)
         self.nadapt = self.read_ini("nadapt", int, 1000)
         self.target_accept = self.read_ini("target_accept", float, 0.6)
-        # self.samples_generated = 0
-        # self.epsilon = None
         self.iterations = 0
         self.p0 = transform_to_unconstrained(self.pipeline.start_vector(), [p.limits for p in self.pipeline.varied_params])
-        self.sampler = PinNUTS(posterior_and_gradient, self.pipeline.nvaried)
+        self.sampler = PinNUTS(posterior_and_gradient, self.pipeline.nvaried, returns_derived_parameters=True)
+
+    def worker(self):
+        print("Workjer starting")
+        while not self.is_converged():
+            self.execute()
+            if self.output:
+                self.output.flush()
+
 
     def resume(self):
-        if self.output.resumed:
-            # Just load the final position from the output file
-            # and the epsilon from the 
-            pass
+        resume_info = self.read_resume_info()
+        if (resume_info is None):
+            return
+
+        self.sampler, self.iterations, self.p0, self.pipeline.run_count, self.pipeline.run_count_ok = resume_info
+
+
+        
+        if self.iterations < self.nadapt:
+            logs.important("Resuming adaptive tuning phase of PINUTS")
+        elif self.is_converged():
+            logs.overview("The resumed chain was already converged.  You can change the converged testing parameters to extend it.")
+        else:
+            logs.overview("Resuming sampling phase of PINUTS")
 
 
     def execute(self):
@@ -128,17 +145,22 @@ class NUTSSampler(ParallelSampler):
         else:
             n_adapt = self.nstep
             n_draw = 0
-        logs.overview(f"Running NUTS with {n_adapt} adaptive samples and {n_draw} regular samples")
+        total = self.samples + self.nadapt
+        logs.overview(f"Running NUTS samples {start}-{end} of {total}, with {n_adapt} adaptive samples and {n_draw} regular samples")
 
-        samples, probs = self.sampler.sample(self.p0, n_draw, n_adapt)
+        # Run the sampler.  We ignore the posterior values given by the sampler,
+        # since these include the jacobian of the transformation, which we can't easily
+        # compare betweeen samplers so is not super useful.
+        samples, _, derived = self.sampler.sample(self.p0, n_draw, n_adapt)
         self.p0 = samples[-1]
         if n_draw:
-            for params, post in zip(samples,probs):
+            for params, derived in zip(samples, derived):
+                prior, post, *derived = derived
                 x = transform_from_unconstrained(params, [p.limits for p in self.pipeline.varied_params])
-                self.output.parameters(x, post)
-
+                self.output.parameters(x, *derived, prior, post)
 
         self.iterations += self.nstep
+        self.write_resume_info([self.sampler, self.iterations, self.p0, self.pipeline.run_count, self.pipeline.run_count_ok])
         
 
 
