@@ -32,7 +32,7 @@ def extract_section(lines, section):
     return output_lines
 
 def save(lines, section, prefix):
-    filename = "{}_{}.ini".format(prefix, section).lower()
+    filename = "{}_{}.ini".format(prefix, section)
     open(filename,'w').writelines(lines)
 
 def main(chain, prefix):
