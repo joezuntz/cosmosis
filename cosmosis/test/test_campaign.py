@@ -80,6 +80,8 @@ def test_campaign_functions():
 
         assert not runs["v4"]["priors"].has_option("parameters", "p2")
 
+        assert runs["v3"]["params"].get("output", "filename") == "output/campaign-test/my_project_v3_suite1.txt"
+
         for name in runs:
             print(name)
 
