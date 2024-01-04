@@ -305,7 +305,7 @@ def temporary_environment(env):
         os.environ.clear()
         os.environ.update(original_environment)
 
-def set_output_dir(params, name, output_dir):
+def set_output_dir(params, name, output_dir, output_name):
     """
     Modify a parameters file to set the output directory and file names to be
     based on the run name and output directory.
@@ -318,7 +318,10 @@ def set_output_dir(params, name, output_dir):
         The name of the run
     output_dir : str
         The output directory to use
-
+    output_name : str
+        The format string to use to generate the output file name, using {name}
+        for the run name.
+        
     Returns
     -------
     None
@@ -329,7 +332,8 @@ def set_output_dir(params, name, output_dir):
     if not params.has_section("test"):
         params.add_section("test")
 
-    params.set("output", "filename", os.path.join(output_dir, f"{name}.txt"))
+    output_name = output_name.format(name=name) + ".txt"
+    params.set("output", "filename", os.path.join(output_dir, output_name))
     params.set("test", "save_dir", os.path.join(output_dir, name))
 
     if params.has_section("multinest"):
@@ -338,7 +342,7 @@ def set_output_dir(params, name, output_dir):
         params.set("polychord", "polychord_outfile_root", f"{name}.polychord")
         params.set("polychord", "base_dir", output_dir)
 
-def build_run(name, run_info, runs, components, output_dir):
+def build_run(name, run_info, runs, components, output_dir, output_name="{name}"):
     """
     Generate a dictionary specifying a CosmoSIS run from a run_info dictioary.
 
@@ -362,6 +366,9 @@ def build_run(name, run_info, runs, components, output_dir):
         A dictionary of previously built components
     output_dir : str
         The output directory to use
+    output_name : str
+        The format string to use to generate the output file name, using {name}
+        for the run name.
 
     Returns
     -------
@@ -433,7 +440,7 @@ def build_run(name, run_info, runs, components, output_dir):
         apply_updates(priors, prior_updates)
         apply_pipeline_updates(params, pipeline_updates)
 
-        set_output_dir(params, name, output_dir)
+        set_output_dir(params, name, output_dir, output_name)
 
     run["params"] = params
     run["values"] = values
@@ -500,6 +507,7 @@ def parse_yaml_run_file(run_config):
             info = yaml.safe_load(f)
     
     output_dir = info.get("output_dir", ".")
+    output_name = info.get("output_name", "{name}")
 
     include = info.get("include", [])
     if isinstance(include, str):
@@ -514,7 +522,7 @@ def parse_yaml_run_file(run_config):
     # But we override the output directory
     # of any imported runs with the one we have here   
     for name, run in runs.items():
-        set_output_dir(run["params"], name, output_dir)
+        set_output_dir(run["params"], name, output_dir, output_name)
     
     # deal with re-usable components
     components = info.get("components", {})
@@ -522,7 +530,7 @@ def parse_yaml_run_file(run_config):
     # Build the parameter, value, and prior objects for this run
     for run_dict in info["runs"]:
         name = run_dict["name"]
-        runs[name] = build_run(name, run_dict, runs, components, output_dir)
+        runs[name] = build_run(name, run_dict, runs, components, output_dir, output_name)
 
     return runs
 
