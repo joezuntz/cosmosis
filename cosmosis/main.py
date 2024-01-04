@@ -176,8 +176,7 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
 
 
 def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, override=None,
-                 profile_mem=0, profile_cpu="", variables=None, only=None, output=None,
-                 extra_metadata=None):
+                 profile_mem=0, profile_cpu="", variables=None, only=None, output=None):
     """
     Execute cosmosis.
 
@@ -226,9 +225,6 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
     output: None or cosmosis.Output
         If set, use this output object to save the results. If not set, create
         an output object from the ini file.
-
-    extra_metadata: None or dict
-        If set, add these key-value pairs to the output metadata.
     """
     no_subprocesses = os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]
 
@@ -387,10 +383,6 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
                 print("* Running in serial mode.")
 
         output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output_original)
-
-        if output and (extra_metadata is not None):
-            for k, v in extra_metadata.items():
-                output.metadata(k, v)
 
         if is_root:
             print("****************************************************")
