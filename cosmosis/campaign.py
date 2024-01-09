@@ -440,6 +440,7 @@ def build_run(name, run_info, runs, components, output_dir, output_name="{name}"
         apply_updates(priors, prior_updates)
         apply_pipeline_updates(params, pipeline_updates)
 
+        output_name = run_info.get("output_name", output_name)
         set_output_dir(params, name, output_dir, output_name)
 
     run["params"] = params
