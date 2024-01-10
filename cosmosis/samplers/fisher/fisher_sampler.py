@@ -18,6 +18,9 @@ def compute_fisher_vector(p, cov=False):
     #Run the pipeline, generating a data block
     data = fisherPipeline.run_parameters(x)
 
+    v = ", ".join(str(xi) for xi in x)
+    logs.info(f"Computed theory vector for parameter set: [{v}]")
+
     #If the pipeline failed, return "None"
     #This might happen if the parameters stray into
     #a bad region.
@@ -68,6 +71,7 @@ class FisherSampler(ParallelSampler):
         self.tolerance = self.read_ini("tolerance", float, 0.01)
         self.maxiter = self.read_ini("maxiter", int, 10)
         self.use_numdifftools = self.read_ini("use_numdifftools", bool, False)
+        self.use_stem = self.read_ini("use_stem", bool, False)
 
         if self.output:
             for p in self.pipeline.extra_saves:
@@ -114,7 +118,10 @@ class FisherSampler(ParallelSampler):
 
         #calculate the fisher matrix.
         #right now just a single step
-        if self.use_numdifftools:
+        if self.use_stem:
+            fisher_class = fisher.STEMFisher
+            print("Using STEM method for derivatives")
+        elif self.use_numdifftools:
             fisher_class = fisher.NumDiffToolsFisher
         else:
             fisher_class = fisher.Fisher
