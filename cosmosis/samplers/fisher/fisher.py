@@ -113,7 +113,7 @@ class STEMFisher(Fisher):
 
 class SarcevicDerivativeCalculator:
     """
-    This is Niko Sarcevic's robust derivative calculator class, from
+    This is Niko Sarcevic's derivative calculator class, from
     https://github.com/nikosarcevic/Derivative-Calculator
 
     Thanks and credit to Niko!
@@ -174,7 +174,8 @@ class SarcevicDerivativeCalculator:
         the central value. It also may require a relatively long time to converge for
         functions with a very small derivative at the central value.
 
-        JZ: Modified this code to use a pool object for parallelism.
+        JZ: Modified this code to use a pool object for parallelism, and to run on
+            vector functions
         
         Returns:
         tuple: the stem derivative.
