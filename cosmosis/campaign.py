@@ -459,7 +459,8 @@ def build_run(name, run_info, runs, components, output_dir, submission_info, out
 def expand_environment_variables(runs):
     """
     For each run, expand any environment variables in the all three parameter files.
-    We expand environment variables in the options, section names, and values.
+
+    Environment variables are only supported in values, not in keys or sections.
 
     Parameters
     ----------
@@ -473,23 +474,12 @@ def expand_environment_variables(runs):
             # We apply this to all the different ini files
             for ini in [run["params"], run["values"], run["priors"]]:
                 for section in ini.sections():
-                    # I've never seen anyone set a section name with an environment
-                    # variable but I guess it could happen
-                    new_section = os.path.expandvars(section)
-
-                    # If the section has changed we have to set the new name.
-                    # We could delete the old one but there shouldn't be a need to.
-                    # I guess it might neaten the metadata output.
-                    if new_section != section and not ini.has_section(new_section):
-                        ini.add_section(new_section)
-
                     # Now we can expand all the actual options
                     for option in ini.options(section):
-                        new_option = os.path.expandvars(option)
                         value = ini.get(section, option)
                         new_value = os.path.expandvars(value)
-                        if (new_value != value) or (new_option != option) or (new_section != section):
-                            ini.set(new_section, new_option, new_value)
+                        if new_value != value:
+                            ini.set(section, option, new_value)
 
 def parse_yaml_run_file(run_config):
     """
