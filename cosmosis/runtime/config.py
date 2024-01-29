@@ -31,7 +31,8 @@ class IncludingConfigParser(configparser.ConfigParser):
     comments, but still delineate sections).
     """
 
-    def __init__(self, defaults=None, print_include_messages=True):
+    def __init__(self, defaults=None, print_include_messages=True, no_expand_vars=False):
+        self.no_expand_vars = no_expand_vars
         configparser.ConfigParser.__init__(self,
                                    defaults=defaults,
                                    dict_type=collections.OrderedDict,
@@ -52,7 +53,7 @@ class IncludingConfigParser(configparser.ConfigParser):
         s = io.StringIO()
         for line in fp:
             # check for include directives
-            if not getattr(self, 'no_expand_vars', False):
+            if not self.no_expand_vars:
                 line = os.path.expandvars(line)
 
             if line.lower().startswith('%include'):
@@ -95,7 +96,7 @@ class Inifile(IncludingConfigParser):
 
     """
 
-    def __init__(self, filename, defaults=None, override=None, print_include_messages=True):
+    def __init__(self, filename, defaults=None, override=None, print_include_messages=True, no_expand_vars=False):
         u"""Read in a configuration from `filename`.
 
         The `defaults` will be applied if a parameter is not specified in
@@ -110,7 +111,8 @@ class Inifile(IncludingConfigParser):
 
         IncludingConfigParser.__init__(self,
                                        defaults=defaults,
-                                       print_include_messages=print_include_messages)
+                                       print_include_messages=print_include_messages,
+                                       no_expand_vars=no_expand_vars)
 
         # if we are pased a dict, convert it to an inifile
         if isinstance(filename, dict):
