@@ -9,6 +9,39 @@ import warnings
 import subprocess
 import contextlib
 
+class UniqueKeyLoader(yaml.SafeLoader):
+    """
+    This is a YAML loader that raises an error if there are duplicate keys.
+
+    It is based on the discussion here:
+    https://gist.github.com/pypt/94d747fe5180851196eb
+    """
+    def construct_mapping(self, node, deep=False):
+        mapping = set()
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if key in mapping:
+                raise ValueError(f"Duplicate {key} key found in YAML.")
+            mapping.add(key)
+        return super().construct_mapping(node, deep)
+
+def load_yaml(stream):
+    """
+    Load YAML markup from a stream, with a check for duplicate keys.
+
+    Parameters
+    ----------
+    stream : file
+        The open file-like object to load from
+
+    Returns
+    -------
+    data : object
+        The dict or list loaded from the YAML file
+    """
+    return yaml.load(stream, Loader=UniqueKeyLoader)
+
+
 def pipeline_after(params, after_module, modules):
     """
     Insert item(s) in the pipeline after the given module.
@@ -547,7 +580,7 @@ def parse_yaml_run_file(run_config):
         info = run_config
     else:
         with open(run_config, 'r') as f:
-            info = yaml.safe_load(f)
+            info = load_yaml(f)
     
     output_dir = info.get("output_dir", ".")
     output_name = info.get("output_name", "{name}")

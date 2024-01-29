@@ -2,8 +2,8 @@ from ..campaign import *
 from ..runtime import Inifile
 import os
 import tempfile
-import yaml
 import contextlib
+import pytest
 
 @contextlib.contextmanager
 def run_from_source_dir():
@@ -104,7 +104,7 @@ def test_campaign_functions():
 def test_campaign_functions2():
     with run_from_source_dir():
         with open("cosmosis/test/campaign.yml") as f:
-            runs_config = yaml.safe_load(f)
+            runs_config = load_yaml(f)
 
         with tempfile.TemporaryDirectory() as dirname:
             runs_config['output_dir']  = dirname
@@ -145,3 +145,8 @@ def test_campaign_env():
         runs = parse_yaml_run_file("cosmosis/test/campaign.yml")
     assert runs["env-test-1"]["params"].get("test1", "env_test_var")  == "xxx"
     assert runs["env-test-2"]["params"].get("test1", "env_test_var")  == "yyy"
+
+def test_campaign_duplicate_keys():
+    with pytest.raises(ValueError):
+        with run_from_source_dir():
+            runs = parse_yaml_run_file("cosmosis/test/bad-campaign.yml")
