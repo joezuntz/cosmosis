@@ -6,6 +6,7 @@ import os
 import yaml
 import sys
 import warnings
+import subprocess
 import contextlib
 
 def pipeline_after(params, after_module, modules):
@@ -342,7 +343,7 @@ def set_output_dir(params, name, output_dir, output_name):
         params.set("polychord", "polychord_outfile_root", f"{name}.polychord")
         params.set("polychord", "base_dir", output_dir)
 
-def build_run(name, run_info, runs, components, output_dir, output_name="{name}"):
+def build_run(name, run_info, runs, components, output_dir, submission_info, output_name="{name}"):
     """
     Generate a dictionary specifying a CosmoSIS run from a run_info dictioary.
 
@@ -366,6 +367,8 @@ def build_run(name, run_info, runs, components, output_dir, output_name="{name}"
         A dictionary of previously built components
     output_dir : str
         The output directory to use
+    submission_info : dict
+        A dictionary of submission information
     output_name : str
         The format string to use to generate the output file name, using {name}
         for the run name.
@@ -443,6 +446,12 @@ def build_run(name, run_info, runs, components, output_dir, output_name="{name}"
         output_name = run_info.get("output_name", output_name)
         set_output_dir(params, name, output_dir, output_name)
 
+        # Finally, set the submission information
+        submission_info = submission_info.copy()
+        submission_info["output_dir"] = output_dir
+        submission_info.update(run_info.get("submission", {}))
+        run["submission"] = submission_info
+
     run["params"] = params
     run["values"] = values
     run["priors"] = priors
@@ -489,7 +498,18 @@ def parse_yaml_run_file(run_config):
         - <list of updates to apply to the priors file>
         pipeline:
         - <list of updates to apply to the pipeline>
-            
+
+    submission:
+        submit: a command to submit runs from batch files (default sbatch)
+        cancel: a command to cancel runs from batch files (default scancel)
+        template: a template for the batch file (default is a SLURM one suitable for NERSC)
+        # remaining variables are passed to the template and can be overridden in specific runs
+        time: Wall time for the job, e.g. 00:30:00
+        nodes: Number of nodes, e.g. 1
+        tasks: Number of tasks in total, e.g. 1
+        cores_per_task: Number of cores (threads) per task, e.g. 1
+        queue: Queue to submit to, e.g. regular
+
                 
     Parameters
     ----------
@@ -528,10 +548,12 @@ def parse_yaml_run_file(run_config):
     # deal with re-usable components
     components = info.get("components", {})
 
+    submission_info = info.get("submission", {})
+
     # Build the parameter, value, and prior objects for this run
     for run_dict in info["runs"]:
         name = run_dict["name"]
-        runs[name] = build_run(name, run_dict, runs, components, output_dir, output_name)
+        runs[name] = build_run(name, run_dict, runs, components, output_dir, submission_info, output_name)
 
     return runs
 
@@ -668,6 +690,39 @@ def launch_run(run, mpi=False):
             return run_cosmosis(params, values=values, priors=priors)
 
 
+def submit_run(run_file, run):
+    """
+    Subnmit a CosmoSIS run using a batch system such as SLURM.
+    """
+
+    submission_info = run["submission"]
+    template = submission_info["template"]
+    keys = submission_info.copy()
+    name = run["name"]
+    keys["job_name"] = name
+    output_dir = keys["output_dir"]
+
+    # We use the campaign program to actually run the jobs
+    keys["command"]  = f"cosmosis-campaign {run_file} --run {name} --mpi"
+
+    # choose where the jobs stdout / stderr should go
+    os.makedirs(os.path.join(output_dir, "logs"), exist_ok=True)
+    keys["log"] = os.path.join(output_dir, "logs", f"{name}.log")
+
+    # fill in the template
+    sub_script = template.format(**keys).lstrip()
+
+    # write the submission file to a batch subdir
+    os.makedirs(os.path.join(output_dir, "batch"), exist_ok=True)
+    sub_file = os.path.join(output_dir, "batch", f"{name}.sub")
+    with open(sub_file, "w") as f:
+        f.write(sub_script)
+
+    # Actually submit the job using slurm or similar
+    submit = submission_info.get("submit", "sbatch")
+    subprocess.check_call(f"{submit} {sub_file}", shell=True)
+    print(f"Submitted {sub_file}\nJob output in", keys["log"])
+
 
 
 import argparse
@@ -678,7 +733,8 @@ group.add_argument("--list", "-l", action="store_true", help="List all available
 group.add_argument("--cat", "-c",  type=str, help="Show a single run")
 group.add_argument("--status", "-s", default="_unset", nargs="*", help="Show the status of a single run, or all runs if called with no argument")
 group.add_argument("--run", "-r",  help="Run the named run")
-group.add_argument("--test", "-t",  help="Launch the named run")
+group.add_argument("--test", "-t",  help="Test the named run")
+group.add_argument("--submit", "-x",  help="Submit the named run to a batch system")
 parser.add_argument("--mpi", action="store_true", help="Use MPI to launch the runs")
 
 
@@ -704,6 +760,8 @@ def main(args):
         show_run_status(runs, args.status)
     elif args.run:
         launch_run(runs[args.run], mpi=args.mpi)
+    elif args.submit:
+        submit_run(args.run_config, runs[args.submit])
 
 
 

@@ -2,6 +2,33 @@ output_dir: output/campaign-test
 output_name: my_project_{name}_suite1
 include: []
 
+submission:
+  # These parameters can be overridden per run.
+  # Normally this would be "sbatch" or "qsub". This
+  # is just for testing.
+  submit: bash -l
+  cores_per_task: 1
+  tasks: 2
+  nodes: 1
+  walltime: 06:00:00
+  queue: regular
+  template: |
+    #!/bin/bash
+    #SBATCH -N {nodes}
+    #SBATCH -q {queue}
+    #SBATCH -J {job_name}
+    #SBATCH -t {walltime}
+
+    # OpenMP settings:
+    export OMP_NUM_THREADS={cores_per_task}
+    export OMP_PLACES=threads
+    export OMP_PROC_BIND=spread
+    
+    # You might need to add some setup commands here
+    mpirun -n {tasks}  {command} &> {log}
+
+
+
 runs:
   - name: v1
     base: cosmosis/test/example.ini
@@ -24,3 +51,7 @@ runs:
     parent: v2
     priors:
     - del parameters .p2
+    # override submission parameters
+    submission:
+      submit: cat
+      walltime: 04:00:00
