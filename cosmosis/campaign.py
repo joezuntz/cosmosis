@@ -383,74 +383,78 @@ def build_run(name, run_info, runs, components, output_dir, submission_info, out
 
     # We set the environment both now, when reading the ini files,
     # so that any variable expansion is done, and also later when running
-    with temporary_environment(env_vars):
-        if "base" in run_info:
-            params = Inifile(run_info["base"], print_include_messages=False)
-        elif "parent" in run_info:
-            try:
-                parent = runs[run_info["parent"]]
-            except KeyError:
-                warnings.warn(f"Run {name} specifies parent {run_info['parent']} but there is no run with that name yet")
-                return None
-            params = Inifile(parent["params"], print_include_messages=False)
-        else:
-            warnings.warn(f"Run {name} specifies neither 'parent' nor 'base' so is invalid")
+    if "base" in run_info:
+        params = Inifile(run_info["base"], print_include_messages=False)
+    elif "parent" in run_info:
+        try:
+            parent = runs[run_info["parent"]]
+        except KeyError:
+            warnings.warn(f"Run {name} specifies parent {run_info['parent']} but there is no run with that name yet")
             return None
+        params = Inifile(parent["params"], print_include_messages=False)
+    else:
+        warnings.warn(f"Run {name} specifies neither 'parent' nor 'base' so is invalid")
+        return None
 
-        # Build values file, which is mandatory
-        if "parent" in run_info:
-            values = Inifile(parent["values"], print_include_messages=False)
-        else:
-            values_file = params.get('pipeline', 'values')
-            values = Inifile(values_file, print_include_messages=False)
+    # Build values file, which is mandatory
+    if "parent" in run_info:
+        values = Inifile(parent["values"], print_include_messages=False)
+    else:
+        values_file = params.get('pipeline', 'values')
+        values = Inifile(values_file, print_include_messages=False)
 
-        # Build optional priors file
-        if "parent" in run_info:
-            priors = Inifile(parent["priors"], print_include_messages=False)
-        elif "priors" in params.options("pipeline"):
-            priors_file = params.get('pipeline', 'priors')
-            priors = Inifile(priors_file, print_include_messages=False)
-        else:
-            priors = Inifile(None)
-        
+    # Build optional priors file
+    if "parent" in run_info:
+        priors = Inifile(parent["priors"], print_include_messages=False)
+    elif "priors" in params.options("pipeline"):
+        priors_file = params.get('pipeline', 'priors')
+        priors = Inifile(priors_file, print_include_messages=False)
+    else:
+        priors = Inifile(None)
+
+    # We want to delay expanding environment variables so that child runs
+    # have a chance to override them
+    params.no_expand_vars = True
+    values.no_expand_vars = True
+    priors.no_expand_vars = True
 
 
-        # Make a list of all the modifications to be applied
-        # to the different bits of this pipeline
+    # Make a list of all the modifications to be applied
+    # to the different bits of this pipeline
 
-        param_updates = []
-        value_updates = []
-        prior_updates = []
-        pipeline_updates = []
+    param_updates = []
+    value_updates = []
+    prior_updates = []
+    pipeline_updates = []
 
-        # First from any generic components specified
-        for component in run_info.get("components", []):
-            component_info = components[component]
-            param_updates.extend(component_info.get("params", []))
-            value_updates.extend(component_info.get("values", []))
-            prior_updates.extend(component_info.get("priors", []))
-            pipeline_updates.extend(component_info.get("pipeline", []))
+    # First from any generic components specified
+    for component in run_info.get("components", []):
+        component_info = components[component]
+        param_updates.extend(component_info.get("params", []))
+        value_updates.extend(component_info.get("values", []))
+        prior_updates.extend(component_info.get("priors", []))
+        pipeline_updates.extend(component_info.get("pipeline", []))
 
-        # And then for anything specific to this pipeline
-        param_updates.extend(run_info.get("params", []))
-        value_updates.extend(run_info.get("values", []))
-        prior_updates.extend(run_info.get("priors", []))
-        pipeline_updates.extend(run_info.get("pipeline", []))
+    # And then for anything specific to this pipeline
+    param_updates.extend(run_info.get("params", []))
+    value_updates.extend(run_info.get("values", []))
+    prior_updates.extend(run_info.get("priors", []))
+    pipeline_updates.extend(run_info.get("pipeline", []))
 
-        # Now apply all the steps
-        apply_updates(params, param_updates, is_params=True)
-        apply_updates(values, value_updates)
-        apply_updates(priors, prior_updates)
-        apply_pipeline_updates(params, pipeline_updates)
+    # Now apply all the steps
+    apply_updates(params, param_updates, is_params=True)
+    apply_updates(values, value_updates)
+    apply_updates(priors, prior_updates)
+    apply_pipeline_updates(params, pipeline_updates)
 
-        output_name = run_info.get("output_name", output_name)
-        set_output_dir(params, name, output_dir, output_name)
+    output_name = run_info.get("output_name", output_name)
+    set_output_dir(params, name, output_dir, output_name)
 
-        # Finally, set the submission information
-        submission_info = submission_info.copy()
-        submission_info["output_dir"] = output_dir
-        submission_info.update(run_info.get("submission", {}))
-        run["submission"] = submission_info
+    # Finally, set the submission information
+    submission_info = submission_info.copy()
+    submission_info["output_dir"] = output_dir
+    submission_info.update(run_info.get("submission", {}))
+    run["submission"] = submission_info
 
     run["params"] = params
     run["values"] = values
@@ -458,6 +462,41 @@ def build_run(name, run_info, runs, components, output_dir, submission_info, out
 
     return run
 
+
+def expand_environment_variables(runs):
+    """
+    For each run, expand any environment variables in the all three parameter files.
+    We expand environment variables in the options, section names, and values.
+
+    Parameters
+    ----------
+    runs : dict
+        A dictionary of runs, keyed by name
+    """
+    for run in runs.values():
+        # This sets environment varibles for the duration of the with block
+        with temporary_environment(run["env"]):
+
+            # We apply this to all the different ini files
+            for ini in [run["params"], run["values"], run["priors"]]:
+                for section in ini.sections():
+                    # I've never seen anyone set a section name with an environment
+                    # variable but I guess it could happen
+                    new_section = os.path.expandvars(section)
+
+                    # If the section has changed we have to set the new name.
+                    # We could delete the old one but there shouldn't be a need to.
+                    # I guess it might neaten the metadata output.
+                    if new_section != section and not ini.has_section(new_section):
+                        ini.add_section(new_section)
+
+                    # Now we can expand all the actual options
+                    for option in ini.options(section):
+                        new_option = os.path.expandvars(option)
+                        value = ini.get(section, option)
+                        new_value = os.path.expandvars(value)
+                        if (new_value != value) or (new_option != option) or (new_section != section):
+                            ini.set(new_section, new_option, new_value)
 
 def parse_yaml_run_file(run_config):
     """
@@ -554,6 +593,10 @@ def parse_yaml_run_file(run_config):
     for run_dict in info["runs"]:
         name = run_dict["name"]
         runs[name] = build_run(name, run_dict, runs, components, output_dir, submission_info, output_name)
+
+    # Only now do we expand environment variables in the runs.  This gives the child runs
+    # a chance to override the environment variables of their parents.
+    expand_environment_variables(runs)
 
     return runs
 
