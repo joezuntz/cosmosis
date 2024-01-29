@@ -1,4 +1,5 @@
 output_dir: output/campaign-test
+output_name: my_project_{name}_suite1
 include: []
 
 submission:
