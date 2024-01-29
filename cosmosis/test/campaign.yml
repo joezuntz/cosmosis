@@ -55,3 +55,13 @@ runs:
     submission:
       submit: cat
       walltime: 04:00:00
+
+  - name: env-test-1
+    base: cosmosis/test/example.ini
+    env:
+      TEST : xxx
+
+  - name: env-test-2
+    parent: env-test-1
+    env:
+      TEST : yyy

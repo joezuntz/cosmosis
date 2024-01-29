@@ -136,3 +136,10 @@ def test_campaign_functions2():
 
             submit_run("cosmosis/test/campaign.yml", runs["v3"])
             submit_run("cosmosis/test/campaign.yml", runs["v4"])
+
+
+def test_campaign_env():
+    with run_from_source_dir():
+        runs = parse_yaml_run_file("cosmosis/test/campaign.yml")
+    assert runs["env-test-1"]["params"].get("test1", "env_test_var")  == "xxx"
+    assert runs["env-test-2"]["params"].get("test1", "env_test_var")  == "yyy"
