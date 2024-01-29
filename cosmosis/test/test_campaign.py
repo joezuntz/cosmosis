@@ -1,5 +1,6 @@
 from ..campaign import *
 from ..runtime import Inifile
+import os
 import tempfile
 import yaml
 import contextlib
@@ -139,6 +140,7 @@ def test_campaign_functions2():
 
 
 def test_campaign_env():
+    os.environ["TEST"] = "aaa"
     with run_from_source_dir():
         runs = parse_yaml_run_file("cosmosis/test/campaign.yml")
     assert runs["env-test-1"]["params"].get("test1", "env_test_var")  == "xxx"

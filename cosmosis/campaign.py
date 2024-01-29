@@ -381,43 +381,36 @@ def build_run(name, run_info, runs, components, output_dir, submission_info, out
     run["env"] = env_vars
 
 
-    # We set the environment both now, when reading the ini files,
-    # so that any variable expansion is done, and also later when running
+    # We want to delay expanding environment variables so that child runs
+    # have a chance to override them. So we set no_expand_vars=True on all of these
     if "base" in run_info:
-        params = Inifile(run_info["base"], print_include_messages=False)
+        params = Inifile(run_info["base"], print_include_messages=False, no_expand_vars=True)
     elif "parent" in run_info:
         try:
             parent = runs[run_info["parent"]]
         except KeyError:
             warnings.warn(f"Run {name} specifies parent {run_info['parent']} but there is no run with that name yet")
             return None
-        params = Inifile(parent["params"], print_include_messages=False)
+        params = Inifile(parent["params"], print_include_messages=False, no_expand_vars=True)
     else:
         warnings.warn(f"Run {name} specifies neither 'parent' nor 'base' so is invalid")
         return None
 
     # Build values file, which is mandatory
     if "parent" in run_info:
-        values = Inifile(parent["values"], print_include_messages=False)
+        values = Inifile(parent["values"], print_include_messages=False, no_expand_vars=True)
     else:
         values_file = params.get('pipeline', 'values')
-        values = Inifile(values_file, print_include_messages=False)
+        values = Inifile(values_file, print_include_messages=False, no_expand_vars=True)
 
     # Build optional priors file
     if "parent" in run_info:
-        priors = Inifile(parent["priors"], print_include_messages=False)
+        priors = Inifile(parent["priors"], print_include_messages=False, no_expand_vars=True)
     elif "priors" in params.options("pipeline"):
         priors_file = params.get('pipeline', 'priors')
-        priors = Inifile(priors_file, print_include_messages=False)
+        priors = Inifile(priors_file, print_include_messages=False, no_expand_vars=True)
     else:
-        priors = Inifile(None)
-
-    # We want to delay expanding environment variables so that child runs
-    # have a chance to override them
-    params.no_expand_vars = True
-    values.no_expand_vars = True
-    priors.no_expand_vars = True
-
+        priors = Inifile(None, no_expand_vars=True)
 
     # Make a list of all the modifications to be applied
     # to the different bits of this pipeline
