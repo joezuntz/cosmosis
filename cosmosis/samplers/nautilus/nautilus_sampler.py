@@ -49,6 +49,9 @@ class NautilusSampler(ParallelSampler):
             self.f_live = self.read_ini("f_live", float, 0.01)
             self.n_shell = self.read_ini("n_shell", int, self.n_batch)
             self.n_eff = self.read_ini("n_eff", float, 10000.0)
+            self.n_like_max = self.read_ini("n_like_max", int, -1)
+            if self.n_like_max < 0:
+                self.n_like_max = np.inf
             self.discard_exploration = self.read_ini(
                 "discard_exploration", bool, False)
             self.verbose = self.read_ini("verbose", bool, False)
@@ -92,6 +95,7 @@ class NautilusSampler(ParallelSampler):
         sampler.run(f_live=self.f_live,
                     n_shell=self.n_shell,
                     n_eff=self.n_eff,
+                    n_like_max=self.n_like_max,
                     discard_exploration=self.discard_exploration,
                     verbose=self.verbose)
 
@@ -102,11 +106,11 @@ class NautilusSampler(ParallelSampler):
             logp = logl + prior
             self.output.parameters(sample, extra, logwt, prior, logp)
 
-        self.output.final(
-            "efficiency", sampler.effective_sample_size() / sampler.n_like)
-        self.output.final("neff", sampler.effective_sample_size())
+        self.output.final("efficiency", sampler.n_eff / sampler.n_like)
+        self.output.final("neff", sampler.n_eff)
         self.output.final("nsample", len(sampler.posterior()[0]))
-        self.output.final("log_z", sampler.evidence())
+        self.output.final("log_z", sampler.log_z)
+        self.output.final("log_z_error", 1.0 / np.sqrt(sampler.n_eff))
         self.converged = True
 
     def is_converged(self):
