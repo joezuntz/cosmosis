@@ -110,6 +110,7 @@ class NautilusSampler(ParallelSampler):
         self.output.final("neff", sampler.n_eff)
         self.output.final("nsample", len(sampler.posterior()[0]))
         self.output.final("log_z", sampler.log_z)
+        self.output.final("log_z_error", 1.0 / np.sqrt(sampler.n_eff))
         self.converged = True
 
     def is_converged(self):
