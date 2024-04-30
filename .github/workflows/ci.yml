@@ -21,12 +21,49 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7, 3.8, 3.9, "3.10", 3.11]
-        os: [ubuntu-20.04, macos-latest]
+        # macos13 runs on until and macos14 now runs on arm64
+        os: [ubuntu-20.04, macos-latest, macos-13]
+        exclude:
+          # Python 3.7 is not available on M1 Mac homebrew
+          - os: macos-latest
+            python-version: 3.7
         include:
           - os: ubuntu-20.04
             INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
           - os: macos-latest
-            INSTALL_DEPS: brew update-reset && HOMEBREW_NO_AUTO_UPDATE=1  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install gcc swig libomp open-mpi openblas && if [ ! -f /usr/local/bin/gfortran ]; then ln -s /usr/local/bin/gfortran-$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1) /usr/local/bin/gfortran; fi
+            # Different versions of homebrew put the gfortran in different
+            INSTALL_DEPS: >
+              brew update-reset 
+              && HOMEBREW_NO_AUTO_UPDATE=1  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install gcc swig libomp open-mpi openblas 
+              && COSMOSIS_GCC_VER=$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1)
+              && GFORTRAN_PATH1=/usr/local/bin/gfortran
+              && GFORTRAN_PATH2=/usr/local/bin/gfortran-${COSMOSIS_GCC_VER}
+              && GFORTRAN_PATH3=/opt/homebrew/bin/gfortran
+              && GFORTRAN_PATH4=/opt/homebrew/bin/gfortran-${COSMOSIS_GCC_VER}
+              && if ! which -s gfortran
+              ; then if [ -f $GFORTRAN_PATH2 ]; then ln -s $GFORTRAN_PATH2 $GFORTRAN_PATH1; echo Linking gfortran from /usr/local
+              ;      elif [ -f $GFORTRAN_PATH4 ]; then ln -s $GFORTRAN_PATH4 $GFORTRAN_PATH3; echo Linking gfortran from /opt/homebrew
+              ;      else echo "gfortran not found" && exit 1
+              ;      fi
+              ; fi
+              && echo "gfortran now at $(which -a gfortran)"
+          - os: macos-13
+            # Different versions of homebrew put the gfortran in different
+            INSTALL_DEPS: >
+              brew update-reset 
+              && HOMEBREW_NO_AUTO_UPDATE=1  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install gcc swig libomp open-mpi openblas 
+              && COSMOSIS_GCC_VER=$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1)
+              && GFORTRAN_PATH1=/usr/local/bin/gfortran
+              && GFORTRAN_PATH2=/usr/local/bin/gfortran-${COSMOSIS_GCC_VER}
+              && GFORTRAN_PATH3=/opt/homebrew/bin/gfortran
+              && GFORTRAN_PATH4=/opt/homebrew/bin/gfortran-${COSMOSIS_GCC_VER}
+              && if ! which -s gfortran
+              ; then if [ -f $GFORTRAN_PATH2 ]; then ln -s $GFORTRAN_PATH2 $GFORTRAN_PATH1; echo Linking gfortran from /usr/local
+              ;      elif [ -f $GFORTRAN_PATH4 ]; then ln -s $GFORTRAN_PATH4 $GFORTRAN_PATH3; echo Linking gfortran from /opt/homebrew
+              ;      else echo "gfortran not found" && exit 1
+              ;      fi
+              ; fi
+              && echo "gfortran now at $(which -a gfortran)"
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
