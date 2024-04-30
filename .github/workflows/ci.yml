@@ -38,8 +38,8 @@ jobs:
               && GFORTRAN_PATH3=/opt/homebrew/bin/gfortran
               && GFORTRAN_PATH4=/opt/homebrew/bin/gfortran-${COSMOSIS_GCC_VER}
               && if ! which -s gfortran
-              ; then if [ -f $GFORTRAN_PATH2 ]; then ln -s $GFORTRAN_PATH2 GFORTRAN_PATH1; echo Linking gfortran from /usr/local
-              ;      elif [ -f $GFORTRAN_PATH4 ]; then ln -s $GFORTRAN_PATH4 GFORTRAN_PATH3; echo Linking gfortran from /opt/homebrew
+              ; then if [ -f $GFORTRAN_PATH2 ]; then ln -s $GFORTRAN_PATH2 $GFORTRAN_PATH1; echo Linking gfortran from /usr/local
+              ;      elif [ -f $GFORTRAN_PATH4 ]; then ln -s $GFORTRAN_PATH4 $GFORTRAN_PATH3; echo Linking gfortran from /opt/homebrew
               ;      else echo "gfortran not found" && exit 1
               ;      fi
               ; fi
