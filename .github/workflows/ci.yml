@@ -46,8 +46,6 @@ jobs:
               ;      else echo "gfortran not found" && exit 1
               ;      fi
               ; fi
-              && echo $PATH
-              && ls -l /opt/homebrew/bin/gfortran*
               && echo "gfortran now at $(which -a gfortran)"
           - os: macos-13
             # Different versions of homebrew put the gfortran in different
@@ -65,8 +63,6 @@ jobs:
               ;      else echo "gfortran not found" && exit 1
               ;      fi
               ; fi
-              && echo $PATH
-              && ls -l /opt/homebrew/bin/gfortran*
               && echo "gfortran now at $(which -a gfortran)"
     steps:
     - name: Checkout repository
