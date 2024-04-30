@@ -43,6 +43,9 @@ jobs:
               ;      else echo "gfortran not found" && exit 1
               ;      fi
               ; fi
+              && echo $PATH
+              && ls -l /opt/homebrew/bin/gfortran*
+              && echo "gfortran now at $(which -a gfortran)"
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
