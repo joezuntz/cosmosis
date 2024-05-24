@@ -410,9 +410,6 @@ def build_run(name, run_info, runs, components, output_dir, submission_info, out
     -------
     """
     run = run_info.copy()
-    env_vars = run_info.get("env", {})
-    run["env"] = env_vars
-
 
     # We want to delay expanding environment variables so that child runs
     # have a chance to override them. So we set no_expand_vars=True on all of these
@@ -428,6 +425,17 @@ def build_run(name, run_info, runs, components, output_dir, submission_info, out
     else:
         warnings.warn(f"Run {name} specifies neither 'parent' nor 'base' so is invalid")
         return None
+    
+    # Build environment variables
+    # These are inherited from the parent run, if there is one,
+    # and then updated with any specific to this run, which can overwrite.
+    # env vars are only applied right at the end when all runs are collected
+    if "parent" in run_info:
+        env_vars = parent["env"].copy()
+    else:
+        env_vars = {}
+    env_vars.update(run_info.get("env", {}))
+    run["env"] = env_vars
 
     # Build values file, which is mandatory
     if "parent" in run_info:

@@ -71,6 +71,20 @@ runs:
     env:
       TEST : yyy
 
+  - name: env-test-3
+    parent: env-test-1
+    params:
+    - emcee.walkers = ${TEST}
+
+  - name: env-test-4
+    parent: env-test-2
+    env:
+      TEST2 : zzz
+
+  # Test double inheritance
+  - name: env-test-5
+    parent: env-test-4
+
   - name: component-test
     parent: v1
     components:
@@ -85,3 +99,4 @@ runs:
     parent: v1
     components:
     - test_component_2
+
