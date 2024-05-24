@@ -575,6 +575,9 @@ def parse_yaml_run_file(run_config):
     -------
     runs : dict
         A dictionary of runs, keyed by name
+    
+    components : dict
+        A dictionary of components, keyed by name
     """
     if isinstance(run_config, dict):
         info = run_config
@@ -592,8 +595,11 @@ def parse_yaml_run_file(run_config):
     # Can include another run file, which we deal with
     # recursively.  
     runs = {}
+    components = {}
     for include_file in include:
-        runs.update(parse_yaml_run_file(include_file))
+        inc_runs, inc_comps = parse_yaml_run_file(include_file)
+        components.update(inc_comps)
+        runs.update(inc_runs)
 
     # But we override the output directory
     # of any imported runs with the one we have here   
@@ -601,7 +607,7 @@ def parse_yaml_run_file(run_config):
         set_output_dir(run["params"], name, output_dir, output_name)
     
     # deal with re-usable components
-    components = info.get("components", {})
+    components.update(info.get("components", {}))
 
     submission_info = info.get("submission", {})
 
@@ -614,7 +620,7 @@ def parse_yaml_run_file(run_config):
     # a chance to override the environment variables of their parents.
     expand_environment_variables(runs)
 
-    return runs
+    return runs, components
 
 
 def show_run(run):
@@ -799,7 +805,7 @@ parser.add_argument("--mpi", action="store_true", help="Use MPI to launch the ru
 
 
 def main(args):
-    runs = parse_yaml_run_file(args.run_config)
+    runs, _ = parse_yaml_run_file(args.run_config)
 
     if args.mpi and not args.run:
         raise ValueError("MPI can only be used when running a single run")

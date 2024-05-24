@@ -1,6 +1,11 @@
 output_dir: output/campaign-test
 output_name: my_project_{name}_suite1
-include: []
+include: [cosmosis/test/included.yml]
+
+components: 
+  test_component_1:
+    params:
+    - emcee.walkers = 100
 
 submission:
   # These parameters can be overridden per run.
@@ -65,3 +70,18 @@ runs:
     parent: env-test-1
     env:
       TEST : yyy
+
+  - name: component-test
+    parent: v1
+    components:
+    - test_component_1
+
+  - name: include-test-1
+    parent: imported-run
+    params:
+    - emcee.walkers = 755
+
+  - name: include-test-2
+    parent: v1
+    components:
+    - test_component_2
