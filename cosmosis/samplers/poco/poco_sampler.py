@@ -4,7 +4,8 @@ import numpy as np
 import os
 
 def likelihood(p):
-    like, _ = pipeline.likelihood(p)
+    r = pipeline.run_results(p)
+    like = r.like
     # PocoMC cannot cope with infinities
     if not np.isfinite(like):
         like = -1e30
