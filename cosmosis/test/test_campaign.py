@@ -108,9 +108,12 @@ def test_campaign_functions2():
         with open("cosmosis/test/campaign.yml") as f:
             runs_config = load_yaml(f)
 
-        with tempfile.TemporaryDirectory() as dirname:
-            runs_config['output_dir']  = dirname
-            runs, _ = parse_yaml_run_file(runs_config)
+    with tempfile.TemporaryDirectory() as dirname:
+        runs_config['output_dir']  = dirname
+
+        with run_from_source_dir():
+            with open("cosmosis/test/campaign.yml") as f:
+                runs, _ = parse_yaml_run_file(runs_config)
 
             for name in runs:
                 print(name)
