@@ -71,6 +71,7 @@ testing_files = [
     "test/libtest/test_c_datablock_scalars.template",
     "test/libtest/Makefile",
     "test/campaign.yml",
+    "test/included.yml",
     "test/bad-campaign.yml",
     "test/example-priors.ini",
     "test/example-values.ini",

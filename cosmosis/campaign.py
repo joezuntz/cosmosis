@@ -410,9 +410,6 @@ def build_run(name, run_info, runs, components, output_dir, submission_info, out
     -------
     """
     run = run_info.copy()
-    env_vars = run_info.get("env", {})
-    run["env"] = env_vars
-
 
     # We want to delay expanding environment variables so that child runs
     # have a chance to override them. So we set no_expand_vars=True on all of these
@@ -428,6 +425,17 @@ def build_run(name, run_info, runs, components, output_dir, submission_info, out
     else:
         warnings.warn(f"Run {name} specifies neither 'parent' nor 'base' so is invalid")
         return None
+    
+    # Build environment variables
+    # These are inherited from the parent run, if there is one,
+    # and then updated with any specific to this run, which can overwrite.
+    # env vars are only applied right at the end when all runs are collected
+    if "parent" in run_info:
+        env_vars = parent["env"].copy()
+    else:
+        env_vars = {}
+    env_vars.update(run_info.get("env", {}))
+    run["env"] = env_vars
 
     # Build values file, which is mandatory
     if "parent" in run_info:
@@ -575,6 +583,9 @@ def parse_yaml_run_file(run_config):
     -------
     runs : dict
         A dictionary of runs, keyed by name
+    
+    components : dict
+        A dictionary of components, keyed by name
     """
     if isinstance(run_config, dict):
         info = run_config
@@ -592,8 +603,11 @@ def parse_yaml_run_file(run_config):
     # Can include another run file, which we deal with
     # recursively.  
     runs = {}
+    components = {}
     for include_file in include:
-        runs.update(parse_yaml_run_file(include_file))
+        inc_runs, inc_comps = parse_yaml_run_file(include_file)
+        components.update(inc_comps)
+        runs.update(inc_runs)
 
     # But we override the output directory
     # of any imported runs with the one we have here   
@@ -601,7 +615,7 @@ def parse_yaml_run_file(run_config):
         set_output_dir(run["params"], name, output_dir, output_name)
     
     # deal with re-usable components
-    components = info.get("components", {})
+    components.update(info.get("components", {}))
 
     submission_info = info.get("submission", {})
 
@@ -614,7 +628,7 @@ def parse_yaml_run_file(run_config):
     # a chance to override the environment variables of their parents.
     expand_environment_variables(runs)
 
-    return runs
+    return runs, components
 
 
 def show_run(run):
@@ -799,7 +813,7 @@ parser.add_argument("--mpi", action="store_true", help="Use MPI to launch the ru
 
 
 def main(args):
-    runs = parse_yaml_run_file(args.run_config)
+    runs, _ = parse_yaml_run_file(args.run_config)
 
     if args.mpi and not args.run:
         raise ValueError("MPI can only be used when running a single run")
