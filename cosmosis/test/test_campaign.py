@@ -173,7 +173,7 @@ def test_component():
 
 def test_include():
     with run_from_source_dir():
-        runs, components = parse_yaml_run_file("cosmosis/test/campaign.yml")
+        runs, _ = parse_yaml_run_file("cosmosis/test/campaign.yml")
     assert "imported-run" in runs
     assert "include-test-1" in runs
     assert runs['include-test-1']['params'].get("emcee", "walkers") == "755"
