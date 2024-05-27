@@ -165,13 +165,14 @@ def test_campaign_duplicate_keys():
 def test_component():
     with run_from_source_dir():
         runs, components = parse_yaml_run_file("cosmosis/test/campaign.yml")
-        assert "test_component_1" in components
-        assert runs["component-test"]["params"].get("emcee", "walkers") == "100"
+    assert "test_component_1" in components
+    assert runs["component-test"]["params"].get("emcee", "walkers") == "100"
 
 def test_include():
+    with run_from_source_dir():
         runs, components = parse_yaml_run_file("cosmosis/test/campaign.yml")
-        assert "imported-run" in runs
-        assert "include-test-1" in runs
-        assert runs['include-test-1']['params'].get("emcee", "walkers") == "755"
-        assert "include-test-2" in runs
-        assert runs['include-test-2']['params'].get("emcee", "walkers") == "200"
+    assert "imported-run" in runs
+    assert "include-test-1" in runs
+    assert runs['include-test-1']['params'].get("emcee", "walkers") == "755"
+    assert "include-test-2" in runs
+    assert runs['include-test-2']['params'].get("emcee", "walkers") == "200"
