@@ -28,15 +28,16 @@ libname=os.path.join(os.path.split(__file__)[0],"minuit_wrapper.so")
 class MinuitSampler(ParallelSampler):
     needs_output = True
     needs_parallel_output = False
+    libminuit_name = libname
     libminuit = None
     sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
         self.converged = False
         if MinuitSampler.libminuit is None:
-            if not os.path.exists(libname):
+            if not os.path.exists(self.libminuit_name):
                 raise ValueError("The CosmoSIS minuit2 wrapper was not compiled.  If you installed CosmoSIS manually you need the library minuit2 to use this sampler. See the wiki for more details.")
-            MinuitSampler.libminuit = ct.cdll.LoadLibrary(libname)
+            MinuitSampler.libminuit = ct.cdll.LoadLibrary(self.libminuit_name)
         self.maxiter = self.read_ini("maxiter", int, 1000)
         self.save_dir = self.read_ini("save_dir", str, "")
         self.save_cov = self.read_ini("save_cov", str, "")
