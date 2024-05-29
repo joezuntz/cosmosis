@@ -154,7 +154,7 @@ class Sampler(metaclass=RegisteredSampler):
     @classmethod
     def get_sampler(cls, name):
         try:
-            cls.registry[name.lower()]
+            return cls.registry[name.lower()]
         except KeyError:
             raise KeyError(f"Unknown sampler {name}")
 
