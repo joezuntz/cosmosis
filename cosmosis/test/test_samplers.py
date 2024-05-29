@@ -182,7 +182,7 @@ def test_list_sampler():
         input_chain.add_column('parameters--p1', float)
         input_chain.add_column('parameters--p2', float)
         nrow = 100
-        data = np.random.normal(size=(nrow, 2))
+        data = np.random.normal(size=(nrow, 2)).clip(-2.99, 2.99)
         for i in range(nrow):
             input_chain.parameters(data[i, 0], data[i, 1])
         input_chain.close()
