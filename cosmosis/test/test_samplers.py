@@ -1,8 +1,4 @@
-from cosmosis.runtime.config import Inifile
-from cosmosis.samplers.sampler import Sampler
-import cosmosis.samplers.minuit.minuit_sampler
-from cosmosis.runtime.pipeline import LikelihoodPipeline
-from cosmosis.output.in_memory_output import InMemoryOutput
+from cosmosis import Inifile, Sampler, LikelihoodPipeline, InMemoryOutput, TextColumnOutput
 from cosmosis.postprocessing import postprocessor_for_sampler
 import tempfile
 import os
@@ -11,7 +7,8 @@ import pytest
 import numpy as np
 from astropy.table import Table
 
-minuit_compiled = os.path.exists(cosmosis.samplers.minuit.minuit_sampler.libname)
+
+minuit_compiled = os.path.exists(Sampler.get_sampler("minuit").libminuit_name)
 
 def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, **options):
 
@@ -174,6 +171,37 @@ def test_star():
 
 def test_test():
     run('test', False, can_postprocess=False)
+
+def test_list_sampler():
+    # test that the burn and thin parameters work
+    # make a mock output file with some samples
+    with tempfile.TemporaryDirectory() as dirname:
+
+        input_chain_filename = os.path.join(dirname, "input_chain.txt")
+        input_chain = TextColumnOutput(input_chain_filename)
+        input_chain.add_column('parameters--p1', float)
+        input_chain.add_column('parameters--p2', float)
+        nrow = 100
+        data = np.random.normal(size=(nrow, 2)).clip(-2.99, 2.99)
+        for i in range(nrow):
+            input_chain.parameters(data[i, 0], data[i, 1])
+        input_chain.close()
+
+        burn = 0.2
+        thin = 2
+
+        data = data[20::thin]
+
+        output = run("list", True, can_postprocess=False, filename=input_chain_filename, burn=burn, thin=thin)
+        p1 = output['parameters--p1']
+        p2 = output['parameters--p2']
+        p3 = p1 + p2
+        expected_like = -(p1**2 + p2**2)/2.
+        assert p1.size == 40
+        assert np.allclose(p1, data[:, 0])
+        assert np.allclose(p2, data[:, 1])
+        assert np.allclose(output['PARAMETERS--P3'], p3)
+        assert np.allclose(output["post"] - output["prior"], expected_like)
 
 @pytest.mark.skipif(sys.version_info < (3,7), reason="pocomc requires python3.6+")
 def test_poco():
