@@ -430,7 +430,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             logs.overview(f"Successful posterior evaluations = {run_count_ok_total} across all processes")
             if output:
                 output.final("evaluations", run_count_total)
-                output.final("successes", run_count_total)
+                output.final("successes", run_count_ok_total)
                 output.final("complete", "1")
 
 
