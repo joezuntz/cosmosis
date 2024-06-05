@@ -100,3 +100,10 @@ runs:
     components:
     - test_component_2
 
+
+  - name: abstract-base-run
+    parent: v1
+    skip: True
+
+  - name: concrete-run
+    parent: abstract-base-run

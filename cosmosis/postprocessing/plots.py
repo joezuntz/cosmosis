@@ -783,18 +783,21 @@ class MetropolisHastingsPlots(MetropolisHastingsPlotsBase):
 
         self.cache[name1, name2] = (x_axis, y_axis, like.T, levels)
 
+        if not hasattr(figure, "cosmosis_extra_labels"):
+            figure.cosmosis_extra_labels = []
+
+
         if imshow:
             pylab.imshow(like.T, extent=(x_axis[0], x_axis[-1], y_axis[0], y_axis[-1]), aspect='auto', origin='lower')
             pylab.colorbar()
         elif fill:
             dark,light = self.shade_colors()
             pylab.contourf(x_axis, y_axis, like.T, [level2,level0], colors=[light], alpha=0.25)
-            pylab.contourf(x_axis, y_axis, like.T, [level1,level0], colors=[dark], alpha=0.25)
+            cs = pylab.contourf(x_axis, y_axis, like.T, [level1,level0], colors=[dark], alpha=0.25)
+            figure.cosmosis_extra_labels.append((cs.legend_elements()[0][-1], self.source.label))
         else:
             color = self.line_color()
             cs = pylab.contour(x_axis, y_axis, like.T, [level2,level1], colors=color)
-            if not hasattr(figure, "cosmosis_extra_labels"):
-                figure.cosmosis_extra_labels = []
             figure.cosmosis_extra_labels.append((cs.legend_elements()[0][0], self.source.label))
 
         if plot_points:

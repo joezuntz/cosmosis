@@ -376,125 +376,6 @@ def set_output_dir(params, name, output_dir, output_name):
         params.set("polychord", "polychord_outfile_root", f"{name}.polychord")
         params.set("polychord", "base_dir", output_dir)
 
-def build_run(name, run_info, runs, components, output_dir, submission_info, output_name="{name}"):
-    """
-    Generate a dictionary specifying a CosmoSIS run from a run_info dictioary.
-
-    Parameters
-    ----------
-    name : str
-        The name of the run
-    run_info : dict
-        A dictionary specifying the run.  This can have the following keys:
-        - base : the name of the base parameter file OR
-        - parent : the name of the parent run to use as a base (one of these is required)
-        - params : a list of updates to apply to the parameters file (optional)
-        - values : a list of updates to apply to the values file (optional)
-        - priors : a list of updates to apply to the priors file (optional)
-        - pipeline : a list of updates to apply to the pipeline (optional)
-        - components : a list of components to include (optional)
-        - env : a dictionary of environment variables to set (optional)
-    runs : dict
-        A dictionary of previously built runs
-    components : dict
-        A dictionary of previously built components
-    output_dir : str
-        The output directory to use
-    submission_info : dict
-        A dictionary of submission information
-    output_name : str
-        The format string to use to generate the output file name, using {name}
-        for the run name.
-
-    Returns
-    -------
-    """
-    run = run_info.copy()
-
-    # We want to delay expanding environment variables so that child runs
-    # have a chance to override them. So we set no_expand_vars=True on all of these
-    if "base" in run_info:
-        params = Inifile(run_info["base"], print_include_messages=False, no_expand_vars=True)
-    elif "parent" in run_info:
-        try:
-            parent = runs[run_info["parent"]]
-        except KeyError:
-            warnings.warn(f"Run {name} specifies parent {run_info['parent']} but there is no run with that name yet")
-            return None
-        params = Inifile(parent["params"], print_include_messages=False, no_expand_vars=True)
-    else:
-        warnings.warn(f"Run {name} specifies neither 'parent' nor 'base' so is invalid")
-        return None
-    
-    # Build environment variables
-    # These are inherited from the parent run, if there is one,
-    # and then updated with any specific to this run, which can overwrite.
-    # env vars are only applied right at the end when all runs are collected
-    if "parent" in run_info:
-        env_vars = parent["env"].copy()
-    else:
-        env_vars = {}
-    env_vars.update(run_info.get("env", {}))
-    run["env"] = env_vars
-
-    # Build values file, which is mandatory
-    if "parent" in run_info:
-        values = Inifile(parent["values"], print_include_messages=False, no_expand_vars=True)
-    else:
-        values_file = params.get('pipeline', 'values')
-        values = Inifile(values_file, print_include_messages=False, no_expand_vars=True)
-
-    # Build optional priors file
-    if "parent" in run_info:
-        priors = Inifile(parent["priors"], print_include_messages=False, no_expand_vars=True)
-    elif "priors" in params.options("pipeline"):
-        priors_file = params.get('pipeline', 'priors')
-        priors = Inifile(priors_file, print_include_messages=False, no_expand_vars=True)
-    else:
-        priors = Inifile(None, no_expand_vars=True)
-
-    # Make a list of all the modifications to be applied
-    # to the different bits of this pipeline
-
-    param_updates = []
-    value_updates = []
-    prior_updates = []
-    pipeline_updates = []
-
-    # First from any generic components specified
-    for component in run_info.get("components", []):
-        component_info = components[component]
-        param_updates.extend(component_info.get("params", []))
-        value_updates.extend(component_info.get("values", []))
-        prior_updates.extend(component_info.get("priors", []))
-        pipeline_updates.extend(component_info.get("pipeline", []))
-
-    # And then for anything specific to this pipeline
-    param_updates.extend(run_info.get("params", []))
-    value_updates.extend(run_info.get("values", []))
-    prior_updates.extend(run_info.get("priors", []))
-    pipeline_updates.extend(run_info.get("pipeline", []))
-
-    # Now apply all the steps
-    apply_updates(params, param_updates, is_params=True)
-    apply_updates(values, value_updates)
-    apply_updates(priors, prior_updates)
-    apply_pipeline_updates(params, pipeline_updates)
-
-    output_name = run_info.get("output_name", output_name)
-    set_output_dir(params, name, output_dir, output_name)
-
-    # Finally, set the submission information
-    submission_info = submission_info.copy()
-    submission_info["output_dir"] = output_dir
-    submission_info.update(run_info.get("submission", {}))
-    run["submission"] = submission_info
-
-    run["params"] = params
-    run["values"] = values
-    run["priors"] = priors
-
-    return run
 
 
 def expand_environment_variables(runs):
@@ -622,7 +503,11 @@ def parse_yaml_run_file(run_config):
     # Build the parameter, value, and prior objects for this run
     for run_dict in info["runs"]:
         name = run_dict["name"]
-        runs[name] = build_run(name, run_dict, runs, components, output_dir, submission_info, output_name)
+        if "parent" in run_dict:
+            parent = runs[run_dict["parent"]]
+        else:
+            parent = None
+        runs[name] = Run.build(name, run_dict, components, output_dir, parent=parent, submission_info=submission_info, output_name=output_name)
 
     # Only now do we expand environment variables in the runs.  This gives the child runs
     # a chance to override the environment variables of their parents.
@@ -631,56 +516,7 @@ def parse_yaml_run_file(run_config):
     return runs, components
 
 
-def show_run(run):
-    """
-    Print a complete description of the run to the screen
 
-    Parameters
-    ----------
-    run : dict
-        The run to print
-    
-    Returns
-    -------
-    None
-    """
-    print(underline(f"Run {run['name']}", '='))
-    print(underline("Parameters"))
-    run["params"].write(sys.stdout)
-    print("")
-    print(underline("Values"))
-    run["values"].write(sys.stdout)
-    print("")
-    print(underline("Priors"))
-    run["priors"].write(sys.stdout)
-    print("")
-
-def perform_test_run(run):
-    """
-    Launch a run under the "test" sampler, which just runs the pipeline
-    and does not do any sampling.
-
-    Parameters
-    ----------
-    run : dict
-        The run to perform
-    
-    Returns
-    -------
-    status: int
-        The exit status of the run
-    """
-    params = run["params"]
-    values = run["values"]
-    priors = run["priors"]
-    env = run["env"]
-    params.set("runtime", "sampler", "test")
-    params.set("pipeline", "debug", "T")
-    params.set("runtime", "verbosity", "debug")
-    params.set("runtime", "resume", "F")
-
-    with temporary_environment(env):
-        return run_cosmosis(params, values=values, priors=priors)
 
 def chain_status(filename, include_comments=False):
     n = 0
@@ -695,72 +531,7 @@ def chain_status(filename, include_comments=False):
     time_ago_minutes = time_ago_seconds / 60
     return n, complete, time_ago_minutes
 
-def show_run_status(runs, names=None):
-    """
-    Report the status of the output of one or more runs.
 
-    Parameters
-    ----------
-    runs : dict
-        A dictionary of runs, keyed by name
-    names : list
-        The names of the runs to report on.  If None then all runs are reported on.
-    
-    Returns
-    -------
-    None
-    """
-    if not names:
-        names = runs.keys()
-
-    for name in names:
-        run = runs[name]
-        sampler = run["params"].get("runtime", "sampler")
-        if sampler == "test":
-            output_dir = run["params"].get("test", "save_dir")
-            if os.path.exists(output_dir):
-                print(f"🟢 {name} has been run [test sampler]")
-            else:
-                print(f"🔴 {name} has not been run [test sampler]")
-        else:
-            output_file = run["params"].get("output", "filename")
-            if os.path.exists(output_file):
-                n, complete, last_update = chain_status(output_file)
-                if complete:
-                    print(f"🟢 {name} output complete with {n} samples, updated {last_update:.1f} minutes ago")
-                elif n:
-                    print(f"🟡 {name} output exists with {n} samples, updated {last_update:.1f} minutes ago")
-                else:
-                    print(f"🟠 {name} output exists with 0 samples, updated {last_update:.1f} minutes ago")
-            else:
-                print(f"🔴 {name} output missing with 0 samples")
-
-
-def launch_run(run, mpi=False):
-    """
-    Launch a CosmoSIS run.
-
-    Parameters
-    ----------
-    run : dict
-        The run to launch
-    
-    Returns
-    -------
-    status: int
-        The exit status of the run
-    """
-    params = run["params"]
-    values = run["values"]
-    priors = run["priors"]
-    env = run["env"]
-
-    with temporary_environment(env):
-        if mpi:
-            with MPIPool() as pool:
-                return run_cosmosis(params, values=values, priors=priors, pool=pool)
-        else:
-            return run_cosmosis(params, values=values, priors=priors)
 
 
 def submit_run(run_file, run):
@@ -796,6 +567,367 @@ def submit_run(run_file, run):
     subprocess.check_call(f"{submit} {sub_file}", shell=True)
     print(f"Submitted {sub_file}\nJob output in", keys["log"])
 
+class Run:
+    def __init__(self, name: str, params: Inifile, values: Inifile, priors: Inifile, env: dict[str,str]=None, submission: dict[str,str]=None, skip: bool=False):
+        self.name = name
+        self.params = params
+        self.values = values
+        self.priors = priors
+        self.env = env or {}
+        self.submission = submission
+        self.skip = skip
+
+    @classmethod
+    def build(cls, 
+                  name: str, 
+                  run_info: dict,
+                  components: dict,
+                  output_dir: str,
+                  parent = None,
+                  submission_info: dict=None, 
+                  output_name="{name}"):
+        """
+        Generate a dictionary specifying a CosmoSIS run from a run_info dictioary.
+
+        Parameters
+        ----------
+        name : str
+            The name of the run
+        run_info : dict
+            A dictionary specifying the run.  This can have the following keys:
+            - base : the name of the base parameter file OR
+            - parent : the name of the parent run to use as a base (one of these is required)
+            - params : a list of updates to apply to the parameters file (optional)
+            - values : a list of updates to apply to the values file (optional)
+            - priors : a list of updates to apply to the priors file (optional)
+            - pipeline : a list of updates to apply to the pipeline (optional)
+            - components : a list of components to include (optional)
+            - env : a dictionary of environment variables to set (optional)
+        runs : dict
+            A dictionary of previously built runs
+        components : dict
+            A dictionary of previously built components
+        output_dir : str
+            The output directory to use
+        submission_info : dict
+            A dictionary of submission information
+        output_name : str
+            The format string to use to generate the output file name, using {name}
+            for the run name.
+
+        Returns
+        -------
+        """
+        base = run_info.get("base", None)
+
+        # We want to delay expanding environment variables so that child runs
+        # have a chance to override them. So we set no_expand_vars=True on all of these
+        if parent is not None:
+            params = Inifile(parent["params"], print_include_messages=False, no_expand_vars=True)
+            if base is not None:
+                raise ValueError("Can only specify either 'base' or 'parent' of a run.  Not both.")
+        else:
+            if base is None:
+                raise ValueError(f"Run {name} specifies neither 'parent' nor 'base' so is invalid")
+            params = Inifile(base, print_include_messages=False, no_expand_vars=True)
+            
+        
+        # Build environment variables
+        # These are inherited from the parent run, if there is one,
+        # and then updated with any specific to this run, which can overwrite.
+        # env vars are only applied right at the end when all runs are collected
+        if parent is not None:
+            env_vars = parent["env"].copy()
+        else:
+            env_vars = {}
+        env_vars.update(run_info.get("env", {}))
+
+        # Build values file, which is mandatory
+        if parent is not None:
+            values = Inifile(parent["values"], print_include_messages=False, no_expand_vars=True)
+        else:
+            values_file = params.get('pipeline', 'values')
+            values = Inifile(values_file, print_include_messages=False, no_expand_vars=True)
+
+        # Build optional priors file
+        if parent is not None:
+            priors = Inifile(parent["priors"], print_include_messages=False, no_expand_vars=True)
+        elif "priors" in params.options("pipeline"):
+            priors_file = params.get('pipeline', 'priors')
+            priors = Inifile(priors_file, print_include_messages=False, no_expand_vars=True)
+        else:
+            priors = Inifile(None, no_expand_vars=True)
+
+        # Make a list of all the modifications to be applied
+        # to the different bits of this pipeline
+
+        param_updates = []
+        value_updates = []
+        prior_updates = []
+        pipeline_updates = []
+
+        # First from any generic components specified
+        for component in run_info.get("components", []):
+            component_info = components[component]
+            param_updates.extend(component_info.get("params", []))
+            value_updates.extend(component_info.get("values", []))
+            prior_updates.extend(component_info.get("priors", []))
+            pipeline_updates.extend(component_info.get("pipeline", []))
+
+        # And then for anything specific to this pipeline
+        param_updates.extend(run_info.get("params", []))
+        value_updates.extend(run_info.get("values", []))
+        prior_updates.extend(run_info.get("priors", []))
+        pipeline_updates.extend(run_info.get("pipeline", []))
+
+        # The "skip" parameter is not inherited, to allow us to make
+        # base runs that are not themselves launched
+        skip = run_info.get("skip", False)
+
+        # Now apply all the steps
+        apply_updates(params, param_updates, is_params=True)
+        apply_updates(values, value_updates)
+        apply_updates(priors, prior_updates)
+        apply_pipeline_updates(params, pipeline_updates)
+
+        output_name = run_info.get("output_name", output_name)
+        set_output_dir(params, name, output_dir, output_name)
+
+        # Finally, set the submission information
+        if submission_info is None:
+            submission_info = {}
+        submission_info = submission_info.copy()
+        submission_info["output_dir"] = output_dir
+        submission_info.update(run_info.get("submission", {}))
+
+        run = cls(name, params, values, priors, env_vars, submission_info, skip)
+        return run
+
+
+    def launch(self, mpi=False):
+        """
+        Launch a CosmoSIS run.
+
+        Parameters
+        ----------
+        mpi : bool
+            Whether to launch with MPI
+        
+        Returns
+        -------
+        status: int
+            The exit status of the run
+        """
+
+        with temporary_environment(self.env):
+            if mpi:
+                with MPIPool() as pool:
+                    return run_cosmosis(self.params, values=self.values, priors=self.priors, pool=pool)
+            else:
+                return run_cosmosis(self.params, values=self.values, priors=self.priors)
+
+    def show(self):
+        """
+        Print a complete description of the run to the screen
+
+        Parameters
+        ----------
+        run : dict
+            The run to print
+        
+        Returns
+        -------
+        None
+        """
+        print(underline(f"Run {self.name}", '='))
+        print(underline("Parameters"))
+        self.params.write(sys.stdout)
+        print("")
+        print(underline("Values"))
+        self.values.write(sys.stdout)
+        print("")
+        print(underline("Priors"))
+        self.priors.write(sys.stdout)
+        print("")
+
+
+    def status_string(self, names=None):
+        """
+        Generate a status string for this run
+
+        Parameters
+        ----------
+        runs : dict
+            A dictionary of runs, keyed by name
+        names : list
+            The names of the runs to report on.  If None then all runs are reported on.
+        
+        Returns
+        -------
+        None
+        """
+        if self.sampler == "test":
+            output_dir = self.params.get("test", "save_dir")
+            if os.path.exists(output_dir):
+                return f"🟢 {self.name} has been run [test sampler]"
+            else:
+                return f"🔴 {self.name} has not been run [test sampler]"
+        else:
+            output_file = self.params.get("output", "filename")
+            if os.path.exists(output_file):
+                n, complete, last_update = chain_status(output_file)
+                if complete:
+                    return f"🟢 {self.name} output complete with {n} samples, updated {last_update:.1f} minutes ago"
+                elif n:
+                    return f"🟡 {self.name} output exists with {n} samples, updated {last_update:.1f} minutes ago"
+                else:
+                    return f"🟠 {self.name} output exists with 0 samples, updated {last_update:.1f} minutes ago"
+            else:
+                return f"🔴 {self.name} output missing with 0 samples"
+
+    def test(self):
+        """
+        Launch the run under the "test" sampler, which just runs the pipeline
+        and does not do any sampling.
+
+        Parameters
+        ----------
+        run : dict
+            The run to perform
+        
+        Returns
+        -------
+        status: int
+            The exit status of the run
+        """
+        # we make a copy of the paraneters so we can modify them without
+        # affecting the run
+        params = Inifile(self.params)
+        env = self.env
+        params.set("runtime", "sampler", "test")
+        params.set("pipeline", "debug", "T")
+        params.set("runtime", "verbosity", "debug")
+        params.set("runtime", "resume", "F")
+
+        with temporary_environment(env):
+            return run_cosmosis(params, values=self.values, priors=self.priors)
+        
+    def set_output_dir(self, output_dir, output_name="{name}"):
+        """
+        Set the output directory for this run
+
+        Parameters
+        ----------
+        output_dir : str
+            The output directory to use
+        output_name: str
+            Override the output name for this run as shown.
+        Returns
+        -------
+        None
+        """
+
+        set_output_dir(self.params, self.name, output_dir, output_name)
+
+    def read_chain(self):
+        chain = Chain.load(self.params)
+        return chain
+    
+    def read_getdist(self):
+        chain = self.read_chain()
+        return chain.mcsamples()
+
+    @property
+    def is_complete(self):
+        output_file = self.params.get("output", "filename")
+        if os.path.exists(output_file):
+            _, complete, _ = chain_status(output_file)
+            return complete
+        else:
+            return False
+
+
+
+class Campaign:
+    def __init__(self, runs, components):
+        self.runs = runs
+        self.components = components
+
+    def __len__(self):
+        return len(self.runs)
+    
+    def items(self):
+        return self.runs.items()
+
+    def names(self):
+        return list(self.runs.keys())
+    
+    def __getitem__(self, name):
+        return self.run[name]
+    
+    def __contains__(self, name):
+        return name in self.runs
+
+    @classmethod
+    def from_yaml(cls, run_config):
+        runs, components = parse_yaml_run_file(run_config)
+        return cls(runs, components)
+    
+    def unskipped_runs(self, name="*"):
+        if isinstance(name, str):
+            if name == "*":
+                names = [name for name, run in self.runs.items() if not run.skip()]
+            names = [names]
+        else:
+            names = name
+        return names
+    
+    def run(self, name):
+        """
+        Launch one or more runs by name
+        """
+
+        statuses = {}
+        for name in self._select_run_names(name):
+            run = self.runs[name]
+            statuses[name] = run.launch()
+        
+        return statuses
+
+    def test(self, name):
+        statuses = {}
+        for name in self._select_run_names(name):
+            run = self.runs[name]
+            statuses[name] = run.test()
+
+        return run.test()
+    
+    def status_report(self, names=None):
+        lines = []
+        if not names:
+            names = self.runs.keys()
+
+        for name in names:
+            run = self.runs[name]
+            if run.skip:
+                continue
+            lines.append(run.status_string())
+        return "\n".join(lines)
+    
+    def skip_run(self, run):
+        self[run].skip = True
+    
+    def unskip_run(self, run):
+        self[run].skip = False
+    
+    def read_chains(self):
+        chains = {}
+        for name, run in self.runs.items():
+            if run.is_complete and not run.skip:
+                chains[name] = run.read_chain()
+        return chains
+
+    
 
 
 import argparse
@@ -806,37 +938,35 @@ group.add_argument("--list", "-l", action="store_true", help="List all available
 group.add_argument("--cat", "-c",  type=str, help="Show a single run")
 group.add_argument("--status", "-s", default="_unset", nargs="*", help="Show the status of a single run, or all runs if called with no argument")
 group.add_argument("--run", "-r",  help="Run the named run")
+group.add_argument("--run-all", action="store_true", help="Run all runs except those marked as skipped")
 group.add_argument("--test", "-t",  help="Test the named run")
 group.add_argument("--submit", "-x",  help="Submit the named run to a batch system")
 parser.add_argument("--mpi", action="store_true", help="Use MPI to launch the runs")
 
 
-
 def main(args):
-    runs, _ = parse_yaml_run_file(args.run_config)
+    campaign = Campaign.from_yaml(args.run_config)
 
-    if args.mpi and not args.run:
+    if args.mpi and not (args.run or args.run_all):
         raise ValueError("MPI can only be used when running a single run")
 
-    status_set = args.status != "_unset"
-
-    # The various command line options, which are mutually exclusive.
-    # This is enforced by the parser above.
-    if args.list:
-        for name in runs:
+    if args.run_all:
+        campaign.run("*")
+    elif args.list:
+        for name in campaign.unskipped_runs():
             print(name)
-    elif args.cat:
-        show_run(runs[args.cat])
-    elif args.test:
-        perform_test_run(runs[args.test])
-    elif status_set:
-        show_run_status(runs, args.status)
     elif args.run:
-        launch_run(runs[args.run], mpi=args.mpi)
+        campaign.run(args.run)
     elif args.submit:
-        submit_run(args.run_config, runs[args.submit])
-
-
+        submit_run(args.run_config, campaign[args.submit])
+    elif args.cat:
+        campaign[args.cat].show()
+    elif args.test:
+        campaign.test(args.test)
+    elif args.submit:
+        submit_run(args.run_config, campaign[args.submit])
+    elif args.status:
+        print(campaign.status_report())
 
 if __name__ == "__main__":
     args = parser.parse_args()

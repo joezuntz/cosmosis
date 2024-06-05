@@ -5,7 +5,7 @@ import tempfile
 import contextlib
 import pytest
 
-NRUN = 13
+NRUN = 15
 
 @contextlib.contextmanager
 def run_from_source_dir():
@@ -72,38 +72,42 @@ def test_pipeline_prepend():
 
 def test_campaign_functions():
     with run_from_source_dir():
-        runs, _ = parse_yaml_run_file("cosmosis/test/campaign.yml")
+        campaign = Campaign.from_yaml("cosmosis/test/campaign.yml")
 
-        assert len(runs) == NRUN
-        assert "v1" in runs
-        assert runs["v2"]["values"].get("parameters", "p1") == "-2.0 0.0 2.0"
-        assert runs["v2"]["priors"].get("parameters", "p2") == "gaussian 0.0 1.0"
-        assert runs["v3"]["params"].get("runtime", "sampler") == "emcee"
-        assert runs["v3"]["params"].get("emcee", "walkers") == "8"
+        assert len(campaign) == NRUN
+        assert "v1" in campaign
+        assert campaign["v2"].values.get("parameters", "p1") == "-2.0 0.0 2.0"
+        assert campaign["v2"].priors.get("parameters", "p2") == "gaussian 0.0 1.0"
+        assert campaign["v3"].params.get("runtime", "sampler") == "emcee"
+        assert campaign["v3"].params.get("emcee", "walkers") == "8"
 
-        assert not runs["v4"]["priors"].has_option("parameters", "p2")
+        assert not campaign["v4"].priors.has_option("parameters", "p2")
 
-        assert runs["v3"]["params"].get("output", "filename") == "output/campaign-test/my_project_v3_suite1.txt"
+        assert campaign["v3"].params.get("output", "filename") == "output/campaign-test/my_project_v3_suite1.txt"
 
-        for name in runs:
+        for name in campaign:
             print(name)
 
-        show_run(runs["v1"])
-        perform_test_run(runs["v1"])
-        show_run_status(runs)
-        show_run_status(runs, ["v1"])
-        show_run_status(runs, ["v2"])
-        perform_test_run(runs["v2"])
-        show_run_status(runs, ["v1"])
-        show_run_status(runs, ["v2"])
-        launch_run(runs["v2"])
-        show_run_status(runs, ["v1"])
-        show_run_status(runs, ["v2"])
+        campaign["v1"].show()
+        campaign["v1"].test()
+        campaign.status_report()
 
-        submit_run("cosmosis/test/campaign.yml", runs["v3"])
-        submit_run("cosmosis/test/campaign.yml", runs["v4"])
+        campaign["v1"].status_string()
+        campaign["v2"].status_string()
+
+        campaign["v2"].test()
+        campaign["v1"].status_string()
+        campaign["v2"].status_string()
+
+        campaign["v2"].launch()
+        campaign["v1"].status_string()
+        campaign["v2"].status_string()
+
+        submit_run("cosmosis/test/campaign.yml", campaign["v3"])
+        submit_run("cosmosis/test/campaign.yml", campaign["v4"])
 
 def test_campaign_functions2():
+    # Same tests but in a different directory
     with run_from_source_dir():
         with open("cosmosis/test/campaign.yml") as f:
             runs_config = load_yaml(f)
@@ -113,35 +117,40 @@ def test_campaign_functions2():
 
         with run_from_source_dir():
             with open("cosmosis/test/campaign.yml") as f:
-                runs, _ = parse_yaml_run_file(runs_config)
+                campaign = Campaign.from_yaml("cosmosis/test/campaign.yml")
 
-            for name in runs:
+            for name in campaign:
                 print(name)
 
 
-            assert len(runs) == NRUN
-            assert "v1" in runs
-            assert runs["v2"]["values"].get("parameters", "p1") == "-2.0 0.0 2.0"
-            assert runs["v2"]["priors"].get("parameters", "p2") == "gaussian 0.0 1.0"
-            assert runs["v3"]["params"].get("runtime", "sampler") == "emcee"
-            assert runs["v3"]["params"].get("emcee", "walkers") == "8"
+        assert len(campaign) == NRUN
+        assert "v1" in campaign
+        assert campaign["v2"].values.get("parameters", "p1") == "-2.0 0.0 2.0"
+        assert campaign["v2"].priors.get("parameters", "p2") == "gaussian 0.0 1.0"
+        assert campaign["v3"].params.get("runtime", "sampler") == "emcee"
+        assert campaign["v3"].params.get("emcee", "walkers") == "8"
 
-            assert not runs["v4"]["priors"].has_option("parameters", "p2")
+        assert not campaign["v4"].priors.has_option("parameters", "p2")
 
-            show_run(runs["v1"])
-            perform_test_run(runs["v1"])
-            show_run_status(runs)
-            show_run_status(runs, ["v1"])
-            show_run_status(runs, ["v2"])
-            perform_test_run(runs["v2"])
-            show_run_status(runs, ["v1"])
-            show_run_status(runs, ["v2"])
-            launch_run(runs["v2"])
-            show_run_status(runs, ["v1"])
-            show_run_status(runs, ["v2"])
+        assert campaign["v3"].params.get("output", "filename") == "output/campaign-test/my_project_v3_suite1.txt"
 
-            submit_run("cosmosis/test/campaign.yml", runs["v3"])
-            submit_run("cosmosis/test/campaign.yml", runs["v4"])
+        campaign["v1"].show()
+        campaign["v1"].test()
+        campaign.status_report()
+
+        campaign["v1"].status_string()
+        campaign["v2"].status_string()
+
+        campaign["v2"].test()
+        campaign["v1"].status_string()
+        campaign["v2"].status_string()
+
+        campaign["v2"].launch()
+        campaign["v1"].status_string()
+        campaign["v2"].status_string()
+
+        submit_run("cosmosis/test/campaign.yml", campaign["v3"])
+        submit_run("cosmosis/test/campaign.yml", campaign["v4"])
 
 
 def test_campaign_env():
