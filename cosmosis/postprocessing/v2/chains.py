@@ -1,14 +1,8 @@
+from cosmosis.runtime.utils import import_by_path
+from cosmosis import Inifile, output as output_module
+import numpy as np
 from io import StringIO
 import os
-import numpy as np
-import scipy.optimize
-
-# from ..runtime.utils import import_by_path
-# from ..runtime import Inifile
-from cosmosis.runtime.utils import import_by_path
-from cosmosis import output as output_module
-from cosmosis import Inifile
-from cosmosis.postprocessing import read_input
 
 
 class Chain:
@@ -25,6 +19,7 @@ class Chain:
         final_metadata: list[list[str]],
         **options
     ):
+        self.name = name
         self.sampler = sampler
         self.colnames = columns
         self.data = data
@@ -228,7 +223,8 @@ class Chain:
                 weights = None
             samples = np.array(samples).T
             self._mcsamples = getdist.MCSamples(
-                samples=samples, weights=weights, names=names
+                samples=samples, weights=weights, names=names,
+                name_tag=self.name
             )
         return self._mcsamples
 
