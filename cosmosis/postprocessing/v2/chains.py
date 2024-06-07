@@ -1,3 +1,13 @@
+"""
+This is the core of what will at some point become the new postprocessing
+system in CosmoSIS.  The plan is:
+- do plotting with GetDist instead of manually
+- make the plotting much simpler than the complex hierarchies we have now
+- connect this to the campaign system to make it easy to specify what to do after completing a campaign
+
+These APIs will change and should not yet be relied on.
+
+"""
 from cosmosis.runtime.utils import import_by_path
 from cosmosis import Inifile, output as output_module
 import numpy as np
