@@ -85,7 +85,7 @@ def sampler_main_loop(sampler, output, pool, is_root):
 
 
 
-def write_header_output(output, params, values, pipeline):
+def write_header_output(output, params, values, pipeline, values_override=None):
     # If there is an output file, save the ini information to
     # it as well.  We do it here since it's nicer to have it
     # after the sampler options that get written in sampler.config.
@@ -100,7 +100,7 @@ def write_header_output(output, params, values, pipeline):
     if isinstance(values, Inifile):
         values_ini = values
     elif values is None:
-        values_ini=Inifile(pipeline.values_filename)
+        values_ini=Inifile(pipeline.values_filename, override=values_override)
     else:
         values_ini=values
     output.comment("START_OF_VALUES_INI")
@@ -408,7 +408,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
            sampler.resume()
 
         if output:
-            write_header_output(output, ini, values, pipeline)
+            write_header_output(output, ini, values, pipeline, values_override=variables)
 
         sys.stdout.flush()
         sys.stderr.flush()
