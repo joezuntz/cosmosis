@@ -4,15 +4,17 @@ import numpy as np
 
 
 def log_likelihood(p):
-    like, _ = pipeline.likelihood(p)
-    # PocoMC cannot cope with infinities
+    r = pipeline.run_results(p)
+    like = r.like
+    # PocoMC cannot cope with -inf posteriors
     if not np.isfinite(like):
         like = -1e30
-    return like
+    return like, r.extra
 
 
 class Prior:
-    def __init__(self):
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
         self.dim = len(self.pipeline.varied_params)
         self.bounds = np.array([p.limits for p in self.pipeline.varied_params])
 
@@ -54,12 +56,16 @@ class PocoMCSampler(ParallelSampler):
             self.n_total = self.read_ini("n_total", int, 4096)
             self.n_evidence = self.read_ini("n_evidence", int, 4096)
             self.progress = self.read_ini("progress", bool, True)
-            self.resume_state_path = self.read_ini("resume_state_path", str, None)
-            self.save_every = self.read_ini("save_every", int, None)
+            self.resume_state_path = self.read_ini("resume_state_path", str, "")
+            if self.resume_state_path == "":
+                self.resume_state_path = None
+            self.save_every = self.read_ini("save_every", int, -1)
+            if self.save_every == -1:
+                self.save_every = None
 
             # Finally we can create the sampler
             self.sampler = self.pocomc.Sampler(
-                prior=Prior(),
+                prior=Prior(self.pipeline),
                 likelihood=log_likelihood,
                 random_state=seed,
                 n_effective=self.n_effective,
