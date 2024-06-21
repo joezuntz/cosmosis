@@ -182,7 +182,7 @@ class develop_cosmosis(setuptools.command.develop.develop):
 requirements = [
     "pyyaml",
     "emcee",
-    "numpy",
+    "numpy<2",
     "scipy",
     "matplotlib",
     "pybind11",
