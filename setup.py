@@ -193,6 +193,7 @@ requirements = [
     "dynesty",
     "zeus-mcmc",
     "nautilus-sampler>=1.0.1",
+    "pocomc>=1.2.2",
     "dulwich",
     "scikit-learn",
     "future",
