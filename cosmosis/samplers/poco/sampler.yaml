@@ -35,8 +35,6 @@ params:
     dynamic: (bool, default=True) Whether to use dynamic particle allocation.
     n_total: (integer, default=4096) Total number of effective samples to generate. Higher values will increase the accuracy of the posterior estimate (recommended ~10000 for publication quality corner plots).
     n_evidence: (integer, default=4096) Number of samples to generate for the Bayesian evidence calculation.
-    output_dir: (string, default="output") Output directory for storing the state files of the sampler.
-    resume_state_path: (string, default=None) Path to a state file to resume from (e.g., "output/pmc_12.state"). If not provided, the sampler will start from scratch.
     save_every: (int, default=None) Save the state of the sampler every `save_every` iterations. If not provided, the sampler will not save intermediate states.
     seed: (int; default=0) A random seed for reproducibility. Default is to generate automatically.
     progress: (bool, default=True) Whether to show a progress bar during sampling.

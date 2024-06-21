@@ -6,11 +6,7 @@ import glob
 
 def log_likelihood(p):
     r = pipeline.run_results(p)
-    like = r.like
-    # PocoMC cannot cope with -inf posteriors
-    if not np.isfinite(like):
-        like = -1e30
-    return like, r.extra
+    return r.like, r.extra
 
 
 class Prior:

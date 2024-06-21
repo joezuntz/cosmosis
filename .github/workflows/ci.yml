@@ -92,7 +92,7 @@ jobs:
         pip install -v .
         pip install --no-binary=mpi4py mpi4py astropy pytest pytest-cov
 
-    - name: Install PocoMC]
+    - name: Install PocoMC
       if: matrix.python-version != '3.7'
       run: |
         pip install pocomc==1.2.2
