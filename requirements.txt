@@ -14,4 +14,3 @@ dulwich
 urllib3
 scikit-learn
 nautilus-sampler >= 1.0.1
-pocomc >= 1.2.2
