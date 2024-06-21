@@ -62,7 +62,11 @@ class PocoMCSampler(ParallelSampler):
         # We only checkpoint if the user is saving output to a
         # file, since otherwise we are probably in a script
         # and so checkopinting would probably not make sense
-        self.output_dir = self.output.name_for_sampler_resume_info()
+        try:
+            self.output_dir = self.output.name_for_sampler_resume_info()
+        except NotImplementedError:
+            self.output_dir = None
+
         if self.output_dir is not None:
             if os.path.isfile(self.output_dir):
                 # Another sampler has been run before this one
@@ -70,7 +74,7 @@ class PocoMCSampler(ParallelSampler):
                 os.remove(self.output_dir)
 
             os.makedirs(self.output_dir, exist_ok=True)
-        print("output_dir = ", self.output_dir)
+
         # Finally we can create the sampler
         self.sampler = self.pocomc.Sampler(
             prior=Prior(self.pipeline),
