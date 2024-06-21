@@ -209,7 +209,7 @@ def test_poco():
         import pocomc
     except ImportError:
         pytest.skip("pocomc not installed")
-    run('poco', True, check_extra=False, n_particles=100)
+    run('pocomc', True, check_extra=False, n_effective=32, n_active=16,  n_total=32, n_evidence=32, )
 
 if __name__ == '__main__':
     import sys
