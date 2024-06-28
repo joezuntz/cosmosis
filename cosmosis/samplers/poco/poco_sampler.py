@@ -31,12 +31,10 @@ class PocoMCSampler(ParallelSampler):
     def config(self):
         global pipeline
         pipeline = self.pipeline
+        import pocomc
+        self.pocomc = pocomc
 
         if self.is_master():
-            import pocomc
-
-            self.pocomc = pocomc
-
             # Parameters of the sampler
             self.n_effective = self.read_ini("n_effective", int, 512)
             self.n_active = self.read_ini("n_active", int, 256)
