@@ -53,40 +53,40 @@ class PocoMCSampler(ParallelSampler):
             if self.save_every == -1:
                 self.save_every = None
 
-        # We only checkpoint if the user is saving output to a
-        # file, since otherwise we are probably in a script
-        # and so checkopinting would probably not make sense
-        try:
-            self.output_dir = self.output.name_for_sampler_resume_info()
-        except NotImplementedError:
-            self.output_dir = None
+            # We only checkpoint if the user is saving output to a
+            # file, since otherwise we are probably in a script
+            # and so checkopinting would probably not make sense
+            try:
+                self.output_dir = self.output.name_for_sampler_resume_info()
+            except NotImplementedError:
+                self.output_dir = None
 
-        if self.output_dir is not None:
-            if os.path.isfile(self.output_dir):
-                # Another sampler has been run before this one
-                # and created a checkpoint file. We can delete it
-                os.remove(self.output_dir)
+            if self.output_dir is not None:
+                if os.path.isfile(self.output_dir):
+                    # Another sampler has been run before this one
+                    # and created a checkpoint file. We can delete it
+                    os.remove(self.output_dir)
 
-            os.makedirs(self.output_dir, exist_ok=True)
+                os.makedirs(self.output_dir, exist_ok=True)
 
-        # Finally we can create the sampler
-        self.sampler = self.pocomc.Sampler(
-            prior=Prior(self.pipeline),
-            likelihood=log_likelihood,
-            random_state=seed,
-            n_effective=self.n_effective,
-            n_active=self.n_active,
-            flow=self.flow,
-            precondition=self.precondition,
-            dynamic=self.dynamic,
-            output_dir=self.output_dir,
-            pool=self.pool,
-            blobs_dtype=float,
-        )
+            # Finally we can create the sampler
+            self.sampler = self.pocomc.Sampler(
+                prior=Prior(self.pipeline),
+                likelihood=log_likelihood,
+                random_state=seed,
+                n_effective=self.n_effective,
+                n_active=self.n_active,
+                flow=self.flow,
+                precondition=self.precondition,
+                dynamic=self.dynamic,
+                output_dir=self.output_dir,
+                pool=self.pool,
+                blobs_dtype=float,
+            )
 
-        self.converged = False
-        self.resume_state_path = None
-        self.told_to_resume = False
+            self.converged = False
+            self.resume_state_path = None
+            self.told_to_resume = False
 
     def resume(self):
         self.told_to_resume = True
