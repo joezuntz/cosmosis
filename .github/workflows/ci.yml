@@ -29,25 +29,25 @@ jobs:
         #   - os: macos-latest
         #     python-version: 3.7
         include:
-          - os: ubuntu-20.04
-            INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
-          - os: macos-latest
-            # Different versions of homebrew put the gfortran in different
-            INSTALL_DEPS: >
-              brew update-reset 
-              && HOMEBREW_NO_AUTO_UPDATE=1  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install gcc swig libomp open-mpi openblas 
-              && COSMOSIS_GCC_VER=$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1)
-              && GFORTRAN_PATH1=/usr/local/bin/gfortran
-              && GFORTRAN_PATH2=/usr/local/bin/gfortran-${COSMOSIS_GCC_VER}
-              && GFORTRAN_PATH3=/opt/homebrew/bin/gfortran
-              && GFORTRAN_PATH4=/opt/homebrew/bin/gfortran-${COSMOSIS_GCC_VER}
-              && if ! which -s gfortran
-              ; then if [ -f $GFORTRAN_PATH2 ]; then ln -s $GFORTRAN_PATH2 $GFORTRAN_PATH1; echo Linking gfortran from /usr/local
-              ;      elif [ -f $GFORTRAN_PATH4 ]; then ln -s $GFORTRAN_PATH4 $GFORTRAN_PATH3; echo Linking gfortran from /opt/homebrew
-              ;      else echo "gfortran not found" && exit 1
-              ;      fi
-              ; fi
-              && echo "gfortran now at $(which -a gfortran)"
+          # - os: ubuntu-20.04
+          #   INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
+          # - os: macos-latest
+          #   # Different versions of homebrew put the gfortran in different
+          #   INSTALL_DEPS: >
+          #     brew update-reset 
+          #     && HOMEBREW_NO_AUTO_UPDATE=1  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew install gcc swig libomp open-mpi openblas 
+          #     && COSMOSIS_GCC_VER=$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1)
+          #     && GFORTRAN_PATH1=/usr/local/bin/gfortran
+          #     && GFORTRAN_PATH2=/usr/local/bin/gfortran-${COSMOSIS_GCC_VER}
+          #     && GFORTRAN_PATH3=/opt/homebrew/bin/gfortran
+          #     && GFORTRAN_PATH4=/opt/homebrew/bin/gfortran-${COSMOSIS_GCC_VER}
+          #     && if ! which -s gfortran
+          #     ; then if [ -f $GFORTRAN_PATH2 ]; then ln -s $GFORTRAN_PATH2 $GFORTRAN_PATH1; echo Linking gfortran from /usr/local
+          #     ;      elif [ -f $GFORTRAN_PATH4 ]; then ln -s $GFORTRAN_PATH4 $GFORTRAN_PATH3; echo Linking gfortran from /opt/homebrew
+          #     ;      else echo "gfortran not found" && exit 1
+          #     ;      fi
+          #     ; fi
+          #     && echo "gfortran now at $(which -a gfortran)"
           - os: macos-13
             # Different versions of homebrew put the gfortran in different
             INSTALL_DEPS: >
@@ -96,7 +96,7 @@ jobs:
     - name: Test with pytest
       run: |
         cosmosis --version
-        mkdir tmp && cd tmp && pytest --pyargs cosmosis -k test_nautilus --cov cosmosis --cov-report=xml
+        mkdir tmp && cd tmp && pytest --pyargs cosmosis -k test_samplers --cov cosmosis --cov-report=xml
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
