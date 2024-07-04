@@ -72,19 +72,14 @@ jobs:
         submodules: true
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip' # caching pip dependencies
+        cache-dependency-path: 'setup.py'
 
     - name: Install dependencies
       run: ${{ matrix.INSTALL_DEPS }}
-
-    - uses: actions/cache@v3
-      name: Load pip cache
-      id: cache-pip
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}
 
 
     - name: Install python dependencies
