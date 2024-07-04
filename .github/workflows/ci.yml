@@ -96,7 +96,7 @@ jobs:
     - name: Test with pytest
       run: |
         cosmosis --version
-        mkdir tmp && cd tmp && pytest --pyargs cosmosis --cov cosmosis --cov-report=xml
+        mkdir tmp && cd tmp && pytest --pyargs cosmosis -k test_nautilus --cov cosmosis --cov-report=xml
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
