@@ -160,7 +160,12 @@ def test_polychord():
 def test_snake():
         run('snake', True, pp_extra=False)
 
+
+# Skip if we are running under github actions and
+# 
+@pytest.mark.skipif(os.environ.get("SKIP_NAUTILUS", "0")=="1", reason="nautilus runs out of memory on github actions")
 def test_nautilus():
+    run('nautilus')
     run('nautilus', True, n_live=250, enlarge_per_dim=1.05,
         split_threshold=95., n_networks=1, n_batch=25, verbose=True, f_live=0.02, n_shell=50)
 
