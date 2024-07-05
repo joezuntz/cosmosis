@@ -96,7 +96,7 @@ jobs:
     - name: Test with pytest
       run: |
         cosmosis --version
-        mkdir tmp && cd tmp && pytest -d --tx popen//python=python${{ matrix.python-version }}  --pyargs cosmosis -k test_samplers --cov cosmosis --cov-report=xml
+        mkdir tmp && cd tmp && pytest --pyargs cosmosis -k test_samplers --cov cosmosis --cov-report=xml
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3

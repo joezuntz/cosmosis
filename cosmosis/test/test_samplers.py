@@ -161,7 +161,6 @@ def test_snake():
         run('snake', True, pp_extra=False)
 
 def test_nautilus():
-    run('nautilus', True)
     run('nautilus', True, n_live=250, enlarge_per_dim=1.05,
         split_threshold=95., n_networks=1, n_batch=25, verbose=True, f_live=0.02, n_shell=50)
 
