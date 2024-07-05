@@ -93,7 +93,7 @@ jobs:
         pip install pocomc==1.2.2
 
     - name: Test nautilus alone
-      if: (matrix.python-version == '3.01' || matrix.python-version =='3.10') && (matrix.os == 'macos-13')
+      if: (matrix.python-version == '3.11' || matrix.python-version =='3.10') && (matrix.os == 'macos-13')
       run: |
         # On some systems it seems like nautilus runs out of
         # memory when run with the full test suite.
