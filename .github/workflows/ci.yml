@@ -71,19 +71,14 @@ jobs:
         submodules: true
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip' # caching pip dependencies
+        cache-dependency-path: 'setup.py'
 
     - name: Install dependencies
       run: ${{ matrix.INSTALL_DEPS }}
-
-    - uses: actions/cache@v3
-      name: Load pip cache
-      id: cache-pip
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/setup.py') }}
 
 
     - name: Install python dependencies
@@ -97,9 +92,19 @@ jobs:
       run: |
         pip install pocomc==1.2.2
 
+    - name: Test nautilus alone
+      if: (matrix.python-version == '3.11' || matrix.python-version =='3.10') && (matrix.os == 'macos-13')
+      run: |
+        # On some systems it seems like nautilus runs out of
+        # memory when run with the full test suite.
+        python cosmosis/test/test_samplers.py test_nautilus
+
     - name: Test with pytest
       run: |
         cosmosis --version
+        if [[ "${{ matrix.os }}" == 'macos-13' && ("${{ matrix.python-version }}" == '3.10' || "${{ matrix.python-version }}" == '3.11') ]]; then
+          export SKIP_NAUTILUS=1
+        fi
         mkdir tmp && cd tmp && pytest --pyargs cosmosis --cov cosmosis --cov-report=xml
 
     - name: Upload coverage reports to Codecov
