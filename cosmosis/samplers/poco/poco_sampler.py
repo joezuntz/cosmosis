@@ -41,8 +41,8 @@ class PocoMCSampler(ParallelSampler):
             self.flow = self.read_ini("flow", str, "nsf6")
             self.precondition = self.read_ini("precondition", bool, True)
             self.dynamic = self.read_ini("dynamic", bool, True)
-            self.n_steps = seld.read_ini("n_steps", int, len(pipeline.varied_params))
-            self.n_max_steps = seld.read_ini("n_max_steps", int, 10*len(pipeline.varied_params))
+            self.n_steps = self.read_ini("n_steps", int, len(pipeline.varied_params))
+            self.n_max_steps = self.read_ini("n_max_steps", int, 10*len(pipeline.varied_params))
             seed = self.read_ini("seed", int, 0)
             if seed == 0:
                 seed = None
