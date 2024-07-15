@@ -11,7 +11,7 @@ submission:
   # These parameters can be overridden per run.
   # Normally this would be "sbatch" or "qsub". This
   # is just for testing.
-  submit: bash -l
+  submit: cat
   cores_per_task: 1
   tasks: 2
   nodes: 1
