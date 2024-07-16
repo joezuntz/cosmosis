@@ -35,6 +35,8 @@ params:
     dynamic: (bool, default=True) Whether to use dynamic particle allocation.
     n_total: (integer, default=4096) Total number of effective samples to generate. Higher values will increase the accuracy of the posterior estimate (recommended ~10000 for publication quality corner plots).
     n_evidence: (integer, default=4096) Number of samples to generate for the Bayesian evidence calculation.
+    n_steps: (integer, default=None) Number of MCMC steps. This will be automatically adjusted based on the sampling efficiency. Default is `n_steps=n_dim`. Larger values will provide more robust results at higher computational cost.
+    n_max_steps: (integer, default=None) Maximum number of MCMC steps. Default is `n_max_steps=10*n_dim`. This should be greater than `n_steps`.
     save_every: (int, default=None) Save the state of the sampler every `save_every` iterations. If not provided, the sampler will not save intermediate states.
     seed: (int; default=0) A random seed for reproducibility. Default is to generate automatically.
     progress: (bool, default=True) Whether to show a progress bar during sampling.
