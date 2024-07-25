@@ -332,6 +332,14 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
 
     number_samplers = len(sampler_classes)
 
+    if ini.has_option("pipeline", "failure_log"):
+        filename = ini.get("pipeline", "failure_log")
+        failure_log_file = mpi_pool.MPILogFile(filename, pool)
+        pipeline.set_failure_log_file(failure_log_file)
+    else:
+        failure_log_file = None
+
+
 
     #To start with we do not have any estimates of 
     #anything the samplers might give us like centers
@@ -439,6 +447,9 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
 
     if cleanup_pipeline:
         pipeline.cleanup()
+
+    if failure_log_file is not None:
+        failure_log_file.close()
 
     if profile_cpu:
         profile.disable()
