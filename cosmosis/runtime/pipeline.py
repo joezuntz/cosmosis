@@ -411,8 +411,23 @@ class Pipeline(object):
                     print("and use the cached results from the first run for everything before that.")
                     print("except the input parameter values. Think about this to check it's what you want.")
                 self.shortcut_module = index
+        # Add a log file where failures are sent
+        # We only set this is a method instead of an init variable
+        # because we may want to activate it on pipelines created
+        # by the user and sent to run_cosmosis
+        self.failure_log_file = None
 
+    def set_failure_log_file(self, failure_log_file):
+        """
+        Set the file where the pipeline will log failures.
 
+        Parameters
+        ----------
+        failure_log_file : file-like object
+            The file where the pipeline will log failures.
+            This can be a regular file or an MPILogFile object
+        """
+        self.failure_log_file = failure_log_file
 
     def find_module_file(self, path):
         u"""Find a module file, which is assumed to be either absolute or relative to COSMOSIS_SRC_DIR"""
@@ -1113,6 +1128,9 @@ class LikelihoodPipeline(Pipeline):
             return data
         else:
             sys.stderr.write("Pipeline failed on these parameters: {}\n".format(p))
+            if self.failure_log_file is not None:
+                msg = " ".join([str(x) for x in p])
+                self.failure_log_file.write(msg + "\n")
             return None
 
 

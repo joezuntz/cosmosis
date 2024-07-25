@@ -124,3 +124,39 @@ class MPIPool(object):
 
     def __exit__(self, *args):
         self.close()
+
+class MPILogFile:
+    def __init__(self, filename, pool=None):
+        if hasattr(pool, "comm"):
+            self.comm = pool.comm
+        elif pool is None:
+            self.comm = None
+        else:
+            raise ValueError("Failure logging from multiple processes does not yet work using multiprocessing with --smp, only MPI using --mpi")
+
+        self.filename = filename
+        if self.comm is None:
+            self.file = open(filename, "w")
+        else:
+            from mpi4py import MPI
+            self.MPI = MPI
+            self.file = MPI.File.Open(self.comm, filename, MPI.MODE_WRONLY | MPI.MODE_CREATE)
+
+    def write(self, message):
+        if self.comm is None:
+            self.file.write(message)
+        else:
+            message = message.encode("utf-8")
+            self.file.Write_shared(message)
+
+    def __del__(self):
+        if self.file is not None:
+            self.close()
+
+    def close(self):
+        if self.comm is None:
+            self.file.close()
+        else:
+            self.file.Close()
+        self.file = None
+
