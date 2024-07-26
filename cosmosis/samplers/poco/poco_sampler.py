@@ -10,16 +10,15 @@ def log_likelihood(p):
 
 
 class Prior:
-    def __init__(self, pipeline):
-        self.pipeline = pipeline
-        self.dim = len(self.pipeline.varied_params)
-        self.bounds = np.array([p.limits for p in self.pipeline.varied_params])
+    def __init__(self):
+        self.dim = len(pipeline.varied_params)
+        self.bounds = np.array([p.limits for p in pipeline.varied_params])
 
     def logpdf(self, x):
-        return np.array([self.pipeline.prior(p) for p in x])
+        return np.array([pipeline.prior(p) for p in x])
     
     def rvs(self, size=None):
-        return np.array([self.pipeline.randomized_start() for i in range(size)])
+        return np.array([pipeline.randomized_start() for i in range(size)])
 
 
 class PocoMCSampler(ParallelSampler):
@@ -73,7 +72,7 @@ class PocoMCSampler(ParallelSampler):
 
             # Finally we can create the sampler
             self.sampler = self.pocomc.Sampler(
-                prior=Prior(self.pipeline),
+                prior=Prior(),
                 likelihood=log_likelihood,
                 random_state=seed,
                 n_effective=self.n_effective,
