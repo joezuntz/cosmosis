@@ -21,6 +21,7 @@ class ImportanceSampler(ParallelSampler):
     #so the postprocessors don't need to be re-written
     sampler_outputs = []
     parallel_output = False
+    supports_resume = True
 
     def config(self):
         global importance_pipeline
@@ -110,13 +111,24 @@ class ImportanceSampler(ParallelSampler):
 
         self.current_index = 0
 
+    def resume(self):
+        if self.output.resumed:
+            data = np.genfromtxt(self.output._filename, invalid_raise=False)
+            self.current_index = len(data)
+            if self.current_index >= self.number_samples:
+                logs.error(f"You told me to resume the chain, but it has already completed (with {self.current_index} samples).")
+            else:
+                logs.overview(f"Continuing importance sampling from existing chain - have {self.current_index} samples already")
+
+
     def execute(self):
-        self.output.comment("Importance sampling from %s"%self.input_filename)
 
         #Pick out a chunk of samples to run on
         start = self.current_index
         end = start+self.nstep
         samples_chunk = self.samples[start:end]
+
+        logs.overview(f"Importance sampling {start} - {end} of {self.number_samples} from {self.input_filename}")
 
         #Run the pipeline on each of the samples
         if self.pool:
