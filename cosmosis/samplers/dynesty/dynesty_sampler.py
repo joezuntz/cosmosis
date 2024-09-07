@@ -81,6 +81,9 @@ class DynestySampler(ParallelSampler):
         results = sampler.results
         results.summary()
 
+        posts = results['blob'][:, 0] + results['logl']
+        self.distribution_hints.set_peak_from_sample(results['samples'], posts)
+
         for sample, logwt, logl, derived in zip(results['samples'],results['logwt'], results['logl'], results['blob']):
             prior = derived[0]
             post = prior + logl

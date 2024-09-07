@@ -111,7 +111,7 @@ class MinuitSampler(ParallelSampler):
             logs.overview("SUCCESS: Minuit has converged!")
             self.save_results(param_vector, param_names, results)
             self.converged = True
-            self.distribution_hints.set_peak(param_vector)
+            self.distribution_hints.set_peak(param_vector, results.post)
 
             if made_cov:
                 cov_matrix = cov_vector.reshape((self.ndim, self.ndim))

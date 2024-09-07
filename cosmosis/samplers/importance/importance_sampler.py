@@ -152,6 +152,7 @@ class ImportanceSampler(ParallelSampler):
             extra = list(extra) + [old_like,weight,new_like]
             #and save results
             self.output.parameters(sample, extra)
+            self.distribution_hints.set_peak(sample, new_like)
         #Update the current index
         self.current_index+=self.nstep
 

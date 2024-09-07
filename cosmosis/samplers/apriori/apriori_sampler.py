@@ -75,6 +75,9 @@ class AprioriSampler(ParallelSampler):
                 #always save the usual text output
                 self.output.parameters(sample, extra, prior, post)
 
+                # this will test to see if the new point is the best so far
+                self.distribution_hints.set_peak(sample, post)
+
         #We only ever run this once, though that could 
         #change if we decide to split up the runs
         self.converged = True
