@@ -169,6 +169,7 @@ class MetropolisSampler(ParallelSampler):
         if (self.num_samples_post_tuning > 0) or self.save_during_tuning:
             for i, result in enumerate(samples):
                 self.output.parameters(result.vector, result.extra, result.prior, result.post)
+                self.distribution_hints.set_peak(result.vector, result.post)
 
         if self.num_samples_post_tuning <= 0:
             logs.overview("Tuning ends at {} samples\n".format(self.tuning_end))

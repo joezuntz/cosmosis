@@ -99,7 +99,11 @@ class NautilusSampler(ParallelSampler):
                     discard_exploration=self.discard_exploration,
                     verbose=self.verbose)
 
-        for sample, logwt, logl, blob in zip(*sampler.posterior(return_blobs=True)):
+        results = sampler.posterior(return_blobs=True)
+        posts = results[2] + results[3][:, 0]
+        self.distribution_hints.set_peak_from_sample(results[0], posts)
+
+        for sample, logwt, logl, blob in zip(*results):
             blob = np.atleast_1d(blob)
             prior = blob[0]
             extra = blob[1:]

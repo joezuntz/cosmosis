@@ -10,7 +10,11 @@ from astropy.table import Table
 
 minuit_compiled = os.path.exists(Sampler.get_sampler("minuit").libminuit_name)
 
-def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, **options):
+# our test priors are uniform on [-3, 3] for two
+# parameters, so our expected prior is 1/6 for each of them.
+EXPECTED_LOG_PRIOR = 2*np.log(1./6)
+
+def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, hints_peak=True, **options):
 
     sampler_class = Sampler.registry[name]
 
@@ -53,9 +57,19 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
     if check_prior:
         pr = np.array(output['prior'])
         # a few samples might be outside the bounds and have zero prior
-        assert np.all((pr==-3.58351893845611)|(pr==-np.inf))
+        assert np.all((pr==EXPECTED_LOG_PRIOR)|(pr==-np.inf))
         # but not all of them
         assert not np.all(pr==-np.inf)
+
+    if hints_peak:
+        assert sampler.distribution_hints.has_peak()
+        peak = sampler.distribution_hints.get_peak()
+        idx = output["post"].argmax()
+        assert np.isclose(output["parameters--p1"][idx], peak[0])
+        assert np.isclose(output["parameters--p2"][idx], peak[1])
+        sampler.distribution_hints.del_peak()
+        assert not sampler.distribution_hints.has_peak()
+
 
     if check_extra and not no_extra:
         p1 = output['parameters--p1']
@@ -111,7 +125,7 @@ def test_truth():
     run('emcee', True, walkers=8, samples=100, do_truth=True)
 
 def test_fisher():
-    run('fisher', False, check_extra=False)
+    run('fisher', False, check_extra=False, hints_peak=False)
 
 def test_grid():
     run('grid', True, pp_extra=False, nsample_dimension=10)
@@ -175,7 +189,7 @@ def test_star():
         run('star', False, pp_extra=False, pp_2d=False)
 
 def test_test():
-    run('test', False, can_postprocess=False)
+    run('test', False, can_postprocess=False, hints_peak=False)
 
 def test_list_sampler():
     # test that the burn and thin parameters work
@@ -207,6 +221,42 @@ def test_list_sampler():
         assert np.allclose(p2, data[:, 1])
         assert np.allclose(output['PARAMETERS--P3'], p3)
         assert np.allclose(output["post"] - output["prior"], expected_like)
+
+def test_importance_sampler():
+
+    for add_to_likelihood in [True, False]:
+        with tempfile.TemporaryDirectory() as dirname:
+
+            input_chain_filename = os.path.join(dirname, "input_chain.txt")
+            input_chain = TextColumnOutput(input_chain_filename)
+            input_chain.add_column('parameters--p1', float)
+            input_chain.add_column('parameters--p2', float)
+            input_chain.add_column('post', float)
+            nrow = 100
+            original_posteriors = -np.arange(nrow).astype(float)
+            data = np.random.normal(size=(nrow, 2)).clip(-2.99, 2.99)
+            for i in range(nrow):
+                input_chain.parameters(data[i, 0], data[i, 1], original_posteriors[i])
+            input_chain.close()
+            os.system(f"cat {input_chain_filename}")
+
+            output = run("importance", True, can_postprocess=False, input=input_chain_filename, add_to_likelihood=add_to_likelihood)
+            p1 = output['parameters--p1']
+            p2 = output['parameters--p2']
+            p3 = p1 + p2
+            expected_like = -(p1**2 + p2**2)/2.
+            # priors are uniform with range -3 to 3 so normalization should be np.log(1/6)
+            expected_prior = EXPECTED_LOG_PRIOR
+            expected_post = expected_like + expected_prior
+            if add_to_likelihood:
+                expected_post += original_posteriors
+            assert p1.size == 100
+            assert np.allclose(p1, data[:, 0])
+            assert np.allclose(p2, data[:, 1])
+            assert np.allclose(output['PARAMETERS--P3'], p3)
+            assert np.allclose(output["post"], expected_post)
+
+        
 
 @pytest.mark.skipif(sys.version_info < (3,7), reason="pocomc requires python3.6+")
 def test_poco():

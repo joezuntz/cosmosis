@@ -143,6 +143,7 @@ class PocoMCSampler(ParallelSampler):
             extra = np.atleast_1d(blob)
             prior = logp
             logpost = logl + prior
+            self.distribution_hints.set_peak(sample, logpost)
             self.output.parameters(sample, extra, logw, prior, logpost)
 
         self.output.final("log_z", logz)

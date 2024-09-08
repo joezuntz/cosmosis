@@ -319,6 +319,11 @@ class PolychordSampler(ParallelSampler):
             importance = np.exp(w)
             post = like + prior
             self.output.parameters(params, extra_vals, prior, like, post, importance)
+
+        # priors + likes
+        posts = data[:, self.ndim+self.nderived-1] + data[:, self.ndim+self.nderived+1]
+        self.distribution_hints.set_peak_from_sample(data[:, :self.ndim], posts)
+
         self.output.final("nsample", ndead)
         self.output.flush()
 

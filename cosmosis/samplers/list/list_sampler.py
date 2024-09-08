@@ -133,6 +133,7 @@ class ListSampler(ParallelSampler):
                 (prob, (prior,extra)) = result
                 # always save the usual text output
                 self.output.parameters(sample, extra, prior, prob)
+                self.distribution_hints.set_peak(sample, prob)
 
         # We only ever run this once, though that could 
         # change if we decide to split up the runs

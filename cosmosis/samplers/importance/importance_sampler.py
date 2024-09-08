@@ -2,6 +2,7 @@ import itertools
 import collections
 import numpy as np
 from ...runtime import logs
+from ...output import TextColumnOutput, FitsOutput
 
 from .. import ParallelSampler
 
@@ -10,8 +11,8 @@ INI_SECTION = "importance"
 
 
 def task(p):
-    r = importance_pipeline.posterior(p)
-    return r
+    r = importance_pipeline.run_results(p)
+    return r.post, (r.prior, r.extra)
 
 
 class ImportanceSampler(ParallelSampler):
@@ -36,13 +37,20 @@ class ImportanceSampler(ParallelSampler):
 
     def load_samples(self, filename):
         options = {"filename":filename}
-        col_names, cols, metadata, comments, final_metadata = self.output.__class__.load_from_options(options)
+        if filename.endswith(".txt"):
+            output_cls = TextColumnOutput
+        elif filename.endswith(".fits"):
+            output_cls = FitsOutput
+        else:
+            raise ValueError(f"Can only postprocess files in cosmosis text format (.txt) or fits format (.fits), not {filename}")
+            
+        col_names, cols, metadata, comments, final_metadata = output_cls.load_from_options(options)
         # pull out the "post" column first
         col_names = [name.lower() for name in col_names]
-        likelihood_index = col_names.index('post')
-        if likelihood_index<0:
+        posterior_index = col_names.index('post')
+        if posterior_index<0:
             raise ValueError("I could not find a 'post' column in the chain %s"%filename)
-        self.original_likelihoods = cols[0].T[likelihood_index]
+        self.original_posteriors = cols[0].T[posterior_index]
 
         #We split the parameters into three groups:
         #   - ones that we have listed as varying
@@ -91,6 +99,7 @@ class ImportanceSampler(ParallelSampler):
         #P' is the new likelihood.
         self.output.add_column("old_post", float) #This is the old likelihood, log(P)
         self.output.add_column("log_weight", float) #This is the log-weight, the ratio of the likelihoods
+        self.output.add_column("prior", float) #This is the new prior
         self.output.add_column("post", float) #This is the new likelihood, log(P')
 
 
@@ -137,21 +146,23 @@ class ImportanceSampler(ParallelSampler):
             results = list(map(task, samples_chunk))
 
         #Collect together and output the results
-        for i,(sample, (new_like, extra)) in enumerate(zip(samples_chunk, results)):
+        for i,(sample, (new_post, extra)) in enumerate(zip(samples_chunk, results)):
             #We already (may) have some extra values from the pipeline
             #as derived parameters.  Add to those any parameters used in the
             #old pipeline but not the new one
+            new_prior, extra = extra
             extra = list(extra)
             for col in list(self.original_extras.values()):
                 extra.append(col[start+i])
             #and then the old and new likelihoods
-            old_like = self.original_likelihoods[start+i]
+            old_post = self.original_posteriors[start+i]
             if self.add_to_likelihood:
-                new_like += old_like
-            weight = new_like-old_like
-            extra = list(extra) + [old_like,weight,new_like]
+                new_post += old_post
+            weight = new_post - old_post
+            extra = list(extra) + [old_post, weight, new_prior, new_post]
             #and save results
             self.output.parameters(sample, extra)
+            self.distribution_hints.set_peak(sample, new_post)
         #Update the current index
         self.current_index+=self.nstep
 
