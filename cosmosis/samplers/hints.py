@@ -15,7 +15,7 @@ class Hints(object):
 
     def set_peak_from_sample(self, samples, posts):
         assert len(samples) == len(posts)
-        idx = np.argmax(post)
+        idx = np.argmax(posts)
         self.set_peak(samples[idx], posts[idx])
     def get_peak(self):
         return self._peak
