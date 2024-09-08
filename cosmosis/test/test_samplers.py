@@ -14,7 +14,7 @@ minuit_compiled = os.path.exists(Sampler.get_sampler("minuit").libminuit_name)
 # parameters, so our expected prior is 1/6 for each of them.
 EXPECTED_LOG_PRIOR = 2*np.log(1./6)
 
-def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, **options):
+def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, hints_peak=True, **options):
 
     sampler_class = Sampler.registry[name]
 
@@ -60,6 +60,16 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
         assert np.all((pr==EXPECTED_LOG_PRIOR)|(pr==-np.inf))
         # but not all of them
         assert not np.all(pr==-np.inf)
+
+    if hints_peak:
+        assert sampler.distribution_hints.has_peak()
+        peak = sampler.distribution_hints.get_peak()
+        idx = output["post"].argmax()
+        assert np.isclose(output["parameters--p1"][idx], peak[0])
+        assert np.isclose(output["parameters--p2"][idx], peak[1])
+        sampler.distribution_hints.del_peak()
+        assert not sampler.distribution_hints.has_peak()
+
 
     if check_extra and not no_extra:
         p1 = output['parameters--p1']
@@ -115,7 +125,7 @@ def test_truth():
     run('emcee', True, walkers=8, samples=100, do_truth=True)
 
 def test_fisher():
-    run('fisher', False, check_extra=False)
+    run('fisher', False, check_extra=False, hints_peak=False)
 
 def test_grid():
     run('grid', True, pp_extra=False, nsample_dimension=10)
@@ -179,7 +189,7 @@ def test_star():
         run('star', False, pp_extra=False, pp_2d=False)
 
 def test_test():
-    run('test', False, can_postprocess=False)
+    run('test', False, can_postprocess=False, hints_peak=False)
 
 def test_list_sampler():
     # test that the burn and thin parameters work
