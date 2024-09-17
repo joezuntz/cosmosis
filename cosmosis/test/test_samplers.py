@@ -80,31 +80,32 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
     if can_postprocess:
         pp_class = postprocessor_for_sampler(name)
         print(pp_class)
-        with tempfile.TemporaryDirectory() as dirname:
-            truth_file = values.name if do_truth else None
-            pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=truth_file, fatal_errors=True)
-            pp_files = pp.run()
-            pp.finalize()
-            pp.save()
-            for p in pp_files:
-                print(p)
-            postprocess_files = ['parameters--p1', 'parameters--p2']
-            if pp_2d:
-                postprocess_files.append('2D_parameters--p2_parameters--p1')
-            if check_extra and pp_extra and not no_extra:
-                postprocess_files.append('parameters--p3')
+        for getdist in [True, False]:
+            with tempfile.TemporaryDirectory() as dirname:
+                truth_file = values.name if do_truth else None
+                pp = pp_class(output, "Chain", 0, outdir=dirname, prefix=name, truth=truth_file, fatal_errors=True, getdist=getdist)
+                pp_files = pp.run()
+                pp.finalize()
+                pp.save()
+                for p in pp_files:
+                    print(p)
+                postprocess_files = ['parameters--p1', 'parameters--p2']
                 if pp_2d:
-                    postprocess_files += ['2D_parameters--p3_parameters--p2', '2D_parameters--p3_parameters--p1']
-            for p in postprocess_files:
-                filename = f"{dirname}{os.path.sep}{name}_{p}.png"
-                print("WANT ", filename)
-                assert filename in pp_files
-                assert os.path.exists(filename)
-            for p in os.listdir(dirname):
-                p = os.path.join(dirname, p)
-                if p.endswith(".txt"):
-                    Table.read(p, format='ascii.commented_header')
-                    print(f"Read file {p} as a table")
+                    postprocess_files.append('2D_parameters--p2_parameters--p1')
+                if check_extra and pp_extra and not no_extra:
+                    postprocess_files.append('parameters--p3')
+                    if pp_2d:
+                        postprocess_files += ['2D_parameters--p3_parameters--p2', '2D_parameters--p3_parameters--p1']
+                for p in postprocess_files:
+                    filename = f"{dirname}{os.path.sep}{name}_{p}.png"
+                    print("WANT ", filename)
+                    assert filename in pp_files
+                    assert os.path.exists(filename)
+                for p in os.listdir(dirname):
+                    p = os.path.join(dirname, p)
+                    if p.endswith(".txt"):
+                        Table.read(p, format='ascii.commented_header')
+                        print(f"Read file {p} as a table")
 
 
     return output
