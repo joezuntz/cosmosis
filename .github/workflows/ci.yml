@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10", 3.11]
+        python-version: [3.7, 3.8, 3.9, "3.10", 3.11, 3.12]
         # macos13 runs on until and macos14 now runs on arm64
         os: [ubuntu-20.04, macos-latest, macos-13]
         exclude:
@@ -93,7 +93,7 @@ jobs:
         pip install pocomc==1.2.2
 
     - name: Test nautilus alone
-      if: (matrix.python-version == '3.11' || matrix.python-version =='3.10') && (matrix.os == 'macos-13')
+      if: (matrix.python-version == '3.12' || matrix.python-version == '3.11' || matrix.python-version =='3.10') && (matrix.os == 'macos-13')
       run: |
         # On some systems it seems like nautilus runs out of
         # memory when run with the full test suite.
@@ -102,7 +102,7 @@ jobs:
     - name: Test with pytest
       run: |
         cosmosis --version
-        if [[ "${{ matrix.os }}" == 'macos-13' && ("${{ matrix.python-version }}" == '3.10' || "${{ matrix.python-version }}" == '3.11') ]]; then
+        if [[ "${{ matrix.os }}" == 'macos-13' && ("${{ matrix.python-version }}" == '3.10' || "${{ matrix.python-version }}" == '3.11' || "${{ matrix.python-version }}" == '3.12' ) ]]; then
           export SKIP_NAUTILUS=1
         fi
         mkdir tmp && cd tmp && pytest --pyargs cosmosis --cov cosmosis --cov-report=xml
