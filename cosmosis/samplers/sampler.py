@@ -9,6 +9,7 @@ import os
 import uuid
 import pickle
 from .hints import Hints
+from ..runtime import callbacks
 import numpy as np
 import shutil
 import numpy as np
@@ -39,7 +40,7 @@ class Sampler(metaclass=RegisteredSampler):
     internal_resume = False
 
     
-    def __init__(self, ini, pipeline, output=None):
+    def __init__(self, ini, pipeline, output=None, callback=None):
         if isinstance(ini, Inifile):
             self.ini = ini
         else:
@@ -53,6 +54,9 @@ class Sampler(metaclass=RegisteredSampler):
         self.attribution = PipelineAttribution(self.pipeline.modules)
         self.distribution_hints = Hints()
         self.write_header()
+        if callback is None:
+            callback = callbacks.null_callback
+        self.callback = callback
 
     def write_header(self):
         if self.output:
@@ -215,8 +219,8 @@ class ParallelSampler(Sampler):
     parallel_output = True
     is_parallel_sampler = True
     supports_smp = True
-    def __init__(self, ini, pipeline, output=None, pool=None):
-        Sampler.__init__(self, ini, pipeline, output)
+    def __init__(self, ini, pipeline, output=None, pool=None, callback=None):
+        Sampler.__init__(self, ini, pipeline, output, callback)
         self.pool = pool
 
     def worker(self):

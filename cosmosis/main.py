@@ -18,6 +18,7 @@ from .samplers.sampler import Sampler, ParallelSampler, Hints
 from . import output as output_module
 from .runtime.handler import activate_segfault_handling
 from .version import __version__
+from .runtime import callbacks
 
 
 RUNTIME_INI_SECTION = "runtime"
@@ -69,18 +70,22 @@ def sampler_main_loop(sampler, output, pool, is_root):
     # limit of the number of samples it is allowed.
     if is_root:
         while not sampler.is_converged():
+            sampler.callback(callbacks.SAMPLER_EXECUTING, {"sampler":sampler})
             sampler.execute()
+            sampler.callback(callbacks.SAMPLER_EXECUTED, {"sampler":sampler})
             #Flush any output. This is to stop
             #a problem in some MPI cases where loads
             #of output is built up before being written.
             if output:
                 output.flush()
+        sampler.callback(callbacks.SAMPLER_CONVERGED, {"sampler":sampler})
         # If we are in parallel tell the other processors to end the 
         # loop and prepare for the next sampler
         if pool and sampler.is_parallel_sampler:
             pool.close()
     else:
         if sampler.is_parallel_sampler:
+            sampler.callback(callbacks.SAMPLER_WORKING, {"sampler":sampler})
             sampler.worker()
 
 
@@ -176,7 +181,7 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
 
 
 def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, override=None,
-                 profile_mem=0, profile_cpu="", variables=None, only=None, output=None):
+                 profile_mem=0, profile_cpu="", variables=None, only=None, output=None, callback=None):
     """
     Execute cosmosis.
 
@@ -225,8 +230,16 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
     output: None or cosmosis.Output
         If set, use this output object to save the results. If not set, create
         an output object from the ini file.
+    
+    callback: None or callable
+        If set, call this function whenever a range of different events occur.
+        It should take two arguments, the first being a string describing the event
+        type, and the second being a dictionary of additional information about the event.
     """
     no_subprocesses = os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]
+
+    if callback is None:
+        callback = callbacks.null_callback
 
     smp = isinstance(pool, process_pool.Pool)
 
@@ -263,6 +276,8 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             if status:
                 raise RuntimeError("The pre-run script {} retuned non-zero status {}".format(
                     pre_script, status))
+            if callback:
+                callback(callbacks.PRESCRIPT_RUN, {})
 
     if is_root and profile_mem:
         from cosmosis.runtime.memmon import MemoryMonitor
@@ -285,14 +300,16 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
                 print(underline(f"Setting up pipeline from pre-constructed configuration"))
 
         if is_root or pool_stdout:
-            pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors)
+            pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors, callback=callback)
         else:
             if pool_stdout:
-                pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors)
+                pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors, callback=callback)
             else:
                 # Suppress output on everything except the root process
                 with stdout_redirected():
                     pipeline = LikelihoodPipeline(ini, override=variables, values=values, only=only, priors=priors)
+            if callback is not callbacks.null_callback:
+                pipeline.callback = callback
 
         if pipeline.do_fast_slow:
             pipeline.setup_fast_subspaces()
@@ -391,7 +408,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
                 print("* Running in serial mode.")
 
         output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output_original)
-
+        callback(callbacks.OUTPUT_READY, {"output": output})
         if is_root:
             print("****************************************************")
 
@@ -399,15 +416,16 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
         #It needs an extra pool argument if it is a ParallelSampler.
         #All the parallel samplers can also act serially too.
         if pool and sampler_class.is_parallel_sampler:
-            sampler = sampler_class(ini, pipeline, output, pool)
+            sampler = sampler_class(ini, pipeline, output, pool, callback=callback)
         else:
-            sampler = sampler_class(ini, pipeline, output)
+            sampler = sampler_class(ini, pipeline, output, callback=callback)
          
         #Set up the sampler - for example loading
         #any resources it needs or checking the ini file
         #for additional parameters.
         sampler.distribution_hints.update(distribution_hints)
         sampler.config()
+        callback(callbacks.SAMPLER_CONFIGURED, {"sampler": sampler})
 
         # Potentially resume
         if resume and sampler_class.needs_output and \
@@ -483,6 +501,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             if status:
                 sys.stdout.write("WARNING: The post-run script {} failed with error {}".format(
                     post_script, status))
+            callback(callbacks.POSTSCRIPT_RUN, {"status": status})
 
     if isinstance(output_original, str):
         if output_original == "astropy":

@@ -15,6 +15,7 @@ from . import parameter
 from . import prior
 from . import module
 from . import logs
+from . import callbacks
 from ..datablock.cosmosis_py import block, section_names
 try:
     import faulthandler
@@ -335,7 +336,7 @@ class Pipeline(object):
 
     """
 
-    def __init__(self, arg=None, load=True, modules=None):
+    def __init__(self, arg=None, load=True, modules=None, callback=None):
 
         u"""Pipeline constructor.
 
@@ -350,6 +351,10 @@ class Pipeline(object):
         """
         if arg is None:
             arg = list()
+
+        if callback is None:
+            callback = callbacks.null_callback
+        self.callback = callback
 
         if isinstance(arg, config.Inifile):
             self.options = arg
@@ -468,10 +473,15 @@ class Pipeline(object):
                 LikelihoodPipeline.module_being_set_up.remove(module.name)
 
             if self.timing:
-                timings.append(time.time())
+                t = time.time()
+                timings.append(t)
+            else:
+                t = None
+            self.callback(callbacks.MODULE_SET_UP, {"module": module, "time": t, "config": config_block, "pipeline": self})
 
 
         logs.overview("Setup all pipeline modules\n")
+        self.callback(callbacks.ALL_MODULES_SET_UP, {"pipeline": self, "modules": self.modules})
 
         if self.timing:
             timings.append(time.time())
@@ -636,11 +646,14 @@ class Pipeline(object):
 
         if self.timing:
             start_time = time.time()
+        self.callback(callbacks.PIPELINE_RUN_START, {"pipeline": self})
 
         for module_number, module in enumerate(modules):
             if module_number<first_module:
                 continue
             logs.noisy(f"Running module {module}")
+            self.callback(callbacks.MODULE_RUN_START, {"pipeline": self, "module": module, "number":module_number, "block": data_package})
+
             data_package.log_access("MODULE-START", module.name, "")
             if self.timing:
                 t1 = time.time()
@@ -656,10 +669,14 @@ class Pipeline(object):
 
             if self.timing:
                 t2 = time.time()
+                module_time = t2 - t1
                 timings.append(t2-t1)
                 sys.stdout.write("%s took: %.3f seconds\n"% (module,t2-t1))
+            else:
+                module_time = None
 
             if status:
+                self.callback(callbacks.MODULE_RUN_FAIL, {"pipeline": self, "module": module, "number":module_number, "status": status, "block": data_package, "time": module_time})
                 if logs.is_enabled_for(logs.logging.DEBUG):
                     data_package.print_log()
                     logs.noisy("Because you set debug verbosity I printed a log of "
@@ -672,6 +689,8 @@ class Pipeline(object):
                 if not logs.is_enabled_for(logs.logging.DEBUG):
                     logs.warning("Set log level to 'debug' for more info.")
                 return None
+            
+            self.callback(callbacks.MODULE_RUN_SUCCESS, {"pipeline": self, "module": module, "number":module_number, "block": data_package, })
 
             # If we are using a fast/slow split (and we are not already running on a cached subset)
             # Then see if it wants to cache these results
@@ -690,6 +709,8 @@ class Pipeline(object):
 
         logs.noisy("Pipeline ran okay.")
         self.run_count_ok += 1
+
+        self.callback(callbacks.PIPELINE_RUN_SUCCESS, {"pipeline": self, "block": data_package})
 
         data_package.log_access("MODULE-START", "Results", "")
         # return something
@@ -734,7 +755,7 @@ class LikelihoodPipeline(Pipeline):
     pipeline_being_set_up = []
     module_being_set_up = []
 
-    def __init__(self, arg=None, id="", override=None, modules=None, load=True, values=None, priors=None, only=None):
+    def __init__(self, arg=None, id="", override=None, modules=None, load=True, values=None, priors=None, only=None, callback=None):
         u"""Construct a :class:`LikelihoodPipeline`.
 
         The arguments `arg` and `load` are used in the base-class
@@ -744,7 +765,7 @@ class LikelihoodPipeline(Pipeline):
         settings for those parametersʼ values in the initialization files.
         
         """
-        super().__init__(arg=arg, load=load, modules=modules)
+        super().__init__(arg=arg, load=load, modules=modules, callback=callback)
 
         if id:
             self.id_code = "[%s] " % str(id)
@@ -1222,7 +1243,8 @@ class LikelihoodPipeline(Pipeline):
                 for name,pr in priors:
                     r.block["priors", name] = pr
 
-        except Exception:
+        except Exception as error:
+            self.callback(callbacks.PIPELINE_RUN_FAIL, {"pipeline": self, "parameters": p, "exception": error})
             logs.error(f"Exception running likelihood at parameters: {p}."
                             "You should fix this; for now, using zero likelihood.")
             logs.error(traceback.format_exc())
@@ -1238,6 +1260,7 @@ class LikelihoodPipeline(Pipeline):
             r.like = -np.inf
         
         r.log(self.run_count)
+        self.callback(callbacks.PIPELINE_RESULTS_SUCCESS, {"pipeline": self, "parameters": p, "results": r})
 
         return r
 
