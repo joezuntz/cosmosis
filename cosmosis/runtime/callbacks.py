@@ -17,6 +17,10 @@ ALL_MODULES_SET_UP = "all-modules-set-up"
 PIPELINE_RUN_START = "pipeline-run-start"
 PIPELINE_RUN_SUCCESS = "pipeline-run-success"
 PIPELINE_RESULTS_SUCCESS = "pipeline-results-success"
+PIPELINE_RUN_FAIL = "pipeline-run-fail"
 
 def null_callback(event, details):
     pass
+
+def print_callback(event, details):
+    print(event, details)
