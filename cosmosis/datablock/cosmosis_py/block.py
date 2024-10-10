@@ -17,6 +17,8 @@ from io import StringIO, BytesIO
 import sys
 
 
+LogTuple = collections.namedtuple("LogTuple", ["logtype", "section", "name", "dtype"])
+
 
 option_section = "module_options"
 metadata_prefix = "cosmosis_metadata:"
@@ -1128,7 +1130,12 @@ class DataBlock(object):
 		status = lib.c_datablock_get_log_entry(self._ptr, i, smax, ptype, section, name, dtype)
 		if status:
 			raise ValueError("Asked for log entry above maximum or less than zero")
-		return ptype.value.decode('utf-8'), section.value.decode('utf-8'), name.value.decode('utf-8'), dtype.value.decode('utf-8')
+		return LogTuple(
+			ptype.value.decode('utf-8'),
+			section.value.decode('utf-8'),
+			name.value.decode('utf-8'),
+			dtype.value.decode('utf-8')
+		)
 
 	def log_access(self, log_type, section, name):
 		u"""Add an entry to the end of this :class:`DataBlock` access log.
