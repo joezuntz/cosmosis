@@ -622,7 +622,11 @@ def parse_yaml_run_file(run_config):
     # Build the parameter, value, and prior objects for this run
     for run_dict in info["runs"]:
         name = run_dict["name"]
-        runs[name] = build_run(name, run_dict, runs, components, output_dir, submission_info, output_name)
+        run = build_run(name, run_dict, runs, components, output_dir, submission_info, output_name)
+        if run is None:
+            sys.stderr.write(f"Run {name} could not be read correctly\n")
+        else:
+            runs[name] = run
 
     # Only now do we expand environment variables in the runs.  This gives the child runs
     # a chance to override the environment variables of their parents.
