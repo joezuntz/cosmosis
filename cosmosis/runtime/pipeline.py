@@ -540,6 +540,13 @@ class Pipeline(object):
         for module in self.modules:
             module.cleanup()
 
+    def get_module(self, name):
+        u"""Return the module with the given name, or None if not found"""
+        for module in self.modules:
+            if module.name == name:
+                return module
+        return None
+
 
 
     def make_graph(self, data, filename):

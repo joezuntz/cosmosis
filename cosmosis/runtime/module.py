@@ -3,6 +3,7 @@ import os
 import abc
 import sys
 import ctypes
+import yaml
 from ..datablock import option_section, DataBlock, SectionOptions
 from ..utils import underline
 
@@ -73,7 +74,7 @@ class Module(object):
 
     def __init__(self, module_name, file_path,
                  setup_function="setup", execute_function="execute",
-                 cleanup_function="cleanup", rootpath="."):
+                 cleanup_function="cleanup", rootpath=".", doc=None):
         u"""Create an object of type `module_name` from dynamic load library at `file_path`, with interface specified by the `*_function`s.
 
         The `rootpath` is the directory to search for the linkable
@@ -86,6 +87,7 @@ class Module(object):
 
         """
         self.name = module_name
+        self.doc = doc
 
         self.setup_function = setup_function
         self.execute_function = execute_function
@@ -364,6 +366,16 @@ class Module(object):
 
         filename = cls.find_module_file(root_directory,
                                         options.get(module_name, "file"))
+        
+        dirname = os.path.dirname(filename)
+        doc_filename = os.path.join(dirname, "module.yaml")
+        doc = None
+        if os.path.exists(doc_filename):
+            try:
+                with open(doc_filename) as f:
+                    doc = yaml.safe_load(f)
+            except Exception as errror: 
+                pass
 
         # identify relevant functions
         setup_function = options.get(module_name, "setup", fallback="setup")
@@ -372,7 +384,7 @@ class Module(object):
 
         m = cls(module_name, filename,
                 setup_function, exec_function, cleanup_function,
-                root_directory)
+                root_directory, doc=doc)
 
         return m
 
@@ -395,7 +407,7 @@ class FunctionModule(Module):
     """
 
     def __init__(self, name, setup_function, execute_function,
-                 cleanup_function=None):
+                 cleanup_function=None, doc=None):
         """
         Initialize the subclass from the functions themselves.
 
@@ -424,6 +436,7 @@ class FunctionModule(Module):
         self.is_python = True
         self.is_julia = False
         self.is_dynamic = True
+        self.doc = doc
 
     @staticmethod
     def load_function(library, function_name,
