@@ -55,16 +55,33 @@ class MaxlikeSampler(Sampler):
         if not np.isfinite(start_like):
             raise RuntimeError('invalid starting point for maxlike')
 
-        result = scipy.optimize.minimize(likefn, start_vector, method=self.method, 
-          jac=False, tol=self.tolerance,  #bounds=bounds, 
-          options={'maxiter':self.maxiter, 'disp':True})
+        if self.method.lower() == "bobyqa":
+            # use the specific pybobyqa minimizer
+            import pybobyqa
 
-        opt_norm = result.x
+            # this works with bounds in the form of a tuple of two arrays
+            lower = np.array([b[0] for b in bounds])
+            upper = np.array([b[1] for b in bounds])
+            kw = {
+                "seek_global_minimum": True,
+                "bounds": (lower,upper),
+                "print_progress": logs.is_enabled_for(logs.NOISY),
+                "rhobeg": 0.1,
+                "rhoend": self.tolerance,
+            }
+            result = pybobyqa.solve(likefn, start_vector, **kw)
+            opt_norm = result.x
+        else:
+            # Use scipy mainimizer instead
+            result = scipy.optimize.minimize(likefn, start_vector, method=self.method,
+            jac=False, tol=self.tolerance,
+            options={'maxiter':self.maxiter, 'disp':True})
+
+            opt_norm = result.x
+
         opt = self.pipeline.denormalize_vector(opt_norm)
         
-
         #Some output - first log the parameters to the screen.
-        #It's not really a warning - that's just a level name
         results = self.pipeline.run_results(opt)
         if self.max_posterior:
             logs.overview("Best fit (by posterior):\n%s"%'   '.join(str(x) for x in opt))

@@ -140,6 +140,9 @@ def test_gridmax():
 def test_maxlike():
     run('maxlike', True, can_postprocess=False)
 
+def test_bobyqa():
+    run('maxlike', True, can_postprocess=False, method='bobyqa')
+
 def test_metropolis():
     run('metropolis', True, samples=20)
     run('metropolis', True, samples=20, covmat_sample_start=True)
