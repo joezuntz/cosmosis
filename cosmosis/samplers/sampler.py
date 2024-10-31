@@ -54,19 +54,23 @@ class Sampler(metaclass=RegisteredSampler):
         self.distribution_hints = Hints()
         self.write_header()
 
-    def write_header(self):
-        if self.output:
-            for p in self.pipeline.output_names():
-                self.output.add_column(p, float)
-            for p,ptype in self.sampler_outputs:
-                self.output.add_column(p, ptype)
-            self.output.metadata("n_varied", len(self.pipeline.varied_params))
-            self.attribution.write_output(self.output)
-            for key, value in self.collect_run_metadata().items():
-                self.output.metadata(key, value)
+    def write_header(self, output=None):
+        if output is None:
+            output = self.output
+        if output is None:
+            return
+
+        for p in self.pipeline.output_names():
+            output.add_column(p, float)
+        for p,ptype in self.sampler_outputs:
+            output.add_column(p, ptype)
+        output.metadata("n_varied", len(self.pipeline.varied_params))
+        self.attribution.write_output(output)
+        for key, value in self.collect_run_metadata().items():
+            output.metadata(key, value)
         blinding_header = self.ini.getboolean("output","blinding-header", fallback=False)
-        if blinding_header and self.output:
-            self.output.blinding_header()
+        if blinding_header:
+            output.blinding_header()
 
     def collect_run_metadata(self):
         info = {
