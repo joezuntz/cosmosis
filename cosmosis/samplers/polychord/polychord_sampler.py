@@ -342,7 +342,7 @@ class PolychordSampler(ParallelSampler):
             for c in comments:
                 new.comment(c)
             
-
+            nsample = 0
             # write the parameter rows from the old file
             with open(boosted_filename, "r")  as f:
                 for line in f:
@@ -353,12 +353,14 @@ class PolychordSampler(ParallelSampler):
                     prior = params[-1]
                     post = like + prior
                     new.parameters(params, like, post, weight)
+                    nsample += 1
 
-
+            metadata = old._final_metadata[md].copy()
+            metadata["nsample"] = nsample
             # This hasn't been written yet because the original output file has not been closed.
             # so we have to use the saved one in the old object. The * is because a comment is also included
-            for md in old._final_metadata:
-                new.final(md, *old._final_metadata[md])
+            for key, value in metadata.keys():
+                new.final(key, *value)
             new.final("log_z", self.log_z)
             new.final("log_z_error", self.log_z_err)
 
