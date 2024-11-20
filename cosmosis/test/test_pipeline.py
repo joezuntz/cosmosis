@@ -305,6 +305,62 @@ def test_failure_log():
         assert lines[1].strip() == "-2.0 0.0 0.0 8.0"
 
 
+def test_recreate_pipeline():
+    with tempfile.TemporaryDirectory() as dirname:
+
+        values = os.path.join(dirname, "values.ini")
+        priors = os.path.join(dirname, "priors.ini")
+        output = os.path.join(dirname, "output.txt")
+        with open(values, "w") as f:
+            f.write(
+                "[parameters]\n"
+                "p1=-10.0  0.0  10.0\n"
+                "p2=-1000.0  0.0  1000.0\n")
+
+        with open(priors, "w") as f:
+            f.write(
+                "[parameters]\n"
+                "p1=uniform -5.0 5.0\n"
+                "p2=gaussian 0.0 1.0"
+            )
+
+        override = {
+            ('runtime', 'root'): root,
+            ('runtime', 'sampler'): "emcee",
+            ("pipeline", "debug"): "F",
+            ("pipeline", "modules"): "test2",
+            ("pipeline", "values"): values,
+            ("pipeline", "priors"): priors,
+            ("pipeline", "extra_output"): "parameters/p3",
+            ("output", "filename"): output,
+            ("output", "format"): "text",
+            ("test2", "file"): "example_module.py",
+            ("emcee", "walkers"): "8",
+            ("emcee", "samples"): "10"
+        }
+
+        ini = Inifile(None, override=override)
+
+        status = run_cosmosis(ini)
+
+        # Now we want to recreate the pipeline from the output
+        pipeline = LikelihoodPipeline.from_chain_file(output)
+
+        # check the basic pipeline configuration
+        assert pipeline.modules[0].name == "test2"
+        assert len(pipeline.modules) == 1
+
+        # check it produces the same results
+        r = pipeline.run_results([1.,2.])
+        assert np.isclose(r.like, -2.5)
+        assert np.isclose(r.extra[0], 3.0)
+
+        # check that the priors have been correctly passed through
+        # the recreated pipeline
+        assert np.isclose(r.prior, np.log(0.1) - 2.0 - 0.5*np.log(2*np.pi))
+
+
+
 
 if __name__ == '__main__':
     test_script_skip()

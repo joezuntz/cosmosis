@@ -10,6 +10,7 @@ import time
 import collections
 import warnings
 import traceback
+import io
 from . import config
 from . import parameter
 from . import prior
@@ -814,7 +815,26 @@ class LikelihoodPipeline(Pipeline):
         else:
             self.likelihood_names = likelihood_names.split()
 
+    @classmethod
+    def from_chain_file(cls, filename, **kwargs):
+        from ..utils import extract_inis_from_chain_header, read_chain_header
+        # Pull out all of the comment bits in the header of the chain
+        # that start with a #
+        header = read_chain_header(filename)
 
+        # Parse he header to pull out the three chunks of INI files
+        # that we save there
+        param_lines = extract_inis_from_chain_header(header, "params")
+        value_lines = extract_inis_from_chain_header(header, "values")
+        prior_lines = extract_inis_from_chain_header(header, "priors")
+
+        # convert all these into Inifile objects
+        params = config.Inifile.from_lines(param_lines)
+        values = config.Inifile.from_lines(value_lines)
+        priors = config.Inifile.from_lines(prior_lines)
+
+        # Build the pipeline from these
+        return cls(arg=params, values=values, priors=priors, **kwargs)
 
 
     def print_priors(self):
