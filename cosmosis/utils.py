@@ -402,3 +402,28 @@ def under_over_line(s, char='-'):
         The character to use for the line
     """
     return underline(overline(s, char), char)
+
+
+def read_chain_header(filename):
+    lines = []
+    for line in open(filename):
+        if not line.startswith('#'):
+            break
+        lines.append(line)
+    return lines
+
+
+def extract_inis_from_chain_header(lines, section):
+    start = "## START_OF_{}_INI".format(section).upper()
+    end = "## END_OF_{}_INI".format(section).upper()
+    in_section = False
+    output_lines = []
+    for line in lines:
+        if line.startswith(start):
+            in_section = True
+            continue
+        elif line.startswith(end):
+            break
+        elif in_section:
+            output_lines.append(line[3:])
+    return output_lines
