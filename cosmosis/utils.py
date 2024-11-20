@@ -34,6 +34,61 @@ everythingIsNan = EverythingIsNan()
 
 
 
+def datablock_to_astropy(block):
+    from .datablock import names
+    cosmo = names.cosmological_parameters
+    from astropy.cosmology import FlatLambdaCDM, LambdaCDM, FlatwCDM, wCDM, w0waCDM, Flatw0waCDM
+
+    # Required parameters that must be in the data block
+    # for this to work
+    omega_lambda = block[cosmo, 'omega_lambda']
+    omega_m = block[cosmo, 'omega_m']
+    omega_b = block[cosmo, 'omega_b']
+    H0 = block[cosmo, 'h0'] * 100
+    m_nu = block[cosmo, 'mnu']
+
+    # Optional parameters with simple default values
+    omega_k = block.get_double(cosmo, 'omega_k', 0.0)
+    w0 = block.get_double(cosmo, 'w', -1.0)
+    wa = block.get_double(cosmo, 'wa', 0.0)
+
+    kw = {
+        "H0": H0,
+        "Ob0": omega_b,
+        "Om0": omega_m,
+        "m_nu": m_nu,
+    }
+
+    if omega_k == 0:
+        if wa == 0:
+            if w0 == -1.0:
+                model = FlatLambdaCDM
+            else:
+                model = FlatwCDM
+                kw["w0"] = w0
+        else:
+            model = Flatw0waCDM
+            kw["w0"] = w0
+            kw["wa"] = wa
+    else:
+        if wa == 0:
+            if w0 == -1.0:
+                model = LambdaCDM
+                kw["Ode0"] = omega_lambda
+            else:
+                model = wCDM
+                kw["Ode0"] = omega_lambda
+                kw["w0"] = w0
+        else:
+            model = w0waCDM
+            kw["Ode0"] = omega_lambda
+            kw["w0"] = w0
+            kw["wa"] = wa
+
+    return model(**kw)
+
+
+
 class ParseExtraParameters(argparse.Action):
 
     u"""Extended command-line argument parser :class:`Action` which knows how to read arguments of the form ‘section.name=value’."""
