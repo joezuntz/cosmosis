@@ -86,11 +86,10 @@ jobs:
         python -m pip install --upgrade pip
         if [[ "${{ matrix.os }}" == "macos-13" || "${{ matrix.python-version }}" == '3.7' || "${{ matrix.python-version}} == '3.8'" ]]; then
           NUMPY_VERSION="<2"
+          pip install "numpy<2"
         else
-          NUMPY_VERSION=">=2"
+          pip install "numpy>=2"
         fi
-        pip install "numpy${NUMPY_VERSION}"
-        pip install -v .
         pip install --no-binary=mpi4py mpi4py astropy pytest pytest-cov getdist
 
     - name: Install PocoMC
