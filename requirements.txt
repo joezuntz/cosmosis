@@ -1,7 +1,7 @@
 pyyaml
 future
 emcee
-numpy < 2
+numpy
 scipy
 matplotlib
 pybind11
