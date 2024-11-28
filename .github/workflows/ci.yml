@@ -90,6 +90,7 @@ jobs:
         else
           pip install "numpy>=2"
         fi
+        pip install -vv .
         pip install --no-binary=mpi4py mpi4py astropy pytest pytest-cov getdist
 
     - name: Install PocoMC
