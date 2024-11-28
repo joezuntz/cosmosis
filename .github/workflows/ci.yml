@@ -84,8 +84,7 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
-        if [[ "${{ matrix.os }}" == "macos-13" || "${{ matrix.python-version }}" == '3.7' || "${{ matrix.python-version}} == '3.8'" ]]; then
-          NUMPY_VERSION="<2"
+        if [[ "${{ matrix.os }}" == "macos-13" || "${{ matrix.python-version }}" == '3.7' || "${{ matrix.python-version}}" == '3.8' ]]; then
           pip install "numpy<2"
         else
           pip install "numpy>=2"
