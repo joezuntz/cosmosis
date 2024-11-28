@@ -29,10 +29,8 @@ jobs:
             python-version: 3.7
         include:
           - os: ubuntu-20.04
-            NUMPY_VERSION: ">=2"
             INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
           - os: macos-latest
-            NUMPY_VERSION: ">=2"
             # Different versions of homebrew put the gfortran in different
             INSTALL_DEPS: >
               brew update-reset 
@@ -50,7 +48,6 @@ jobs:
               ; fi
               && echo "gfortran now at $(which -a gfortran)"
           - os: macos-13
-            NUMPY_VERSION: "<2"
             # Different versions of homebrew put the gfortran in different
             INSTALL_DEPS: >
               brew update-reset 
@@ -87,7 +84,12 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install "numpy${{ matrix.NUMPY_VERSION }}"
+        if [[ "${{ matrix.python-version }}" == '3.7' || "${{ matrix.python-version}} == '3.8'" ]]; then
+          NUMPY_VERSION="<2"
+        else
+          NUMPY_VERSION=">=2"
+        fi
+        pip install "numpy${NUMPY_VERSION}"
         pip install -v .
         pip install --no-binary=mpi4py mpi4py astropy pytest pytest-cov getdist
 
