@@ -1,13 +1,36 @@
-from .. import Sampler
+from .. import ParallelSampler
 from ...runtime import logs
 import numpy as np
 import scipy.optimize
+import warnings
 
+# The likelihood function we wish to optimize.
+# Not that we are minimizing the negative of the likelihood/posterior
+def likefn(p_in):
+    global sampler
+    # Check the normalization
+    if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
+        return np.inf
+    p = sampler.pipeline.denormalize_vector(p_in)
+    r = sampler.pipeline.run_results(p)
+    if sampler.max_posterior:
+        return -r.post
+    else:
+        return -r.like
 
-class MaxlikeSampler(Sampler):
+def run_optimizer(start_vector):
+    global sampler
+    return sampler.run_optimizer(start_vector)
+
+class MaxlikeSampler(ParallelSampler):
+    parallel_output = False
+    supports_resume = False # TODO: support resuming
+
     sampler_outputs = [("prior", float), ("like", float), ("post", float)]
 
     def config(self):
+        global sampler
+        sampler = self
         self.tolerance = self.read_ini("tolerance", float, 1e-3)
         self.maxiter = self.read_ini("maxiter", int, 1000)
         self.output_ini = self.read_ini("output_ini", str, "")
@@ -15,6 +38,13 @@ class MaxlikeSampler(Sampler):
         self.method = self.read_ini("method",str,"Nelder-Mead")
         self.max_posterior = self.read_ini("max_posterior", bool, False)
         self.repeats = self.read_ini("repeats", int, 1)
+        if self.repeats == 1:
+            nsteps = 1
+        elif self.pool is not None:
+            nsteps = self.pool.size
+        else:
+            nsteps = 1
+        self.nsteps = self.read_ini("nsteps", int, nsteps)
         start_method = self.read_ini("start_method", str, "")
 
         if self.repeats > 1:
@@ -34,67 +64,68 @@ class MaxlikeSampler(Sampler):
                                  " or set it to 'cov' or 'chain' and also set start_input to a file to load one"
                                  " either a covariance matrix or a chain of samples."
                                  )
+        if self.is_master():
+            if self.max_posterior:
+                logs.overview("------------------------------------------------")
+                logs.overview("NOTE: Running optimizer in **max-posterior** mode:")
+                logs.overview("NOTE: Will maximize the combined likelihood and prior")
+                logs.overview("------------------------------------------------")
+            else:
+                logs.overview("--------------------------------------------------")
+                logs.overview("NOTE: Running optimizer in **max-like** mode:")
+                logs.overview("NOTE: not including the prior, just the likelihood.")
+                logs.overview("NOTE: Set the parameter max_posterior=T to change this.")
+                logs.overview("NOTE: This won't matter unless you set some non-flat")
+                logs.overview("NOTE: priors in a separate priors file.")
+                logs.overview("--------------------------------------------------")
 
-        if self.max_posterior:
-            logs.overview("------------------------------------------------")
-            logs.overview("NOTE: Running optimizer in **max-posterior** mode:")
-            logs.overview("NOTE: Will maximize the combined likelihood and prior")
-            logs.overview("------------------------------------------------")
-        else:
-            logs.overview("--------------------------------------------------")
-            logs.overview("NOTE: Running optimizer in **max-like** mode:")
-            logs.overview("NOTE: not including the prior, just the likelihood.")
-            logs.overview("NOTE: Set the parameter max_posterior=T to change this.")
-            logs.overview("NOTE: This won't matter unless you set some non-flat")
-            logs.overview("NOTE: priors in a separate priors file.")
-            logs.overview("--------------------------------------------------")
-
-        self.repeat_index = 0
         self.best_fit_results = []
 
-    def save_final_outputs(self):
+    def save_final_outputs(self, best_fit_results, final=False):
 
         # This can happen if the user ctrl'c's the run before any results are saved
-        if not self.best_fit_results:
+        if not best_fit_results:
             return
 
         # Sort the repeated best-fit estimates by increasing posterior or likelihood
         if self.max_posterior:
-            self.best_fit_results.sort(key=lambda x: x.post)
+            best_fit_results.sort(key=lambda x: x.post)
         else:
-            self.best_fit_results.sort(key=lambda x: x.like)
+            best_fit_results.sort(key=lambda x: x.like)
 
-        # Save all the results to the main chain output file
-        for results in self.best_fit_results:
+        # Save all the results to the main chain output file.
+        # We will overwrite previous sets of results in the file here
+        self.output.reset_to_chain_start()
+        for results in best_fit_results:
             self.output.parameters(results.vector, results.extra, results.prior, results.like, results.post)
 
-
-        # Find the overall best fit. We use this to create a new ini file and/or covmat, if requested,
-        # and to pass on to the next sampler in any chain
-        results = self.best_fit_results[-1]
-
-        # If requested, create a new ini file for the best fit.
-        if self.output_ini:
-          self.pipeline.create_ini(results.vector, self.output_ini)
-
-        # This info is useful for the next sampler in a chain
-        self.distribution_hints.set_peak(results.vector, results.post)
+        # Get the overall best-fit results
+        results = best_fit_results[-1]
 
         # Also if requested, approximate the covariance matrix with the
         # inverse of the Hessian matrix.
         # For a gaussian posterior this is exact.
         if results.covmat is None:
             if self.output_cov:
-               logs.error("Sorry - the optimization method you chose does not return a covariance (or Hessian) matrix")
+               warnings.warn("Sorry - the optimization method you chose does not return a covariance (or Hessian) matrix")
         else:
             if self.output_cov:
                 np.savetxt(self.output_cov, results.covmat)
 
-            # This info is also useful for the next sampler in a chain
-            self.distribution_hints.set_cov(results.covmat)
+        # We only want to update the distribution hints at the very end
+        if final:
+            # These values are used by subsequent samplers, if you chain
+            # some of them together
+            self.distribution_hints.set_peak(results.vector, results.post)
+            if results.covmat is not None:
+                self.distribution_hints.set_cov(results.covmat)
 
 
-    def run_optimizer(self, likefn, start_vector):
+    def run_optimizer(self, inputs):
+        rank = self.pool.rank if self.pool is not None else 0
+        start_vector, repeat_index = inputs
+        start_vector_denorm = self.pipeline.denormalize_vector(start_vector)
+        logs.overview(f"[Rank {rank}] Starting from point: {start_vector_denorm}")
         bounds = [(0.0, 1.0) for p in self.pipeline.varied_params]
 
         if self.method.lower() == "bobyqa":
@@ -128,13 +159,14 @@ class MaxlikeSampler(Sampler):
         results = self.pipeline.run_results(opt)
 
         # Log some info to the screen
-        logs.overview("\n\nOptimization run {} of {}".format(self.repeat_index+1, self.repeats))
+        par_text = '   '.join(str(x) for x in opt)
+        logs.overview(f"\n\n[Rank {rank}] Optimization run {repeat_index+1} of {self.repeats}")
         if self.max_posterior:
-            logs.overview("Best fit (by posterior):\n%s"%'   '.join(str(x) for x in opt))
+            logs.overview(f"[Rank {rank}] Best fit (by posterior): {par_text}\n%s")
         else:
-            logs.overview("Best fit (by likelihood):\n%s"%'   '.join(str(x) for x in opt))
-        logs.overview("Posterior: {}".format(results.post))
-        logs.overview("Likelihood: {}\n".format(results.like))
+            logs.overview(f"[Rank {rank}] Best fit (by likelihood):\n{par_text}")
+        logs.overview(f"[Rank {rank}] Posterior: {results.post}")
+        logs.overview(f"[Rank {rank}] Likelihood: {results.like}\n")
 
         # Also attach any covariance matrix saved by the sampler to the results
         # object, in an ad-hoc way
@@ -149,69 +181,84 @@ class MaxlikeSampler(Sampler):
             results.covmat = None
 
         return results
+    
+    def choose_start(self, n):
+        if n == 1:
+            # we just want a single starting point. 
+            # So we can use the basic one from the values file or
+            # previous sampler; we don't have to worry about making
+            # it randomized.
 
-    def execute(self):
-
-        # The likelihood function we wish to optimize.
-        # Not that we are minimizing the negative of the likelihood/posterior
-        def likefn(p_in):
-            # Check the normalization
-            if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
-                return np.inf
-            p = self.pipeline.denormalize_vector(p_in)
-            r = self.pipeline.run_results(p)
-            if self.max_posterior:
-                return -r.post
-            else:
-                return -r.like
-
-        # Choose a starting point. If we are repeating our optimization we will need
-        # multiple starting points. Otherwise we use a fixed one
-        repeating = self.repeats > 1
-
-        if repeating:
-            # If we are taking a random starting point then there is a chance it will randomly
-            # be invalid. So we should try a 20 times to get a valid one.
-            for _ in range(20):
-                start_vector_denorm = self.start_estimate(prefer_random=True)
-                start_vector = self.pipeline.normalize_vector(start_vector_denorm)
-                if np.isfinite(likefn(start_vector)):
-                    break
-            else:
-                raise RuntimeError("Could not find a valid random starting point for maxlike in 20 tries")
-        else:
-            # Otherwise we just use the one starting point. It will be from a previous
-            # chained sampler, if there is one, or otherwise just what is in the values file
+            # It's also possible that this is just the last of our repeats
+            # to be done, but in that case it's also okay to just use the
+            # basic starting point, since we won't already have used it
             start_vector_denorm = self.start_estimate()
             start_vector = self.pipeline.normalize_vector(start_vector_denorm)
 
             # If that is invalid we will raise an error
             if not np.isfinite(likefn(start_vector)):
                 raise RuntimeError("Invalid starting point for maxlike")
+            
+            start_vectors = np.array([start_vector]) # 1 x n array
 
-        logs.overview(f"Starting from point: {start_vector_denorm}")
+        else:
+            start_vectors = np.zeros((n, self.pipeline.nvaried))
+            for i in range(n):
+                # If we are taking a random starting point then there is a chance it will randomly
+                # be invalid. So we should try a 20 times to get a valid one.
+                for _ in range(20):
+                    start_vector_denorm = self.start_estimate(prefer_random=True)
+                    start_vector = self.pipeline.normalize_vector(start_vector_denorm)
+                    if np.isfinite(likefn(start_vector)):
+                        break
+                else:
+                    raise RuntimeError("Could not find a valid random starting point for maxlike in 20 tries")
+                start_vectors[i] = start_vector
 
-        try:
-            results = self.run_optimizer(likefn, start_vector)
-        except KeyboardInterrupt:
-            # If we get a ctrl-c we should save the current best fit
-            # and then exit.
-            # Otherwise report what we are doing. It should be basically instant
-            # so it shouldn't annoy anyone
-            logs.overview("Keyboard interrupt - saving current best fit, if any finished")
-            self.save_final_outputs()
-            raise
+        return start_vectors
 
-        # We will only save all the results at the end, because then we can sort them
-        # by likelihood or posterior. So for now just save this one.
-        self.best_fit_results.append(results)
+    def execute(self):
+        # Figure out how many steps we need to do
+        # 
+        ndone = len(self.best_fit_results)
+        if ndone + self.nsteps > self.repeats:
+            n = self.repeats - ndone
+        else:
+            n = self.nsteps
 
-        # In the final iteration we save everything. # We probably want to do this
-        # on a keyboard interrupt too.
-        self.repeat_index += 1
 
-        if self.repeat_index == self.repeats:
-            self.save_final_outputs()
+        # Choose a starting point. If we are repeating our optimization we will need
+        # multiple starting points. Otherwise we use a fixed one
+        starting_points = self.choose_start(n)
+
+        if self.pool is None:
+            # serial mode. Just do everything on this process.
+            # this allows us to also do a nice thing where if we
+            # get part way through the results and then the user
+            # ctrl-c's then we can still output partial results
+            collected_results = []
+            for i, start_vector in enumerate(starting_points):
+                try:
+                    results = self.run_optimizer((start_vector, ndone + i))
+                    collected_results.append(results)
+                except KeyboardInterrupt:
+                    # If we get a ctrl-c we should save the current best fit
+                    # and then exit.
+                    # Otherwise report what we are doing. It should be basically instant
+                    # so it shouldn't annoy anyone
+                    logs.overview("Keyboard interrupt - saving current best fit, if any finished")
+                    self.save_final_outputs(collected_results, final=True)
+                    raise
+        else:
+            inputs = [(start_vector, ndone + i) for i, start_vector in enumerate(starting_points)]
+            collected_results = self.pool.map(run_optimizer, inputs)
+
+        # Add this to our list of best-fits
+        self.best_fit_results.extend(collected_results)
+
+        # we re-save the final outputs each time, rewinding the file
+        # to overwrite the previous ones, so we can re-sort each time.
+        self.save_final_outputs(self.best_fit_results, final=self.is_converged()    )
 
     def is_converged(self):
-        return self.repeat_index >= self.repeats
+        return len(self.best_fit_results) >= self.repeats
