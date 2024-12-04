@@ -72,3 +72,4 @@ params:
     repeats: "(integer; default=1) number of times to repeat the minimization from different starting points"
     start_method: "(string; default='') method to use to generate starting points.  Options are 'prior' and 'chain', 'cov', or blank for default start'"
     start_input: "(string; default='') input file to use for starting points if start_method is 'chain' or 'cov'"
+    nstep: "(integer; default=1) number of steps to output at once"
