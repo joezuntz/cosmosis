@@ -141,6 +141,14 @@ def test_maxlike():
     output = run('maxlike', True, can_postprocess=False)
     assert len(output["post"]) == 1
 
+
+    # alternative sampler, max-post, output_cov
+    with tempfile.TemporaryDirectory() as dirname:
+        output_ini = os.path.join(dirname, "output.ini")
+        output_cov = os.path.join(dirname, "output_cov.txt")
+        run('maxlike', True, can_postprocess=False, method="L-BFGS-B", max_posterior=True, output_ini=output_ini, output_cov=output_cov)
+
+
     output = run('maxlike', True, can_postprocess=False, repeats=5, start_method="prior")
     assert len(output["post"]) == 5
     assert (np.diff(output["like"]) >= 0).all()
@@ -165,6 +173,10 @@ def test_maxlike():
         f.write("-0.1 0.2  2.0\n")
         f.flush()
         run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain", start_input=f.name)
+
+        # start from last element of chain
+        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain", start_input=f.name)
+
 
     # Check we can start from a covmat
     with tempfile.NamedTemporaryFile('w') as f:

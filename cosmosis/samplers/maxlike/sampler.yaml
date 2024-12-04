@@ -43,6 +43,8 @@ explanation: >
 
     - trust-ncg
 
+    - bobyqa (requires pybobyqa)
+
 
     Each has different (dis)advantages, and which works best will depend on your
     particular application.  The default in CosmoSIS is Nelder-Mead.
@@ -67,3 +69,6 @@ params:
     output_ini: "(string; default='') if present, save the resulting parameters to a new ini file with this name"
     output_covmat: "(string; default='') if present and the sampler supports it, save the estimated covariance to this file"
     max_posterior: "(bool; default=False) find the max a posteriori point instead of max like (includes the priors as well)"
+    repeats: "(integer; default=1) number of times to repeat the minimization from different starting points"
+    start_method: "(string; default='') method to use to generate starting points.  Options are 'prior' and 'chain', 'cov', or blank for default start'"
+    start_input: "(string; default='') input file to use for starting points if start_method is 'chain' or 'cov'"
