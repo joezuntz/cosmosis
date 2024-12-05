@@ -138,7 +138,54 @@ def test_gridmax():
 #     run('kombine')
 
 def test_maxlike():
-    run('maxlike', True, can_postprocess=False)
+    output = run('maxlike', True, can_postprocess=False)
+    assert len(output["post"]) == 1
+
+
+    # alternative sampler, max-post, output_cov
+    with tempfile.TemporaryDirectory() as dirname:
+        output_ini = os.path.join(dirname, "output.ini")
+        output_cov = os.path.join(dirname, "output_cov.txt")
+        run('maxlike', True, can_postprocess=False, method="L-BFGS-B", max_posterior=True, output_ini=output_ini, output_cov=output_cov)
+
+
+    output = run('maxlike', True, can_postprocess=False, repeats=5, start_method="prior")
+    assert len(output["post"]) == 5
+    assert (np.diff(output["like"]) >= 0).all()
+
+    # error - no start method specified but need one for repeats
+    with pytest.raises(ValueError):
+        run('maxlike', True, can_postprocess=False, repeats=5)
+
+    # error - no start_input specified
+    with pytest.raises(ValueError):
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain")
+
+    # error - no start_input specified
+    with pytest.raises(ValueError):
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="cov")
+
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight\n")
+        f.write("0.0 0.1  1.0\n")
+        f.write("0.05 0.0  2.0\n")
+        f.write("-0.1 0.2  2.0\n")
+        f.flush()
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain", start_input=f.name)
+
+        # start from last element of chain
+        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain", start_input=f.name)
+
+
+    # Check we can start from a covmat
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("0.1  0.0\n")
+        f.write("0.0 0.08\n")
+        f.flush()
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="cov", start_input=f.name)
+
+
 
 def test_bobyqa():
     run('maxlike', True, can_postprocess=False, method='bobyqa')

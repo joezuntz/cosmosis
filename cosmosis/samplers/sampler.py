@@ -169,10 +169,81 @@ class Sampler(metaclass=RegisteredSampler):
     def is_converged(self):
         return False
     
-    def start_estimate(self):
+
+
+    def start_estimate(self, method=None, input_source=None, prefer_random=False):
+        """
+        Select a starting parameter set for the sampler.
+
+        The method is chosen by looking at the start_method and start_input
+        options in the sampler's ini file.
+
+        This can be:
+        - the peak from a previous sampler (default if available)
+        - the defined starting position in the values file (if start_method not set)
+        - a random point in the prior (if start_method is "prior")
+        - a random point from a chain file (if start_method "chain-sample")
+        - the last point from a chain file (if start_method is "chain-last")
+        - a point from a covariance matrix (if start_method is "cov")
+
+        Returns
+        -------
+        start : np.ndarray
+        """
+        if method is None:
+            method = self.read_ini("start_method", str, "")
+        if input_source is None:
+            input_source = self.read_ini("start_input", str, "")
+
+        if method == "chain":
+            if prefer_random:
+                method = "chain-sample"
+            else:
+                method = "chain-last"
+
         if self.distribution_hints.has_peak():
             start = self.distribution_hints.get_peak()
+            if prefer_random:
+                covmat = self.distribution_hints.get_cov()
+                start = sample_ellipsoid(start, covmat)
+
+        elif method == "prior":
+            start = self.pipeline.randomized_start()
+
+        elif method == "chain-last":
+            if not input_source:
+                raise ValueError("If you set the start_method to 'chain' you should not also set start_input to the name of a chain file")
+            start = np.genfromtxt(input_source, invalid_raise=False)[-1, :self.pipeline.nvaried]
+
+        elif method == "chain-sample":
+            if not input_source:
+                raise ValueError("If you set the start_method to 'chain' you should not also set start_input to the name of a chain file")
+
+            # assume the chain file has a header. check for weight or log_weight columns
+            # otherwise assume that the columns match the varied parameters
+            data = np.genfromtxt(input_source, invalid_raise=False)
+            with open(input_source) as f:
+                maybe_colnames = f.readline().strip('#').split()
+            if 'weight' in maybe_colnames:
+                weight_index = maybe_colnames.index('weight')
+                weight = data[:, weight_index]
+            elif 'log_weight' in maybe_colnames:
+                log_weight_index = maybe_colnames.index('log_weight')
+                weight = np.exp(data[:, log_weight_index] - data[:, log_weight_index].max())
+            else:
+                weight = np.ones(len(data))
+            index = np.random.choice(len(data), p=weight/weight.sum())
+            start = data[index, :self.pipeline.nvaried]
+
+        elif method == "cov":
+            if not input_source:
+                raise ValueError("If you set the start_method to 'cov' you should not also set start_input to the name of a covariance file")
+
+            covmat = np.loadtxt(input_source)[:self.pipeline.nvaried, :self.pipeline.nvaried]
+            start = sample_ellipsoid(self.pipeline.start_vector(), covmat)[0]
+
         else:
+            # default method is just to use a single starting point
             start = self.pipeline.start_vector()
         return start
 
