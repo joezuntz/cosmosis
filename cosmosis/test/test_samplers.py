@@ -146,7 +146,10 @@ def test_maxlike():
     with tempfile.TemporaryDirectory() as dirname:
         output_ini = os.path.join(dirname, "output.ini")
         output_cov = os.path.join(dirname, "output_cov.txt")
-        run('maxlike', True, can_postprocess=False, method="L-BFGS-B", max_posterior=True, output_ini=output_ini, output_cov=output_cov)
+        run('maxlike', True, can_postprocess=False, method="L-BFGS-B", max_posterior=True, output_ini=output_ini, output_covmat=output_cov)
+        assert os.path.exists(output_cov)
+        assert os.path.exists(output_ini)
+        
 
 
     output = run('maxlike', True, can_postprocess=False, repeats=5, start_method="prior")
@@ -188,7 +191,11 @@ def test_maxlike():
 
 
 def test_bobyqa():
-    run('maxlike', True, can_postprocess=False, method='bobyqa')
+    with tempfile.TemporaryDirectory() as dirname:
+        output_cov = os.path.join(dirname, "output_cov.txt")
+        run('maxlike', True, can_postprocess=False, method='bobyqa', output_covmat=output_cov)
+        assert os.path.exists(output_cov)
+    
 
 def test_metropolis():
     run('metropolis', True, samples=20)

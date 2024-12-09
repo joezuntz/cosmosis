@@ -112,6 +112,10 @@ class MaxlikeSampler(ParallelSampler):
             if self.output_cov:
                 np.savetxt(self.output_cov, results.covmat)
 
+        if self.output_ini:
+            self.pipeline.create_ini(results.vector, self.output_ini)
+
+
         # We only want to update the distribution hints at the very end
         if final:
             # These values are used by subsequent samplers, if you chain
@@ -144,6 +148,10 @@ class MaxlikeSampler(ParallelSampler):
             }
             optimizer_result = pybobyqa.solve(likefn, start_vector, **kw)
             opt_norm = optimizer_result.x
+            # bobyqa calls it .hessian but scipy calls it .hess, so copy it here
+            # if available
+            if optimizer_result.hessian is not None:
+                optimizer_result.hess = optimizer_result.hessian
         else:
             # Use scipy mainimizer instead
             optimizer_result = scipy.optimize.minimize(likefn, start_vector, method=self.method,
