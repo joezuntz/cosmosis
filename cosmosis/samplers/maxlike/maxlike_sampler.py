@@ -144,6 +144,10 @@ class MaxlikeSampler(ParallelSampler):
             }
             optimizer_result = pybobyqa.solve(likefn, start_vector, **kw)
             opt_norm = optimizer_result.x
+            # bobyqa calls it .hessian but scipy calls it .hess, so copy it here
+            # if available
+            if optimizer_result.hessian is not None:
+                optimizer_result.hess = optimizer_result.hessian
         else:
             # Use scipy mainimizer instead
             optimizer_result = scipy.optimize.minimize(likefn, start_vector, method=self.method,
