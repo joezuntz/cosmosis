@@ -127,6 +127,21 @@ def test_truth():
 
 def test_fisher():
     run('fisher', False, check_extra=False, hints_peak=False)
+    run('fisher', False, check_extra=False, hints_peak=False)
+
+def test_fisher_numdifftools():
+    try:
+        import numdifftools
+    except ImportError:
+        pytest.skip("numdifftools not installed")
+    run('fisher', False, check_extra=False, hints_peak=False, method="numdifftools")
+
+def test_fisher_smoothing():
+    try:
+        import derivative
+    except ImportError:
+        pytest.skip("derivative not installed")
+    run('fisher', False, check_extra=False, hints_peak=False, method="smoothing")
 
 def test_grid():
     run('grid', True, pp_extra=False, nsample_dimension=10)
