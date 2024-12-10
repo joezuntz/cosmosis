@@ -16,7 +16,8 @@ def compute_fisher_vector(p, cov=False):
         return None
 
     #Run the pipeline, generating a data block
-    data = fisherPipeline.run_parameters(x)
+    result = fisherPipeline.run_results(x)
+    data = result.block
 
     #If the pipeline failed, return "None"
     #This might happen if the parameters stray into
@@ -136,7 +137,7 @@ class FisherSampler(ParallelSampler):
                 self.step_size_min, self.step_size_max, self.step_count, pool=self.pool)
 
         else:
-            raise ValueError("Unknown Fisher matrix method {self.method}")
+            raise ValueError(f"Unknown Fisher matrix method {self.method}")
 
         try:
             fisher_matrix = fisher_calc.compute_fisher_matrix()
