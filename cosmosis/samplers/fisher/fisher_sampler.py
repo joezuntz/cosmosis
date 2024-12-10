@@ -66,8 +66,6 @@ class FisherSampler(ParallelSampler):
         global fisherPipeline
         fisherPipeline = self.pipeline
         self.step_size = self.read_ini("step_size", float, 0.01)
-        self.tolerance = self.read_ini("tolerance", float, 0.01)
-        self.maxiter = self.read_ini("maxiter", int, 10)
         self.method = self.read_ini("method", str, "stencil")
         self.use_numdifftools = self.read_ini("use_numdifftools", bool, False)
         if self.use_numdifftools:
