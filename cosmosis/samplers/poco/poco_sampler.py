@@ -139,7 +139,10 @@ class PocoMCSampler(ParallelSampler):
 
         logz, logz_err = self.sampler.evidence()
 
-        for sample, logw, logl, logp, blob in zip(*self.sampler.posterior(return_blobs=True, return_logw=True)):
+        results = self.sampler.posterior(return_blobs=True, return_logw=True)
+        self.distribution_hints.set_from_sample(results[0], results[3], log_weights=results[1])
+
+        for sample, logw, logl, logp, blob in zip(*results):
             extra = np.atleast_1d(blob)
             prior = logp
             logpost = logl + prior

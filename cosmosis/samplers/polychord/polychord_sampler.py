@@ -390,7 +390,7 @@ class PolychordSampler(ParallelSampler):
 
         # priors + likes
         posts = data[:, self.ndim+self.nderived-1] + data[:, self.ndim+self.nderived+1]
-        self.distribution_hints.set_peak_from_sample(data[:, :self.ndim], posts)
+        self.distribution_hints.set_from_sample(data[:, :self.ndim], posts, log_weights=logw)
 
         self.output.final("nsample", ndead)
         self.output.flush()
