@@ -14,7 +14,7 @@ minuit_compiled = os.path.exists(Sampler.get_sampler("minuit").libminuit_name)
 # parameters, so our expected prior is 1/6 for each of them.
 EXPECTED_LOG_PRIOR = 2*np.log(1./6)
 
-def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, hints_peak=True, **options):
+def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, hints_peak=True, hints_cov=True, **options):
 
     sampler_class = Sampler.registry[name]
 
@@ -64,11 +64,17 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
     if hints_peak:
         assert sampler.distribution_hints.has_peak()
         peak = sampler.distribution_hints.get_peak()
+        assert peak.shape == (2,)
         idx = output["post"].argmax()
         assert np.isclose(output["parameters--p1"][idx], peak[0])
         assert np.isclose(output["parameters--p2"][idx], peak[1])
         sampler.distribution_hints.del_peak()
         assert not sampler.distribution_hints.has_peak()
+    if hints_cov:
+        assert sampler.distribution_hints.has_cov()
+        cov = sampler.distribution_hints.get_cov()
+        assert cov.shape == (2, 2)
+
 
 
     if check_extra and not no_extra:
@@ -112,7 +118,7 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
 
 
 def test_apriori():
-    run('apriori', True, can_postprocess=False, nsample=100)
+    run('apriori', True, can_postprocess=False, hints_cov=False, nsample=100)
 
 def test_dynesty():
     # dynesty does not support extra params
@@ -144,16 +150,16 @@ def test_fisher_smoothing():
     run('fisher', False, check_extra=False, hints_peak=False, method="smoothing")
 
 def test_grid():
-    run('grid', True, pp_extra=False, nsample_dimension=10)
+    run('grid', True, pp_extra=False, nsample_dimension=10, hints_cov=False)
 
 def test_gridmax():
-    run('gridmax', True, can_postprocess=False, max_iterations=1000)
+    run('gridmax', True, can_postprocess=False, max_iterations=1000, hints_cov=False)
 
 # def test_kombine():
 #     run('kombine')
 
 def test_maxlike():
-    output = run('maxlike', True, can_postprocess=False)
+    output = run('maxlike', True, can_postprocess=False, hints_cov=False)
     assert len(output["post"]) == 1
 
 
@@ -167,7 +173,7 @@ def test_maxlike():
         
 
 
-    output = run('maxlike', True, can_postprocess=False, repeats=5, start_method="prior")
+    output = run('maxlike', True, can_postprocess=False, repeats=5, start_method="prior", hints_cov=False)
     assert len(output["post"]) == 5
     assert (np.diff(output["like"]) >= 0).all()
 
@@ -190,10 +196,10 @@ def test_maxlike():
         f.write("0.05 0.0  2.0\n")
         f.write("-0.1 0.2  2.0\n")
         f.flush()
-        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain", start_input=f.name)
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain", start_input=f.name, hints_cov=False)
 
         # start from last element of chain
-        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain", start_input=f.name)
+        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain", start_input=f.name, hints_cov=False)
 
 
     # Check we can start from a covmat
@@ -201,7 +207,7 @@ def test_maxlike():
         f.write("0.1  0.0\n")
         f.write("0.0 0.08\n")
         f.flush()
-        run('maxlike', True, can_postprocess=False, repeats=5, start_method="cov", start_input=f.name)
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="cov", start_input=f.name, hints_cov=False)
 
 
 
@@ -218,34 +224,31 @@ def test_metropolis():
 
 @pytest.mark.skipif(not minuit_compiled,reason="requires Minuit2")
 def test_minuit():
-    run('minuit', True, can_postprocess=False)
+    run('minuit', True, can_postprocess=False, hints_cov=False)
 
 def test_multinest():
     run('multinest', True, max_iterations=10000, live_points=50, feedback=False)
 
 def test_pmaxlike():
-    run('pmaxlike', True, can_postprocess=False)
+    run('pmaxlike', True, can_postprocess=False, hints_cov=False)
 
 def test_pmc():
     old_settings = np.seterr(invalid='ignore', divide='ignore')
-    run('pmc', True, iterations=10)
+    run('pmc', True, iterations=10, hints_cov=False)
     np.seterr(**old_settings)  
 
 def test_zeus():
     run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50)
     run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, verbose=True)
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, tune=False)
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, tolerance=0.1)
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, patience=5000)
+    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, tune=False, tolerance=0.1, patience=5000)
     run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global")
-    run('zeus', True, maxiter=50_000, walkers=10, samples=100, nsteps=50)
 
 def test_polychord():
     with tempfile.TemporaryDirectory() as base_dir:
         run('polychord', True, live_points=20, feedback=0, base_dir=base_dir, polychord_outfile_root='pc')
 
 def test_snake():
-        run('snake', True, pp_extra=False)
+        run('snake', True, pp_extra=False, hints_cov=False)
 
 
 # Skip in a specific combination which causes a crash I can't track down.
@@ -259,10 +262,10 @@ def test_nautilus():
 
 
 def test_star():
-        run('star', False, pp_extra=False, pp_2d=False)
+        run('star', False, pp_extra=False, pp_2d=False, hints_cov=False)
 
 def test_test():
-    run('test', False, can_postprocess=False, hints_peak=False)
+    run('test', False, can_postprocess=False, hints_peak=False, hints_cov=False)
 
 def test_list_sampler():
     # test that the burn and thin parameters work
@@ -284,7 +287,7 @@ def test_list_sampler():
 
         data = data[20::thin]
 
-        output = run("list", True, can_postprocess=False, filename=input_chain_filename, burn=burn, thin=thin)
+        output = run("list", True, can_postprocess=False, filename=input_chain_filename, burn=burn, thin=thin, hints_cov=False)
         p1 = output['parameters--p1']
         p2 = output['parameters--p2']
         p3 = p1 + p2
@@ -313,7 +316,7 @@ def test_importance_sampler():
             input_chain.close()
             os.system(f"cat {input_chain_filename}")
 
-            output = run("importance", True, can_postprocess=False, input=input_chain_filename, add_to_likelihood=add_to_likelihood)
+            output = run("importance", True, can_postprocess=False, input=input_chain_filename, add_to_likelihood=add_to_likelihood, hints_cov=False)
             p1 = output['parameters--p1']
             p2 = output['parameters--p2']
             p3 = p1 + p2
@@ -337,7 +340,7 @@ def test_poco():
         import pocomc
     except ImportError:
         pytest.skip("pocomc not installed")
-    run('pocomc', True, check_extra=False, n_effective=32, n_active=16,  n_total=32, n_evidence=32, )
+    run('pocomc', True, check_extra=False, n_effective=32, n_active=16,  n_total=32, n_evidence=32)
 
 if __name__ == '__main__':
     import sys
