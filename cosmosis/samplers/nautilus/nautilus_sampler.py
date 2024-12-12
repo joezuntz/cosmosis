@@ -101,7 +101,7 @@ class NautilusSampler(ParallelSampler):
 
         results = sampler.posterior(return_blobs=True)
         posts = results[2] + results[3][:, 0]
-        self.distribution_hints.set_peak_from_sample(results[0], posts)
+        self.distribution_hints.set_from_sample(results[0], posts, log_weights=results[1])
 
         for sample, logwt, logl, blob in zip(*results):
             blob = np.atleast_1d(blob)

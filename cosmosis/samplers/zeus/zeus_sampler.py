@@ -238,12 +238,15 @@ class ZeusSampler(ParallelSampler):
         chain = self.sampler.get_chain()
         blobs = self.sampler.get_blobs()
 
+        chain_flat = self.sampler.get_chain(flat=True)
+        post_flat = self.sampler.get_log_prob(flat=True)
+        self.distribution_hints.set_from_sample(chain_flat, post_flat)
+
         # Output results per sampler per walker
         for i in range(start, end):
             for j in range(self.nwalkers):
                 prior, extra = blobs[i, j]
                 self.output.parameters(chain[i, j], extra, prior, post[i, j])
-                self.distribution_hints.set_peak(chain[i, j], post[i, j])
 
         #Set the starting positions for the next chunk of samples
         #to the last ones for this chunk
