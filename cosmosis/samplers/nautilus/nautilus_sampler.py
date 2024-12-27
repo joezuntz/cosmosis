@@ -25,8 +25,7 @@ def prior_transform(p):
 class NautilusSampler(ParallelSampler):
     parallel_output = False
     internal_resume = True
-    sampler_outputs = [('log_weight', float), ('prior', float),
-                       ("post", float)]
+    sampler_outputs = [("log_weight", float), ("prior", float), ("post", float)]
 
     def config(self):
         global pipeline
@@ -36,10 +35,10 @@ class NautilusSampler(ParallelSampler):
             self.n_live = self.read_ini("n_live", int, 2000)
             self.n_update = self.read_ini("n_update", int, self.n_live)
             self.enlarge_per_dim = self.read_ini("enlarge_per_dim", float, 1.1)
-            self.n_points_min = self.read_ini("n_points_min", int,
-                                              self.pipeline.nvaried + 50)
-            self.split_threshold = self.read_ini("split_threshold", float,
-                                                 100.0)
+            self.n_points_min = self.read_ini(
+                "n_points_min", int, self.pipeline.nvaried + 50
+            )
+            self.split_threshold = self.read_ini("split_threshold", float, 100.0)
             self.n_networks = self.read_ini("n_networks", int, 4)
             self.n_batch = self.read_ini("n_batch", int, 100)
             self.seed = self.read_ini("seed", int, -1)
@@ -52,8 +51,7 @@ class NautilusSampler(ParallelSampler):
             self.n_like_max = self.read_ini("n_like_max", int, -1)
             if self.n_like_max < 0:
                 self.n_like_max = np.inf
-            self.discard_exploration = self.read_ini(
-                "discard_exploration", bool, False)
+            self.discard_exploration = self.read_ini("discard_exploration", bool, False)
             self.verbose = self.read_ini("verbose", bool, False)
 
         self.converged = False
@@ -89,26 +87,37 @@ class NautilusSampler(ParallelSampler):
             filepath=resume_filepath,
             resume=self.resume_,
             pool=self.pool,
-            blobs_dtype=float
+            blobs_dtype=float,
         )
 
-        sampler.run(f_live=self.f_live,
-                    n_shell=self.n_shell,
-                    n_eff=self.n_eff,
-                    n_like_max=self.n_like_max,
-                    discard_exploration=self.discard_exploration,
-                    verbose=self.verbose)
+        sampler.run(
+            f_live=self.f_live,
+            n_shell=self.n_shell,
+            n_eff=self.n_eff,
+            n_like_max=self.n_like_max,
+            discard_exploration=self.discard_exploration,
+            verbose=self.verbose,
+        )
 
         results = sampler.posterior(return_blobs=True)
-        posts = results[2] + results[3][:, 0]
-        self.distribution_hints.set_from_sample(results[0], posts, log_weights=results[1])
+        if isinstance(results[3][0], float):
+            priors = results[3]
+        else:
+            priors = np.array([r[0] for r in results[3]])
+
+        posts = results[2] + priors
+        self.distribution_hints.set_from_sample(
+            results[0], posts, log_weights=results[1]
+        )
 
         for sample, logwt, logl, blob in zip(*results):
-            blob = np.atleast_1d(blob)
-            prior = blob[0]
-            extra = blob[1:]
-            logp = logl + prior
-            self.output.parameters(sample, extra, logwt, prior, logp)
+            if isinstance(blob, float):
+                prior = blob
+                self.output.parameters(sample, logwt, prior, logl + prior)
+            else:
+                prior = blob[0]
+                extra = list(blob)[1:]
+                self.output.parameters(sample, extra, logwt, prior, logl + prior)
 
         self.output.final("efficiency", sampler.n_eff / sampler.n_like)
         self.output.final("neff", sampler.n_eff)
