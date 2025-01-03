@@ -932,7 +932,7 @@ class Campaign:
 
 import argparse
 parser = argparse.ArgumentParser(description="Manage and launch CosmoSIS runs")
-parser.add_argument("run_config", help="The yaml file containing the runs to perform")
+parser.add_argument("campaign_file", help="The yaml file containing the runs to perform")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--list", "-l", action="store_true", help="List all available runs")
 group.add_argument("--cat", "-c",  type=str, help="Show a single run")
@@ -945,7 +945,7 @@ parser.add_argument("--mpi", action="store_true", help="Use MPI to launch the ru
 
 
 def main(args):
-    campaign = Campaign.from_yaml(args.run_config)
+    campaign = Campaign.from_yaml(args.campaign_file)
 
     if args.mpi and not (args.run or args.run_all):
         raise ValueError("MPI can only be used when running a single run")
