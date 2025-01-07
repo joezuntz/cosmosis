@@ -36,9 +36,10 @@ class NautilusSampler(ParallelSampler):
             self.n_live = self.read_ini("n_live", int, 2000)
             self.n_update = self.read_ini("n_update", int, self.n_live)
             self.enlarge_per_dim = self.read_ini("enlarge_per_dim", float, 1.1)
-            sampler_outputs = [('log_weight', float), ('prior', float),
-                       ("post", float)]
-            self.split_threshold = self.read_ini("split_threshold", float, 100.0)
+            self.n_points_min = self.read_ini("n_points_min", int,
+                                              self.pipeline.nvaried + 50)
+            self.split_threshold = self.read_ini("split_threshold", float,
+                                                 100.0)
             self.n_networks = self.read_ini("n_networks", int, 4)
             self.n_batch = self.read_ini("n_batch", int, 100)
             self.seed = self.read_ini("seed", int, -1)
