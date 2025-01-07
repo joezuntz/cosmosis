@@ -106,9 +106,7 @@ class NautilusSampler(ParallelSampler):
             priors = np.array([r[0] for r in results[3]])
 
         posts = results[2] + priors
-        self.distribution_hints.set_from_sample(
-            results[0], posts, log_weights=results[1]
-        )
+        self.distribution_hints.set_from_sample(results[0], posts, log_weights=results[1])
 
         for sample, logwt, logl, blob in zip(*results):
             if isinstance(blob, float):
