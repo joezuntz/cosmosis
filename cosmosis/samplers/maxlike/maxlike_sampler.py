@@ -35,6 +35,7 @@ class MaxlikeSampler(ParallelSampler):
         self.maxiter = self.read_ini("maxiter", int, 1000)
         self.output_ini = self.read_ini("output_ini", str, "")
         self.output_cov = self.read_ini("output_covmat", str, "")
+        self.output_block = self.read_ini("output_block", str, "")
         self.method = self.read_ini("method",str,"Nelder-Mead")
         self.max_posterior = self.read_ini("max_posterior", bool, False)
         self.repeats = self.read_ini("repeats", int, 1)
@@ -114,6 +115,9 @@ class MaxlikeSampler(ParallelSampler):
 
         if self.output_ini:
             self.pipeline.create_ini(results.vector, self.output_ini)
+        
+        if self.output_block:
+            results.block.save_to_directory(self.output_block)
 
 
         # We only want to update the distribution hints at the very end

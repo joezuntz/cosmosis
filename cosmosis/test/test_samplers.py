@@ -167,9 +167,11 @@ def test_maxlike():
     with tempfile.TemporaryDirectory() as dirname:
         output_ini = os.path.join(dirname, "output.ini")
         output_cov = os.path.join(dirname, "output_cov.txt")
-        run('maxlike', True, can_postprocess=False, method="L-BFGS-B", max_posterior=True, output_ini=output_ini, output_covmat=output_cov)
+        output_block = os.path.join(dirname, "output_block")
+        run('maxlike', True, can_postprocess=False, method="L-BFGS-B", max_posterior=True, output_ini=output_ini, output_covmat=output_cov, output_block=output_block)
         assert os.path.exists(output_cov)
         assert os.path.exists(output_ini)
+        assert os.path.isdir(output_block)
         
 
 
