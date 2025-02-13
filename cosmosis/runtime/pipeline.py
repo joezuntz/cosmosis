@@ -1307,11 +1307,11 @@ class LikelihoodPipeline(Pipeline):
         self.likelihood_names = likelihood_names
 
         # Tell the user what we found.
-        logs.overview("Using likelihooods from first run:")
+        logs.noisy("Using likelihooods from first run:")
         for name in self.likelihood_names:
-            logs.overview(f" - {name}")
+            logs.noisy(f" - {name}")
         if not self.likelihood_names:
-            logs.overview(" - (None found)")
+            logs.noisy(" - (None found)")
 
     def _extract_likelihoods(self, data):
         "Extract the likelihoods from the block"

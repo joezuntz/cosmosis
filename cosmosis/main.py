@@ -430,8 +430,8 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             run_count_total = pipeline.run_count
             run_count_ok_total = pipeline.run_count_ok
         else:
-            run_count_total = pool.comm.allreduce(pipeline.run_count)
-            run_count_ok_total = pool.comm.allreduce(pipeline.run_count_ok)
+            run_count_total = pool.allreduce(pipeline.run_count)
+            run_count_ok_total = pool.allreduce(pipeline.run_count_ok)
         
         if is_root and sampler_name != 'test':
             logs.overview(f"Total posterior evaluations = {run_count_total} across all processes")
