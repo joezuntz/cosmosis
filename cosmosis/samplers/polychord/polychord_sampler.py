@@ -348,7 +348,7 @@ class PolychordSampler(ParallelSampler):
                 for line in f:
                     values = [float(x) for x in line.split()]
                     weight = values[0]
-                    like = values[1]
+                    like = -0.5 * values[1]
                     params = values[2:]
                     prior = params[-1]
                     post = like + prior
