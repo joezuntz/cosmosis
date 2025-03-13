@@ -177,15 +177,11 @@ def test_maxlike_alt(capfd):
         
 
 
-def test_maxlike_start_prior_repeat(capfd):
-    logs.flush()
-    out = capfd.readouterr().out
+def test_maxlike_start_prior_repeat(caplog):
     output = run('maxlike', True, can_postprocess=False, repeats=5, start_method="prior", hints_cov=False)
     assert len(output["post"]) == 5
     assert (np.diff(output["like"]) >= 0).all()
-    logs.flush()
-    out = capfd.readouterr().out
-    assert "Starting at a random point in the prior" in out
+    assert "Starting at a random point in the prior" in caplog.text
 
 def test_maxlike_start_unable_to_repeat(capfd):
     # error - no start method specified but need one for repeats
@@ -208,9 +204,7 @@ def test_maxlike_start_chain_sample_auto(caplog):
 
         # This should work, and default to chain-sample because we have set repeats > 1
         run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain", start_input=f.name, hints_cov=False)
-        logs.flush()
-        out = caplog.text
-        assert "Starting at random sample of points from chain file" in out
+        assert "Starting at random sample of points from chain file" in caplog.text
 
 def test_maxlike_start_chain_sample_manual(caplog):
     # Check we can start from a chain file
@@ -223,9 +217,7 @@ def test_maxlike_start_chain_sample_manual(caplog):
 
         # This should work, and default to chain-sample because we have set repeats > 1
         run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain-sample", start_input=f.name, hints_cov=False)
-        logs.flush()
-        out = caplog.text
-        assert "Starting at random sample of points from chain file" in out
+        assert "Starting at random sample of points from chain file" in caplog.text
 
 
 def test_maxlike_start_chain_fail(caplog):
@@ -243,8 +235,6 @@ def test_maxlike_start_chain_fail(caplog):
 
 
 def test_maxlike_start_max_post(caplog):
-    # clear old logs and stdout
-    logs.flush()
     # Check we can start from a chain file
     with tempfile.NamedTemporaryFile('w') as f:
         f.write("#p1 p2 weight post\n")
@@ -255,25 +245,18 @@ def test_maxlike_start_max_post(caplog):
 
         # start from best element of chain - should work because there is a max-post column
         run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain-maxpost", start_input=f.name, hints_cov=False)
-        logs.flush()
-        out = caplog.text
-        assert "Starting at best posterior point from chain file" in out
+        assert "Starting at best posterior point from chain file" in caplog.text
 
 
 
 def test_maxlike_start_covmat(caplog):
-    # clear old logs and stdout
-    logs.flush()
-
     # Check we can start from a covmat
     with tempfile.NamedTemporaryFile('w') as f:
         f.write("0.1  0.0\n")
         f.write("0.0 0.08\n")
         f.flush()
         run('maxlike', True, can_postprocess=False, repeats=5, start_method="cov", start_input=f.name, hints_cov=False)
-        logs.flush()
-        out = caplog.text
-        assert "Starting at a random sample of points from the covariance of chain" in out
+        assert "Starting at a random sample of points from the covariance of chain" in caplog.text
 
 
 
