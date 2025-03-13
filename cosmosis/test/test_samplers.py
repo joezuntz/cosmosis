@@ -160,11 +160,11 @@ def test_gridmax():
 # def test_kombine():
 #     run('kombine')
 
-def test_maxlike_single(capfd):
+def test_maxlike_single():
     output = run('maxlike', True, can_postprocess=False, hints_cov=False)
     assert len(output["post"]) == 1
 
-def test_maxlike_alt(capfd):
+def test_maxlike_alt():
     # alternative sampler, max-post, output_cov
     with tempfile.TemporaryDirectory() as dirname:
         output_ini = os.path.join(dirname, "output.ini")
@@ -183,12 +183,12 @@ def test_maxlike_start_prior_repeat(caplog):
     assert (np.diff(output["like"]) >= 0).all()
     assert "Starting at a random point in the prior" in caplog.text
 
-def test_maxlike_start_unable_to_repeat(capfd):
+def test_maxlike_start_unable_to_repeat():
     # error - no start method specified but need one for repeats
     with pytest.raises(ValueError):
         run('maxlike', True, can_postprocess=False, repeats=5)
 
-def test_maxlike_start_no_start_file(capfd):
+def test_maxlike_start_no_start_file():
     # error - no start_input specified
     with pytest.raises(ValueError):
         run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain")
