@@ -4,13 +4,16 @@ import sys
 NOISY = 15
 
 
+# The python logger interacts very confusingly with pytest when overridden
+# with a StreamHandler
+
 # Change the logger so it doesn't print out all the boilerplate, unless requested
 logger = logging.getLogger("cosmosis")
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 formatter = logging.Formatter('%(message)s')
 handler.setFormatter(formatter)
-logger.propagate = False
+logger.propagate = True
 
 
 verbosity_levels = {
@@ -87,3 +90,13 @@ def critical(message):
 
 def is_enabled_for(level):
     return logger.isEnabledFor(level)
+
+
+def flush():
+    """
+    Flush the log.
+
+    This is mainly useful when running the tests to make
+    sure all logs have been printed.
+    """
+    logger.handlers[0].flush()

@@ -1,5 +1,6 @@
 from cosmosis import Inifile, Sampler, LikelihoodPipeline, InMemoryOutput, TextColumnOutput
 from cosmosis.postprocessing import postprocessor_for_sampler
+from cosmosis.runtime import logs
 import tempfile
 import os
 import sys
@@ -27,6 +28,7 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
 
     override = {
         ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
+        ('runtime', 'verbosity'): "noisy",
         ("pipeline", "debug"): "F",
         ("pipeline", "modules"): "test1",
         ("pipeline", "extra_output"): "parameters/p3",
@@ -158,11 +160,11 @@ def test_gridmax():
 # def test_kombine():
 #     run('kombine')
 
-def test_maxlike():
+def test_maxlike_single(capfd):
     output = run('maxlike', True, can_postprocess=False, hints_cov=False)
     assert len(output["post"]) == 1
 
-
+def test_maxlike_alt(capfd):
     # alternative sampler, max-post, output_cov
     with tempfile.TemporaryDirectory() as dirname:
         output_ini = os.path.join(dirname, "output.ini")
@@ -175,34 +177,93 @@ def test_maxlike():
         
 
 
+def test_maxlike_start_prior_repeat(capfd):
+    logs.flush()
+    out = capfd.readouterr().out
     output = run('maxlike', True, can_postprocess=False, repeats=5, start_method="prior", hints_cov=False)
     assert len(output["post"]) == 5
     assert (np.diff(output["like"]) >= 0).all()
+    logs.flush()
+    out = capfd.readouterr().out
+    assert "Starting at a random point in the prior" in out
 
+def test_maxlike_start_unable_to_repeat(capfd):
     # error - no start method specified but need one for repeats
     with pytest.raises(ValueError):
         run('maxlike', True, can_postprocess=False, repeats=5)
 
+def test_maxlike_start_no_start_file(capfd):
     # error - no start_input specified
     with pytest.raises(ValueError):
         run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain")
 
-    # error - no start_input specified
-    with pytest.raises(ValueError):
-        run('maxlike', True, can_postprocess=False, repeats=5, start_method="cov")
-
+def test_maxlike_start_chain_sample_auto(caplog):
     # Check we can start from a chain file
     with tempfile.NamedTemporaryFile('w') as f:
-        f.write("#p1 p2 weight\n")
-        f.write("0.0 0.1  1.0\n")
-        f.write("0.05 0.0  2.0\n")
-        f.write("-0.1 0.2  2.0\n")
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
         f.flush()
+
+        # This should work, and default to chain-sample because we have set repeats > 1
         run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain", start_input=f.name, hints_cov=False)
+        logs.flush()
+        out = caplog.text
+        assert "Starting at random sample of points from chain file" in out
 
-        # start from last element of chain
-        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain", start_input=f.name, hints_cov=False)
+def test_maxlike_start_chain_sample_manual(caplog):
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
 
+        # This should work, and default to chain-sample because we have set repeats > 1
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain-sample", start_input=f.name, hints_cov=False)
+        logs.flush()
+        out = caplog.text
+        assert "Starting at random sample of points from chain file" in out
+
+
+def test_maxlike_start_chain_fail(caplog):
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
+
+        # should fail - no like column
+        with pytest.raises(ValueError):
+            run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain-maxlike", start_input=f.name, hints_cov=False)
+
+
+def test_maxlike_start_max_post(caplog):
+    # clear old logs and stdout
+    logs.flush()
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
+
+        # start from best element of chain - should work because there is a max-post column
+        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain-maxpost", start_input=f.name, hints_cov=False)
+        logs.flush()
+        out = caplog.text
+        assert "Starting at best posterior point from chain file" in out
+
+
+
+def test_maxlike_start_covmat(caplog):
+    # clear old logs and stdout
+    logs.flush()
 
     # Check we can start from a covmat
     with tempfile.NamedTemporaryFile('w') as f:
@@ -210,6 +271,9 @@ def test_maxlike():
         f.write("0.0 0.08\n")
         f.flush()
         run('maxlike', True, can_postprocess=False, repeats=5, start_method="cov", start_input=f.name, hints_cov=False)
+        logs.flush()
+        out = caplog.text
+        assert "Starting at a random sample of points from the covariance of chain" in out
 
 
 
