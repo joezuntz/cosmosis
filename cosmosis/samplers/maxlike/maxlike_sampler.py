@@ -49,7 +49,7 @@ class MaxlikeSampler(ParallelSampler):
         start_method = self.read_ini("start_method", str, "")
 
         if self.repeats > 1:
-            start_method_is_random = start_method in ["prior", "cov", "chain"]
+            start_method_is_random = start_method in ["prior", "cov", "chain", "chain-sample"]
             have_previous_peak = self.distribution_hints.has_peak()
             have_previous_cov = self.distribution_hints.has_cov()
 
@@ -81,6 +81,7 @@ class MaxlikeSampler(ParallelSampler):
                 logs.overview("--------------------------------------------------")
 
         self.best_fit_results = []
+        self.start_points = None
 
     def save_final_outputs(self, best_fit_results, final=False):
 
@@ -218,8 +219,8 @@ class MaxlikeSampler(ParallelSampler):
             for i in range(n):
                 # If we are taking a random starting point then there is a chance it will randomly
                 # be invalid. So we should try a 20 times to get a valid one.
-                for _ in range(20):
-                    start_vector_denorm = self.start_estimate(prefer_random=True)
+                for j in range(20):
+                    start_vector_denorm = self.start_estimate(prefer_random=True, quiet=(i>0 or j>0))
                     start_vector = self.pipeline.normalize_vector(start_vector_denorm)
                     if np.isfinite(likefn(start_vector)):
                         break
@@ -230,18 +231,23 @@ class MaxlikeSampler(ParallelSampler):
         return start_vectors
 
     def execute(self):
-        # Figure out how many steps we need to do
-        # 
+        # Choose a starting point. If we are repeating our optimization we will need
+        # multiple starting points. Otherwise we use a fixed one.
+        # If we are re-starting then this will actually generate a different set of
+        # starting points compared to the first time, but they are random so it doesn't
+        # matter
+        if self.start_points is None:
+            self.start_points = self.choose_start(self.repeats)
+
+        # Figure out how many steps we need to do now.
         ndone = len(self.best_fit_results)
         if ndone + self.nsteps > self.repeats:
             n = self.repeats - ndone
         else:
             n = self.nsteps
 
-
-        # Choose a starting point. If we are repeating our optimization we will need
-        # multiple starting points. Otherwise we use a fixed one
-        starting_points = self.choose_start(n)
+        # Starting points to use for this chunk of steps
+        starting_points = self.start_points[ndone:ndone + n]
 
         if self.pool is None:
             # serial mode. Just do everything on this process.
