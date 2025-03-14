@@ -110,6 +110,9 @@ jobs:
         if [[ "${{ matrix.os }}" == 'macos-13' && ("${{ matrix.python-version }}" == '3.10' || "${{ matrix.python-version }}" == '3.11' || "${{ matrix.python-version }}" == '3.12' ) ]]; then
           export SKIP_NAUTILUS=1
         fi
+        # This changes the logging behaviour to prevent an unwanted interaction
+        # with how pytest deals with logs:
+        export COSMOSIS_TESTING=1
         mkdir tmp && cd tmp && pytest --pyargs cosmosis --cov cosmosis --cov-report=xml
 
     - name: Upload coverage reports to Codecov

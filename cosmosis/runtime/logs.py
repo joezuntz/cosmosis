@@ -18,7 +18,7 @@ handler.setFormatter(formatter)
 # the tests, not otherwise. I'm probably using this wrong and should just
 # not use the python logging system, it's not really a good fit for this
 # application
-if "PYTEST_VERSION" in os.environ:
+if ("PYTEST_VERSION" in os.environ) or ("COSMOSIS_TESTING" in os.environ):
     logger.propagate = True
 else:
     logger.propagate = False
