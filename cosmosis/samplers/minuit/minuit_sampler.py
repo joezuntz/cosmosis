@@ -52,7 +52,7 @@ class MinuitSampler(ParallelSampler):
         self.width_estimate = self.read_ini("width_estimate", float, 0.05)
         self.tolerance = self.read_ini("tolerance", float, 50.0)
         self.neval = 0
-        self.param_vector = self.pipeline.start_vector()  #initial value
+        self.param_vector = None
 
         strategy = {
             "fast":0,
@@ -99,6 +99,9 @@ class MinuitSampler(ParallelSampler):
 
 
     def execute(self):
+        if self.param_vector is None:
+            self.param_vector = self.start_estimate(self)
+
         #Run an iteration of minuit
         param_vector, param_names, results, status, made_cov, cov_vector = self.sample()
 
