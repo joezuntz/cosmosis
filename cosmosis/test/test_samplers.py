@@ -323,6 +323,58 @@ def test_maxlike_start_covmat(caplog):
         assert "Starting at a random sample of points from the covariance of chain" in caplog.text
 
 
+def test_start_estimate():
+    values = tempfile.NamedTemporaryFile('w')
+    values.write(
+        "[parameters]\n"
+        "p1=-10.0  0.0  10.0\n"
+        "p2=-10.0  0.0  10.0\n")
+    values.flush()
+
+    override = {
+        # ('runtime', 'verbosity'): "noisy",
+        ("pipeline", "modules"): "",
+        ("pipeline", "values"): values.name,
+    }
+
+    # mock objects just to stop the init breaking
+    ini = Inifile(None, override=override)
+
+    pipeline = LikelihoodPipeline(ini)
+    sampler = Sampler(ini, pipeline)
+
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1    p2  weight like post\n")
+        f.write(" 1.0   1.0  1.0  1.0   0.0\n") # non-zero weight
+        f.write(" 2.0   2.0  0.0  2.0   0.0\n") # max-like
+        f.write(" 3.0   3.0  0.0  1.0   1.0\n")
+        f.write(" 4.0   4.0  0.0  0.0   2.0\n") # max-post
+        f.write(" 5.0   5.0  0.0  0.0   0.0\n") # last
+        f.flush()
+
+        # only one sample has any weight so this one should be selected
+        p = sampler.start_estimate(method="chain-sample", input_source=f.name, prefer_random=False)
+        assert np.allclose(p, [1.0, 1.0])
+
+        # only one sample has any weight so this one should be selected
+        p = sampler.start_estimate(method="chain-maxlike", input_source=f.name, prefer_random=False)
+        assert np.allclose(p, [2.0, 2.0])
+
+        # last sample should be selected
+        p = sampler.start_estimate(method="chain-maxpost", input_source=f.name, prefer_random=False)
+        assert np.allclose(p, [4.0, 4.0])
+
+        # last sample should be selected
+        p = sampler.start_estimate(method="chain-last", input_source=f.name, prefer_random=False)
+        assert np.allclose(p, [5.0, 5.0])
+
+        # fall back to ini file choice
+        p = sampler.start_estimate(method="", prefer_random=False)
+        assert np.allclose(p, [0.0, 0.0])
+
+
+
+
 
 def test_bobyqa():
     with tempfile.TemporaryDirectory() as dirname:
