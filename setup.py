@@ -196,6 +196,7 @@ requirements = [
     "dulwich",
     "scikit-learn",
     "future",
+    "Py-BOBYQA",
 
 ]
 

@@ -10,6 +10,7 @@ import time
 import collections
 import warnings
 import traceback
+import io
 from . import config
 from . import parameter
 from . import prior
@@ -411,8 +412,23 @@ class Pipeline(object):
                     print("and use the cached results from the first run for everything before that.")
                     print("except the input parameter values. Think about this to check it's what you want.")
                 self.shortcut_module = index
+        # Add a log file where failures are sent
+        # We only set this is a method instead of an init variable
+        # because we may want to activate it on pipelines created
+        # by the user and sent to run_cosmosis
+        self.failure_log_file = None
 
+    def set_failure_log_file(self, failure_log_file):
+        """
+        Set the file where the pipeline will log failures.
 
+        Parameters
+        ----------
+        failure_log_file : file-like object
+            The file where the pipeline will log failures.
+            This can be a regular file or an MPILogFile object
+        """
+        self.failure_log_file = failure_log_file
 
     def find_module_file(self, path):
         u"""Find a module file, which is assumed to be either absolute or relative to COSMOSIS_SRC_DIR"""
@@ -799,7 +815,26 @@ class LikelihoodPipeline(Pipeline):
         else:
             self.likelihood_names = likelihood_names.split()
 
+    @classmethod
+    def from_chain_file(cls, filename, **kwargs):
+        from ..utils import extract_inis_from_chain_header, read_chain_header
+        # Pull out all of the comment bits in the header of the chain
+        # that start with a #
+        header = read_chain_header(filename)
 
+        # Parse he header to pull out the three chunks of INI files
+        # that we save there
+        param_lines = extract_inis_from_chain_header(header, "params")
+        value_lines = extract_inis_from_chain_header(header, "values")
+        prior_lines = extract_inis_from_chain_header(header, "priors")
+
+        # convert all these into Inifile objects
+        params = config.Inifile.from_lines(param_lines)
+        values = config.Inifile.from_lines(value_lines)
+        priors = config.Inifile.from_lines(prior_lines)
+
+        # Build the pipeline from these
+        return cls(arg=params, values=values, priors=priors, **kwargs)
 
 
     def print_priors(self):
@@ -1113,6 +1148,9 @@ class LikelihoodPipeline(Pipeline):
             return data
         else:
             sys.stderr.write("Pipeline failed on these parameters: {}\n".format(p))
+            if self.failure_log_file is not None:
+                msg = " ".join([str(x) for x in p])
+                self.failure_log_file.write(msg + "\n")
             return None
 
 
@@ -1269,11 +1307,11 @@ class LikelihoodPipeline(Pipeline):
         self.likelihood_names = likelihood_names
 
         # Tell the user what we found.
-        logs.overview("Using likelihooods from first run:")
+        logs.noisy("Using likelihooods from first run:")
         for name in self.likelihood_names:
-            logs.overview(f" - {name}")
+            logs.noisy(f" - {name}")
         if not self.likelihood_names:
-            logs.overview(" - (None found)")
+            logs.noisy(" - (None found)")
 
     def _extract_likelihoods(self, data):
         "Extract the likelihoods from the block"

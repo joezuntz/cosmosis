@@ -89,3 +89,152 @@ def test_git_nosub():
     finally:
         cosmosis.utils.dulwich = dulwich_orig
         del os.environ["COSMOSIS_NO_SUBPROCESS"]
+
+
+def test_datablock_to_astropy():
+    try:
+        import astropy.cosmology
+    except ImportError:
+        pytest.skip("astropy not installed")
+    block = cosmosis.DataBlock()
+
+    # implicitly should be FlatLambdaCDM
+    test_params = [
+        (astropy.cosmology.FlatLambdaCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.7,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+        }),
+        (astropy.cosmology.FlatLambdaCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.7,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.0,
+        }),
+        (astropy.cosmology.FlatLambdaCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.7,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.0,
+            "wa": 0.0,
+        }),
+        (astropy.cosmology.FlatLambdaCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.7,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.0,
+            "wa": 0.0,
+            "omega_k": 0.0,
+        }),
+        (astropy.cosmology.FlatwCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.7,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.50,
+            "wa": 0.0,
+            "omega_k": 0.0,
+        }),
+        (astropy.cosmology.FlatwCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.7,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.50,
+        }),
+        (astropy.cosmology.Flatw0waCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.7,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.50,
+            "wa": 0.5,
+        }),
+        (astropy.cosmology.wCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.65,
+            "omega_k": 0.05,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.50,
+            "wa": 0.0,
+        }),
+        (astropy.cosmology.wCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.65,
+            "omega_k": 0.05,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.50,
+        }),
+        (astropy.cosmology.w0waCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.65,
+            "omega_k": 0.05,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.50,
+            "wa": -0.5,
+        }),
+        (astropy.cosmology.LambdaCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.65,
+            "omega_k": 0.05,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+        }),
+        (astropy.cosmology.LambdaCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.65,
+            "omega_k": 0.05,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "w": -1.0,
+        }),
+        (astropy.cosmology.LambdaCDM,
+        {
+            "h0": 0.7,
+            "omega_m": 0.3,
+            "omega_lambda": 0.65,
+            "omega_k": 0.05,
+            "omega_b": 0.05,
+            "mnu": 0.0,
+            "wa": 0.0,
+        }),
+
+    ]
+
+    for expected_class, params in test_params:
+        block = cosmosis.DataBlock()
+        for k, v in params.items():
+            block["cosmological_parameters", k] = v
+        c = cosmosis.utils.datablock_to_astropy(block)
+        assert isinstance(c, expected_class)

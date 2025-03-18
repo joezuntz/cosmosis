@@ -117,6 +117,7 @@ class GridSampler(ParallelSampler):
             (prob, prior, extra) = result
             #always save the usual text output
             self.output.parameters(sample, extra, prior, prob)
+            self.distribution_hints.set_peak(sample, prob)
 
     def is_converged(self):
         return self.converged

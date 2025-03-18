@@ -85,7 +85,7 @@ def sampler_main_loop(sampler, output, pool, is_root):
 
 
 
-def write_header_output(output, params, values, pipeline):
+def write_header_output(output, params, values, pipeline, values_override=None):
     # If there is an output file, save the ini information to
     # it as well.  We do it here since it's nicer to have it
     # after the sampler options that get written in sampler.config.
@@ -100,7 +100,7 @@ def write_header_output(output, params, values, pipeline):
     if isinstance(values, Inifile):
         values_ini = values
     elif values is None:
-        values_ini=Inifile(pipeline.values_filename)
+        values_ini=Inifile(pipeline.values_filename, override=values_override)
     else:
         values_ini=values
     output.comment("START_OF_VALUES_INI")
@@ -117,7 +117,7 @@ def write_header_output(output, params, values, pipeline):
         prior_ini.write(comment_wrapper)
     output.comment("END_OF_PRIORS_INI")
 
-def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output):
+def setup_output(sampler_class, sampler_number, ini, pool, sample_methods, sample_method, resume, output):
 
     output_original = output
 
@@ -139,16 +139,29 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
             output_options['rank'] = pool.rank
             output_options['parallel'] = pool.size
 
+        number_samplers = len(sample_methods)
+
         #Give different output filenames to the different sampling steps
         #Only change if this is not the last sampling step - the final
         #one retains the name in the output file.
         # Change, e.g. demo17.txt to demo17.fisher.txt
         if ("filename" in output_options) and (sampler_number<number_samplers-1):
+
+            sampler_count = sample_methods.count(sample_method)
             filename = output_options['filename']
             filename, ext = os.path.splitext(filename)
-            filename += '.' + sampler_class.name
-            filename += ext
+            if sampler_count == 1:
+                filename += '.' + sampler_class.name
+                filename += ext
+            else:
+                sampler_repeat_index = 0
+                for i in range(sampler_number):
+                    if sample_methods[i] == sample_method:
+                        sampler_repeat_index += 1
+                filename += '.' + sampler_class.name + '.' + str(sampler_repeat_index)
+                filename += ext
             output_options['filename'] = filename
+
 
         if ("filename" in output_options):
             print("* Saving output -> {}".format(output_options['filename']))
@@ -332,6 +345,14 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
 
     number_samplers = len(sampler_classes)
 
+    if ini.has_option("pipeline", "failure_log"):
+        filename = ini.get("pipeline", "failure_log")
+        failure_log_file = mpi_pool.MPILogFile(filename, pool)
+        pipeline.set_failure_log_file(failure_log_file)
+    else:
+        failure_log_file = None
+
+
 
     #To start with we do not have any estimates of 
     #anything the samplers might give us like centers
@@ -341,7 +362,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.
     for sampler_number, (sampler_class, sample_method) in enumerate(
-            zip(sampler_classes, sample_methods)):
+            zip(sampler_classes, sample_methods[:])):
         sampler_name = sampler_class.__name__[:-len("Sampler")].lower()
 
         # The resume feature lets us restart from an existing file.
@@ -382,7 +403,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             else:
                 print("* Running in serial mode.")
 
-        output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output_original)
+        output = setup_output(sampler_class, sampler_number, ini, pool, sample_methods, sample_method, resume, output_original)
 
         if is_root:
             print("****************************************************")
@@ -408,7 +429,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
            sampler.resume()
 
         if output:
-            write_header_output(output, ini, values, pipeline)
+            write_header_output(output, ini, values, pipeline, values_override=variables)
 
         sys.stdout.flush()
         sys.stderr.flush()
@@ -422,15 +443,15 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             run_count_total = pipeline.run_count
             run_count_ok_total = pipeline.run_count_ok
         else:
-            run_count_total = pool.comm.allreduce(pipeline.run_count)
-            run_count_ok_total = pool.comm.allreduce(pipeline.run_count_ok)
+            run_count_total = pool.allreduce(pipeline.run_count)
+            run_count_ok_total = pool.allreduce(pipeline.run_count_ok)
         
         if is_root and sampler_name != 'test':
             logs.overview(f"Total posterior evaluations = {run_count_total} across all processes")
             logs.overview(f"Successful posterior evaluations = {run_count_ok_total} across all processes")
             if output:
                 output.final("evaluations", run_count_total)
-                output.final("successes", run_count_total)
+                output.final("successes", run_count_ok_total)
                 output.final("complete", "1")
 
 
@@ -439,6 +460,9 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
 
     if cleanup_pipeline:
         pipeline.cleanup()
+
+    if failure_log_file is not None:
+        failure_log_file.close()
 
     if profile_cpu:
         profile.disable()

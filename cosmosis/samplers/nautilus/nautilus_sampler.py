@@ -99,12 +99,23 @@ class NautilusSampler(ParallelSampler):
                     discard_exploration=self.discard_exploration,
                     verbose=self.verbose)
 
-        for sample, logwt, logl, blob in zip(*sampler.posterior(return_blobs=True)):
-            blob = np.atleast_1d(blob)
-            prior = blob[0]
-            extra = blob[1:]
-            logp = logl + prior
-            self.output.parameters(sample, extra, logwt, prior, logp)
+        results = sampler.posterior(return_blobs=True)
+        if isinstance(results[3][0], float):
+            priors = results[3]
+        else:
+            priors = np.array([r[0] for r in results[3]])
+
+        posts = results[2] + priors
+        self.distribution_hints.set_from_sample(results[0], posts, log_weights=results[1])
+
+        for sample, logwt, logl, blob in zip(*results):
+            if isinstance(blob, float):
+                prior = blob
+                self.output.parameters(sample, logwt, prior, logl + prior)
+            else:
+                prior = blob[0]
+                extra = list(blob)[1:]
+                self.output.parameters(sample, extra, logwt, prior, logl + prior)
 
         self.output.final("efficiency", sampler.n_eff / sampler.n_like)
         self.output.final("neff", sampler.n_eff)

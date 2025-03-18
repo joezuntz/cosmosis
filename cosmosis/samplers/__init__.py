@@ -22,5 +22,5 @@ from .star.star_sampler import StarSampler
 from .apriori.apriori_sampler import AprioriSampler
 from .dynesty.dynesty_sampler import DynestySampler
 from .zeus.zeus_sampler import ZeusSampler
-from .poco.poco_sampler import PocoSampler
+from .poco.poco_sampler import PocoMCSampler
 from .nautilus.nautilus_sampler import NautilusSampler

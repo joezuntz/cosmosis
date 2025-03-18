@@ -165,7 +165,9 @@ class MetropolisSampler(ParallelSampler):
             traces = np.array([r.vector for r in samples[-self.num_samples_post_tuning:]])
             self.analytics.add_traces(traces)
 
-
+        vectors = np.array([r.vector for r in samples])
+        posts = np.array([r.post for r in samples])
+        self.distribution_hints.set_from_sample(vectors, posts)
         if (self.num_samples_post_tuning > 0) or self.save_during_tuning:
             for i, result in enumerate(samples):
                 self.output.parameters(result.vector, result.extra, result.prior, result.post)
