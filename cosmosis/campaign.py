@@ -655,7 +655,7 @@ def show_run(run):
     run["priors"].write(sys.stdout)
     print("")
 
-def perform_test_run(run, use_pdb):
+def perform_test_run(run, use_pdb=False):
     """
     Launch a run under the "test" sampler, which just runs the pipeline
     and does not do any sampling.
