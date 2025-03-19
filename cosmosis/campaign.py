@@ -1,5 +1,5 @@
 from .runtime import Inifile, MPIPool
-from .main import run_cosmosis
+from .main import run_cosmosis, run_under_debugger
 from .runtime.utils import underline
 import time
 import os
@@ -655,7 +655,7 @@ def show_run(run):
     run["priors"].write(sys.stdout)
     print("")
 
-def perform_test_run(run):
+def perform_test_run(run, use_pdb=False):
     """
     Launch a run under the "test" sampler, which just runs the pipeline
     and does not do any sampling.
@@ -680,7 +680,11 @@ def perform_test_run(run):
     params.set("runtime", "resume", "F")
 
     with temporary_environment(env):
-        return run_cosmosis(params, values=values, priors=priors)
+        if use_pdb:
+            with run_under_debugger():
+                return run_cosmosis(params, values=values, priors=priors)
+        else:
+            return run_cosmosis(params, values=values, priors=priors)
 
 def chain_status(filename, include_comments=False):
     n = 0
@@ -809,6 +813,7 @@ group.add_argument("--run", "-r",  help="Run the named run")
 group.add_argument("--test", "-t",  help="Test the named run")
 group.add_argument("--submit", "-x",  help="Submit the named run to a batch system")
 parser.add_argument("--mpi", action="store_true", help="Use MPI to launch the runs")
+parser.add_argument("--pdb",  action="store_true", help="When testing a run, enter the debugger in case of failure")
 
 
 
@@ -828,7 +833,7 @@ def main(args):
     elif args.cat:
         show_run(runs[args.cat])
     elif args.test:
-        perform_test_run(runs[args.test])
+        perform_test_run(runs[args.test], args.pdb)
     elif status_set:
         show_run_status(runs, args.status)
     elif args.run:

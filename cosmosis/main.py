@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-
-
 import sys
 import configparser
-
 import argparse
 import os
 import pdb
 import cProfile
+import contextlib
 from .runtime.config import Inifile, CosmosisConfigurationError
 from .runtime.pipeline import LikelihoodPipeline
 from .runtime import mpi_pool
@@ -550,6 +548,18 @@ parser.add_argument('--version', action='version', version=__version__, help="Pr
 parser.add_argument('--profile' , help="Save profiling (timing) information to this named file")
 
 
+@contextlib.contextmanager
+def run_under_debugger():
+    try:
+        yield
+    except Exception as error:
+        print("There was an exception - starting python debugger because you ran with --pdb")
+        print(error)
+        pdb.post_mortem()
+
+
+
+
 def main():
     try:
         args = parser.parse_args(sys.argv[1:])
@@ -568,16 +578,12 @@ def main():
         elif args.smp:
             with process_pool.Pool(args.smp) as pool:
                 return run_cosmosis(ini=args.inifile, pool=pool, override=args.params, profile_mem=args.mem, profile_cpu=args.profile, variables=args.variables, only=args.only)
-        else:
-            try:
+        elif args.pdb:
+            with run_under_debugger():
                 return run_cosmosis(ini=args.inifile, pool=None, override=args.params, profile_mem=args.mem, profile_cpu=args.profile, variables=args.variables, only=args.only)
-            except Exception as error:
-                if args.pdb:
-                    print("There was an exception - starting python debugger because you ran with --pdb")
-                    print(error)
-                    pdb.post_mortem()
-                else:
-                    raise
+        else:
+            return run_cosmosis(ini=args.inifile, pool=None, override=args.params, profile_mem=args.mem, profile_cpu=args.profile, variables=args.variables, only=args.only)
+
     except CosmosisConfigurationError as e:
         print(e)
         return 1
