@@ -8,6 +8,7 @@ import sys
 import warnings
 import subprocess
 import contextlib
+import re
 
 class UniqueKeyLoader(yaml.SafeLoader):
     """
@@ -391,10 +392,10 @@ def expand_environment_variables(runs):
     """
     for run in runs.values():
         # This sets environment varibles for the duration of the with block
-        with temporary_environment(run["env"]):
+        with temporary_environment(run.env):
 
             # We apply this to all the different ini files
-            for ini in [run["params"], run["values"], run["priors"]]:
+            for ini in [run.params, run.values, run.priors]:
                 for section in ini.sections():
                     # Now we can expand all the actual options
                     for option in ini.options(section):
@@ -493,7 +494,7 @@ def parse_yaml_run_file(run_config):
     # But we override the output directory
     # of any imported runs with the one we have here   
     for name, run in runs.items():
-        set_output_dir(run["params"], name, output_dir, output_name)
+        set_output_dir(run.params, name, output_dir, output_name)
     
     # deal with re-usable components
     components.update(info.get("components", {}))
@@ -515,6 +516,39 @@ def parse_yaml_run_file(run_config):
 
     return runs, components
 
+def minutes_since_last_update(path):
+    """
+    Get the number of minutes since the file was last updated.
+
+    If the path is a directory then we look at all the files in the directory
+
+    Parameters
+    ----------
+    path : str
+        The name of the file or directory to check
+
+    Returns
+    -------
+    minutes : float
+        The number of minutes since the file was last updated
+    """
+    if os.path.isfile(path):
+        last_update_time = os.path.getmtime(path)
+    elif os.path.isdir(path):
+        # look at all the files in the top-level subdirectories of this
+        # directory and find the latest modification time
+        last_update_time = os.path.getmtime(path)
+        for p in os.listdir(path):
+            p = os.path.join(path, p)
+            if os.path.isdir(p):
+                for f in os.listdir(p):
+                    f = os.path.join(p, f)
+                    last_update_time = max(last_update_time, os.path.getmtime(f))
+
+    # convert to minutes ago
+    time_ago_seconds = time.time() - last_update_time
+    time_ago_minutes = time_ago_seconds / 60
+    return time_ago_minutes
 
 
 
@@ -526,46 +560,12 @@ def chain_status(filename, include_comments=False):
             n += 1
     # if the last line
     complete = line.startswith("#complete=1")
-    last_update_time = os.path.getmtime(filename)
-    time_ago_seconds = time.time() - last_update_time
-    time_ago_minutes = time_ago_seconds / 60
+    time_ago_minutes = minutes_since_last_update(filename)
     return n, complete, time_ago_minutes
 
 
 
 
-def submit_run(run_file, run):
-    """
-    Subnmit a CosmoSIS run using a batch system such as SLURM.
-    """
-
-    submission_info = run["submission"]
-    template = submission_info["template"]
-    keys = submission_info.copy()
-    name = run["name"]
-    keys["job_name"] = name
-    output_dir = keys["output_dir"]
-
-    # We use the campaign program to actually run the jobs
-    keys["command"]  = f"cosmosis-campaign {run_file} --run {name} --mpi"
-
-    # choose where the jobs stdout / stderr should go
-    os.makedirs(os.path.join(output_dir, "logs"), exist_ok=True)
-    keys["log"] = os.path.join(output_dir, "logs", f"{name}.log")
-
-    # fill in the template
-    sub_script = template.format(**keys).lstrip()
-
-    # write the submission file to a batch subdir
-    os.makedirs(os.path.join(output_dir, "batch"), exist_ok=True)
-    sub_file = os.path.join(output_dir, "batch", f"{name}.sub")
-    with open(sub_file, "w") as f:
-        f.write(sub_script)
-
-    # Actually submit the job using slurm or similar
-    submit = submission_info.get("submit", "sbatch")
-    subprocess.check_call(f"{submit} {sub_file}", shell=True)
-    print(f"Submitted {sub_file}\nJob output in", keys["log"])
 
 class Run:
     def __init__(self, name: str, params: Inifile, values: Inifile, priors: Inifile, env: dict[str,str]=None, submission: dict[str,str]=None, skip: bool=False):
@@ -623,7 +623,7 @@ class Run:
         # We want to delay expanding environment variables so that child runs
         # have a chance to override them. So we set no_expand_vars=True on all of these
         if parent is not None:
-            params = Inifile(parent["params"], print_include_messages=False, no_expand_vars=True)
+            params = Inifile(parent.params, print_include_messages=False, no_expand_vars=True)
             if base is not None:
                 raise ValueError("Can only specify either 'base' or 'parent' of a run.  Not both.")
         else:
@@ -637,21 +637,21 @@ class Run:
         # and then updated with any specific to this run, which can overwrite.
         # env vars are only applied right at the end when all runs are collected
         if parent is not None:
-            env_vars = parent["env"].copy()
+            env_vars = parent.env.copy()
         else:
             env_vars = {}
         env_vars.update(run_info.get("env", {}))
 
         # Build values file, which is mandatory
         if parent is not None:
-            values = Inifile(parent["values"], print_include_messages=False, no_expand_vars=True)
+            values = Inifile(parent.values, print_include_messages=False, no_expand_vars=True)
         else:
             values_file = params.get('pipeline', 'values')
             values = Inifile(values_file, print_include_messages=False, no_expand_vars=True)
 
         # Build optional priors file
         if parent is not None:
-            priors = Inifile(parent["priors"], print_include_messages=False, no_expand_vars=True)
+            priors = Inifile(parent.priors, print_include_messages=False, no_expand_vars=True)
         elif "priors" in params.options("pipeline"):
             priors_file = params.get('pipeline', 'priors')
             priors = Inifile(priors_file, print_include_messages=False, no_expand_vars=True)
@@ -750,40 +750,71 @@ class Run:
         self.priors.write(sys.stdout)
         print("")
 
-
-    def status_string(self, names=None):
+    def status(self):
         """
-        Generate a status string for this run
+        Get the status of this run
 
         Parameters
         ----------
-        runs : dict
-            A dictionary of runs, keyed by name
-        names : list
-            The names of the runs to report on.  If None then all runs are reported on.
+        run : dict
+            The run to check
         
         Returns
         -------
-        None
+        status: int
+            The exit status of the run
         """
+        status = {}
+
+        status["sampler"] = self.sampler
         if self.sampler == "test":
             output_dir = self.params.get("test", "save_dir")
-            if os.path.exists(output_dir):
-                return f"🟢 {self.name} has been run [test sampler]"
-            else:
-                return f"🔴 {self.name} has not been run [test sampler]"
+            status["complete"] = os.path.exists(output_dir)
+            status["length"] = 0
+            status["updated"] = minutes_since_last_update(output_dir)
         else:
             output_file = self.params.get("output", "filename")
             if os.path.exists(output_file):
                 n, complete, last_update = chain_status(output_file)
-                if complete:
-                    return f"🟢 {self.name} output complete with {n} samples, updated {last_update:.1f} minutes ago"
-                elif n:
-                    return f"🟡 {self.name} output exists with {n} samples, updated {last_update:.1f} minutes ago"
-                else:
-                    return f"🟠 {self.name} output exists with 0 samples, updated {last_update:.1f} minutes ago"
+                status["complete"] = complete
+                status["length"] = n
+                status["updated"] = last_update
+        return status
+
+
+    def status_string(self):
+        """
+        Generate a status string for this run.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        status: str
+            A string describing the status of the run
+        """
+        status = self.status()
+        n = status["length"]
+        last_update = status["updated"]
+        sampler = status["sampler"]
+        complete = status["complete"]
+
+        if sampler == "test":
+            if complete:
+                return f"🟢 {self.name} has been run [test sampler], updated {last_update:.1f} minutes ago"
             else:
-                return f"🔴 {self.name} output missing with 0 samples"
+                return f"🔴 {self.name} has not been run [test sampler]"
+        else:
+            if complete:
+                return f"🟢 {self.name} output complete with {n} samples, updated {last_update:.1f} minutes ago"
+            elif status["length"]:
+                return f"🟡 {self.name} output exists with {n} samples, updated {last_update:.1f} minutes ago"
+            else:
+                return f"🟠 {self.name} output exists with 0 samples, updated {last_update:.1f} minutes ago"
+            else:
+                return f"🔴 {self.name} no output"
 
     def test(self):
         """
@@ -811,7 +842,43 @@ class Run:
 
         with temporary_environment(env):
             return run_cosmosis(params, values=self.values, priors=self.priors)
-        
+
+    def submit(self, run_file):
+        """
+        Subnmit a CosmoSIS run using a batch system such as SLURM.
+        """
+
+        submission_info = self.submission
+        if not submission_info:
+            raise ValueError("To enable submission you must provide submission information in the run file including a batch file template")
+
+        template = submission_info["template"]
+        keys = submission_info.copy()
+        keys["job_name"] = self.name
+        output_dir = keys["output_dir"]
+
+        # We use the campaign program to actually run the jobs
+        keys["command"]  = f"cosmosis-campaign {run_file} --run {self.name} --mpi"
+
+        # choose where the jobs stdout / stderr should go
+        os.makedirs(os.path.join(output_dir, "logs"), exist_ok=True)
+        keys["log"] = os.path.join(output_dir, "logs", f"{self.name}.log")
+
+        # fill in the template
+        sub_script = template.format(**keys).lstrip()
+
+        # write the submission file to a batch subdir
+        os.makedirs(os.path.join(output_dir, "batch"), exist_ok=True)
+        sub_file = os.path.join(output_dir, "batch", f"{name}.sub")
+        with open(sub_file, "w") as f:
+            f.write(sub_script)
+
+        # Actually submit the job using slurm or similar
+        submit = submission_info.get("submit", "sbatch")
+        subprocess.check_call(f"{submit} {sub_file}", shell=True)
+        print(f"Submitted {sub_file}. Output:", keys["log"])
+
+
     def set_output_dir(self, output_dir, output_name="{name}"):
         """
         Set the output directory for this run
@@ -873,44 +940,35 @@ class Campaign:
         runs, components = parse_yaml_run_file(run_config)
         return cls(runs, components)
     
-    def unskipped_runs(self, name="*"):
-        if isinstance(name, str):
-            if name == "*":
-                names = [name for name, run in self.runs.items() if not run.skip()]
-            names = [names]
-        else:
-            names = name
-        return names
-    
+    def unskipped_runs(self):
+        return [name for (name, run) in self.runs.items() if not run.skip]
+
     def run(self, name):
         """
         Launch one or more runs by name
         """
+        run = self[name]
+        return run.launch()
 
-        statuses = {}
-        for name in self._select_run_names(name):
-            run = self.runs[name]
-            statuses[name] = run.launch()
-        
-        return statuses
+    def run_all(self):
+        status = {}
+        for name in self.unskipped_runs():
+            statusn[name] = self.run(name)
+        return status
 
     def test(self, name):
-        statuses = {}
-        for name in self._select_run_names(name):
-            run = self.runs[name]
-            statuses[name] = run.test()
-
+        run = self.runs[name]
         return run.test()
-    
-    def status_report(self, names=None):
-        lines = []
-        if not names:
-            names = self.runs.keys()
 
-        for name in names:
+    def test_all(self):
+        status = {}
+        for name in self.unskipped_runs():
+            status[name] = self.test(name)
+    
+    def status_report(self):
+        lines = []
+        for name in self.unskipped_runs():
             run = self.runs[name]
-            if run.skip:
-                continue
             lines.append(run.status_string())
         return "\n".join(lines)
     
@@ -935,12 +993,17 @@ parser = argparse.ArgumentParser(description="Manage and launch CosmoSIS runs")
 parser.add_argument("campaign_file", help="The yaml file containing the runs to perform")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--list", "-l", action="store_true", help="List all available runs")
+group.add_argument("--status", "-s", action="store_true" help="Show the status of a single run, or all runs if called with no argument")
 group.add_argument("--cat", "-c",  type=str, help="Show a single run")
-group.add_argument("--status", "-s", default="_unset", nargs="*", help="Show the status of a single run, or all runs if called with no argument")
-group.add_argument("--run", "-r",  help="Run the named run")
+group.add_argument("--run", "-r",  type=str,help="Run the named run")
+group.add_argument("--test", "-t",  type=str, help="Test the named run")
+group.add_argument("--submit", "-x",  type=str, help="Submit the named run to a batch system")
+
+group.add_argument("--submit-all", help="Submit all runs to a batch system")
 group.add_argument("--run-all", action="store_true", help="Run all runs except those marked as skipped")
-group.add_argument("--test", "-t",  help="Test the named run")
-group.add_argument("--submit", "-x",  help="Submit the named run to a batch system")
+group.add_argument("--test-all",  help="Test all runs except those marked as skipped")
+
+
 parser.add_argument("--mpi", action="store_true", help="Use MPI to launch the runs")
 
 
@@ -952,6 +1015,8 @@ def main(args):
 
     if args.run_all:
         campaign.run("*")
+    if args.test_all:
+        campaign.test_all()
     elif args.list:
         for name in campaign.unskipped_runs():
             print(name)
@@ -964,9 +1029,10 @@ def main(args):
     elif args.test:
         campaign.test(args.test)
     elif args.submit:
-        submit_run(args.run_config, campaign[args.submit])
+        campaign[args.submit].submit(args.run_config)
     elif args.status:
-        print(campaign.status_report())
+        report = campaign.status_report()
+        print(report)
 
 if __name__ == "__main__":
     args = parser.parse_args()
