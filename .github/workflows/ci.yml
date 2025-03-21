@@ -84,9 +84,6 @@ jobs:
     - name: Test with pytest
       run: |
         cosmosis --version
-        if [[ "${{ matrix.python-version }}" == '3.11' || "${{ matrix.python-version }}" == '3.12' ) ]]; then
-          export SKIP_NAUTILUS=1
-        fi
         # This changes the logging behaviour to prevent an unwanted interaction
         # with how pytest deals with logs:
         export COSMOSIS_TESTING=1
