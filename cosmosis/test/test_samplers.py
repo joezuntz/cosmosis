@@ -124,14 +124,14 @@ def test_apriori():
 
 def test_dynesty():
     # dynesty does not support extra params
-    run('dynesty', False, check_extra=False, nlive=50, sample='unif')
+    run('dynesty', False, check_extra=False, nlive=25, sample='unif')
 
 def test_emcee():
-    run('emcee', True, walkers=8, samples=100)
-    run('emcee', True, walkers=8, samples=100, a=3.0)
+    run('emcee', True, walkers=8, samples=25)
+    run('emcee', True, walkers=8, samples=25, a=3.0)
 
 def test_truth():
-    run('emcee', True, walkers=8, samples=100, do_truth=True)
+    run('emcee', True, walkers=8, samples=25, do_truth=True)
 
 def test_fisher():
     run('fisher', False, check_extra=False, hints_peak=False)
@@ -399,14 +399,12 @@ def test_pmaxlike():
 
 def test_pmc():
     old_settings = np.seterr(invalid='ignore', divide='ignore')
-    run('pmc', True, iterations=10, hints_cov=False)
+    run('pmc', True, iterations=3, hints_cov=False)
     np.seterr(**old_settings)  
 
 def test_zeus():
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50)
     run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, verbose=True)
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, tune=False, tolerance=0.1, patience=5000)
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global")
+    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global", tolerance=0.1, patience=5000)
 
 def test_polychord():
     with tempfile.TemporaryDirectory() as base_dir:

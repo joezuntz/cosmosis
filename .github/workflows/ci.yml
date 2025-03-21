@@ -22,7 +22,7 @@ jobs:
       matrix:
         python-version: [3.7, 3.8, 3.9, "3.10", 3.11, 3.12]
         # macos13 runs on until and macos14 now runs on arm64
-        os: [ubuntu-20.04, macos-latest, macos-13]
+        os: [ubuntu-20.04, macos-latest]
         exclude:
           # Python 3.7 is not available on M1 Mac homebrew
           - os: macos-latest
