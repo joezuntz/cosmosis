@@ -100,7 +100,7 @@ class MinuitSampler(ParallelSampler):
 
     def execute(self):
         if self.param_vector is None:
-            self.param_vector = self.start_estimate(self)
+            self.param_vector = self.start_estimate()
 
         #Run an iteration of minuit
         param_vector, param_names, results, status, made_cov, cov_vector = self.sample()
