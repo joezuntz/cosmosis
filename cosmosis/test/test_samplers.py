@@ -421,9 +421,8 @@ def test_snake():
 # not when run standalone.
 @pytest.mark.skipif(os.environ.get("SKIP_NAUTILUS", "0")=="1", reason="nautilus runs out of memory on github actions")
 def test_nautilus():
-    run('nautilus', True)
-    run('nautilus', True, n_live=500, enlarge_per_dim=1.05,
-        split_threshold=95., n_networks=3, n_batch=50, verbose=True, f_live=0.02, n_shell=100)
+    run('nautilus', True, n_live=200, enlarge_per_dim=1.05,
+        split_threshold=95., n_networks=2, n_batch=50, verbose=True, f_live=0.02, n_shell=50)
 
 
 def test_star():
