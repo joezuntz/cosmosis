@@ -39,6 +39,7 @@ class MaxlikeSampler(ParallelSampler):
         self.method = self.read_ini("method",str,"Nelder-Mead")
         self.max_posterior = self.read_ini("max_posterior", bool, False)
         self.repeats = self.read_ini("repeats", int, 1)
+        self.reiterations = self.read_ini("reiterations", int, 1)
         if self.repeats == 1:
             nsteps = 1
         elif self.pool is not None:
@@ -151,7 +152,9 @@ class MaxlikeSampler(ParallelSampler):
                 "rhobeg": 0.1,
                 "rhoend": self.tolerance,
             }
-            optimizer_result = pybobyqa.solve(likefn, start_vector, **kw)
+            for i in range(self.reiterations):
+                optimizer_result = pybobyqa.solve(likefn, start_vector, **kw)
+                start_vector = optimizer_result.x
             opt_norm = optimizer_result.x
             # bobyqa calls it .hessian but scipy calls it .hess, so copy it here
             # if available
@@ -159,9 +162,11 @@ class MaxlikeSampler(ParallelSampler):
                 optimizer_result.hess = optimizer_result.hessian
         else:
             # Use scipy mainimizer instead
-            optimizer_result = scipy.optimize.minimize(likefn, start_vector, method=self.method,
-            jac=False, tol=self.tolerance,
-            options={'maxiter':self.maxiter, 'disp':True})
+            for i in range(self.reiterations):
+                optimizer_result = scipy.optimize.minimize(likefn, start_vector, method=self.method,
+                    jac=False, tol=self.tolerance,
+                    options={'maxiter':self.maxiter, 'disp':True})
+                start_vector = optimizer_result.x
 
             opt_norm = optimizer_result.x
 

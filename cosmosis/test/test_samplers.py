@@ -188,6 +188,12 @@ def test_maxlike_start_unable_to_repeat():
     with pytest.raises(ValueError):
         run('maxlike', True, can_postprocess=False, repeats=5)
 
+def test_maxlike_reiterations():
+    # re-run the maxlike starting from the end of the previous run
+    output = run('maxlike', True, can_postprocess=False, hints_cov=False, reiterations=2)
+    assert len(output["post"]) == 1
+
+
 def test_maxlike_start_no_start_file():
     # error - no start_input specified
     with pytest.raises(ValueError):
