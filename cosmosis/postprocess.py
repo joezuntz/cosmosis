@@ -1,12 +1,8 @@
 #!/usr/bin/env python
-from .postprocessing.postprocess import postprocessor_for_sampler
-from .postprocessing.inputs import read_input
-from .postprocessing.plots import Tweaks
-from .runtime.utils import mkdir
 import sys
 import argparse
 import os
-
+from .postprocessing import run_cosmosis_postprocess
 
 parser = argparse.ArgumentParser(description="Post-process cosmosis output")
 parser.add_argument("inifile", nargs="+")
@@ -24,6 +20,7 @@ general.add_argument("--no-latex", action='store_true', help="Do not use latex-s
 general.add_argument("--blind-add", action='store_true', help="Blind results by adding adding a secret value to each parameter")
 general.add_argument("--blind-mul", action='store_true', help="Blind results by scaling by a secret value for each parameter")
 general.add_argument("--pdb", action='store_true', help="Run the debugger if any of the postprocessing stages fail")
+general.add_argument("--fatal-errors", action='store_true', help="Errors are fatal; useful for testing only")
 
 inputs=parser.add_argument_group(title="Inputs", description="Options controlling the inputs to this script")
 inputs.add_argument("--text", action='store_true', help="Tell postprocess that its argument is a text file, regardless of its suffix")
@@ -35,12 +32,15 @@ plots.add_argument("--legend-loc", default='best', help="The location of the leg
 plots.add_argument("--swap", action='store_true', help="Swap the ordering of the parameters in (x,y)")
 plots.add_argument("--only", type=str, dest='prefix_only', help="Only make 2D plots where both parameter names start with this")
 plots.add_argument("--either", type=str, dest='prefix_either', help="Only make 2D plots where one of the parameter names starts with this.")
+parser.add_argument("--exclude", nargs="+", dest='prefix_exclude', help='Specify one or more prefixes to exclude matching parameters from 2D plots')
+
 plots.add_argument("--no-plots", action='store_true', help="Do not make any default plots")
 plots.add_argument("--no-2d", action='store_true', help="Do not make any 2D plots")
 plots.add_argument("--no-alpha", dest='alpha', action='store_false', help="No alpha effect - shaded contours will not be visible through other ones")
 plots.add_argument("-f", "--file-type", default="png", help="Filename suffix for plots")
 plots.add_argument("--no-smooth", dest='smooth', default=True, action='store_false', help="Do not smooth grid plot joint constraints")
-plots.add_argument("--fix-edges", dest='fix_edges', default=False, action='store_true', help="Use an alternative KDE to fix 1D plot boundaries")
+plots.add_argument("--fix-edges", dest='fix_edges', default=True, action='store_true', help="Use an alternative KDE to fix 1D plot boundaries")
+plots.add_argument("--no-fix-edges", dest='fix_edges', default=False, action='store_false', help="Switch off the edge fixing")
 plots.add_argument("--n-kde", default=100, type=int, help="Number of KDE smoothing points per dimension to use for MCMC 2D curves. Reduce to speed up, but can make plots look worse.")
 plots.add_argument("--factor-kde", default=2.0, type=float, help="Smoothing factor for MCMC plots.  More makes plots look better but can smooth out too much.")
 plots.add_argument("--no-fill", dest='fill', default=True, action='store_false', help="Do not fill in 2D constraint plots with color")
@@ -50,76 +50,18 @@ plots.add_argument("--no-image", dest='image', default=True, action='store_false
 plots.add_argument("--run-max-post", default="", help="Run the test sampler on maximum-posterior sample and save to the named directory.")
 plots.add_argument("--truth", default="", help="An ini file containing truth values to mark on plots")
 
+
 def main(args):
-	#Read the command line arguments and load the
-	#ini file that created the run
 	args = parser.parse_args(args)
 
-	for ini_filename in args.inifile:
-		if not os.path.exists(ini_filename):
-			raise ValueError("The file (or directory) {} does not exist.".format(ini_filename))
+	# Run the main postprocessing code
+	processor = run_cosmosis_postprocess(args.inifile, **vars(args))
 
-	#Make the directory for the outputs to go in.
-	mkdir(args.outdir)
-	outputs = {}
-
-	#Deal with legends, if any
-	if args.legend:
-		labels = args.legend.split("|")
-		if len(labels)!=len(args.inifile):
-			raise ValueError("You specified {} legend names but {} files to plot".format(len(labels), len(args.inifile)))
-	else:
-		labels = args.inifile
-
-	if len(args.inifile)>1 and args.run_max_post:
-		raise ValueError("Can only use the --run-max-post argument with a single parameter file for now")
-
-	for i,ini_filename in enumerate(args.inifile):
-		sampler, ini = read_input(ini_filename, args.text, args.weights)
-		processor_class = postprocessor_for_sampler(sampler.split()[-1])
-
-		#We do not know how to postprocess everything.
-		if processor_class is None:
-			print("I do not know how to postprocess output from the %s sampler"%sampler)
-			sampler = None
-			continue
-
-		#Create and run the postprocessor
-
-		processor = processor_class(ini, labels[i], i, **vars(args))
-
-		#Inherit any plots from the previous postprocessor
-		#so we can make plots with multiple datasets on
-		processor.outputs.update(outputs)
-
-		#We can load extra plots to make from a python
-		#script here
-		if args.extra:
-			processor.load_extra_steps(args.extra)
-
-		#Optionally add a step in which we 
-		if args.run_max_post:
-			processor.add_rerun_bestfit_step(args.run_max_post)
-
-
-		#Run the postprocessor and make the outputs for this chain
-		processor.run()
-
-		#Save the outputs ready for the next post-processor in case
-		#they want to add to it (e.g. two constriants on the same axes)
-		outputs = processor.outputs
-
-	if sampler is None:
-		return
-
-	#Run any tweaks that the user specified
-	if args.tweaks:
-		tweaks = Tweaks.instances_from_file(args.tweaks)
-		for tweak in tweaks:
-			processor.apply_tweaks(tweak)
-
-	#Save all the image files and close the text files
-	processor.finalize()
+	# The postprocessor doesn't finalize the plots until it is saved
+	# so that we can use it interactively too. So save here.
+	if processor is not None:
+		#Save all the image files and close the text files
+		processor.save()
 
 if __name__=="__main__":
 	main(sys.argv[1:])

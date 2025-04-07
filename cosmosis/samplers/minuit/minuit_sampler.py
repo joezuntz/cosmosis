@@ -1,9 +1,9 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 import ctypes as ct
 import os
 import sys
-import collections
 
 MINUIT_INI_SECTION = "minuit"
 
@@ -28,15 +28,16 @@ libname=os.path.join(os.path.split(__file__)[0],"minuit_wrapper.so")
 class MinuitSampler(ParallelSampler):
     needs_output = True
     needs_parallel_output = False
+    libminuit_name = libname
     libminuit = None
     sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
         self.converged = False
         if MinuitSampler.libminuit is None:
-            if not os.path.exists(libname):
+            if not os.path.exists(self.libminuit_name):
                 raise ValueError("The CosmoSIS minuit2 wrapper was not compiled.  If you installed CosmoSIS manually you need the library minuit2 to use this sampler. See the wiki for more details.")
-            MinuitSampler.libminuit = ct.cdll.LoadLibrary(libname)
+            MinuitSampler.libminuit = ct.cdll.LoadLibrary(self.libminuit_name)
         self.maxiter = self.read_ini("maxiter", int, 1000)
         self.save_dir = self.read_ini("save_dir", str, "")
         self.save_cov = self.read_ini("save_cov", str, "")
@@ -51,7 +52,7 @@ class MinuitSampler(ParallelSampler):
         self.width_estimate = self.read_ini("width_estimate", float, 0.05)
         self.tolerance = self.read_ini("tolerance", float, 50.0)
         self.neval = 0
-        self.param_vector = self.pipeline.start_vector()  #initial value
+        self.param_vector = None
 
         strategy = {
             "fast":0,
@@ -92,15 +93,15 @@ class MinuitSampler(ParallelSampler):
             except KeyboardInterrupt:
                 sys.exit(1)
             self.iterations += 1
-            if self.verbose:
-                print(self.iterations, like, "   ",  "    ".join(str(v) for v in vector))
-                sys.stdout.flush()
             return -like
 
         self.wrapped_likelihood = wrapped_likelihood
 
 
     def execute(self):
+        if self.param_vector is None:
+            self.param_vector = self.start_estimate()
+
         #Run an iteration of minuit
         param_vector, param_names, results, status, made_cov, cov_vector = self.sample()
 
@@ -110,31 +111,25 @@ class MinuitSampler(ParallelSampler):
         self.neval += status
 
         if status == 0:
-            print() 
-            print("SUCCESS: Minuit has converged!")
-            print()
+            logs.overview("SUCCESS: Minuit has converged!")
             self.save_results(param_vector, param_names, results)
             self.converged = True
-            self.distribution_hints.set_peak(param_vector)
+            self.distribution_hints.set_peak(param_vector, results.post)
 
             if made_cov:
                 cov_matrix = cov_vector.reshape((self.ndim, self.ndim))
                 self.distribution_hints.set_cov(cov_matrix)
         elif self.neval > self.maxiter:
-            print()
-            print("MINUIT has failed to converge properly in the max number of iterations.  Sorry.")
-            print("Saving the best fitting parameters of the ones we tried, though beware: these are probably not the best-fit")
-            print()
+            logs.error("MINUIT has failed to converge properly in the max number of iterations.  Sorry.")
+            logs.error("Saving the best fitting parameters of the ones we tried, though beware: these are probably not the best-fit")
             self.save_results(param_vector, param_names, results)
             #we actually just use self.converged to indicate that the 
             #sampler should stop now
             self.converged = True
 
         else:
-            print()
-            print("Minuit did not converge this run; trying again")
-            print("until we run out of iterations.")
-            print()
+            logs.overview("Minuit did not converge this run; trying again")
+            logs.overview("until we run out of iterations.")
             
 
 
@@ -142,9 +137,7 @@ class MinuitSampler(ParallelSampler):
         section = None
 
         if self.pool is not None:
-            print()
-            print("Note that the # of function calls printed above is not the total count for all cores, just for one core.")
-            print()
+            logs.error("Note that the # of function calls printed above is not the total count for all cores, just for one core.")
 
         self.output.parameters(param_vector, results.extra, results.prior, results.post)
 
@@ -154,15 +147,14 @@ class MinuitSampler(ParallelSampler):
         for name, value in zip(param_names, param_vector):
             sec,name=name.split('--')
             if section!=sec:
-                print()
-                print("[%s]" % sec)
+                logs.important("[%s]" % sec)
                 section=sec
-            print("%s = %g" % (name,value))
-        print()
-        print("Likelihood = ", results.like)
+            logs.important("%s = %g" % (name,value))
+
+        logs.important(f"Likelihood = {results.like}")
 
         if self.save_dir:
-            print("Saving best-fit model cosmology to ", self.save_dir)
+            logs.overview(f"Saving best-fit model cosmology to {self.save_dir}")
             results.block.save_to_directory(self.save_dir, clobber=True)
 
         self.converged = True

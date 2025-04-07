@@ -1,5 +1,6 @@
 #coding: utf-8
 from .. import ParallelSampler
+from ...runtime import logs
 import ctypes as ct
 import os
 import cosmosis
@@ -59,28 +60,34 @@ multinest_args = [
 
 MULTINEST_SECTION='multinest'
 
+def load_multinest_library(mpi_version):
+    if mpi_version:
+        libname = "libnest3_mpi.so"
+    else:
+        libname = "libnest3.so"
+    dirname = os.path.split(__file__)[0]
+    libname = os.path.join(dirname, "multinest_src", libname)
+        
+    try:
+        libnest3 = ct.cdll.LoadLibrary(libname)
+    except Exception as error:
+        raise RuntimeError("Multinest could not be loaded.\n"
+                            "This may mean an MPI compiler was not found to compile it,\n"
+                            "or that some other error occurred.  More info below:\n"
+                            + str(error)+'\n')
+
+    return libnest3
+
+
 
 class MultinestSampler(ParallelSampler):
     parallel_output = False
     sampler_outputs = [("prior", float), ("like", float), ("post", float), ("weight", float)]
     supports_smp=False
+    internal_resume = True
 
     def config(self):
-        if self.pool:
-            libname = "libnest3_mpi.so"
-        else:
-            libname = "libnest3.so"
-
-        dirname = os.path.split(__file__)[0]
-        libname = os.path.join(dirname, "multinest_src", libname)
-            
-        try:
-            libnest3 = ct.cdll.LoadLibrary(libname)
-        except Exception as error:
-            raise RuntimeError("Multinest could not be loaded.\n"
-                             "This may mean an MPI compiler was not found to compile it,\n"
-                             "or that some other error occurred.  More info below:\n"
-                             + str(error)+'\n')
+        libnest3 = load_multinest_library(self.pool is not None)
 
         self._run = libnest3.run
         self._run.restype=None
@@ -91,7 +98,7 @@ class MultinestSampler(ParallelSampler):
 
         # We add one to the output to save the posterior as well as the
         # likelihood.
-        self.npar = self.ndim + len(self.pipeline.extra_saves) + 2
+        self.npar = self.ndim + self.pipeline.number_extra + 2
 
         #Required options
         self.max_iterations = self.read_ini("max_iterations", int)
@@ -125,8 +132,6 @@ class MultinestSampler(ParallelSampler):
         wrapped_params = self.read_ini("wrapped_params", str, default="")
         wrapped_params = wrapped_params.split()
         self.wrapping = [0 for i in range(self.ndim)]
-        if wrapped_params:
-            print("")
         for p in wrapped_params:
             try:
                 P = p.split('--')
@@ -135,19 +140,17 @@ class MultinestSampler(ParallelSampler):
             if P in self.pipeline.varied_params:
                 index = self.pipeline.varied_params.index(P)
                 self.wrapping[index] = 1
-                print("MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p))
+                logs.overview("MULTINEST: Parameter {} ({}) will be wrapped around the edge of its prior".format(index,p))
             elif P in self.pipeline.parameters:
-                print("MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not fixed in this pipeline, so this will have no effect.".format(p))
+                logs.warnings("MULTINEST NOTE: You asked for wrapped sampling on {}. That parameter is not varied in this pipeline, so this will have no effect.".format(p))
             else:
                 raise ValueError("You asked for an unknown parameter, {} to be wrapped around in the multinest wrapped_params option.".format(p))
-        if wrapped_params:
-            print("")
 
 
 
         if self.output:
             def dumper(nsample, nlive, nparam, live, post, paramConstr, max_log_like, logz, ins_logz, log_z_err, context):
-                print("Saving %d samples" % nsample)
+                logs.overview("Saving %d samples" % nsample)
                 self.output_params(nsample, live, post, logz, ins_logz, log_z_err)
             self.wrapped_output_logger = dumper_type(dumper)
         else:
@@ -220,6 +223,10 @@ class MultinestSampler(ParallelSampler):
         self.log_z = ins_log_z if self.importance else log_z
         self.log_z_err = log_z_err
         data = np.array([posterior[i] for i in range(n*(self.npar+2))]).reshape((self.npar+2, n))
+
+        self.distribution_hints.set_from_sample(data[:self.ndim].T, data[self.npar - 1], weights=data[self.npar+1])
+
+        # Note the transposition here to get the right shape
         for row in data.T:
             params = row[:self.ndim]
             extra_vals = row[self.ndim:self.npar-2]

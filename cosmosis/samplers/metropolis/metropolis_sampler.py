@@ -1,4 +1,5 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 from . import metropolis
 from cosmosis.runtime.analytics import Analytics
@@ -26,6 +27,7 @@ class MetropolisSampler(ParallelSampler):
         pipeline = self.pipeline
         self.samples = self.read_ini("samples", int, default=20000)
         random_start = self.read_ini("random_start", bool, default=False)
+        covmat_sample_start = self.read_ini("covmat_sample_start", bool, default=False)
         use_cobaya = self.read_ini("cobaya", bool, default=False)
         self.Rconverge = self.read_ini("Rconverge", float, -1.0)
         self.drag = self.read_ini("drag", int, 0)
@@ -51,7 +53,7 @@ class MetropolisSampler(ParallelSampler):
             self.tuning_end = 0
 
         if (self.drag > 0) and not self.pipeline.do_fast_slow:
-            print("You asked for dragging, but the pipeline does not have fast/slow enabled"
+            logs.warning("You asked for dragging, but the pipeline does not have fast/slow enabled"
                   ", so no draggng will be done."
                 )
 
@@ -59,26 +61,25 @@ class MetropolisSampler(ParallelSampler):
             raise ValueError("To use fast/slow splitting with metropolis please "
                              "manually define first_fast_module in the pipeline "
                              "section.")
-        #start values from prior
-        start = self.define_parameters(random_start)
-        print("MCMC starting point:")
-        for param, x in zip(self.pipeline.varied_params, start):
-            print("    ", param, x)
+
 
         #Covariance matrix
         covmat = self.load_covariance_matrix()
 
-        #Sampler object itself.
-        quiet = self.pipeline.quiet
+        #start values from prior
+        start = self.define_parameters(random_start, covmat_sample_start, covmat)
+        logs.overview("MCMC starting point:")
+        for param, x in zip(self.pipeline.varied_params, start):
+            logs.overview(f"    {param}  {x}")
+
 
         if use_cobaya:
-            print("Using the Cobaya proposal")
+            logs.overview("Using the Cobaya proposal")
 
-        print(f"Will tune every {tuning_frequency} samples, from samples "
+        logs.overview(f"Will tune every {tuning_frequency} samples, from samples "
               f"{tuning_grace} to {self.tuning_end}.")
 
         self.sampler = metropolis.MCMC(start, posterior, covmat,
-            quiet=quiet, 
             tuning_frequency=tuning_frequency, # Will be multiplied by the oversampling
             tuning_grace=tuning_grace,         # within the sampler if needed
             tuning_end=self.tuning_end,
@@ -116,14 +117,14 @@ class MetropolisSampler(ParallelSampler):
 
         
         if self.num_samples >= self.samples:
-            print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
-            print("Increase the 'samples' parameter to keep going.")
+            logs.important("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
+            logs.important("Increase the 'samples' parameter to keep going.")
         elif self.is_converged():
-            print("The resumed chain was already converged.  You can change the converged testing parameters to extend it.")
+            logs.overview("The resumed chain was already converged.  You can change the converged testing parameters to extend it.")
         elif data is None:
-            print("Continuing metropolis from existing chain - you were in the tuning phase, which will continue")
+            logs.overview("Continuing metropolis from existing chain - you were in the tuning phase, which will continue")
         else:
-            print("Continuing metropolis from existing chain - have {} samples already".format(len(data)))
+            logs.overview("Continuing metropolis from existing chain - have {} samples already".format(len(data)))
 
 
 
@@ -152,9 +153,9 @@ class MetropolisSampler(ParallelSampler):
         overall_rate = (self.sampler.accepted * 1.0) / self.sampler.iterations
         recent_accepted = self.sampler.accepted - self.last_accept_count
         recent_rate = recent_accepted / self.n
-        print("Overall accepted {} / {} samples ({:.1%})" .format(
+        logs.overview("Overall accepted {} / {} samples ({:.1%})" .format(
             self.sampler.accepted, self.sampler.iterations, overall_rate))
-        print("Last {0} accepted {1} / {0} samples ({2:.1%})\n" .format(
+        logs.overview("Last {0} accepted {1} / {0} samples ({2:.1%})\n" .format(
             self.n, recent_accepted, recent_rate))
         self.last_accept_count = self.sampler.accepted
 
@@ -164,13 +165,15 @@ class MetropolisSampler(ParallelSampler):
             traces = np.array([r.vector for r in samples[-self.num_samples_post_tuning:]])
             self.analytics.add_traces(traces)
 
-
+        vectors = np.array([r.vector for r in samples])
+        posts = np.array([r.post for r in samples])
+        self.distribution_hints.set_from_sample(vectors, posts)
         if (self.num_samples_post_tuning > 0) or self.save_during_tuning:
             for i, result in enumerate(samples):
                 self.output.parameters(result.vector, result.extra, result.prior, result.post)
 
         if self.num_samples_post_tuning <= 0:
-            print("Tuning ends at {} samples\n".format(self.tuning_end))
+            logs.overview("Tuning ends at {} samples\n".format(self.tuning_end))
 
         self.write_resume_info([self.sampler, self.num_samples, self.num_samples_post_tuning])
 
@@ -179,13 +182,14 @@ class MetropolisSampler(ParallelSampler):
         if self.interrupted:
             return True
         if self.num_samples >= self.samples:
-            print("Full number of samples generated; sampling complete")
+            rank = self.pool.rank if self.pool is not None else 0
+            logs.overview(f"Rank {rank}: Full number of samples generated; sampling complete")
             return True
         elif (self.num_samples > 0 and
               self.pool is not None and
               self.Rconverge is not None and
               self.num_samples_post_tuning > 0):
-            R = self.analytics.gelman_rubin(quiet=False)
+            R = self.analytics.gelman_rubin()
             R1 = abs(R - 1)
             return np.all(R1 <= self.Rconverge)
         else:
@@ -196,16 +200,16 @@ class MetropolisSampler(ParallelSampler):
     def load_covariance_matrix(self):
         covmat_filename = self.read_ini("covmat", str, "").strip()
         if covmat_filename == "" and self.distribution_hints.has_cov():
-                covmat =  self.distribution_hints.get_cov() 
-                print("Using covariance from previous sampler")
+                covmat =  self.distribution_hints.get_cov()
+                logs.overview("Using covariance from previous sampler")
         elif covmat_filename == "":
-            print("Using default covariance 1% of param widths")
+            logs.overview("Using default covariance 1% of param widths")
             covmat = np.array([p.width()/100.0 for p in self.pipeline.varied_params])
         elif not os.path.exists(covmat_filename):
             raise ValueError(
             "Covariance matrix %s not found" % covmat_filename)
         else:
-            print("Loading covariance from {}".format(covmat_filename))
+            logs.overview("Loading covariance from {}".format(covmat_filename))
             covmat = np.loadtxt(covmat_filename)
 
         if covmat.ndim == 0:
@@ -222,8 +226,25 @@ class MetropolisSampler(ParallelSampler):
 
 
 
-    def define_parameters(self, random_start):
-        if random_start:
+    def define_parameters(self, random_start, covmat_sample_start, covmat):
+        if covmat_sample_start:
+            p = self.pipeline.start_vector()
+            chol = np.linalg.cholesky(covmat)
+
+            # Try 100 times to get points within the prior
+            for i in range(200):
+                r = np.random.normal(size=covmat.shape[0])
+                start = p + chol @ r
+                prior = self.pipeline.prior(start, total_only=True)
+                if np.isfinite(prior):
+                    break
+            else:
+                raise ValueError("You set covmat_sample_start=T so I tried "
+                                 "100 times to get a sample inside the prior, "
+                                 "but it was always outside."
+                    )
+            return start
+        elif random_start:
             return self.pipeline.randomized_start()
         else:
             return self.pipeline.start_vector()

@@ -5,11 +5,13 @@ numpy
 scipy
 matplotlib
 pybind11
-pyyaml
-scipy
 threadpoolctl
-emcee
 dynesty
 zeus-mcmc
 --no-binary=mpi4py
 mpi4py
+dulwich
+urllib3
+scikit-learn
+nautilus-sampler >= 1.0.1
+Py-BOBYQA

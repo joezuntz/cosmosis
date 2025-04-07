@@ -1,7 +1,6 @@
 import setuptools
-import distutils.command.build
-import distutils.command.clean
-import distutils.command.install
+import setuptools.command.install
+import setuptools.command.build_py
 import setuptools.command.develop
 import subprocess
 import os
@@ -18,6 +17,7 @@ f90_mods = [
 
 scripts = [
     'bin/cosmosis',
+    'bin/cosmosis-campaign',
     'bin/cosmosis-configure',
     'bin/cosmosis-extract',
     'bin/cosmosis-sample-fisher',
@@ -70,6 +70,13 @@ testing_files = [
     "test/libtest/test_c_datablock_scalars.h",
     "test/libtest/test_c_datablock_scalars.template",
     "test/libtest/Makefile",
+    "test/campaign.yml",
+    "test/included.yml",
+    "test/bad-campaign.yml",
+    "test/example-priors.ini",
+    "test/example-values.ini",
+    "test/example.ini",
+
 ]
 
 other_files = ["postprocessing/latex.ini"]
@@ -122,11 +129,10 @@ def make_cosmosis():
 
     subprocess.check_call(["make"], env=env, cwd="cosmosis")
 
-
-
 class build_cosmosis(setuptools.Command):
-    description = "Run the CosmoSIS build process"
+    description = "Build CosmoSIS and do nothing else"
     user_options = []
+
     def initialize_options(self):
         pass
 
@@ -135,6 +141,13 @@ class build_cosmosis(setuptools.Command):
 
     def run(self):
         make_cosmosis()
+
+
+
+class build_py_cosmosis(setuptools.command.build_py.build_py):
+    def run(self):
+        make_cosmosis()
+        super().run()
 
 class clean_cosmosis(setuptools.Command):
     description = "Run the CosmoSIS clean process"
@@ -152,10 +165,7 @@ class clean_cosmosis(setuptools.Command):
         env = {"COSMOSIS_SRC_DIR": cosmosis_src_dir,}
         subprocess.check_call(["make", "clean"], env=env, cwd="cosmosis")
 
-        # Run the original clean command
-        self.run_command("clean_original")
-
-class install_cosmosis(distutils.command.install.install):
+class install_cosmosis(setuptools.command.install.install):
     description = "Run the CosmoSIS install process"
 
     def run(self):
@@ -168,7 +178,6 @@ class develop_cosmosis(setuptools.command.develop.develop):
         make_cosmosis()
         super().run()
 
-distutils.command.build.build.sub_commands.insert(0, ("build_cosmosis", None))
 
 requirements = [
     "pyyaml",
@@ -183,13 +192,17 @@ requirements = [
     "emcee",
     "dynesty",
     "zeus-mcmc",
-    "dulwich"
+    "nautilus-sampler>=1.0.1",
+    "dulwich",
+    "scikit-learn",
+    "future",
+    "Py-BOBYQA",
+
 ]
 
 all_package_files = (datablock_libs + sampler_libs
                             + c_headers + cc_headers + f90_mods 
                             + compilers_config + testing_files + other_files)
-
 
 setuptools.setup(name = 'cosmosis',
     description       = "The CosmoSIS parameter estimation library.",
@@ -202,10 +215,10 @@ setuptools.setup(name = 'cosmosis',
     install_requires = requirements,
     cmdclass={
         "build_cosmosis": build_cosmosis,
+        "build_py": build_py_cosmosis,
         "install": install_cosmosis,
         "develop": develop_cosmosis,
         "clean": clean_cosmosis,
-        "clean_original": distutils.command.clean.clean,
     },
     version=version,
 )

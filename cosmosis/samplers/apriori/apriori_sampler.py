@@ -1,17 +1,14 @@
-import itertools
 import numpy as np
-from cosmosis.output.text_output import TextColumnOutput
 from .. import ParallelSampler
-
+from ...runtime import logs
 
 def task(p):
     i,p = p
-    print("Running sample from prior: ", p)
     r = sampler.pipeline.run_results(p)
     #If requested, save the data to file
     if sampler.save_name:
         if r.block is None:
-            print("Failed to run parameters: {} so not saving".format(p))
+            logs.error("Failed to run parameters: {} so not saving".format(p))
         else:
             filename = "{}_{}".format(sampler.save_name, i)
             r.block.save_to_file(filename, clobber=True)
@@ -23,6 +20,7 @@ def task(p):
 
 class AprioriSampler(ParallelSampler):
     parallel_output = False
+    supports_resume = True
     sampler_outputs = [("prior", float), ("post", float)]
 
     def config(self):
@@ -32,10 +30,21 @@ class AprioriSampler(ParallelSampler):
         self.converged = False
         self.save_name = self.read_ini("save", str, "")
         self.nsample = self.read_ini("nsample", int, 1)
+        self.n = 0
+
+    def resume(self):
+        if self.output.resumed:
+            data = np.genfromtxt(self.output._filename, invalid_raise=False)
+            self.n = len(data)
+            if self.n >= self.nsample:
+                logs.error(f"You told me to resume the apriori sampler - it has already completed (with {self.n} samples), so sampling will end.")
+                logs.error("Increase the 'nsample' parameter to keep going.")
+            else:
+                logs.overview(f"Continuing apriori sampling - have {self.n} samples already")
 
 
     def execute(self):
-        n = 0
+        n = self.n
         nparam = len(self.pipeline.varied_params)
 
         if self.pool:
@@ -65,6 +74,11 @@ class AprioriSampler(ParallelSampler):
                 (prior, post, extra) = result
                 #always save the usual text output
                 self.output.parameters(sample, extra, prior, post)
+
+                # this will test to see if the new point is the best so far.
+                # It's not a good idea to try to estimate the covariance from
+                # an apriori sample, so we don't do that here.
+                self.distribution_hints.set_peak(sample, post)
 
         #We only ever run this once, though that could 
         #change if we decide to split up the runs

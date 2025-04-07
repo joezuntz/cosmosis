@@ -31,19 +31,22 @@ class TextColumnOutput(OutputBase):
         dirname, _ = os.path.split(self._filename)
         mkdir(dirname)
 
+        self._any_written = False
         if resume and utils.file_exists_and_is_empty(self._filename):
-            print("You set resume=T but the file {} is empty so I will start afresh".format(self._filename))
+            print("* You set resume=T but the file {} is empty so I will start afresh".format(self._filename))
             self._file = open(self._filename, "w")
             self.resumed = False
         elif resume and os.path.exists(self._filename):
-            print("Note: You set resume=T so I will resume from file {}".format(self._filename))
+            print("* Note: You set resume=T so I will resume from file {}".format(self._filename))
             self._file = open(self._filename, "r+")
             # Jump to the end of the file
             self._file.seek(0,2)
             self.resumed = True
+            self._any_written = True
+
         else:
             if resume:
-                print("Note: You set resume=T but the file {} does not exist so I will start a new one".format(self._filename))
+                print("* Note: You set resume=T but the file {} does not exist so I will start a new one".format(self._filename))
             self._file = open(self._filename, "w")
             self.resumed = False
         if lock:
@@ -52,10 +55,11 @@ class TextColumnOutput(OutputBase):
             except IOError:
                 error_msg = """
 Another CosmoSIS process was trying to use the same output file (%s). 
-This means one of three things:
+This means one of four things:
 1) you were trying to use MPI but left out the --mpi flag
-2) you have another CosmoSIS run going trying to use the same filename
-3) your file system cannot cope with file locks properly.  
+2) your MPI installation is not working properly
+3) you have another CosmoSIS run going trying to use the same filename
+4) your file system cannot cope with file locks properly.  
 In the last case you can set lock=F in the [output] section to disable this feature.
 """ % self._filename
                 raise IOError(error_msg)
@@ -111,12 +115,14 @@ In the last case you can set lock=F in the [output] section to disable this feat
                        "_%d" % (len(self._metadata))] = (comment,None)
 
     def _write_parameters(self, params):
+        self._any_written = True
         line = self.delimiter.join(str(x) for x in params) + '\n'
         self._file.write(line)
 
     def _write_final(self, key, value, comment=''):
         #I suppose we can put this at the end - why not?
-        self._final_metadata[key]= (value, comment)
+        if self._any_written:
+            self._final_metadata[key]= (value, comment)
 
     def _flush(self):
         self._file.flush()

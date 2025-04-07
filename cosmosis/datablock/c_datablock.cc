@@ -564,10 +564,16 @@ extern "C"
     if (sz == nullptr) return DBS_SIZE_NULL;
 
     auto p = static_cast<DataBlock *>(s);
-    vector<int> const& r = p->view<vector<int>>(section, name);
-    *sz = r.size();
-    if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
-    std::copy(r.cbegin(), r.cend(), val);
+    try {
+      vector<int> const& r = p->view<vector<int>>(section, name);
+      *sz = r.size();
+      if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
+      std::copy(r.cbegin(), r.cend(), val);
+    }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
     // If we are asked to clear out the remainder of the input buffer,
     // the following line should be used.
     //    std::fill(val + *sz, val+maxsize, 0);
@@ -590,10 +596,16 @@ extern "C"
     if (sz == nullptr) return DBS_SIZE_NULL;
 
     auto p = static_cast<DataBlock *>(s);
-    vector<double> const& r = p->view<vector<double>>(section, name);
-    *sz = r.size();
-    if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
-    std::copy(r.cbegin(), r.cend(), val);
+    try {
+      vector<double> const& r = p->view<vector<double>>(section, name);
+      *sz = r.size();
+      if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
+      std::copy(r.cbegin(), r.cend(), val);
+    }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
     // If we are asked to clear out the remainder of the input buffer,
     // the following line should be used.
     //    std::fill(val + *sz, val+maxsize, 0);
@@ -616,14 +628,21 @@ extern "C"
     if (sz == nullptr) return DBS_SIZE_NULL;
 
     auto p = static_cast<DataBlock *>(s);
-    vector<complex_t> const& r = p->view<vector<complex_t>>(section, name);
-    *sz = r.size();
-    if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
-    //std::copy(r.cbegin(), r.cend(), val);
-    for (size_t i = 0, n = r.size(); i != n; ++i)
-      {
-        val[i] = from_complex(r[i]);
-      }
+    try{
+      vector<complex_t> const& r = p->view<vector<complex_t>>(section, name);
+      *sz = r.size();
+      if (r.size() > static_cast<size_t>(maxsize)) return DBS_SIZE_INSUFFICIENT;
+      //std::copy(r.cbegin(), r.cend(), val);
+      for (size_t i = 0, n = r.size(); i != n; ++i)
+        {
+          val[i] = from_complex(r[i]);
+        }
+    }
+    catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
+    catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }
+    catch (Entry::BadEntry const&) { return DBS_WRONG_VALUE_TYPE; }
+    catch (...) { return DBS_LOGIC_ERROR; }
+
 
     // If we are asked to clear out the remainder of the input buffer,
     // the following line should be used.
@@ -652,8 +671,6 @@ extern "C"
       for (int i=0; i<*sz; i++){
         val[i] = strdup(r[i].c_str());
       }
-
-      *sz = r.size();
     }
     catch (DataBlock::BadDataBlockAccess const&) { return DBS_SECTION_NOT_FOUND; }
     catch (Section::BadSectionAccess const&) { return DBS_NAME_NOT_FOUND; }

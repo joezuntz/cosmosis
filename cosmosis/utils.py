@@ -34,6 +34,61 @@ everythingIsNan = EverythingIsNan()
 
 
 
+def datablock_to_astropy(block):
+    from .datablock import names
+    cosmo = names.cosmological_parameters
+    from astropy.cosmology import FlatLambdaCDM, LambdaCDM, FlatwCDM, wCDM, w0waCDM, Flatw0waCDM
+
+    # Required parameters that must be in the data block
+    # for this to work
+    omega_lambda = block[cosmo, 'omega_lambda']
+    omega_m = block[cosmo, 'omega_m']
+    omega_b = block[cosmo, 'omega_b']
+    H0 = block[cosmo, 'h0'] * 100
+    m_nu = block[cosmo, 'mnu']
+
+    # Optional parameters with simple default values
+    omega_k = block.get_double(cosmo, 'omega_k', 0.0)
+    w0 = block.get_double(cosmo, 'w', -1.0)
+    wa = block.get_double(cosmo, 'wa', 0.0)
+
+    kw = {
+        "H0": H0,
+        "Ob0": omega_b,
+        "Om0": omega_m,
+        "m_nu": m_nu,
+    }
+
+    if omega_k == 0:
+        if wa == 0:
+            if w0 == -1.0:
+                model = FlatLambdaCDM
+            else:
+                model = FlatwCDM
+                kw["w0"] = w0
+        else:
+            model = Flatw0waCDM
+            kw["w0"] = w0
+            kw["wa"] = wa
+    else:
+        if wa == 0:
+            if w0 == -1.0:
+                model = LambdaCDM
+                kw["Ode0"] = omega_lambda
+            else:
+                model = wCDM
+                kw["Ode0"] = omega_lambda
+                kw["w0"] = w0
+        else:
+            model = w0waCDM
+            kw["Ode0"] = omega_lambda
+            kw["w0"] = w0
+            kw["wa"] = wa
+
+    return model(**kw)
+
+
+
 class ParseExtraParameters(argparse.Action):
 
     u"""Extended command-line argument parser :class:`Action` which knows how to read arguments of the form ‘section.name=value’."""
@@ -135,6 +190,7 @@ def fileno(file_or_fd):
 
 @contextmanager
 def stdout_redirected(to=os.devnull, stdout=None):
+    from .runtime import logs
     if stdout is None:
        stdout = sys.stdout
 
@@ -143,6 +199,8 @@ def stdout_redirected(to=os.devnull, stdout=None):
     #NOTE: `copied` is inheritable on Windows when duplicating a standard stream
     with os.fdopen(os.dup(stdout_fd), 'wb') as copied: 
         stdout.flush()  # flush library buffers that dup2 knows nothing about
+        log_level = logs.get_level()
+        logs.set_level(51)
         try:
             os.dup2(fileno(to), stdout_fd)  # $ exec >&to
         except ValueError:  # filename
@@ -155,6 +213,8 @@ def stdout_redirected(to=os.devnull, stdout=None):
             #NOTE: dup2 makes stdout_fd inheritable unconditionally
             stdout.flush()
             os.dup2(copied.fileno(), stdout_fd)  # $ exec >&copied
+            logs.set_level(log_level)
+
 
 
 
@@ -309,48 +369,44 @@ def get_git_revision_dulwich(directory):
 
 
 def get_git_revision(directory):
-    # Turn e.g. $COSMOSIS_SRC_DIR into a proper path
-    directory = os.path.expandvars(directory)
-    if not os.path.isdir(directory):
+    try:
+        # Turn e.g. $COSMOSIS_SRC_DIR into a proper path
+        directory = os.path.expandvars(directory)
+        if not os.path.isdir(directory):
+            return ""
+
+        if dulwich is not None:
+            return get_git_revision_dulwich(directory)
+
+        if os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]:
+            return ""
+
+        # this git command gives the current commit ID of the
+        # directory it is run from
+        cmd = "git rev-parse HEAD".split()
+
+        # run, capturing stderr and stdout to read the hash from
+        p = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
+            cwd=directory)
+
+        # Read stdout.  Discard stderr, which will be None
+        rev, _ = p.communicate()
+
+        # If there are any errors then we ignore everything
+        if p.returncode:
+            return ""
+        # There shouldn't be any newlines here, but in case there are in future
+        # we replace them with spaces to avoid messing up output file formats
+        return rev.decode('utf-8').strip().replace("\n", " ")
+    
+    # It's usually bad practice to catch all exceptions, but we really don't
+    # want to crash if we can't get the metadata.
+    except Exception as e:
+        print(f"Unable to get metadata on git revision for {directory}: error {e}")
         return ""
 
-    if dulwich is not None:
-        return get_git_revision_dulwich(directory)
-
-    if os.environ.get("COSMOSIS_NO_SUBPROCESS", "") not in ["", "0"]:
-        return ""
-
-    # this git command gives the current commit ID of the
-    # directory it is run from
-    cmd = "git rev-parse HEAD".split()
-
-    # run, capturing stderr and stdout to read the hash from
-    p = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
-        cwd=directory)
-
-    # Read stdout.  Discard stderr, which will be None
-    rev, _ = p.communicate()
-
-    # If there are any errors then we ignore everything
-    if p.returncode:
-        return ""
-    # There shouldn't be any newlines here, but in case there are in future
-    # we replace them with spaces to avoid messing up output file formats
-    return rev.decode('utf-8').strip().replace("\n", " ")
 
 
-def requires_python3(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if sys.version_info[0] < 3:
-            raise RuntimeError(
-                "You are using a CosmoSIS function ({}) "
-                " only available in python 3 and above".format(f))
-        return f(*args, **kwargs)
-    return wrapper
-
-
-@requires_python3
 def import_by_path(name, path):
     # https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path
     import importlib.util
@@ -358,3 +414,71 @@ def import_by_path(name, path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def underline(s, char='-'):
+    """
+    Return a string with a line of the given character
+    underneath it.
+
+    Parameters
+    ----------
+    s : str
+        The string to underline
+    char : str, optional
+        The character to use for the line
+    """
+    return s + "\n" + char * len(s)
+
+def overline(s, char='-'):
+    """
+    Return a string with a line of the given character
+    over it.
+
+    Parameters
+    ----------
+    s : str
+        The string to overline
+    char : str, optional
+        The character to use for the line
+    """
+    return char * len(s) + "\n" + s
+
+def under_over_line(s, char='-'):
+    """
+    Return a string with a line of the given character
+    over and under it.
+
+    Parameters
+    ----------
+    s : str
+        The string to overline
+    char : str, optional
+        The character to use for the line
+    """
+    return underline(overline(s, char), char)
+
+
+def read_chain_header(filename):
+    lines = []
+    for line in open(filename):
+        if not line.startswith('#'):
+            break
+        lines.append(line)
+    return lines
+
+
+def extract_inis_from_chain_header(lines, section):
+    start = "## START_OF_{}_INI".format(section).upper()
+    end = "## END_OF_{}_INI".format(section).upper()
+    in_section = False
+    output_lines = []
+    for line in lines:
+        if line.startswith(start):
+            in_section = True
+            continue
+        elif line.startswith(end):
+            break
+        elif in_section:
+            output_lines.append(line[3:])
+    return output_lines

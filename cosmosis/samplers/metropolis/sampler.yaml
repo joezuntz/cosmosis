@@ -40,6 +40,7 @@ installation: >
 params:
     samples: "(integer) number of steps"
     random_start: "(bool; default=N) whether to start the chains at random points in the prior instead of the ini file start"
+    covmat_sample_start: "bool, default=N) start from random points sampled from the covariance matrix"
     Rconverge: "(float; default=-1.0) when multiple chains are run, use this as the Gelman-Rubin statistic"
     covmat: "(string; default='') load a covariance matrix from this file.  The parameter order should match the order of varied parameters in the ini file"
     nsteps: "(integer; default=100) number of points between saving data and testing convergence"

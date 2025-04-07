@@ -1,4 +1,5 @@
 from .. import ParallelSampler, sample_ellipsoid, sample_ball
+from ...runtime import logs
 import numpy as np
 import sys
 
@@ -66,8 +67,8 @@ class ZeusSampler(ParallelSampler):
                 move_cls = move_names[move_name]
                 self.moves.append((move_cls(), move_weight))
 
-            print("Running zeus with moves:")
-            print(self.moves)
+            logs.overview("Running zeus with moves:")
+            logs.overview(str(self.moves))
 
             # Other zeus options
             self.tune = self.read_ini("tune", bool, True)
@@ -85,16 +86,16 @@ class ZeusSampler(ParallelSampler):
             # Generate starting point
             if start_file:
                 self.p0 = self.load_start(start_file)
-                self.output.log_info("Loaded starting position from %s", start_file)
+                logs.overview(f"Loaded starting position from {start_file}")
             elif self.distribution_hints.has_cov():
                 center = self.start_estimate()
                 cov = self.distribution_hints.get_cov()
                 self.p0 = sample_ellipsoid(center, cov, size=self.nwalkers)
-                self.output.log_info("Generating starting positions from covmat from earlier in pipeline")
+                logs.overview("Generating starting positions from covmat from earlier in pipeline")
             elif covmat_file:
                 center = self.start_estimate()
                 cov = self.load_covmat(covmat_file)
-                self.output.log_info("Generating starting position from covmat in  %s", covmat_file)
+                logs.overview(f"Generating starting position from covmat in  {covmat_file}")
                 iterations_limit = 100000
                 n=0
                 p0 = []
@@ -110,7 +111,7 @@ class ZeusSampler(ParallelSampler):
             elif random_start:
                 self.p0 = [self.pipeline.randomized_start()
                            for i in range(self.nwalkers)]
-                self.output.log_info("Generating random starting positions from within prior")
+                logs.overview("Generating random starting positions from within prior")
             else:
                 center_norm = self.pipeline.normalize_vector(self.start_estimate())
                 sigma_norm=np.repeat(1e-3, center_norm.size)
@@ -118,7 +119,7 @@ class ZeusSampler(ParallelSampler):
                 p0_norm[p0_norm<=0] = 0.001
                 p0_norm[p0_norm>=1] = 0.999
                 self.p0 = [self.pipeline.denormalize_vector(p0_norm_i) for p0_norm_i in p0_norm]
-                self.output.log_info("Generating starting positions in small ball around starting point")
+                logs.overview("Generating starting positions in small ball around starting point")
 
             #Finally we can create the sampler
             self.started = False
@@ -158,9 +159,9 @@ class ZeusSampler(ParallelSampler):
                 "(c) switch off runtime.resume.  If you just want to restart the "
                 "walkers from old positions, set zeus.start_points")
 
-        print("Loaded 'Move' objects from resume file:")
+        logs.overview("Loaded 'Move' objects from resume file:")
         for m, w in zip(moves, weights):
-            print(    "{} mu0={}  weight={}  tuning={}".format(m.__class__.__name__, m.mu0, w, m.tune))
+            logs.overview(    "{} mu0={}  weight={}  tuning={}".format(m.__class__.__name__, m.mu0, w, m.tune))
         self.sampler._moves = moves
         self.sampler._weights = weights
         self.sampler.tune = tune
@@ -168,9 +169,9 @@ class ZeusSampler(ParallelSampler):
         self.sampler.mus = mus
 
         if tune:
-            print("Resumed sampler is still tuning")
+            logs.overview("Resumed sampler is still tuning")
         else:
-            print("Resumed sampler has finished tuning")
+            logs.overview("Resumed sampler has finished tuning")
 
         # if we have some chain, read it here and use it to get
         # the p0 value and number of samples
@@ -180,10 +181,10 @@ class ZeusSampler(ParallelSampler):
             self.p0 = data[-self.nwalkers:]
             self.num_samples += num_samples
             if self.num_samples >= self.samples:
-                print("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
-                print("Increase the 'samples' parameter to keep going.")
+                logs.error("You told me to resume the chain - it has already completed (with {} samples), so sampling will end.".format(len(data)))
+                logs.error("Increase the 'samples' parameter to keep going.")
             else:
-                print("Continuing zeus from existing chain - have {} samples already".format(len(data)))
+                logs.overview("Continuing zeus from existing chain - have {} samples already".format(len(data)))
 
     def load_start(self, filename):
         #Load the data and cut to the bits we need.
@@ -222,7 +223,7 @@ class ZeusSampler(ParallelSampler):
         if self.started:
             start = self.sampler.chain.shape[0]
         else:
-            print("Begun sampling")
+            logs.error("Begun sampling")
             self.started = True
             start = 0
 
@@ -236,6 +237,10 @@ class ZeusSampler(ParallelSampler):
         post = self.sampler.get_log_prob()
         chain = self.sampler.get_chain()
         blobs = self.sampler.get_blobs()
+
+        chain_flat = self.sampler.get_chain(flat=True)
+        post_flat = self.sampler.get_log_prob(flat=True)
+        self.distribution_hints.set_from_sample(chain_flat, post_flat)
 
         # Output results per sampler per walker
         for i in range(start, end):
@@ -251,18 +256,17 @@ class ZeusSampler(ParallelSampler):
         except TypeError:
             self.p0 = self.sampler.get_last_sample
         self.num_samples += self.nsteps
-        import scipy.fft
+
         taus = self.zeus.AutoCorrTime(chain)
-        print("\nHave {} samples from zeus. Current auto-correlation estimates are:".format(
-            self.num_samples*self.nwalkers))
+        logs.overview(f"Have {self.num_samples} samples from zeus. Current auto-correlation estimates are:")
         for par, tau in zip(self.pipeline.varied_params, taus):
-            print("   {}:  {:.2f}".format(par, tau))
+            logs.overview("   {}:  {:.2f}".format(par, tau))
         sys.stdout.flush()
 
         if self.sampler.tune:
-            print("Sampler is (still) tuning")
+            logs.overview("Sampler is (still) tuning")
         else:
-            print("Sampler is no longer tuning")
+            logs.overview("Sampler is no longer tuning")
 
         self.write_resume_info([self.sampler._moves, self.sampler._weights,
                                 self.sampler.tune, self.sampler.mu, self.sampler.mus])

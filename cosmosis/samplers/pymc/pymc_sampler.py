@@ -1,7 +1,7 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 import os
-import itertools
 from cosmosis.runtime.analytics import Analytics
 import logging
 
@@ -93,12 +93,14 @@ class PymcSampler(ParallelSampler):
                            for param in self.pipeline.varied_params]).T
         likes = -0.5 * self.mcmc.trace('deviance')[:]
 
+        self.distribution_hints.set_from_sample(traces, likes)
+
         for trace, like in zip(traces, likes):
             self.output.parameters(trace, like)
 
         self.analytics.add_traces(traces)
 
-        self.output.log_noisy("Done %d iterations" % self.num_samples)
+        logs.overview(f"Done {self.num_samples} iterations")
 
     def worker(self):
         while not self.is_converged():
@@ -115,7 +117,7 @@ class PymcSampler(ParallelSampler):
             return True
         elif self.num_samples > 0 and self.pool is not None and \
             self.Rconverge is not None:
-            R = self.analytics.gelman_rubin(quiet=self.pipeline.quiet)
+            R = self.analytics.gelman_rubin()
             R1 = abs(R - 1)
             return np.all(R1 <= self.Rconverge)
         else:

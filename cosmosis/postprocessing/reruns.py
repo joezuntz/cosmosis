@@ -92,7 +92,6 @@ class Rerunner(PostProcessorElement):
 		likes = params_ini.get('pipeline', 'likelihoods', fallback='')
 		params_ini.set('pipeline', 'values', values_file.name)
 		params_ini.set('pipeline', 'priors', priors_file.name)
-		params_ini.set('pipeline', 'quiet', 'F')
 		params_ini.set('pipeline', 'timing', 'T')
 		params_ini.set('pipeline', 'debug', 'T')
 		params_ini.set('runtime', 'sampler', 'test')

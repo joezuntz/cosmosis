@@ -3,39 +3,9 @@ from .cosmomc_output import CosmoMCOutput
 from .null_output import NullOutput
 from .fits_output import FitsOutput
 from .in_memory_output import InMemoryOutput
-from .output_base import output_registry
-import logging
+from .astropy_output import AstropyOutput
+from .output_base import output_registry, OutputBase
 
-
-verbosity_levels = {
-	"highest": 50-0,             #50
-	"debug":50-logging.DEBUG,    #40
-	"noisy":50-15,               #35
-	"standard":50-logging.INFO,  #30
-	"gentle":50-logging.WARNING, #20
-	"quiet":50-logging.ERROR,    #10
-	"silent":50-logging.FATAL,   #-1
-}
-
-
-def set_verbosity(verb):
-	try:
-		verb = int(verb)
-	except ValueError:
-		pass
-	if not isinstance(verb, int):
-		try:
-			verb = verbosity_levels[verb]
-		except KeyError:
-			valid_levels = ', '.join(list(verbosity_levels.keys()))
-			message = """Error specifiying verbosity.
-				You put: '{0}'.
-				We want either an integer 0 (silent) - 50 (everything) 
-				or one of: {1}""".format(verb, valid_levels)
-			raise ValueError(message)
-	level = 50 - verb
-	logging.getLogger().setLevel(level)
-	logging.debug("CosmoSIS verbosity set to %d"%(verb))
 
 def output_from_options(options, resume=False):
 	# figure out the type of output required
@@ -52,8 +22,6 @@ I know about these format names:
 
 	output_class = output_registry[format]
 
-	verb = options.get("verbosity", "standard")
-	set_verbosity(verb)
 	return output_class.from_options(options,resume)
 
 def input_from_options(options):

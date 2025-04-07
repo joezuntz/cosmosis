@@ -24,3 +24,4 @@ from .dynesty.dynesty_sampler import DynestySampler
 from .zeus.zeus_sampler import ZeusSampler
 from .poco.poco_sampler import PocoSampler
 from .emugen.emugen_sampler import EmugenSampler
+from .nautilus.nautilus_sampler import NautilusSampler

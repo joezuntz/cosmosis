@@ -1,4 +1,5 @@
 from .. import ParallelSampler
+from ...runtime import logs
 import numpy as np
 
 
@@ -44,13 +45,13 @@ class GridmaxSampler(ParallelSampler):
         bounds = self.bounds[d]
         samples = np.linspace(bounds[0], bounds[1], self.nsteps)
 
-        self.output.log_noisy("Minimizing in %s"%self.pipeline.varied_params[d].name)
+        logs.overview("Minimizing in %s"%self.pipeline.varied_params[d].name)
 
         #Fill in the sample points for the current
         #dimension in the samples
         for (p,s) in zip(normed_points,samples):
             p[d] = s
-        # print 'normed points', normed_points
+
         #Denormalize the points to get the physical parameters
         points = [self.pipeline.denormalize_vector(p) for p in normed_points]
 
@@ -63,6 +64,7 @@ class GridmaxSampler(ParallelSampler):
         #Log the results for posterity
         for p, (pr, po, e) in zip(points, results):
             self.output.parameters(p, e, pr, po)
+            self.distribution_hints.set_peak(p, po)
 
         #And now update our information.
         #We need to find the two points either side
@@ -101,7 +103,9 @@ class GridmaxSampler(ParallelSampler):
             self.previous_maxlike = self.maxlike
             self.maxlike = results[best][0]
 
-        self.output.log_noisy("New best fit L = %lf at %s = %le"%(posteriors.max(), self.pipeline.varied_params[d].name,points[best][d]))
+        logs.overview(f"New best fit L = {posteriors.max()} at {self.pipeline.varied_params[d].name} = {points[best][d]}")
+
+        
 
         #and go on to the next dimension
         self.dimension = (d+1)%self.ndim

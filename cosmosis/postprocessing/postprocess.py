@@ -61,8 +61,7 @@ def multiplicative_blinding(postprocessors, seed):
 
 class MetropolisHastingsProcessor(PostProcessor):
 	elements=[
-		plots.MetropolisHastingsPlots1D,
-		plots.MetropolisHastingsPlots2D,
+		plots.MetropolisHastingsPlots,
 		plots.TracePlots,
 		statistics.MetropolisHastingsStatistics,
 		statistics.MetropolisHastingsCovariance,
@@ -95,7 +94,7 @@ class MetropolisHastingsProcessor(PostProcessor):
 
 
 class PocoProcessor(MetropolisHastingsProcessor):
-	sampler = "poco"
+	sampler = "pocomc"
 	def reduced_col(self, name, stacked=True):
 		# PocoMC has the burn-in removed already,
 		# so there is nothing to remove here.
@@ -144,8 +143,7 @@ class PymcProcessor(MetropolisHastingsProcessor):
 class MetropolisProcessor(MetropolisHastingsProcessor):
 	sampler="metropolis"
 	elements=[
-		plots.MetropolisHastingsPlots1D,
-		plots.MetropolisHastingsPlots2D,
+		plots.MetropolisHastingsPlots,
 		statistics.MetropolisHastingsStatistics,
 		statistics.MetropolisHastingsCovariance,
 		statistics.DunkleyTest,
@@ -157,8 +155,7 @@ class MetropolisProcessor(MetropolisHastingsProcessor):
 class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 	sampler="weighted_metropolis"
 	elements=[
-		plots.WeightedMetropolisPlots1D,
-		plots.WeightedMetropolisPlots2D,
+		plots.WeightedMetropolisPlots,
 		plots.TracePlots,
 		statistics.WeightedMetropolisStatistics,
 		statistics.WeightedMetropolisHastingsCovariance,
@@ -209,8 +206,7 @@ class WeightedMetropolisProcessor(MetropolisHastingsProcessor):
 class ImportanceProcessor(WeightedMetropolisProcessor):
 	sampler="importance"
 	elements=[
-		plots.WeightedMetropolisPlots1D,
-		plots.WeightedMetropolisPlots2D,
+		plots.WeightedMetropolisPlots,
 		statistics.WeightedMetropolisStatistics,
 		# statistics.DunkleyTest,
 		statistics.Citations,		
@@ -243,8 +239,7 @@ class TestProcessor(PostProcessor):
 
 class MultinestProcessor(WeightedMetropolisProcessor):
 	elements = [
-		plots.MultinestPlots1D, 
-		plots.MultinestPlots2D,
+		plots.MultinestPlots,
 		plots.TracePlots,
 		statistics.MultinestStatistics,
 		statistics.MultinestCovariance,
@@ -284,8 +279,7 @@ class MultinestProcessor(WeightedMetropolisProcessor):
 
 class PolyChordProcessor(MultinestProcessor):
     elements = [
-            plots.PolychordPlots1D, 
-            plots.PolychordPlots2D,
+            plots.PolychordPlots,
             plots.TracePlots,
             statistics.PolychordStatistics,
             statistics.PolychordCovariance,
@@ -295,8 +289,7 @@ class PolyChordProcessor(MultinestProcessor):
 
 class DynestyProcessor(MultinestProcessor):
 	elements = [
-			plots.PolychordPlots1D, 
-			plots.PolychordPlots2D,
+			plots.PolychordPlots,
 			plots.TracePlots,
 			statistics.PolychordStatistics,
 			statistics.PolychordCovariance,
@@ -309,20 +302,27 @@ class DynestyProcessor(MultinestProcessor):
 			return self._weight_col
 		w = self.get_col("log_weight")
 		w = np.exp(w - w.max())
-		self._weight_col = w / w.sum()
+		# w = w[w>0]
+		self._good_index = w > 0
+		self._weight_col = (w / w.sum())[self._good_index]
 		return self._weight_col
 
 	def reduced_col(self, name, stacked=True):
 		col = self.get_col(name)
-		return col
+		self.weight_col()
+		x = col[self._good_index]
+		return x
 
+class NautilusProcess(DynestyProcessor):
+	sampler = "nautilus"
+
+		
 
 
 class PMCPostProcessor(WeightedMetropolisProcessor):
 	sampler="pmc"
 	elements = [
-		plots.WeightedMetropolisPlots1D,
-		plots.WeightedMetropolisPlots2D,
+		plots.WeightedMetropolisPlots,
 		statistics.WeightedMetropolisStatistics,
 		#statistics.WeightedMetropolisHastingsCovariance,
 		#statistics.DunkleyTest,
@@ -386,3 +386,19 @@ class StarProcessor(PostProcessor):
 	]
 
 
+class AprioriProcessor(PostProcessor):
+	sampler='apriori'
+	elements=[
+		plots.AprioriPlots1D,
+		plots.AprioriPlots2D,
+	]
+	def reduced_col(self, name, stacked=True):
+		cols = self.get_col(name, stacked=False)
+		likes = self.get_col("post", stacked=False)
+		cols = [col[np.isfinite(like)] for col, like in zip(cols, likes)]
+
+		if stacked:
+			return np.concatenate(cols)
+		else:
+			return cols
+	

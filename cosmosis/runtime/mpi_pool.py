@@ -15,14 +15,15 @@ def _error_function(task):
 
 
 class MPIPool(object):
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, comm=None):
         try:
             from mpi4py import MPI
             self.MPI = MPI
         except ImportError:
             raise RuntimeError("MPI environment not found!")
-
-        self.comm = MPI.COMM_WORLD
+        if comm is None:
+            comm = self.MPI.COMM_WORLD
+        self.comm = comm
         self.rank = self.comm.Get_rank()
         self.size = self.comm.Get_size()
         self.debug = debug
@@ -113,6 +114,9 @@ class MPIPool(object):
     def recv(self, source=0, tag=0):
         return self.comm.recv(source, tag)
 
+    def allreduce(self, data):
+        return self.comm.allreduce(data)
+
     def close(self):
         if self.is_master():
             for i in range(1, self.size):
@@ -123,3 +127,39 @@ class MPIPool(object):
 
     def __exit__(self, *args):
         self.close()
+
+class MPILogFile:
+    def __init__(self, filename, pool=None):
+        if hasattr(pool, "comm"):
+            self.comm = pool.comm
+        elif pool is None:
+            self.comm = None
+        else:
+            raise ValueError("Failure logging from multiple processes does not yet work using multiprocessing with --smp, only MPI using --mpi")
+
+        self.filename = filename
+        if self.comm is None:
+            self.file = open(filename, "w")
+        else:
+            from mpi4py import MPI
+            self.MPI = MPI
+            self.file = MPI.File.Open(self.comm, filename, MPI.MODE_WRONLY | MPI.MODE_CREATE)
+
+    def write(self, message):
+        if self.comm is None:
+            self.file.write(message)
+        else:
+            message = message.encode("utf-8")
+            self.file.Write_shared(message)
+
+    def __del__(self):
+        if self.file is not None:
+            self.close()
+
+    def close(self):
+        if self.comm is None:
+            self.file.close()
+        else:
+            self.file.Close()
+        self.file = None
+

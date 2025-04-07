@@ -1,17 +1,21 @@
+from ...runtime import logs
 from .. import ParallelSampler
 import numpy as np
 import sys
 
 
 def log_probability_function(p):
-    return pipeline.posterior(p)[0]
+    results = pipeline.run_results(p)
+    # also save the prior because we want the posterior which dynesty does not report
+    blob = np.concatenate([[results.prior], results.extra])
+    return results.like, blob
 
 def prior_transform(p):
     return pipeline.denormalize_vector_from_prior(p)
 
 class DynestySampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [('log_weight', float), ("like", float)]
+    sampler_outputs = [('log_weight', float), ("prior", float), ("post", float)]
 
     def config(self):
         global pipeline
@@ -30,15 +34,8 @@ class DynestySampler(ParallelSampler):
             self.parallel_prior = self.read_ini("parallel_prior", bool, True)
             self.max_call = self.read_ini("max_call", int, sys.maxsize)
             self.dlogz = self.read_ini("dlogz", float, 0.01)
-            self.print_progress = self.read_ini("print_progress", bool, True)
-
-            # if self.mode=='dynamic':
-            #     raise ValueError("Dynesty mode 'dynamic' not yet implemented (sorry)")
-
-            for sec,name in pipeline.extra_saves:
-                col = "{}--{}".format(sec,name)
-                print("WARNING: DYNESTY DOES NOT SUPPORT DERIVED PARAMS - NOT SAVING {}".format(col))
-                self.output.del_column(col)
+            print_progress_default = logs.is_enabled_for(logs.logging.INFO)
+            self.print_progress = self.read_ini("print_progress", bool, print_progress_default)
 
         self.converged = False
 
@@ -61,7 +58,8 @@ class DynestySampler(ParallelSampler):
                 update_interval = self.update_interval,
                 first_update = {'min_ncall':self.min_ncall, 'min_eff':self.min_eff},
                 queue_size = self.queue_size,
-                pool = self.pool
+                pool = self.pool,
+                blob=True
                 )
 
             sampler.run_nested(dlogz=self.dlogz)
@@ -75,21 +73,26 @@ class DynestySampler(ParallelSampler):
                 sample = self.sample,
                 # update_interval = self.update_interval,
                 queue_size = self.queue_size,
-                pool = self.pool
+                pool = self.pool,
+                blob=True
                 )
             sampler.run_nested(dlogz_init=self.dlogz)
 
         results = sampler.results
         results.summary()
 
-        for sample, logwt, logl in zip(results['samples'],results['logwt'], results['logl']):
-            self.output.parameters(sample, logwt, logl)
+        posts = results['blob'][:, 0] + results['logl']
+        self.distribution_hints.set_from_sample(results['samples'], posts, log_weights=results['logwt'])
+
+        for sample, logwt, logl, derived in zip(results['samples'],results['logwt'], results['logl'], results['blob']):
+            prior = derived[0]
+            post = prior + logl
+            self.output.parameters(sample, derived[1:], logwt, prior, post)
 
         self.output.final("efficiency", results['eff'])
         self.output.final("nsample", len(results['samples']))
         self.output.final("log_z", results['logz'][-1])
         self.output.final("log_z_error", results['logzerr'][-1])
-
         self.converged = True
 
 

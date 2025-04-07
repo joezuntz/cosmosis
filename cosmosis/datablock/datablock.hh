@@ -28,11 +28,9 @@
 // controlled by the DataBlock; it provides the user with a copy of
 // the data, copied to a memory location of the user's
 // specification. For any array obtained from the DataBlock, the C
-// user must deallocate the array when he is done with it. The
+// user must deallocate the array when done with it. The
 // deallocation does not need to be done for arrays that are on the
 // stack, into which DataBlock copies the data.
-//
-//  TODO: Add support for 2-dimensional arrays of the numeric types.
 //
 //----------------------------------------------------------------------
 

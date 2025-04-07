@@ -1,0 +1,4 @@
+#!/usr/bin/env python3
+import cosmosis.campaign
+args = cosmosis.campaign.parser.parse_args()
+cosmosis.campaign.main(args)

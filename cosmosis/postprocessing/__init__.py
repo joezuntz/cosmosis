@@ -1,4 +1,5 @@
 from .inputs import read_input
+from .main import run_cosmosis_postprocess
 from .postprocess import (
     postprocessor_for_sampler,
     MetropolisHastingsProcessor,
@@ -22,18 +23,12 @@ from .plots import (
     GridPlots1D,
     GridPlots2D,
     SnakePlots2D,
-    MetropolisHastingsPlots1D,
-    MetropolisHastingsPlots2D,
+    MetropolisHastingsPlots,
     TestPlots,
-    WeightedPlots1D,
-    WeightedPlots2D,
-    MultinestPlots1D,
-    MultinestPlots2D,
-    PolychordPlots1D,
-    PolychordPlots2D,
-    WeightedMetropolisPlots1D,
-    WeightedMetropolisPlots2D,
-    TrianglePlot,
+    WeightedPlots,
+    MultinestPlots,
+    PolychordPlots,
+    WeightedMetropolisPlots,
     MCMCColorScatterPlot,
     WeightedMCMCColorScatterPlot,
     MultinestColorScatterPlot,
@@ -42,5 +37,15 @@ from .plots import (
     CovarianceMatrixEllipse,
     StarPlots,
     Tweaks,
+    # These are deprecated:
+    MetropolisHastingsPlots1D,
+    WeightedMetropolisPlots1D,
+    MultinestPlots1D,
+    PolychordPlots1D,
+    MetropolisHastingsPlots2D,
+    WeightedMetropolisPlots2D,
+    MultinestPlots2D,
+    PolychordPlots2D,
+
 )
 from .reruns import BestFitRerunner, ini_from_header

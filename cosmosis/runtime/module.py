@@ -1,14 +1,11 @@
 #coding: utf-8
-
-u"""Definition of :class:`Module`."""
-
-
 import os
-import ctypes
-import sys
-import numpy as np
 import abc
-from cosmosis.datablock import option_section, DataBlock, SectionOptions
+import sys
+import ctypes
+from ..datablock import option_section, DataBlock, SectionOptions
+from ..utils import underline
+
 
 MODULE_TYPE_EXECUTE_SIMPLE = "execute"
 MODULE_TYPE_EXECUTE_CONFIG = "execute_config"
@@ -185,7 +182,7 @@ class Module(object):
                 print(msg)
 
 
-    def setup_functions(self, config, quiet=True):
+    def setup_functions(self, config):
         u"""Call the /Module/ constructor.
 
         This method also pulls in the `execute_function` from the linked
@@ -197,13 +194,13 @@ class Module(object):
         """
         # We need to keep a reference to the full
         # config object for the access check report
+        from . import logs
         config_orig = config
         if not self.is_python:
             config = config._ptr
 
         if self.setup_function:
-            if not quiet:
-                print('-- Setting up module %s --' % (self.name))
+            logs.overview(underline(f'\nSetting up module {self.name}'))
             self.data = self.setup_function(config)
             self.access_check_report(config_orig)
         else:
@@ -222,7 +219,7 @@ class Module(object):
             raise ValueError("Could not find a function 'execute' in module '"
                                  +  self.name + "'")
 
-    def setup(self, config, quiet=True):
+    def setup(self, config):
         u"""Call the /Module/ after copying config information constructor.
         
         This module is split from the main workhorse method  setup_functions
@@ -281,25 +278,23 @@ class Module(object):
 
         """
 
-        if filepath.endswith('so') or filepath.endswith('dylib'):
+        if not os.path.exists(filepath):
+            raise SetupError(f"You specified a path {filepath} for a module. "
+                             "This file does not exist.")
+
+        elif filepath.endswith('so') or filepath.endswith('dylib'):
             language = MODULE_LANG_DYLIB
             try:
                 library = ctypes.cdll.LoadLibrary(filepath)
             except OSError as error:
-                exists = os.path.exists(filepath)
-                if exists:
-                    raise SetupError("You specified a path %s for a module. "
-                                     "File exists, but could not be opened. "
-                                     "Error was %s" % (filepath, error))
-                else:
-                    raise SetupError("You specified a path %s for a module. "
-                                     "File does not exist.  Error was %s" %
-                                     (filepath, error))
+                raise SetupError(f"You specified a path {filepath} for a module. "
+                                 f"File exists, but could not be opened. "
+                                 f"Error was {error}")
         elif filepath.endswith(".jl"):
             from . import julia_modules
             library = julia_modules.JuliaModule(filepath)
             language = MODULE_LANG_JULIA
-        else:
+        elif filepath.endswith(".py"):
             language = MODULE_LANG_PYTHON
             dirname, filename = os.path.split(filepath)
             # allows .pyc and .py modules to be used
@@ -313,6 +308,12 @@ class Module(object):
                                  "was unable to load it.  Error was %s" %
                                  (filepath, error))
             sys.path.pop(0)
+        else:
+            raise SetupError(f"You specified a path {filepath} for a module. "
+                             "I do not know what kind of module this is "
+                             "because the suffix is not .so, .dylib, .jl, or .py"
+                             )
+
 
         return library, language
 
@@ -359,7 +360,7 @@ class Module(object):
 
         """
         if root_directory is None:
-            root_directory = os.environ.get("COSMOSIS_SRC_DIR", ".")
+            root_directory = os.getcwd()
 
         filename = cls.find_module_file(root_directory,
                                         options.get(module_name, "file"))

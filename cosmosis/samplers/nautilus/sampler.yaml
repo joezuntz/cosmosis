@@ -1,0 +1,41 @@
+name: "nautilus"
+version: "0.7.0"
+parallel: parallel
+purpose: "Neural Network-Boosted Importance Nested Sampling"
+url: "https://github.com/johannesulf/nautilus"
+attribution: ["Johannes U. Lange"]
+cite:
+    - "https://arxiv.org/abs/2306.16923"
+
+explanation: >
+    Nautilus is an MIT-licensed pure-Python package for Bayesian posterior and
+    evidence estimation. It utilizes importance sampling and efficient space
+    exploration using neural networks. Compared to traditional MCMC and Nested
+    Sampling codes, it often needs fewer likelihood calls and produces much
+    larger posterior samples. Additionally, nautilus is highly accurate and
+    can produce Bayesian evidence estimates with percent precision.
+
+
+installation: >
+    pip install nautilus-sampler
+    conda install -c conda-forge nautilus-sampler
+    
+
+# List of configuration options for this sampler
+params:
+    n_live: (integer; default=2000) number of live points
+    n_update: (integer; default=n_live) number of additions to the live set before a new bound is created
+    enlarge_per_dim: (float; default=1.1) factor by which ellipsoidal bounds are increased in each dimension
+    n_points_min: (integer; default=50+n_dim) minimum number of points for constructing a bounding ellipsoid
+    split_threshold: (float; default=100) volume threshold for splitting bounding ellipsoids
+    n_networks: (integer; default=4) number of neural networks in each network ensemble
+    n_batch: (integer; default=100) number of likelihood evaluations that are performed at each step
+    seed: (integer, default=-1) random seed, no fixed seed is used if negative
+    filepath: (string; default='None') file used for checkpointing, must have .hdf5 ending
+    resume: (bool; default=False) if True, resume from previous run stored in `filepath`
+    f_live: (float; default=0.01) live set evidence fraction when exploration phase terminates
+    n_shell: (int; default=n_batch) minimum number of points in each shell
+    n_eff: (float; default=10000.0) minimum effective sample size
+    n_like_max: (int; default=-1) maximum number of likelihood calls, negative values are interpreted as infinity
+    discard_exploration: (bool; default=False) whether to discard points drawn in the exploration phase
+    verbose: (bool; default=False) If true, print information about sampler progress

@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 from cosmosis.output.text_output import TextColumnOutput
 from .. import ParallelSampler
-
+from ...runtime import logs
 
 def task(p):
     i,p = p
@@ -26,9 +26,16 @@ class ListSampler(ParallelSampler):
         self.converged = False
         self.filename = self.read_ini("filename", str)
         self.save_name = self.read_ini("save", str, "")
-        self.burn = self.read_ini("burn", int, 0)
+        # The burn parameter can be an int or a float
+        # so we read it as a string and then convert it
+        burn = self.read_ini("burn", str, "0")
+        try:
+            self.burn = int(burn)
+        except ValueError:
+            self.burn = float(burn)
         self.thin = self.read_ini("thin", int, 1)
         limits = self.read_ini("limits", bool, False)
+        self.chunk_size = self.read_ini("chunk_size", int, 100)
 
         #overwrite the parameter limits
         if not limits:
@@ -39,8 +46,13 @@ class ListSampler(ParallelSampler):
                 if self.output is not None:
                     self.output.add_column(str(p), float)
             if self.output is not None:
-                for p in self.pipeline.extra_saves:
-                    self.output.add_column('{}--{}'.format(*p), float)
+                for section,name in self.pipeline.extra_saves:
+                    if ('#' in name):
+                        n,l = name.split('#')
+                        for i in range(int(l)):
+                            self.output.add_column('{}--{}_{}'.format(section,n,i), float)
+                    else:
+                        self.output.add_column('%s--%s'%(section,name), float)
                 for p,ptype in self.sampler_outputs:
                     self.output.add_column(p, ptype)
 
@@ -51,6 +63,12 @@ class ListSampler(ParallelSampler):
         file_options = {"filename":self.filename}
         column_names, samples, _, _, _ = TextColumnOutput.load_from_options(file_options)
         samples = samples[0]
+        if (self.burn != 0) or (self.thin != 1):
+            if isinstance(self.burn, float):
+                burn = int(self.burn*len(samples))
+            else:
+                burn = self.burn
+            samples = samples[burn::self.thin]
         # find where in the parameter vector of the pipeline
         # each of the table parameters can be found
         replaced_params = []
@@ -59,7 +77,7 @@ class ListSampler(ParallelSampler):
             try:
                 section,name = column_name.split('--')
             except ValueError:
-                print("Not including column %s as not a cosmosis name" % column_name)
+                logs.important("Not including column %s as not a cosmosis name" % column_name)
                 continue
             section = section.lower()
             name = name.lower()
@@ -69,7 +87,7 @@ class ListSampler(ParallelSampler):
                 j = self.pipeline.parameters.index((section,name))
                 replaced_params.append((i,j))
             except ValueError:
-                print("Not including column %s as not in values file" % column_name)
+                logs.important("Not including column %s as not in values file" % column_name)
 
         #Create a collection of sample vectors at the start position.
         #This has to be a list, not an array, as it can contain integer parameters,
@@ -88,28 +106,37 @@ class ListSampler(ParallelSampler):
         sample_index = list(range(len(sample_vectors)))
         jobs = list(zip(sample_index, sample_vectors))
 
-        #Run all the parameters
-        #This only outputs them all at the end
-        #which is a bit problematic, though you 
-        #can't use MPI and retain the output ordering.
-        #Have a few options depending on whether
-        #you care about this we should think about
-        #(also true for grid sampler).
-        if self.pool:
-            results = self.pool.map(task, jobs)
-        else:
-            results = list(map(task, jobs))
+        nsample = len(sample_index)
+        nchunk = nsample//self.chunk_size
+        if nsample%self.chunk_size!=0:
+            nchunk += 1
+        
+        # Run on a chunk of parameters
+        for i in range(nchunk):
+            start = i*self.chunk_size
+            end = (i+1)*self.chunk_size
+            if end>nsample:
+                end = nsample
+            chunk = jobs[start:end]
 
-        #Save the results of the sampling
-        #We now need to abuse the output code a little.
-        for sample, result  in zip(sample_vectors, results):
-            #Optionally save all the results calculated by each
-            #pipeline run to files
-            (prob, (prior,extra)) = result
-            #always save the usual text output
-            self.output.parameters(sample, extra, prior, prob)
-        #We only ever run this once, though that could 
-        #change if we decide to split up the runs
+            if self.pool:
+                results = self.pool.map(task, chunk)
+            else:
+                results = list(map(task, chunk))
+
+
+            # Save the results of the sampling
+            # We now need to abuse the output code a little.
+            for sample, result  in zip(sample_vectors[start:end], results):
+                # Optionally save all the results calculated by each
+                # pipeline run to files
+                (prob, (prior,extra)) = result
+                # always save the usual text output
+                self.output.parameters(sample, extra, prior, prob)
+                self.distribution_hints.set_peak(sample, prob)
+
+        # We only ever run this once, though that could 
+        # change if we decide to split up the runs
         self.converged = True
 
     def is_converged(self):

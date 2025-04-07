@@ -12,9 +12,8 @@ class Pool(object):
         return self.master_pid == os.getpid()
 
     def map(self, function, args):
-        pool = multiprocessing.Pool(self.size)
-        results = pool.map(function, args)
-        pool.close()
+        with multiprocessing.Pool(self.size) as pool:
+            results = pool.map(function, args)
         return results
 
     def close(self):
@@ -26,6 +25,8 @@ class Pool(object):
     def gather(self, data):
         return self.data
 
+    def allreduce(self, data):
+        return self.data
 
     def __enter__(self):
         return self

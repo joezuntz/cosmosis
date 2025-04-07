@@ -33,6 +33,6 @@ void cosmosis_segfault_handler(int sig) {
 
 
 
-void enable_cosmosis_segfault_handler(){
+void enable_cosmosis_segfault_handler(void){
   default_handler = signal(SIGSEGV, cosmosis_segfault_handler);   // install our handler
 }

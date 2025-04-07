@@ -7,8 +7,8 @@ u"""Definition of the :class:`Inifile` class."""
 import os
 import sys
 import collections
-import warnings
 import configparser
+import io
 
 class CosmosisConfigurationError(configparser.Error):
     u"""Something to throw when there is an error in a .ini file particular to Cosmosis.
@@ -20,7 +20,7 @@ class CosmosisConfigurationError(configparser.Error):
     pass
 
 class IncludingConfigParser(configparser.ConfigParser):
-    u"""Extension of built-in python :class:`ConfigParser` to \%include other files.
+    u"""Extension of built-in python :class:`ConfigParser` to %include other files.
 
     Use the line: %include filename.ini This is assumed to end a section,
     and the last section in the included file is assumed to end as well
@@ -31,123 +31,52 @@ class IncludingConfigParser(configparser.ConfigParser):
     comments, but still delineate sections).
     """
 
-    def __init__(self, defaults=None, print_include_messages=True):
+    def __init__(self, defaults=None, print_include_messages=True, no_expand_vars=False):
+        self.no_expand_vars = no_expand_vars
         configparser.ConfigParser.__init__(self,
                                    defaults=defaults,
                                    dict_type=collections.OrderedDict,
-                                   strict=False)
+                                   strict=False,
+                                   inline_comment_prefixes=(';', '#'),
+                                   )
         self.print_include_messages = print_include_messages
 
     def _read(self, fp, fpname):
-        u"""Parse a sectioned setup file.
-
-        The sections in setup file contains a title line at the top,
-        indicated by a name in square brackets (`[]'), plus key/value
-        options lines, indicated by `name: value' format lines.
-        Continuations are represented by an embedded newline then
-        leading whitespace.  Blank lines, lines beginning with a '#',
-        and just about everything else are ignored.
-
         """
-        cursect = None                        # None, or a dictionary
-        optname = None
-        lineno = 0
-        e = None                              # None, or an exception
-        while True:
-            line = fp.readline()
-            if not line:
-                break
-            lineno = lineno + 1
-            # comment or blank line?
-            if line.strip() == '' or line[0] in '#;':
-                continue
-            if line.split(None, 1)[0].lower() == 'rem' and line[0] in "rR":
-                # no leading whitespace
-                continue
-            # continuation line?
-            if line[0].isspace() and cursect is not None and optname:
-                value = line.strip()
-                if value:
-                    cursect[optname].append(value)
-            # a section header or option header?
+        This overrides the parent method to allow %include directives
+        to import additional files.
+
+        To do so we first read the file into a StringIO object, dealing
+        with the %include directives as we go, then pass that to the
+        parent method.
+        """
+        s = io.StringIO()
+        for line in fp:
+            # check for include directives
+            if not self.no_expand_vars:
+                line = os.path.expandvars(line)
+
+            if line.lower().startswith('%include'):
+                _, filename = line.split()
+                filename = filename.strip('"').strip("'")
+
+                if self.print_include_messages:
+                    print(f"Reading included ini file: {filename}")
+                if not os.path.exists(filename):
+                    raise ValueError(f"Tried to include non-existent file {filename}")
+
+                # read the contents of the ini file into a new instance
+                # of this class, then we will write it out
+                sub_ini = self.__class__(filename)
+
+                # write the whole other file content to our StringIO
+                sub_ini.write(s)
             else:
-                #JAZ add environment variable expansion
-                if not getattr(self, 'no_expand_vars', False):
-                    line = os.path.expandvars(line)
-                # is it a section header?
-                mo = self.SECTCRE.match(line)
-                if mo:
-                    sectname = mo.group('header')
-                    if sectname in self._sections:
-                        cursect = self._sections[sectname]
-                    elif sectname == configparser.DEFAULTSECT:
-                        cursect = self._defaults
-                    else:
-                        cursect = self._dict()
-                        self._sections[sectname] = cursect
-                    # So sections can't start with a continuation line
-                    optname = None
-                # no section header in the file?
-                elif line.lower().startswith('%include'):
-                    if  not  getattr (self, 'no_expand_includes', False):
-                        include_statement, filename = line.split()
-                        filename = filename.strip('"').strip("'")
-                        if self.print_include_messages:
-                            sys.stdout.write("Reading included ini file: `"
-                                                               + filename + "'\n")
-                        if not os.path.exists(filename):
-                            # TODO: remove direct sys.stderr writes
-                            raise ValueError("Tried to include non-existent "
-                                          "ini file: `" + filename + "'\n")
-                        self.read(filename)
-                    cursect = None
-                elif cursect is None:
-                    raise configparser.MissingSectionHeaderError(fpname,
-                                                                 lineno,
-                                                                 line)
-                # an option line?
-                else:
-                    mo = self._optcre.match(line)
-                    if mo:
-                        optname, vi, optval = mo.group('option', 'vi', 'value')
-                        optname = self.optionxform(optname.rstrip())
-                        # This check is fine because the OPTCRE cannot
-                        # match if it would set optval to None
-                        if optval is not None:
-                            if vi in ('=', ':') and ';' in optval:
-                                # ';' is a comment delimiter only if it
-                                # follows a spacing character
-                                pos = optval.find(';')
-                                if pos != -1 and optval[pos-1].isspace():
-                                    optval = optval[:pos]
-                            optval = optval.strip()
-                            # allow empty values
-                            if optval == '""':
-                                optval = ''
-                            cursect[optname] = [optval]
-                        else:
-                            # valueless option handling
-                            cursect[optname] = optval
-                    else:
-                        # a non-fatal parsing error occurred.  set up the
-                        # exception but keep going. the exception will be
-                        # raised at the end of the file and will contain
-                        # a list of all bogus lines
-                        if not e:
-                            e = configparser.ParsingError(fpname)
-                        e.append(lineno, repr(line))
-        # if any parsing errors occurred, raise an exception
-        if e:
-            raise e
+                s.write(line)
 
-        # join the multi-line values collected while reading
-        all_sections = [self._defaults]
-        all_sections.extend(list(self._sections.values()))
-        for options in all_sections:
-            for name, val in list(options.items()):
-                if isinstance(val, list):
-                    options[name] = '\n'.join(val)
-
+        # rewind the stuff we have read
+        s.seek(0)
+        return super()._read(s, fpname)
 
 
 
@@ -167,11 +96,11 @@ class Inifile(IncludingConfigParser):
 
     """
 
-    def __init__(self, filename, defaults=None, override=None, print_include_messages=True):
+    def __init__(self, filename, defaults=None, override=None, print_include_messages=True, no_expand_vars=False):
         u"""Read in a configuration from `filename`.
 
         The `defaults` will be applied if a parameter is not specified in
-        the file (or \%included descendants), and the `override`s will be
+        the file (or %included descendants), and the `override`s will be
         imposed on the regardless of whether those parameters have
         assigned values or not.
 
@@ -182,7 +111,8 @@ class Inifile(IncludingConfigParser):
 
         IncludingConfigParser.__init__(self,
                                        defaults=defaults,
-                                       print_include_messages=print_include_messages)
+                                       print_include_messages=print_include_messages,
+                                       no_expand_vars=no_expand_vars)
 
         # if we are pased a dict, convert it to an inifile
         if isinstance(filename, dict):
@@ -190,6 +120,16 @@ class Inifile(IncludingConfigParser):
                 self.add_section(section)
                 for key, value in values.items():
                     self.set(section, key, str(value))
+        elif isinstance(filename, Inifile):
+            # This seems to be the only way to preserve the
+            # defaults.
+            # https://stackoverflow.com/questions/23416370/manually-building-a-deep-copy-of-a-configparser-in-python-2-7
+            s = io.StringIO()
+            filename.write(s)
+            s.seek(0)
+            self.read_file(s)
+        elif hasattr(filename, "read"):
+            self.read_file(filename)
         # default read behaviour is to ignore unreadable files which
         # is probably not what we want here
         elif filename is not None:
@@ -207,7 +147,11 @@ class Inifile(IncludingConfigParser):
                         self.add_section(section)
                     self.set(section, name, override[(section, name)])
 
-
+    @classmethod
+    def from_lines(cls, lines, *args, **kwargs):
+        u"""Create an Inifile from a list of lines."""
+        s = io.StringIO("\n".join(lines))
+        return cls(s, *args, **kwargs)
 
     def __iter__(self):
         u"""Iterate over all the parameters.
@@ -271,6 +215,14 @@ class Inifile(IncludingConfigParser):
                 raise CosmosisConfigurationError("CosmoSIS looked for an option called '%s' in the '[%s]' section, but it was not in the ini file"%(option,section))
             else:
                 return fallback
+            
+    def __getitem__(self, key: tuple):
+        section, option = key
+        return self.get(section, option)
+
+    def __setitem__(self, key: tuple, value: str):
+        section, option = key
+        self.set(section, option, str(value))
 
     # these functions override the default parsers to allow for extra formats
     def getint(self, section, option, raw=False, vars=None, fallback=configparser._UNSET):
