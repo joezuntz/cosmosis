@@ -30,7 +30,7 @@ def task(p, return_all=False):
     else:
         # use all the things found in the data_vector section
         for sec, key in block.keys(section="data_vector"):
-            if not key.endwith("_theory"):
+            if not key.endswith("_theory"):
                 continue
             data_vectors.append(r.block[sec, key])
             if return_all:
