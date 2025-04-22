@@ -29,7 +29,7 @@ jobs:
             python-version: 3.7
         include:
           - os: ubuntu-latest
-            INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
+            INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-11 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-11` /usr/local/bin/gfortran
           - os: macos-latest
             # Different versions of homebrew put the gfortran in different
             INSTALL_DEPS: >
