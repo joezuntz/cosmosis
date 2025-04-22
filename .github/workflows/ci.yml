@@ -22,13 +22,13 @@ jobs:
       matrix:
         python-version: [3.7, 3.8, 3.9, "3.10", 3.11, 3.12]
         # macos13 runs on until and macos14 now runs on arm64
-        os: [ubuntu-20.04, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         exclude:
           # Python 3.7 is not available on M1 Mac homebrew
           - os: macos-latest
             python-version: 3.7
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-7 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-7` /usr/local/bin/gfortran
           - os: macos-latest
             # Different versions of homebrew put the gfortran in different
@@ -91,7 +91,7 @@ jobs:
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
-      if: matrix.python-version == '3.9' && matrix.os == 'ubuntu-20.04'
+      if: matrix.python-version == '3.9' && matrix.os == 'ubuntu-latest'
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
