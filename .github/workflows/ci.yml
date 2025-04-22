@@ -20,13 +20,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10", 3.11, 3.12]
+        python-version: [3.9, "3.10", 3.11, 3.12]
         # macos13 runs on until and macos14 now runs on arm64
         os: [ubuntu-latest, macos-latest]
-        exclude:
-          # Python 3.7 is not available on M1 Mac homebrew
-          - os: macos-latest
-            python-version: 3.7
         include:
           - os: ubuntu-latest
             INSTALL_DEPS: sudo apt-get update && sudo apt-get -y install gfortran-11 swig libopenmpi-dev openmpi-bin libopenblas-dev && sudo ln -s `which gfortran-11` /usr/local/bin/gfortran
@@ -68,18 +64,8 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
-        if [[ "${{ matrix.python-version }}" == '3.7' || "${{ matrix.python-version}}" == '3.8' ]]; then
-          pip install "numpy<2"
-        else
-          pip install "numpy>=2"
-        fi
         pip install -vv .
-        pip install --no-binary=mpi4py mpi4py astropy pytest pytest-cov getdist derivative numdifftools
-
-    - name: Install PocoMC
-      if: matrix.python-version != '3.7'
-      run: |
-        pip install pocomc==1.2.6
+        pip install --no-binary=mpi4py mpi4py astropy pytest pytest-cov getdist derivative numdifftools pocomc==1.2.6
 
     - name: Test with pytest
       run: |
