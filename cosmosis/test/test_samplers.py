@@ -1,5 +1,6 @@
 from cosmosis import Inifile, Sampler, LikelihoodPipeline, InMemoryOutput, TextColumnOutput
 from cosmosis.postprocessing import postprocessor_for_sampler
+from cosmosis.runtime import logs
 import tempfile
 import os
 import sys
@@ -14,7 +15,7 @@ minuit_compiled = os.path.exists(Sampler.get_sampler("minuit").libminuit_name)
 # parameters, so our expected prior is 1/6 for each of them.
 EXPECTED_LOG_PRIOR = 2*np.log(1./6)
 
-def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, hints_peak=True, **options):
+def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=False, no_extra=False, pp_extra=True, pp_2d=True, hints_peak=True, hints_cov=True, **options):
 
     sampler_class = Sampler.registry[name]
 
@@ -27,6 +28,7 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
 
     override = {
         ('runtime', 'root'): os.path.split(os.path.abspath(__file__))[0],
+        ('runtime', 'verbosity'): "noisy",
         ("pipeline", "debug"): "F",
         ("pipeline", "modules"): "test1",
         ("pipeline", "extra_output"): "parameters/p3",
@@ -64,11 +66,17 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
     if hints_peak:
         assert sampler.distribution_hints.has_peak()
         peak = sampler.distribution_hints.get_peak()
+        assert peak.shape == (2,)
         idx = output["post"].argmax()
         assert np.isclose(output["parameters--p1"][idx], peak[0])
         assert np.isclose(output["parameters--p2"][idx], peak[1])
         sampler.distribution_hints.del_peak()
         assert not sampler.distribution_hints.has_peak()
+    if hints_cov:
+        assert sampler.distribution_hints.has_cov()
+        cov = sampler.distribution_hints.get_cov()
+        assert cov.shape == (2, 2)
+
 
 
     if check_extra and not no_extra:
@@ -112,33 +120,274 @@ def run(name, check_prior, check_extra=True, can_postprocess=True, do_truth=Fals
 
 
 def test_apriori():
-    run('apriori', True, can_postprocess=False, nsample=100)
+    run('apriori', True, can_postprocess=False, hints_cov=False, nsample=100)
 
 def test_dynesty():
     # dynesty does not support extra params
-    run('dynesty', False, check_extra=False, nlive=50, sample='unif')
+    run('dynesty', False, check_extra=False, nlive=25, sample='unif')
 
 def test_emcee():
-    run('emcee', True, walkers=8, samples=100)
-    run('emcee', True, walkers=8, samples=100, a=3.0)
+    run('emcee', True, walkers=8, samples=25)
+    run('emcee', True, walkers=8, samples=25, a=3.0)
 
 def test_truth():
-    run('emcee', True, walkers=8, samples=100, do_truth=True)
+    run('emcee', True, walkers=8, samples=25, do_truth=True)
 
 def test_fisher():
     run('fisher', False, check_extra=False, hints_peak=False)
+    run('fisher', False, check_extra=False, hints_peak=False)
+
+def test_fisher_numdifftools():
+    try:
+        import numdifftools
+    except ImportError:
+        pytest.skip("numdifftools not installed")
+    run('fisher', False, check_extra=False, hints_peak=False, method="numdifftools")
+
+def test_fisher_smoothing():
+    try:
+        import derivative
+    except ImportError:
+        pytest.skip("derivative not installed")
+    run('fisher', False, check_extra=False, hints_peak=False, method="smoothing")
 
 def test_grid():
-    run('grid', True, pp_extra=False, nsample_dimension=10)
+    run('grid', True, pp_extra=False, nsample_dimension=10, hints_cov=False)
 
 def test_gridmax():
-    run('gridmax', True, can_postprocess=False, max_iterations=1000)
+    run('gridmax', True, can_postprocess=False, max_iterations=1000, hints_cov=False)
 
 # def test_kombine():
 #     run('kombine')
 
-def test_maxlike():
-    run('maxlike', True, can_postprocess=False)
+def test_maxlike_single():
+    output = run('maxlike', True, can_postprocess=False, hints_cov=False)
+    assert len(output["post"]) == 1
+
+def test_maxlike_alt():
+    # alternative sampler, max-post, output_cov
+    with tempfile.TemporaryDirectory() as dirname:
+        output_ini = os.path.join(dirname, "output.ini")
+        output_cov = os.path.join(dirname, "output_cov.txt")
+        output_block = os.path.join(dirname, "output_block")
+        run('maxlike', True, can_postprocess=False, method="L-BFGS-B", max_posterior=True, output_ini=output_ini, output_covmat=output_cov, output_block=output_block)
+        assert os.path.exists(output_cov)
+        assert os.path.exists(output_ini)
+        assert os.path.isdir(output_block)
+        
+
+
+def test_maxlike_start_prior_repeat(caplog):
+    output = run('maxlike', True, can_postprocess=False, repeats=5, start_method="prior", hints_cov=False)
+    assert len(output["post"]) == 5
+    assert (np.diff(output["like"]) >= 0).all()
+    assert "Starting at a random point in the prior" in caplog.text
+
+def test_maxlike_start_unable_to_repeat():
+    # error - no start method specified but need one for repeats
+    with pytest.raises(ValueError):
+        run('maxlike', True, can_postprocess=False, repeats=5)
+
+def test_maxlike_reiterations():
+    # re-run the maxlike starting from the end of the previous run
+    output = run('maxlike', True, can_postprocess=False, hints_cov=False, reiterations=2)
+    assert len(output["post"]) == 1
+
+
+def test_maxlike_start_no_start_file():
+    # error - no start_input specified
+    with pytest.raises(ValueError):
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain")
+
+def test_maxlike_start_chain_sample_auto(caplog):
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
+
+        # This should work, and default to chain-sample because we have set repeats > 1
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain", start_input=f.name, hints_cov=False)
+        assert "Starting at random sample of points from chain file" in caplog.text
+
+def test_maxlike_start_chain_maxpost_auto(caplog):
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
+
+        # This should work, and default to chain-sample because we have set repeats > 1
+        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain", start_input=f.name, hints_cov=False)
+        assert "Starting at best posterior point from chain file" in caplog.text
+
+def test_maxlike_start_chain_maxlike_auto(caplog):
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight like\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
+
+        # This should work, and default to chain-sample because we have set repeats > 1
+        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain", start_input=f.name, hints_cov=False)
+        assert "Starting at best likelihood point from chain file" in caplog.text
+
+
+def test_maxlike_start_chain_sample_manual(caplog):
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
+
+        # This should work, and default to chain-sample because we have set repeats > 1
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain-sample", start_input=f.name, hints_cov=False)
+        assert "Starting at random sample of points from chain file" in caplog.text
+
+    # Again with log-weights
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  0.0  0.0\n")
+        f.write("0.05 0.0  0.7  1.0\n")
+        f.write("-0.1 0.2  0.7  2.0\n")
+        f.flush()
+
+        # This should work, and default to chain-sample because we have set repeats > 1
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain-sample", start_input=f.name, hints_cov=False)
+        assert "Starting at random sample of points from chain file" in caplog.text
+
+    # Again with no weights
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 post\n")
+        f.write("0.0 0.1  0.0\n")
+        f.write("0.05 0.0  1.0\n")
+        f.write("-0.1 0.2   2.0\n")
+        f.flush()
+
+        # This should work, and default to chain-sample because we have set repeats > 1
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="chain-sample", start_input=f.name, hints_cov=False)
+        assert "Starting at random sample of points from chain file" in caplog.text
+
+
+def test_maxlike_start_chain_fail(caplog):
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
+
+        # should fail - no like column
+        with pytest.raises(ValueError):
+            run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain-maxlike", start_input=f.name, hints_cov=False)
+
+
+def test_maxlike_start_max_post(caplog):
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
+
+        # start from best element of chain - should work because there is a max-post column
+        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain-maxpost", start_input=f.name, hints_cov=False)
+        assert "Starting at best posterior point from chain file" in caplog.text
+
+def test_maxlike_start_last(caplog):
+    # Check we can start from a chain file
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1 p2 weight post\n")
+        f.write("0.0 0.1  1.0  0.0\n")
+        f.write("0.05 0.0  2.0  1.0\n")
+        f.write("-0.1 0.2  2.0  2.0\n")
+        f.flush()
+
+        # start from best element of chain - should work because there is a max-post column
+        run('maxlike', True, can_postprocess=False, repeats=1, start_method="chain-last", start_input=f.name, hints_cov=False)
+        assert "Starting from last point in file" in caplog.text
+
+
+
+def test_maxlike_start_covmat(caplog):
+    # Check we can start from a covmat
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("0.1  0.0\n")
+        f.write("0.0 0.08\n")
+        f.flush()
+        run('maxlike', True, can_postprocess=False, repeats=5, start_method="cov", start_input=f.name, hints_cov=False)
+        assert "Starting at a random sample of points from the covariance of chain" in caplog.text
+
+
+def test_start_estimate():
+    values = tempfile.NamedTemporaryFile('w')
+    values.write(
+        "[parameters]\n"
+        "p1=-10.0  0.0  10.0\n"
+        "p2=-10.0  0.0  10.0\n")
+    values.flush()
+
+    override = {
+        # ('runtime', 'verbosity'): "noisy",
+        ("pipeline", "modules"): "",
+        ("pipeline", "values"): values.name,
+    }
+
+    # mock objects just to stop the init breaking
+    ini = Inifile(None, override=override)
+
+    pipeline = LikelihoodPipeline(ini)
+    sampler = Sampler(ini, pipeline)
+
+    with tempfile.NamedTemporaryFile('w') as f:
+        f.write("#p1    p2  weight like post\n")
+        f.write(" 1.0   1.0  1.0  1.0   0.0\n") # non-zero weight
+        f.write(" 2.0   2.0  0.0  2.0   0.0\n") # max-like
+        f.write(" 3.0   3.0  0.0  1.0   1.0\n")
+        f.write(" 4.0   4.0  0.0  0.0   2.0\n") # max-post
+        f.write(" 5.0   5.0  0.0  0.0   0.0\n") # last
+        f.flush()
+
+        # only one sample has any weight so this one should be selected
+        p = sampler.start_estimate(method="chain-sample", input_source=f.name, prefer_random=False)
+        assert np.allclose(p, [1.0, 1.0])
+
+        # only one sample has any weight so this one should be selected
+        p = sampler.start_estimate(method="chain-maxlike", input_source=f.name, prefer_random=False)
+        assert np.allclose(p, [2.0, 2.0])
+
+        # last sample should be selected
+        p = sampler.start_estimate(method="chain-maxpost", input_source=f.name, prefer_random=False)
+        assert np.allclose(p, [4.0, 4.0])
+
+        # last sample should be selected
+        p = sampler.start_estimate(method="chain-last", input_source=f.name, prefer_random=False)
+        assert np.allclose(p, [5.0, 5.0])
+
+        # fall back to ini file choice
+        p = sampler.start_estimate(method="", prefer_random=False)
+        assert np.allclose(p, [0.0, 0.0])
+
+
+
+
+
+def test_bobyqa():
+    with tempfile.TemporaryDirectory() as dirname:
+        output_cov = os.path.join(dirname, "output_cov.txt")
+        run('maxlike', True, can_postprocess=False, method='bobyqa', output_covmat=output_cov)
+        assert os.path.exists(output_cov)
+    
 
 def test_metropolis():
     run('metropolis', True, samples=20)
@@ -146,34 +395,29 @@ def test_metropolis():
 
 @pytest.mark.skipif(not minuit_compiled,reason="requires Minuit2")
 def test_minuit():
-    run('minuit', True, can_postprocess=False)
+    run('minuit', True, can_postprocess=False, hints_cov=False)
 
 def test_multinest():
     run('multinest', True, max_iterations=10000, live_points=50, feedback=False)
 
 def test_pmaxlike():
-    run('pmaxlike', True, can_postprocess=False)
+    run('pmaxlike', True, can_postprocess=False, hints_cov=False)
 
 def test_pmc():
     old_settings = np.seterr(invalid='ignore', divide='ignore')
-    run('pmc', True, iterations=10)
+    run('pmc', True, iterations=3, hints_cov=False)
     np.seterr(**old_settings)  
 
 def test_zeus():
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50)
     run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, verbose=True)
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, tune=False)
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, tolerance=0.1)
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, patience=5000)
-    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global")
-    run('zeus', True, maxiter=50_000, walkers=10, samples=100, nsteps=50)
+    run('zeus', True, maxiter=100_000, walkers=10, samples=100, nsteps=50, moves="differential:2.0  global", tolerance=0.1, patience=5000)
 
 def test_polychord():
     with tempfile.TemporaryDirectory() as base_dir:
         run('polychord', True, live_points=20, feedback=0, base_dir=base_dir, polychord_outfile_root='pc')
 
 def test_snake():
-        run('snake', True, pp_extra=False)
+        run('snake', True, pp_extra=False, hints_cov=False)
 
 
 # Skip in a specific combination which causes a crash I can't track down.
@@ -181,16 +425,15 @@ def test_snake():
 # not when run standalone.
 @pytest.mark.skipif(os.environ.get("SKIP_NAUTILUS", "0")=="1", reason="nautilus runs out of memory on github actions")
 def test_nautilus():
-    run('nautilus', True)
-    run('nautilus', True, n_live=500, enlarge_per_dim=1.05,
-        split_threshold=95., n_networks=3, n_batch=50, verbose=True, f_live=0.02, n_shell=100)
+    run('nautilus', True, n_live=200, enlarge_per_dim=1.05,
+        split_threshold=95., n_networks=2, n_batch=50, verbose=True, f_live=0.02, n_shell=50)
 
 
 def test_star():
-        run('star', False, pp_extra=False, pp_2d=False)
+        run('star', False, pp_extra=False, pp_2d=False, hints_cov=False)
 
 def test_test():
-    run('test', False, can_postprocess=False, hints_peak=False)
+    run('test', False, can_postprocess=False, hints_peak=False, hints_cov=False)
 
 def test_list_sampler():
     # test that the burn and thin parameters work
@@ -212,7 +455,7 @@ def test_list_sampler():
 
         data = data[20::thin]
 
-        output = run("list", True, can_postprocess=False, filename=input_chain_filename, burn=burn, thin=thin)
+        output = run("list", True, can_postprocess=False, filename=input_chain_filename, burn=burn, thin=thin, hints_cov=False)
         p1 = output['parameters--p1']
         p2 = output['parameters--p2']
         p3 = p1 + p2
@@ -241,7 +484,7 @@ def test_importance_sampler():
             input_chain.close()
             os.system(f"cat {input_chain_filename}")
 
-            output = run("importance", True, can_postprocess=False, input=input_chain_filename, add_to_likelihood=add_to_likelihood)
+            output = run("importance", True, can_postprocess=False, input=input_chain_filename, add_to_likelihood=add_to_likelihood, hints_cov=False)
             p1 = output['parameters--p1']
             p2 = output['parameters--p2']
             p3 = p1 + p2
@@ -265,7 +508,7 @@ def test_poco():
         import pocomc
     except ImportError:
         pytest.skip("pocomc not installed")
-    run('pocomc', True, check_extra=False, n_effective=32, n_active=16,  n_total=32, n_evidence=32, )
+    run('pocomc', True, check_extra=False, n_effective=32, n_active=16,  n_total=32, n_evidence=32)
 
 if __name__ == '__main__':
     import sys

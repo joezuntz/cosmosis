@@ -93,7 +93,7 @@ class PymcSampler(ParallelSampler):
                            for param in self.pipeline.varied_params]).T
         likes = -0.5 * self.mcmc.trace('deviance')[:]
 
-        self.distribution_hints.set_peak_from_sample(traces, likes)
+        self.distribution_hints.set_from_sample(traces, likes)
 
         for trace, like in zip(traces, likes):
             self.output.parameters(trace, like)

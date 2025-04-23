@@ -131,7 +131,7 @@ class EmceeSampler(ParallelSampler):
 
 
     def output_samples(self, pos, prob, extra_info):
-        self.distribution_hints.set_peak_from_sample(pos, prob)
+        self.distribution_hints.set_from_sample(pos, prob)
         for params, post, extra in zip(pos,prob,extra_info):
             prior, extra = extra      
             self.output.parameters(params, extra, prior, post)

@@ -128,6 +128,8 @@ class Inifile(IncludingConfigParser):
             filename.write(s)
             s.seek(0)
             self.read_file(s)
+        elif hasattr(filename, "read"):
+            self.read_file(filename)
         # default read behaviour is to ignore unreadable files which
         # is probably not what we want here
         elif filename is not None:
@@ -145,7 +147,11 @@ class Inifile(IncludingConfigParser):
                         self.add_section(section)
                     self.set(section, name, override[(section, name)])
 
-
+    @classmethod
+    def from_lines(cls, lines, *args, **kwargs):
+        u"""Create an Inifile from a list of lines."""
+        s = io.StringIO("\n".join(lines))
+        return cls(s, *args, **kwargs)
 
     def __iter__(self):
         u"""Iterate over all the parameters.

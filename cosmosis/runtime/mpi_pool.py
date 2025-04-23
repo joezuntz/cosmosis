@@ -114,6 +114,9 @@ class MPIPool(object):
     def recv(self, source=0, tag=0):
         return self.comm.recv(source, tag)
 
+    def allreduce(self, data):
+        return self.comm.allreduce(data)
+
     def close(self):
         if self.is_master():
             for i in range(1, self.size):

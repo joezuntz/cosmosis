@@ -6,11 +6,20 @@ class Hints(object):
         self._cov = None
         self._peak_post = None
 
+    def set_from_sample(self, samples, posts, weights=None, log_weights=None):
+        assert len(samples) == len(posts)
+        self.set_peak_from_sample(samples, posts)
+        if log_weights is not None:
+            if weights is not  None:
+                raise ValueError("You must provide either weights or log_weights, not both")
+            weights = np.exp(log_weights - log_weights.max())
+        self.set_cov(np.cov(samples.T, aweights=weights))
+
     def has_peak(self):
         return self._peak is not None
     def set_peak(self, peak, post):
         if self._peak_post is None or post > self._peak_post:
-            self._peak = peak
+            self._peak = np.array(peak)
             self._peak_post = post
 
     def set_peak_from_sample(self, samples, posts):

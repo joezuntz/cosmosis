@@ -92,6 +92,9 @@ class ImportanceSampler(ParallelSampler):
                 if code=="weight":
                     code="old_weight"
                     logs.overview("Renaming weight -> old_weight")
+                elif code == "log_weight":
+                    code = "old_log_weight"
+                    print("Renaming log_weight -> old_log_weight")
                 self.output.add_column(code, float)
 
         #Now finally add our actual two sampler outputs, old_like and like

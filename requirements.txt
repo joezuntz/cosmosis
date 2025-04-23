@@ -1,7 +1,7 @@
 pyyaml
 future
 emcee
-numpy < 2
+numpy
 scipy
 matplotlib
 pybind11
@@ -14,3 +14,4 @@ dulwich
 urllib3
 scikit-learn
 nautilus-sampler >= 1.0.1
+Py-BOBYQA

@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-
-
 import sys
 import configparser
-
 import argparse
 import os
 import pdb
 import cProfile
+import contextlib
 from .runtime.config import Inifile, CosmosisConfigurationError
 from .runtime.pipeline import LikelihoodPipeline
 from .runtime import mpi_pool
@@ -122,7 +120,7 @@ def write_header_output(output, params, values, pipeline, values_override=None):
         prior_ini.write(comment_wrapper)
     output.comment("END_OF_PRIORS_INI")
 
-def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output):
+def setup_output(sampler_class, sampler_number, ini, pool, sample_methods, sample_method, resume, output):
 
     output_original = output
 
@@ -144,16 +142,29 @@ def setup_output(sampler_class, sampler_number, ini, pool, number_samplers, samp
             output_options['rank'] = pool.rank
             output_options['parallel'] = pool.size
 
+        number_samplers = len(sample_methods)
+
         #Give different output filenames to the different sampling steps
         #Only change if this is not the last sampling step - the final
         #one retains the name in the output file.
         # Change, e.g. demo17.txt to demo17.fisher.txt
         if ("filename" in output_options) and (sampler_number<number_samplers-1):
+
+            sampler_count = sample_methods.count(sample_method)
             filename = output_options['filename']
             filename, ext = os.path.splitext(filename)
-            filename += '.' + sampler_class.name
-            filename += ext
+            if sampler_count == 1:
+                filename += '.' + sampler_class.name
+                filename += ext
+            else:
+                sampler_repeat_index = 0
+                for i in range(sampler_number):
+                    if sample_methods[i] == sample_method:
+                        sampler_repeat_index += 1
+                filename += '.' + sampler_class.name + '.' + str(sampler_repeat_index)
+                filename += ext
             output_options['filename'] = filename
+
 
         if ("filename" in output_options):
             print("* Saving output -> {}".format(output_options['filename']))
@@ -366,7 +377,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
     #Now that we have a sampler we know whether we will need an
     #output file or not.  By default new samplers do need one.
     for sampler_number, (sampler_class, sample_method) in enumerate(
-            zip(sampler_classes, sample_methods)):
+            zip(sampler_classes, sample_methods[:])):
         sampler_name = sampler_class.__name__[:-len("Sampler")].lower()
 
         # The resume feature lets us restart from an existing file.
@@ -407,7 +418,7 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             else:
                 print("* Running in serial mode.")
 
-        output = setup_output(sampler_class, sampler_number, ini, pool, number_samplers, sample_method, resume, output_original)
+        output = setup_output(sampler_class, sampler_number, ini, pool, sample_methods, sample_method, resume, output_original)
         callback(callbacks.OUTPUT_READY, {"output": output})
         if is_root:
             print("****************************************************")
@@ -448,8 +459,8 @@ def run_cosmosis(ini, pool=None, pipeline=None, values=None, priors=None, overri
             run_count_total = pipeline.run_count
             run_count_ok_total = pipeline.run_count_ok
         else:
-            run_count_total = pool.comm.allreduce(pipeline.run_count)
-            run_count_ok_total = pool.comm.allreduce(pipeline.run_count_ok)
+            run_count_total = pool.allreduce(pipeline.run_count)
+            run_count_ok_total = pool.allreduce(pipeline.run_count_ok)
         
         if is_root and sampler_name != 'test':
             logs.overview(f"Total posterior evaluations = {run_count_total} across all processes")
@@ -556,6 +567,18 @@ parser.add_argument('--version', action='version', version=__version__, help="Pr
 parser.add_argument('--profile' , help="Save profiling (timing) information to this named file")
 
 
+@contextlib.contextmanager
+def run_under_debugger():
+    try:
+        yield
+    except Exception as error:
+        print("There was an exception - starting python debugger because you ran with --pdb")
+        print(error)
+        pdb.post_mortem()
+
+
+
+
 def main():
     try:
         args = parser.parse_args(sys.argv[1:])
@@ -574,16 +597,12 @@ def main():
         elif args.smp:
             with process_pool.Pool(args.smp) as pool:
                 return run_cosmosis(ini=args.inifile, pool=pool, override=args.params, profile_mem=args.mem, profile_cpu=args.profile, variables=args.variables, only=args.only)
-        else:
-            try:
+        elif args.pdb:
+            with run_under_debugger():
                 return run_cosmosis(ini=args.inifile, pool=None, override=args.params, profile_mem=args.mem, profile_cpu=args.profile, variables=args.variables, only=args.only)
-            except Exception as error:
-                if args.pdb:
-                    print("There was an exception - starting python debugger because you ran with --pdb")
-                    print(error)
-                    pdb.post_mortem()
-                else:
-                    raise
+        else:
+            return run_cosmosis(ini=args.inifile, pool=None, override=args.params, profile_mem=args.mem, profile_cpu=args.profile, variables=args.variables, only=args.only)
+
     except CosmosisConfigurationError as e:
         print(e)
         return 1

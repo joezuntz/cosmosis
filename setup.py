@@ -182,7 +182,7 @@ class develop_cosmosis(setuptools.command.develop.develop):
 requirements = [
     "pyyaml",
     "emcee",
-    "numpy<2",
+    "numpy",
     "scipy",
     "matplotlib",
     "pybind11",
@@ -196,6 +196,7 @@ requirements = [
     "dulwich",
     "scikit-learn",
     "future",
+    "Py-BOBYQA",
 
 ]
 

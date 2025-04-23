@@ -90,6 +90,7 @@ def test_campaign_functions():
 
         show_run(runs["v1"])
         perform_test_run(runs["v1"])
+        perform_test_run(runs["v1"], use_pdb=True)
         show_run_status(runs)
         show_run_status(runs, ["v1"])
         show_run_status(runs, ["v2"])
