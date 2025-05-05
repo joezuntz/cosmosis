@@ -31,8 +31,9 @@ class IncludingConfigParser(configparser.ConfigParser):
     comments, but still delineate sections).
     """
 
-    def __init__(self, defaults=None, print_include_messages=True, no_expand_vars=False):
+    def __init__(self, defaults=None, print_include_messages=True, no_expand_vars=False, include_relative_to=None):
         self.no_expand_vars = no_expand_vars
+        self.include_relative_to = include_relative_to
         configparser.ConfigParser.__init__(self,
                                    defaults=defaults,
                                    dict_type=collections.OrderedDict,
@@ -62,6 +63,10 @@ class IncludingConfigParser(configparser.ConfigParser):
 
                 if self.print_include_messages:
                     print(f"Reading included ini file: {filename}")
+                # if we have a relative path, make it absolute
+                if self.include_relative_to is not None:
+                    filename = os.path.join(self.include_relative_to, filename)
+
                 if not os.path.exists(filename):
                     raise ValueError(f"Tried to include non-existent file {filename}")
 
@@ -96,7 +101,7 @@ class Inifile(IncludingConfigParser):
 
     """
 
-    def __init__(self, filename, defaults=None, override=None, print_include_messages=True, no_expand_vars=False):
+    def __init__(self, filename, defaults=None, override=None, print_include_messages=True, no_expand_vars=False, include_relative_to=None):
         u"""Read in a configuration from `filename`.
 
         The `defaults` will be applied if a parameter is not specified in
@@ -112,7 +117,8 @@ class Inifile(IncludingConfigParser):
         IncludingConfigParser.__init__(self,
                                        defaults=defaults,
                                        print_include_messages=print_include_messages,
-                                       no_expand_vars=no_expand_vars)
+                                       no_expand_vars=no_expand_vars,
+                                       include_relative_to=include_relative_to)
 
         # if we are pased a dict, convert it to an inifile
         if isinstance(filename, dict):
