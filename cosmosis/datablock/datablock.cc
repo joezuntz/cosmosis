@@ -154,9 +154,9 @@ cosmosis::DataBlock::get_log_entry(int i,
   section = std::get<1>(entry);
   name = std::get<2>(entry);
   std::type_index info(std::get<3>(entry));
-  char type_name[128];
+  char type_name[256];
   int status;
-  size_t len = 128;
+  size_t len = 256;
   abi::__cxa_demangle(info.name(), type_name, &len, &status); 
   if (status){
     type = info.name();

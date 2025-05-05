@@ -23,6 +23,15 @@ def test_string_array():
     assert (strings == strings3).all()
     print(strings3)
 
+def test_string_array_logging():
+    block = DataBlock()
+    strings = "I am a mole and I live in a hole".split()
+    print(strings)
+    block.put_string_array_1d("my_section", "my_key", strings)
+    nlog = block.get_log_count()
+    for i in range(nlog):
+        print(block.get_log_entry(i))
+
 
 def test_string_array_getset():
     block = DataBlock()
