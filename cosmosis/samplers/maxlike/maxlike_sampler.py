@@ -1,5 +1,6 @@
 from .. import ParallelSampler
 from ...runtime import logs
+from ...runtime.pipeline import PipelineResults
 import numpy as np
 import scipy.optimize
 import warnings
@@ -142,6 +143,8 @@ class MaxlikeSampler(ParallelSampler):
             # use the specific pybobyqa minimizer
             import pybobyqa
 
+            starting_tolerance = 0.1
+
             # this works with bounds in the form of a tuple of two arrays
             lower = np.array([b[0] for b in bounds])
             upper = np.array([b[1] for b in bounds])
@@ -149,13 +152,27 @@ class MaxlikeSampler(ParallelSampler):
                 "seek_global_minimum": True,
                 "bounds": (lower,upper),
                 "print_progress": logs.is_enabled_for(logs.NOISY),
-                "rhobeg": 0.1,
+                "rhobeg": starting_tolerance,
                 "rhoend": self.tolerance,
             }
+
+            if self.tolerance >= starting_tolerance:
+                raise ValueError(f"The tolerance for bobyqa must be less than {starting_tolerance}.  You chose {self.tolerance}.")
+
             for i in range(self.reiterations):
                 optimizer_result = pybobyqa.solve(likefn, start_vector, **kw)
                 start_vector = optimizer_result.x
+
+                if start_vector is None:
+                    # The default PipelineResults object is empty and has likelihod -inf
+                    vector = np.repeat(np.nan, self.pipeline.nvaried)
+                    opt = PipelineResults(vector, self.pipeline.number_extra)
+                    logs.error(f"[Rank {rank}] BOBYQA Optimization failed with error number {optimizer_result.flag}, message {optimizer_result.msg}")
+                    return opt
+
             opt_norm = optimizer_result.x
+
+
             # bobyqa calls it .hessian but scipy calls it .hess, so copy it here
             # if available
             if optimizer_result.hessian is not None:
