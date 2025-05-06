@@ -387,7 +387,9 @@ def test_bobyqa():
         output_cov = os.path.join(dirname, "output_cov.txt")
         run('maxlike', True, can_postprocess=False, method='bobyqa', output_covmat=output_cov)
         assert os.path.exists(output_cov)
-    
+
+        with pytest.raises(ValueError, match="The tolerance for bobyqa must be less than 0.1"):
+            run('maxlike', True, can_postprocess=False, method='bobyqa', tolerance=0.2)
 
 def test_metropolis():
     run('metropolis', True, samples=20)
