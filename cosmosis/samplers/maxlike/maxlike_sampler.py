@@ -168,6 +168,7 @@ class MaxlikeSampler(ParallelSampler):
                     vector = np.repeat(np.nan, self.pipeline.nvaried)
                     opt = PipelineResults(vector, self.pipeline.number_extra)
                     logs.error(f"[Rank {rank}] BOBYQA Optimization failed with error number {optimizer_result.flag}, message {optimizer_result.msg}")
+                    opt.covmat = None
                     return opt
 
             opt_norm = optimizer_result.x
