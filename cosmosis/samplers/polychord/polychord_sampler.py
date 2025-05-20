@@ -355,12 +355,15 @@ class PolychordSampler(ParallelSampler):
                     new.parameters(params, like, post, weight)
                     nsample += 1
 
-            metadata = old._final_metadata[md].copy()
+            metadata = old._final_metadata.copy()
             metadata["nsample"] = nsample
             # This hasn't been written yet because the original output file has not been closed.
             # so we have to use the saved one in the old object. The * is because a comment is also included
-            for key, value in metadata.keys():
-                new.final(key, *value)
+            for key, value in metadata.items():
+                if isinstance(value, tuple):
+                    new.final(key, *value)
+                else:
+                    new.final(key, value)
             new.final("log_z", self.log_z)
             new.final("log_z_error", self.log_z_err)
 
