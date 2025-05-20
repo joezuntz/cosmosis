@@ -100,3 +100,19 @@ runs:
     components:
     - test_component_2
 
+  # Multinest and polychord need specific tests because
+  # they set up their own output directories
+  - name: multinest-test
+    parent: v1
+    params:
+    - sampler = multinest
+    - runtime.verbosity = quiet
+    - multinest.max_iterations = 2
+    - multinest.live_points = 20
+
+  - name: polychord-test
+    parent: v1
+    params:
+    - sampler = polychord
+    - runtime.verbosity = quiet
+    - polychord.live_points = 20
