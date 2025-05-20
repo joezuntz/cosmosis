@@ -5,7 +5,7 @@ import tempfile
 import contextlib
 import pytest
 
-NRUN = 13
+NRUN = 15
 
 @contextlib.contextmanager
 def run_from_source_dir():
@@ -131,6 +131,8 @@ def test_campaign_functions2():
 
             show_run(runs["v1"])
             perform_test_run(runs["v1"])
+            expected_test_output_dir = os.path.join(dirname, "my_project_v1_suite1")
+            assert os.path.isdir(expected_test_output_dir)
             show_run_status(runs)
             show_run_status(runs, ["v1"])
             show_run_status(runs, ["v2"])
@@ -143,6 +145,31 @@ def test_campaign_functions2():
 
             submit_run("cosmosis/test/campaign.yml", runs["v3"])
             submit_run("cosmosis/test/campaign.yml", runs["v4"])
+
+
+def test_polychord_multinest_campaign():
+    with run_from_source_dir():
+        with open("cosmosis/test/campaign.yml") as f:
+            runs_config = load_yaml(f)
+
+    with tempfile.TemporaryDirectory() as dirname:
+        runs_config['output_dir']  = dirname
+
+        with run_from_source_dir():
+            with open("cosmosis/test/campaign.yml") as f:
+                runs, _ = parse_yaml_run_file(runs_config)
+
+            for name in runs:
+                print(name)
+
+            # polychord and multinest tests - should make the extra output files
+            launch_run(runs["multinest-test"])
+            launch_run(runs["polychord-test"])
+            mn_file = os.path.join(dirname, "my_project_multinest-test_suite1.multinest.txt")
+            pc_file = os.path.join(dirname, "my_project_polychord-test_suite1.polychord.txt")
+            assert os.path.isfile(mn_file)
+            assert os.path.isfile(pc_file)
+
 
 
 def test_campaign_env():

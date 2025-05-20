@@ -368,14 +368,21 @@ def set_output_dir(params, name, output_dir, output_name):
     if not params.has_section("test"):
         params.add_section("test")
 
-    output_name = output_name.format(name=name) + ".txt"
+    output_name_base = output_name.format(name=name)
+    output_name = output_name_base + ".txt"
     params.set("output", "filename", os.path.join(output_dir, output_name))
-    params.set("test", "save_dir", os.path.join(output_dir, name))
+    params.set("test", "save_dir", os.path.join(output_dir, output_name_base))
 
+    # Polychord and Multinest have their own output files. They are handled slightly
+    # differently. It would be nicer to put all these files in specific directories
+    # instead of just using specific base names, and I will do that at the next breaking
+    # change, but right now doing that would mean I had to change the multinest sampler
+    # to create the directories, which would be backwards incompatible.
     if params.has_section("multinest"):
-        params.set("multinest", "multinest_outfile_root", os.path.join(output_dir, f"{name}.multinest"))
+        params.set("multinest", "multinest_outfile_root", os.path.join(output_dir, f"{output_name_base}.multinest"))
+
     if params.has_section("polychord"):
-        params.set("polychord", "polychord_outfile_root", f"{name}.polychord")
+        params.set("polychord", "polychord_outfile_root", f"{output_name_base}.polychord")
         params.set("polychord", "base_dir", output_dir)
 
 def build_run(name, run_info, runs, components, output_dir, submission_info, output_name="{name}"):
