@@ -1,9 +1,12 @@
 from ..campaign import *
 from ..runtime import Inifile
+from ..runtime.handler import activate_segfault_handling
 import os
 import tempfile
 import contextlib
 import pytest
+
+activate_segfault_handling()
 
 NRUN = 15
 
