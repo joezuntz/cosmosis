@@ -767,7 +767,7 @@ module read_write_module
         write(write_stats_unit, '("----------------")')
         write(write_stats_unit,'("")')
 
-        write(fmt_Z,'("(""log(Z_"",",A,","")  = "",", A, ","" +/- "",", A, """ (Still Active)"")")') 'I2',DB_FMT,DB_FMT
+        write(fmt_Z,'("(""log(Z_"",",A,","")  = "",", A, ","" +/- "",", A, ","" (Still Active)"")")') 'I2',DB_FMT,DB_FMT
         do p=1,RTI%ncluster
             write(write_stats_unit,fmt_Z) p, logZp(p), sqrt(abs(varlogZp(p)))
         end do
