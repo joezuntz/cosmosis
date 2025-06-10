@@ -7,9 +7,23 @@ MPI = $(shell which $(MPIFC) 2> /dev/null)
 ifneq ($(MPI),)
     $(info MPI Compiler found so compiling MPI polychord)
 	TARGETS+=libchord_mpi.so
-endif
 
-FFLAGS += -std=legacy
+    # gfortran 10 does not cope with some behaviour of
+    # MPICH (argument mismatches).
+    # check if we are using such a version and if so add a legacy flag.
+    # We could probably get away with adding that everywhere but I still
+    # hold out vague hopes of supporting e.g. intel fortran sometime.
+    IS_GFORTRAN=$(shell $(MPIFC) --version | grep -q "GNU Fortran"; echo $$?)
+    ifeq ($(IS_GFORTRAN),0)
+        $(info Using gfortran)
+        GF_VERSION_GT_10=$(shell expr `$(MPIFC) -dumpversion | cut -f1 -d.` \>= 10)
+        ifeq ($(GF_VERSION_GT_10),1)
+            $(info "Using gfortran version >= 10 so adding -std=legacy")
+            FFLAGS += -std=legacy
+        endif
+
+    endif
+endif
 
 all: $(TARGETS)
 

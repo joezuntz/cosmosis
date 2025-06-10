@@ -73,7 +73,7 @@ jobs:
         # This changes the logging behaviour to prevent an unwanted interaction
         # with how pytest deals with logs:
         export COSMOSIS_TESTING=1
-        mkdir cosmosis-ci-tmp && cd cosmosis-ci-tmp && pytest -s -vvv --pyargs cosmosis --cov cosmosis --cov-report=xml --durations=0
+        mkdir tmp && cd tmp && pytest --pyargs cosmosis --cov cosmosis --cov-report=xml --durations=0
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
