@@ -41,7 +41,7 @@ params:
     samples: "(integer) number of steps"
     random_start: "(bool; default=N) whether to start the chains at random points in the prior instead of the ini file start"
     covmat_sample_start: "(bool; default=N) start from random points sampled from the covariance matrix"
-    cobaya: "(bool; default=N) whether to use Cobaya's MCMC implementation"
+    cobaya: "(bool; default=N) whether to use Cobaya's proposal distribution"
     Rconverge: "(float; default=-1.0) when multiple chains are run, use this as the Gelman-Rubin statistic"
     drag: "(int; default=0) number of slow parameters to drag when using fast/slow sampling"
     oversampling: "(int; default=5) oversampling factor for fast parameters in fast/slow sampling"
