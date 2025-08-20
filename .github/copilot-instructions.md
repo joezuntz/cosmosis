@@ -21,7 +21,7 @@ Always reference these instructions first and fallback to search or bash command
   - `export COSMOSIS_TESTING=1 && mkdir -p tmp && cd tmp && pytest --pyargs cosmosis` -- takes 78 seconds. NEVER CANCEL. Set timeout to 180+ seconds.
 
 ### Build from Clean:
-- Clean build artifacts: `cd cosmosis && make clean`
+- Clean build artifacts: `cd cosmosis && make clean && python setup.py clean`
 - Rebuild: `cd cosmosis && make` -- takes 40 seconds from clean
 
 ## Validation
