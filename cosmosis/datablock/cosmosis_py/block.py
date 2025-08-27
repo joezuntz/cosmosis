@@ -3,6 +3,7 @@
 u"""Definition of the :class:`DataBlock` class."""
 
 import ctypes as ct
+from typing import Any, Optional, Union, Tuple, Sequence, List, Dict, Mapping, Callable
 from . import lib
 from . import errors
 from . import dbt_types as types
@@ -18,8 +19,8 @@ import sys
 
 
 
-option_section = "module_options"
-metadata_prefix = "cosmosis_metadata:"
+option_section: str = "module_options"
+metadata_prefix: str = "cosmosis_metadata:"
 
 class DataBlock(object):
 	u"""A map of (section,name)->value of parameters.
@@ -51,7 +52,7 @@ class DataBlock(object):
 	GET=0
 	PUT=1
 	REPLACE=2
-	def __init__(self, ptr=None, own=None):
+	def __init__(self, ptr: Optional[Any] = None, own: Optional[bool] = None) -> None:
 		u"""Construct an empty parameter map, or possibly shadow an existing one.
 
 		In implementation, this Python object is actually a wrapper around
@@ -81,7 +82,7 @@ class DataBlock(object):
 		self._as_parameter_ = ptr
 	#TODO: add destructor.  destroy block if owned
 
-	def __del__(self):
+	def __del__(self) -> None:
 		u"""Destroy this object.
 
 		Also destroy the underlying C object if we are deemed to own it.
@@ -94,7 +95,7 @@ class DataBlock(object):
 			pass
 
 				
-	def clone(self):
+	def clone(self) -> "DataBlock":
 		u"""Make a brand-new, completely independent object, a deep copy of the existing one.
 
 		A new object will be returned from this method which has its own
@@ -108,7 +109,7 @@ class DataBlock(object):
 
 
 	@staticmethod
-	def python_to_c_complex(value):
+	def python_to_c_complex(value: Union[complex, Tuple[float, float], float, int, Any]) -> Any:
 		u"""Interpret an arbitrary Python object as a lib.c_complex type.
 
 		This convenience function will take an actual lib.c_complex
@@ -131,7 +132,7 @@ class DataBlock(object):
 			return lib.c_complex(value, 0.0)
 
 	@staticmethod
-	def python_to_1d_c_array(value, numpy_type):
+	def python_to_1d_c_array(value: Sequence[Any], numpy_type: Any) -> Tuple[np.ndarray, Any, int]:
 		u"""Create a C object equivalent to the `value` array, interpreted as `numpy_type`.
 
 		The object will be a contiguous list—this may entail that a value
@@ -165,7 +166,7 @@ class DataBlock(object):
 
 
 
-	def get_int(self, section, name, default=None):
+	def get_int(self, section: str, name: str, default: Optional[int] = None) -> int:
 		u"""Retrieve an integer value from the parameter set.
 
 		The `name` ʼd parameter in the given `section` will be interpreted
@@ -185,7 +186,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
-	def get_bool(self, section, name, default=None):
+	def get_bool(self, section: str, name: str, default: Optional[bool] = None) -> bool:
 		u"""Retrieve a boolean value from the parameter set.
 
 		The `name` parameter in the given `section` will be interpreted
@@ -205,7 +206,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
-	def get_double(self, section, name, default=None):
+	def get_double(self, section: str, name: str, default: Optional[float] = None) -> float:
 		u"""Retrieve a floating-point value from the parameter set.
 
 		The `name` parameter in the given `section` will be interpreted
@@ -226,7 +227,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
-	def get_complex(self, section, name, default=None):
+	def get_complex(self, section: str, name: str, default: Optional[complex] = None) -> complex:
 		u"""Retrieve a complex value from the parameter set.
 
 		The `name` parameter in the given `section` will be interpreted
@@ -246,7 +247,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.real+1j*r.imag
 
-	def get_string(self, section, name, default=None):
+	def get_string(self, section: str, name: str, default: Optional[str] = None) -> str:
 		u"""Retrieve a string value from the parameter set.
 
 		The `name` parameter in the given `section` will be interpreted
@@ -268,7 +269,7 @@ class DataBlock(object):
 		lib.free(r)
 		return c
 
-	def get_int_array_1d(self, section, name):
+	def get_int_array_1d(self, section: str, name: str) -> np.ndarray:
 		u"""Retrieve an integer array from the parameter set.
 
 		The `name` parameter in the given `section` will be understood
@@ -286,7 +287,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def get_double_array_1d(self, section, name):
+	def get_double_array_1d(self, section: str, name: str) -> np.ndarray:
 		u"""Retrieve a floating-point array from the parameter set.
 
 		The `name` parameter in the given `section` will be understood
@@ -305,7 +306,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def get_string_array_1d(self, section, name):
+	def get_string_array_1d(self, section: str, name: str) -> np.ndarray:
 		u"""Retrieve an array of strings from the datablock.
 
 		The `name` parameter in the given `section` will be understood
@@ -344,7 +345,7 @@ class DataBlock(object):
 
 
 
-	def _get_array_nd(self, section, name, dtype):
+	def _get_array_nd(self, section: str, name: str, dtype: type) -> np.ndarray:
 
 		if dtype is complex or dtype is str:
 			raise ValueError("Sorry - cosmosis support for 2D complex and string values is incomplete")
@@ -378,7 +379,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def _put_replace_array_nd(self, section, name, value, dtype, mode):
+	def _put_replace_array_nd(self, section: str, name: str, value: np.ndarray, dtype: Any, mode: int) -> None:
 		shape = value.shape
 		ndim = len(shape)
 		extent = (ct.c_int * ndim)()
@@ -398,7 +399,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 
 
-	def put_double_array_nd(self, section, name, value):
+	def put_double_array_nd(self, section: str, name: str, value: np.ndarray) -> None:
 		u"""Add a floating-point array parameter to the data set.
 
 		The `value` must be an array of values which can be interpreted as
@@ -409,7 +410,7 @@ class DataBlock(object):
 		"""
 		self._put_replace_array_nd(section, name, value, np.double, self.PUT)
 
-	def put_int_array_nd(self, section, name, value):
+	def put_int_array_nd(self, section: str, name: str, value: np.ndarray) -> None:
 		u"""Add an integer array parameter to the data set.
 
 		The value must be an array of values which can be interpreted as
@@ -422,7 +423,7 @@ class DataBlock(object):
 
 
 
-	def replace_double_array_nd(self, section, name, value):
+	def replace_double_array_nd(self, section: str, name: str, value: np.ndarray) -> None:
 		u"""Replace a floating-point array parameter in the data set.
 
 		The value must be an array of values which can be interpreted as
@@ -435,7 +436,7 @@ class DataBlock(object):
 		"""
 		self._put_replace_array_nd(section, name, value, np.double, self.REPLACE)
 
-	def replace_int_array_nd(self, section, name, value):
+	def replace_int_array_nd(self, section: str, name: str, value: np.ndarray) -> None:
 		u"""Replace an integer array parameter in the data set.
 
 		The value must be an array of values which can be interpreted as
@@ -448,7 +449,7 @@ class DataBlock(object):
 		"""
 		self._put_replace_array_nd(section, name, value, np.intc, self.REPLACE)
 
-	def get_double_array_nd(self, section, name):
+	def get_double_array_nd(self, section: str, name: str) -> np.ndarray:
 		u"""Get a floating-point array of *a priori* unspecified shape.
 
 		Expect :class:`BlockError` or :class:`ValueError` to be raised if
@@ -457,7 +458,7 @@ class DataBlock(object):
 		"""
 		return self._get_array_nd(section, name, float)
 
-	def get_int_array_nd(self, section, name):
+	def get_int_array_nd(self, section: str, name: str) -> np.ndarray:
 		u"""Get an integer-valued array of *a priori* unspecified shape.
 
 		Expect :class:`BlockError` or :class:`ValueError` to be raised if
