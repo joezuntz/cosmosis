@@ -1402,13 +1402,13 @@ class SectionOptions(object):
 
 def _make_getter(cls: type, name: str) -> Callable[..., Any]:
 	if name=='__getitem__':
-		def getter(self, key):
+		def getter(self, key: str) -> Any:
 			return self.block[option_section, key]
 	elif "array" in name:
-		def getter(self, key):
+		def getter(self, key: str) -> Any:
 			return getattr(self.block, name)(option_section, key)
 	else:
-		def getter(self, key, default=None):
+		def getter(self, key: str, default: Optional[Any] = None) -> Any:
 			return getattr(self.block, name)(option_section, key, default=default)
 
 	return getter
