@@ -587,7 +587,7 @@ class DataBlock(object):
 
 
 
-	def _method_for_type(self, T: type, method_type: int) -> Optional[Callable[..., Any]]:
+	def _method_for_type(self, T, method_type):
 		method={ int:    (self.get_int,     self.put_int,     self.replace_int),
 				 float:  (self.get_double,  self.put_double,  self.replace_double),
 				 bool:   (self.get_bool,    self.put_bool,    self.replace_bool),
@@ -598,7 +598,7 @@ class DataBlock(object):
 			return method[method_type]
 		return None
 
-	def _method_for_datatype_code(self, code: int, method_type: int) -> Optional[Callable[..., Any]]:
+	def _method_for_datatype_code(self, code, method_type):
 
 		T={ 
 			types.DBT_INT:     (self.get_int,     self.put_int,     self.replace_int),
@@ -621,7 +621,7 @@ class DataBlock(object):
 		return None
 
 
-	def _method_for_value(self, value: Any, method_type: int) -> Callable[..., Any]:
+	def _method_for_value(self, value, method_type):
 		if isinstance(value, np.float32) or isinstance(value, np.float64):
 			value = float(value)
 		if isinstance(value, np.int32) or isinstance(value, np.int64):
@@ -1063,7 +1063,7 @@ class DataBlock(object):
 							f.write("#%s %s = %s\n"%(s[0],key,val))
 				f.close()
 
-	def _save_paths(self) -> List[Tuple[str, str]]:
+	def _save_paths(self):
 		keys = list(self.keys())
 		sections = set(k[0] for k in keys)
 		for section in sections:
@@ -1287,7 +1287,7 @@ class DataBlock(object):
 		sentinel_value = "%s_cosmosis_order_%s" % (name_x, name_y)
 		self[section, sentinel_key] = sentinel_value.lower()
 
-	def get_first_parameter_use(self, params_of_interest: List[Tuple[str, str]]) -> Any:
+	def get_first_parameter_use(self, params_of_interest: List[Tuple[str, str]]) -> Dict[str, Tuple[str, str]]:
 		u"""Analyze the log and figure out when each parameter is first used"""
 		params_by_module = collections.OrderedDict()
 		current_module = []
