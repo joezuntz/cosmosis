@@ -157,6 +157,26 @@ def test_keys():
     for k in keys:
         assert k in b
 
+def test_to_string():
+    b = DataBlock()
+    section='dogs'
+    b.put(section, 'x', [1.4,2.1,3.6])
+    b.put(section, "n", 14)
+    b.put(section, 's', 'my_string')
+    section='other'
+    b.put(section, 'a', 98)
+    b.put(section, "b", 1.4)
+    b.put_string(section, 's', 'my_string')
+    s = b.to_string()
+    s2 = DataBlock.from_string(s)
+    for sec, key in b.keys():
+        v1 = b.get(sec, key)
+        v2 = s2.get(sec, key)
+        assert (v1==v2).all()
+    for sec, key in s2.keys():
+        v1 = b.get(sec, key)
+        v2 = s2.get(sec, key)
+        assert (v1==v2).all()
 
 def test_wrong_array_type():
     puts = {
