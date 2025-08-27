@@ -3,6 +3,7 @@
 u"""Definition of the :class:`DataBlock` class."""
 
 import ctypes as ct
+from typing import Any, Optional, Union, Tuple, Sequence, List, Dict, Mapping, Callable
 from . import lib
 from . import errors
 from . import dbt_types as types
@@ -18,8 +19,8 @@ import sys
 
 
 
-option_section = "module_options"
-metadata_prefix = "cosmosis_metadata:"
+option_section: str = "module_options"
+metadata_prefix: str = "cosmosis_metadata:"
 
 class DataBlock(object):
 	u"""A map of (section,name)->value of parameters.
@@ -51,7 +52,7 @@ class DataBlock(object):
 	GET=0
 	PUT=1
 	REPLACE=2
-	def __init__(self, ptr=None, own=None):
+	def __init__(self, ptr: Optional[Any] = None, own: Optional[bool] = None) -> None:
 		u"""Construct an empty parameter map, or possibly shadow an existing one.
 
 		In implementation, this Python object is actually a wrapper around
@@ -81,7 +82,7 @@ class DataBlock(object):
 		self._as_parameter_ = ptr
 	#TODO: add destructor.  destroy block if owned
 
-	def __del__(self):
+	def __del__(self) -> None:
 		u"""Destroy this object.
 
 		Also destroy the underlying C object if we are deemed to own it.
@@ -94,7 +95,7 @@ class DataBlock(object):
 			pass
 
 				
-	def clone(self):
+	def clone(self) -> "DataBlock":
 		u"""Make a brand-new, completely independent object, a deep copy of the existing one.
 
 		A new object will be returned from this method which has its own
@@ -108,7 +109,7 @@ class DataBlock(object):
 
 
 	@staticmethod
-	def python_to_c_complex(value):
+	def python_to_c_complex(value: Union[complex, Tuple[float, float], float, int, Any]) -> Any:
 		u"""Interpret an arbitrary Python object as a lib.c_complex type.
 
 		This convenience function will take an actual lib.c_complex
@@ -131,7 +132,7 @@ class DataBlock(object):
 			return lib.c_complex(value, 0.0)
 
 	@staticmethod
-	def python_to_1d_c_array(value, numpy_type):
+	def python_to_1d_c_array(value: Sequence[Any], numpy_type: Any) -> Tuple[np.ndarray, Any, int]:
 		u"""Create a C object equivalent to the `value` array, interpreted as `numpy_type`.
 
 		The object will be a contiguous list—this may entail that a value
@@ -165,7 +166,7 @@ class DataBlock(object):
 
 
 
-	def get_int(self, section, name, default=None):
+	def get_int(self, section: str, name: str, default: Optional[int] = None) -> int:
 		u"""Retrieve an integer value from the parameter set.
 
 		The `name` ʼd parameter in the given `section` will be interpreted
@@ -185,7 +186,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
-	def get_bool(self, section, name, default=None):
+	def get_bool(self, section: str, name: str, default: Optional[bool] = None) -> bool:
 		u"""Retrieve a boolean value from the parameter set.
 
 		The `name` parameter in the given `section` will be interpreted
@@ -205,7 +206,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
-	def get_double(self, section, name, default=None):
+	def get_double(self, section: str, name: str, default: Optional[float] = None) -> float:
 		u"""Retrieve a floating-point value from the parameter set.
 
 		The `name` parameter in the given `section` will be interpreted
@@ -226,7 +227,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value
 
-	def get_complex(self, section, name, default=None):
+	def get_complex(self, section: str, name: str, default: Optional[complex] = None) -> complex:
 		u"""Retrieve a complex value from the parameter set.
 
 		The `name` parameter in the given `section` will be interpreted
@@ -246,7 +247,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.real+1j*r.imag
 
-	def get_string(self, section, name, default=None):
+	def get_string(self, section: str, name: str, default: Optional[str] = None) -> str:
 		u"""Retrieve a string value from the parameter set.
 
 		The `name` parameter in the given `section` will be interpreted
@@ -268,7 +269,7 @@ class DataBlock(object):
 		lib.free(r)
 		return c
 
-	def get_int_array_1d(self, section, name):
+	def get_int_array_1d(self, section: str, name: str) -> np.ndarray:
 		u"""Retrieve an integer array from the parameter set.
 
 		The `name` parameter in the given `section` will be understood
@@ -286,7 +287,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def get_double_array_1d(self, section, name):
+	def get_double_array_1d(self, section: str, name: str) -> np.ndarray:
 		u"""Retrieve a floating-point array from the parameter set.
 
 		The `name` parameter in the given `section` will be understood
@@ -305,7 +306,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def get_string_array_1d(self, section, name):
+	def get_string_array_1d(self, section: str, name: str) -> np.ndarray:
 		u"""Retrieve an array of strings from the datablock.
 
 		The `name` parameter in the given `section` will be understood
@@ -344,7 +345,7 @@ class DataBlock(object):
 
 
 
-	def _get_array_nd(self, section, name, dtype):
+	def _get_array_nd(self, section: str, name: str, dtype: type) -> np.ndarray:
 
 		if dtype is complex or dtype is str:
 			raise ValueError("Sorry - cosmosis support for 2D complex and string values is incomplete")
@@ -378,7 +379,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r
 
-	def _put_replace_array_nd(self, section, name, value, dtype, mode):
+	def _put_replace_array_nd(self, section: str, name: str, value: np.ndarray, dtype: Any, mode: int) -> None:
 		shape = value.shape
 		ndim = len(shape)
 		extent = (ct.c_int * ndim)()
@@ -398,7 +399,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 
 
-	def put_double_array_nd(self, section, name, value):
+	def put_double_array_nd(self, section: str, name: str, value: np.ndarray) -> None:
 		u"""Add a floating-point array parameter to the data set.
 
 		The `value` must be an array of values which can be interpreted as
@@ -409,7 +410,7 @@ class DataBlock(object):
 		"""
 		self._put_replace_array_nd(section, name, value, np.double, self.PUT)
 
-	def put_int_array_nd(self, section, name, value):
+	def put_int_array_nd(self, section: str, name: str, value: np.ndarray) -> None:
 		u"""Add an integer array parameter to the data set.
 
 		The value must be an array of values which can be interpreted as
@@ -422,7 +423,7 @@ class DataBlock(object):
 
 
 
-	def replace_double_array_nd(self, section, name, value):
+	def replace_double_array_nd(self, section: str, name: str, value: np.ndarray) -> None:
 		u"""Replace a floating-point array parameter in the data set.
 
 		The value must be an array of values which can be interpreted as
@@ -435,7 +436,7 @@ class DataBlock(object):
 		"""
 		self._put_replace_array_nd(section, name, value, np.double, self.REPLACE)
 
-	def replace_int_array_nd(self, section, name, value):
+	def replace_int_array_nd(self, section: str, name: str, value: np.ndarray) -> None:
 		u"""Replace an integer array parameter in the data set.
 
 		The value must be an array of values which can be interpreted as
@@ -448,7 +449,7 @@ class DataBlock(object):
 		"""
 		self._put_replace_array_nd(section, name, value, np.intc, self.REPLACE)
 
-	def get_double_array_nd(self, section, name):
+	def get_double_array_nd(self, section: str, name: str) -> np.ndarray:
 		u"""Get a floating-point array of *a priori* unspecified shape.
 
 		Expect :class:`BlockError` or :class:`ValueError` to be raised if
@@ -457,7 +458,7 @@ class DataBlock(object):
 		"""
 		return self._get_array_nd(section, name, float)
 
-	def get_int_array_nd(self, section, name):
+	def get_int_array_nd(self, section: str, name: str) -> np.ndarray:
 		u"""Get an integer-valued array of *a priori* unspecified shape.
 
 		Expect :class:`BlockError` or :class:`ValueError` to be raised if
@@ -472,7 +473,7 @@ class DataBlock(object):
 	#def get_string_array_2d(self, section, name):
 	#	return self._get_array_2d(section, name, str)
 
-	def put_int(self, section, name, value):
+	def put_int(self, section: str, name: str, value: int) -> None:
 		u"""Add an integer parameter to the map.
 
 		A new parameter will be added to the current map, at (`section`,
@@ -485,7 +486,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def put_bool(self, section, name, value):
+	def put_bool(self, section: str, name: str, value: bool) -> None:
 		u"""Add a boolean parameter to the map.
 
 		A new parameter will be added to the current map, at (`section`,
@@ -498,7 +499,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def put_double(self, section, name, value):
+	def put_double(self, section: str, name: str, value: float) -> None:
 		u"""Add a floating-point parameter to the map.
 
 		A new parameter will be added to the current map, at (`section`,
@@ -511,7 +512,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def put_complex(self, section, name, value):
+	def put_complex(self, section: str, name: str, value: complex) -> None:
 		u"""Add a complex parameter to the map.
 
 		A new parameter will be added to the current map, at (`section`,
@@ -525,7 +526,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def put_string(self, section, name, value):
+	def put_string(self, section: str, name: str, value: str) -> None:
 		u"""Add a string parameter to the map.
 
 		A new parameter will be added to the current map, at (`section`,
@@ -538,7 +539,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def put_int_array_1d(self, section, name, value):
+	def put_int_array_1d(self, section: str, name: str, value: Union[Sequence[int], np.ndarray]) -> None:
 		u"""Add a one-dimensional integer array to the map.
 
 		A parameter called `name` is added to `section`, and holds `value`
@@ -551,7 +552,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def put_double_array_1d(self, section, name, value):
+	def put_double_array_1d(self, section: str, name: str, value: Union[Sequence[float], np.ndarray]) -> None:
 		u"""Add a one-dimensional floating-point array to the map.
 
 		A parameter called `name` is added to `section`, and holds `value`
@@ -565,7 +566,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def put_string_array_1d(self, section, name, value):
+	def put_string_array_1d(self, section: str, name: str, value: Union[Sequence[str], np.ndarray]) -> None:
 		u"""Add a one-dimensional floating-point array to the map.
 
 		A parameter called `name` is added to `section`, and holds `value`
@@ -658,7 +659,7 @@ class DataBlock(object):
 				return method[method_type]
 		raise ValueError("I do not know how to handle this type %r %r"%(value,type(value)))
 	
-	def get(self, section, name):
+	def get(self, section: str, name: str) -> Any:
 		u"""Get the value of parameter with `name` in `section`.
 
 		The type value returned from this method will reflect the type of
@@ -678,7 +679,7 @@ class DataBlock(object):
 			return method(section,name)
 		raise ValueError("Cosmosis internal error; unknown type of data. section: %s, name: %s, type_code: %s" % (section, name, type_code))
 
-	def put(self, section, name, value, **meta):
+	def put(self, section: str, name: str, value: Any, **meta: Any) -> None:
 		u"""Add a parameter with `value` at (`section`, `name`) in the map.
 
 		The parameter stored in the map will have a type which
@@ -698,7 +699,7 @@ class DataBlock(object):
 		for (key, val) in list(meta.items()):
 			self.put_metadata(section, name, str(key), str(val))
 
-	def replace(self, section, name, value):
+	def replace(self, section: str, name: str, value: Any) -> None:
 		u"""Replace the value of a parameter at (`section`, `name`) in the map with `value`.
 
 		The parameter newly stored in the map will have a type which
@@ -713,7 +714,7 @@ class DataBlock(object):
 		method(section, name, value)
 
 
-	def replace_int(self, section, name, value):
+	def replace_int(self, section: str, name: str, value: int) -> None:
 		u"""Change the value of an integer parameter in the map.
 
 		The parameter at (`section`, `name`) will be given the new
@@ -726,7 +727,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def replace_bool(self, section, name, value):
+	def replace_bool(self, section: str, name: str, value: bool) -> None:
 		u"""Change the value of a boolean parameter in the map.
 
 		The parameter at (`section`, `name`) will be given the new
@@ -739,7 +740,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def replace_double(self, section, name, value):
+	def replace_double(self, section: str, name: str, value: float) -> None:
 		u"""Change the value of a floating-point parameter in the map.
 
 		The parameter at (`section`, `name`) will be given the new
@@ -753,7 +754,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def replace_complex(self, section, name, value):
+	def replace_complex(self, section: str, name: str, value: complex) -> None:
 		u"""Change the value of a complex parameter in the map.
 
 		The parameter at (`section`, `name`) will be given the new
@@ -767,7 +768,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def replace_string(self, section, name, value):
+	def replace_string(self, section: str, name: str, value: str) -> None:
 		u"""Change the value of a string parameter in the map.
 
 		The parameter at (`section`, `name`) will be given the new
@@ -780,7 +781,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def replace_int_array_1d(self, section, name, value):
+	def replace_int_array_1d(self, section: str, name: str, value: Union[Sequence[int], np.ndarray]) -> None:
 		u"""Replace the value of a parameter with a simple integer array.
 
 		The parameter at (`section`, `name`) is replaced with `value`,
@@ -795,7 +796,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def replace_double_array_1d(self, section, name, value):
+	def replace_double_array_1d(self, section: str, name: str, value: Union[Sequence[float], np.ndarray]) -> None:
 		u"""Replace the value of a parameter with a simple floating-point array.
 
 		The parameter at (`section`, `name`) is replaced with `value`,
@@ -810,7 +811,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def replace_string_array_1d(self, section, name, value):
+	def replace_string_array_1d(self, section: str, name: str, value: Union[Sequence[str], np.ndarray]) -> None:
 		u"""Replacing string arrays is not yet implemented
 
 		"""
@@ -818,7 +819,7 @@ class DataBlock(object):
 								  "Please open an issue if you need this feature")
 
 
-	def has_section(self, section):
+	def has_section(self, section: str) -> bool:
 		u"""Indicate whether or not there is a given `section` in the data set.
 
 		The `section` should be a string holding the name of the section.
@@ -827,7 +828,7 @@ class DataBlock(object):
 		has = lib.c_datablock_has_section(self._ptr, section.encode('ascii'))
 		return bool(has)
 
-	def has_value(self, section, name):
+	def has_value(self, section: str, name: str) -> bool:
 		u"""Indicate whether or not a parameter is in the map.
 
 		Both `section` and `name` should be strings.
@@ -836,7 +837,7 @@ class DataBlock(object):
 		has = lib.c_datablock_has_value(self._ptr, section.encode('ascii'), name.encode('ascii'))
 		return bool(has)
 
-	def __getitem__(self, section_name):
+	def __getitem__(self, section_name: Tuple[str, str]) -> Any:
 		u"""Get the value of a parameter with `section`, name in the tuple section_name.
 
 		Implicit use of this method is the recommended way to get the
@@ -851,7 +852,7 @@ class DataBlock(object):
 			raise ValueError("You must specify both a section and a name to get or set a block item: b['section','name']")
 		return self.get(section, name)
 
-	def __setitem__(self, section_name, value):
+	def __setitem__(self, section_name: Tuple[str, str], value: Any) -> None:
 		u"""Set a parameter with value in the map.
 
 		The section_name must be a tuple with the parameterʼs section and
@@ -870,7 +871,7 @@ class DataBlock(object):
 		else:
 			self.put(section, name, value)
 
-	def __contains__(self, section_name):
+	def __contains__(self, section_name: Union[str, Tuple[str, str]]) -> bool:
 		u"""Indicate whether there is a parameter with given section/name in the database.
 
 		The section and name must be specified as the first two items of a
@@ -888,7 +889,7 @@ class DataBlock(object):
 			raise ValueError("You must specify both a section and a name to get or set a block item: b['section','name']")
 		return self.has_value(section, name)
 
-	def sections(self):
+	def sections(self) -> List[str]:
 		u"""Return a list of strings with the names of all sections in the data set.
 
 		"""
@@ -896,7 +897,7 @@ class DataBlock(object):
 		return [lib.c_datablock_get_section_name(self._ptr, i).decode('utf-8') for i in range(n)]
 
 
-	def keys(self, section=None):
+	def keys(self, section: Optional[str] = None) -> List[Tuple[str, str]]:
 		u"""Return all keys in the collection, or, if `section` is specified, all keys under that section.
 
 		If `section` is specified, it must be a string naming a section
@@ -919,13 +920,13 @@ class DataBlock(object):
 		return keys
 
 
-	def _delete_section(self, section):
+	def _delete_section(self, section: str) -> None:
 		"Internal use only!"
 		status = lib.c_datablock_delete_section(self._ptr, section.encode('ascii'))
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, "<tried to delete>")
 
-	def _copy_section(self, source, dest):
+	def _copy_section(self, source: str, dest: str) -> None:
 		"Internal use only!"
 		status = lib.c_datablock_copy_section(self._ptr, source.encode('ascii'), dest.encode('ascii'))
 		if status!=0:
@@ -933,7 +934,7 @@ class DataBlock(object):
 
 
 	@staticmethod
-	def _parse_metadata_key(key):
+	def _parse_metadata_key(key: str) -> Tuple[str, str]:
 		key = key[len(metadata_prefix):].strip(":")
 		s = key.index(":")
 		if s==-1:
@@ -942,7 +943,7 @@ class DataBlock(object):
 		meta = key[s+1:]
 		return name, meta
 
-	def save_to_file(self, dirname, clobber=False):
+	def save_to_file(self, dirname: str, clobber: bool = False) -> None:
 		u"""Effectively :func:`save_to_directory` with the result tarʼd and compressed to a single file.
 
 		The `dirname` argument here is actually a file name without an
@@ -1008,7 +1009,7 @@ class DataBlock(object):
 		tar.close()
 
 
-	def save_to_directory(self, dirname, clobber=False):
+	def save_to_directory(self, dirname: str, clobber: bool = False) -> None:
 		u"""Save the entire contents of this parameter map in the filesystem under `dirname`.
 
 		The data are all written out long-hand in ASCII.  Each unique
@@ -1084,7 +1085,7 @@ class DataBlock(object):
 			yield section, scalar_outputs, vector_outputs, meta
 
 
-	def report_failures(self):
+	def report_failures(self) -> None:
 		u"""Dump a human-readable list of failed-action log entries to the standard error channel.
 
 		The entries appear one per line, with space-separated items
@@ -1096,7 +1097,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
-	def print_log(self):
+	def print_log(self) -> None:
 		u"""Dump a human-readable list of log entries to standard output.
 
 		The entries appear one per line, with space-separated items
@@ -1108,11 +1109,11 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
-	def get_log_count(self):
+	def get_log_count(self) -> int:
 		u"""Return the number of entries in the log."""
 		return lib.c_datablock_get_log_count(self._ptr)
 
-	def get_log_entry(self, i):
+	def get_log_entry(self, i: int) -> Tuple[str, str, str, str]:
 		u"""Get the iʼth log entry.
 
 		The return is a tuple of four strings indicating the verb (i.e.,
@@ -1130,7 +1131,7 @@ class DataBlock(object):
 			raise ValueError("Asked for log entry above maximum or less than zero")
 		return ptype.value.decode('utf-8'), section.value.decode('utf-8'), name.value.decode('utf-8'), dtype.value.decode('utf-8')
 
-	def log_access(self, log_type, section, name):
+	def log_access(self, log_type: str, section: str, name: str) -> None:
 		u"""Add an entry to the end of this :class:`DataBlock` access log.
 
 		The `log_type` describes the action performed on the parameter at
@@ -1144,7 +1145,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, "", "")
 
-	def get_metadata(self, section, name, key):
+	def get_metadata(self, section: str, name: str, key: str) -> str:
 		u"""Get the metadata called `key` attached to parameter `name` under `section`.
 
 		If the data do not exist at the requested address, then a
@@ -1157,7 +1158,7 @@ class DataBlock(object):
 			raise BlockError.exception_for_status(status, section, name)
 		return r.value.decode('utf-8')
 
-	def put_metadata(self, section, name, key, value):
+	def put_metadata(self, section: str, name: str, key: str, value: str) -> None:
 		u"""Associate `value` with the meta-`key` attached to parameter `name` under `section`.
 
 		If there is no parameter under (`section`, `name`) then a
@@ -1168,7 +1169,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def replace_metadata(self, section, name, key, value):
+	def replace_metadata(self, section: str, name: str, key: str, value: str) -> None:
 		u"""Associate `value` with the meta-`key` attached to parameter `name` under `section`.
 
 		If there is no parameter under (`section`, `name`) then a
@@ -1179,7 +1180,7 @@ class DataBlock(object):
 		if status!=0:
 			raise BlockError.exception_for_status(status, section, name)
 
-	def put_grid(self, section, name_x, x, name_y, y, name_z, z):
+	def put_grid(self, section: str, name_x: str, x: np.ndarray, name_y: str, y: np.ndarray, name_z: str, z: np.ndarray) -> None:
 		u"""Put a grid into the map.
 
 		The grid is put into `section`, using keys `name_x`, `name_y` and
@@ -1196,7 +1197,7 @@ class DataBlock(object):
 		"""
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, False)
 
-	def get_grid(self, section, name_x, name_y, name_z):
+	def get_grid(self, section: str, name_x: str, name_y: str, name_z: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 		u"""Return a triple of arrays, representing a grid of data.
 
 		The strings `name_x`, `name_y` and `name_z` must be keys under
@@ -1233,7 +1234,7 @@ class DataBlock(object):
 
 
 
-	def replace_grid(self, section, name_x, x, name_y, y, name_z, z):
+	def replace_grid(self, section: str, name_x: str, x: np.ndarray, name_y: str, y: np.ndarray, name_z: str, z: np.ndarray) -> None:
 		u"""Put a grid into the map.
 
 		The grid is put into `section`, using keys `name_x`, `name_y` and
@@ -1250,7 +1251,7 @@ class DataBlock(object):
 		"""
 		self._grid_put_replace(section, name_x, x, name_y, y, name_z, z, True)
 
-	def _grid_put_replace(self, section, name_x, x, name_y, y, name_z, z, replace):
+	def _grid_put_replace(self, section: str, name_x: str, x: np.ndarray, name_y: str, y: np.ndarray, name_z: str, z: np.ndarray, replace: bool) -> None:
 		# These conversions do not create new objects if x,y,z are already arrays.
 		x = np.asarray(x)
 		y = np.asarray(y)
@@ -1286,7 +1287,7 @@ class DataBlock(object):
 		sentinel_value = "%s_cosmosis_order_%s" % (name_x, name_y)
 		self[section, sentinel_key] = sentinel_value.lower()
 
-	def get_first_parameter_use(self, params_of_interest):
+	def get_first_parameter_use(self, params_of_interest: List[Tuple[str, str]]) -> Dict[str, Tuple[str, str]]:
 		u"""Analyze the log and figure out when each parameter is first used"""
 		params_by_module = collections.OrderedDict()
 		current_module = []
@@ -1313,7 +1314,7 @@ class DataBlock(object):
 		return params_by_module
 
 	@classmethod
-	def from_yaml(cls, filename_or_stream):
+	def from_yaml(cls, filename_or_stream: Union[str, Any]) -> "DataBlock":
 		import yaml
 
 		block = cls()
@@ -1335,7 +1336,7 @@ class DataBlock(object):
 
 		return block
 
-	def to_yaml(self, filename_or_stream):
+	def to_yaml(self, filename_or_stream: Union[str, Any]) -> None:
 		import yaml
 		if isinstance(filename_or_stream, str):
 			stream = open(filename_or_stream, 'w')
@@ -1354,7 +1355,7 @@ class DataBlock(object):
 		yaml.dump(data, stream)
 
 	@classmethod
-	def from_dict(cls, d):
+	def from_dict(cls, d: Mapping[str, Mapping[str, Any]]) -> "DataBlock":
 		b = cls()
 		for section, values in d.items():
 			for key, value in values.items():
@@ -1362,17 +1363,17 @@ class DataBlock(object):
 		return b
 
 	@classmethod
-	def from_string(cls, s):
+	def from_string(cls, s: str) -> "DataBlock":
 		sio = StringIO(s)
 		return cls.from_yaml(sio)
 
-	def to_string(self):
+	def to_string(self) -> str:
 		sio = StringIO()
 		self.to_yaml(sio)
 		sio.seek(0)
 		return sio.read()
 
-	def __reduce__(self):
+	def __reduce__(self) -> Tuple[Any, Tuple[str]]:
 		return (DataBlock.from_string, (self.to_string(),))
 
 
@@ -1390,24 +1391,24 @@ class SectionOptions(object):
 	defines the current module"
 
 	"""
-	def __init__(self, block):
+	def __init__(self, block: DataBlock) -> None:
 		self.block=block
 
-	def has_value(self, name):
+	def has_value(self, name: str) -> bool:
 		has = self.block.has_value(option_section, name)
 		return bool(has)
 
 
 
-def _make_getter(cls, name):
+def _make_getter(cls: type, name: str) -> Callable[..., Any]:
 	if name=='__getitem__':
-		def getter(self, key):
+		def getter(self, key: str) -> Any:
 			return self.block[option_section, key]
 	elif "array" in name:
-		def getter(self, key):
+		def getter(self, key: str) -> Any:
 			return getattr(self.block, name)(option_section, key)
 	else:
-		def getter(self, key, default=None):
+		def getter(self, key: str, default: Optional[Any] = None) -> Any:
 			return getattr(self.block, name)(option_section, key, default=default)
 
 	return getter
