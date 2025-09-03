@@ -27,8 +27,8 @@ installation: >
 
 # List of configuration options for this sampler
 params:
-    walkers: "(int; required) Number of walkers in the ensemble"
-    samples: "(int; required) Number of samples to generate per walker"
+    walkers: "(int) Number of walkers in the ensemble"
+    samples: "(int) Number of samples to generate per walker"
     nsteps: "(int; default=50) Number of sample steps taken in between writing output"
     random_start: "(bool; default=False) Whether to start walkers at random points in the prior"
     start_points: "(string; default='') File containing starting points for the walkers"
